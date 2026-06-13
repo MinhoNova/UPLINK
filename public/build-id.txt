@@ -1,1 +1,1 @@
-2026-06-13-discord-oauth-fix
+2026-06-13-auth-env-sync

@@ -1,15 +1,9 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
-function readDiscordEnv() {
-  return {
-    clientId: process.env.DISCORD_CLIENT_ID,
-    clientSecret: process.env.DISCORD_CLIENT_SECRET,
-  };
-}
-
 export function getAuthOptions(): NextAuthOptions {
-  const { clientId, clientSecret } = readDiscordEnv();
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     console.warn(
@@ -55,20 +49,7 @@ export function getAuthOptions(): NextAuthOptions {
       },
     },
     secret: process.env.NEXTAUTH_SECRET,
-    trustHost: process.env.AUTH_TRUST_HOST === "true",
-    useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? false,
-    cookies: {
-      sessionToken: {
-        name: `next-auth.session-token`,
-        options: {
-          httpOnly: true,
-          sameSite: "lax",
-          path: "/",
-          secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? false,
-        },
-      },
-    },
-    debug: process.env.NODE_ENV === "development",
+    trustHost: true,
   };
 }
 
