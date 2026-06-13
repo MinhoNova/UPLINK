@@ -1,1 +1,1 @@
-2026-06-13-auth-env-sync
+2026-06-13-discord-secret-check
