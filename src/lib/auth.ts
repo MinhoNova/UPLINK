@@ -46,6 +46,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith("https://") ?? false,
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,

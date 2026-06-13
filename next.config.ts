@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+const productionUrl = "https://uplink.uplinklfg.workers.dev";
+
 const nextConfig: NextConfig = {
+  // NextAuth reads NEXTAUTH_URL in the client bundle; without this it defaults to localhost:3000.
+  env: {
+    NEXTAUTH_URL:
+      process.env.NEXTAUTH_URL ??
+      (process.env.NODE_ENV === "development" ? "http://localhost:3000" : productionUrl),
+  },
   serverExternalPackages: ["better-sqlite3"],
   typescript: {
     ignoreBuildErrors: true,
