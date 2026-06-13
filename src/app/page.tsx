@@ -5205,7 +5205,6 @@ export default function HomePage() {
                              </motion.div>
                           )}
                          </div>
-                              </div>
                              {session && (
                                 <OngoingMissionsPanel
                                    lobbies={lobbies}
