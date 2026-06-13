@@ -5215,7 +5215,6 @@ export default function HomePage() {
                                    roleIconUrl={roleIconUrl}
                                    getVfxSettings={getVfxSettings}
                                    onOpenMission={openMissionThread}
-                                   alignWithOfferBanners
                                 />
                              )}
                     </div>
