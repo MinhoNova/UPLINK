@@ -1,0 +1,11 @@
+# Copy to .dev.vars for local wrangler dev / build (do not commit real secrets)
+NEXTJS_ENV=development
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_BOT_TOKEN=
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=http://localhost:3000
+AUTH_TRUST_HOST=true
+NEXT_PUBLIC_LIVEKIT_URL=
+LIVEKIT_API_KEY=
+LIVEKIT_API_SECRET=
