@@ -2,4 +2,5 @@
 
 interface CloudflareEnv {
   DB: D1Database;
+  KV_BINDING: KVNamespace;
 }

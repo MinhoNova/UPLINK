@@ -21,8 +21,14 @@
     {
       "binding": "DB",
       "database_name": "uplink-db",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "779b2a59-50c9-4378-bfa9-b6d96ac4d692",
       "migrations_dir": "drizzle/migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV_BINDING",
+      "id": "d14e5f2da43a43d18c1d5ad068c92d02"
     }
   ]
 }
