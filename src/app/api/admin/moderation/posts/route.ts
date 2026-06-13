@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
-import { db, initDb } from "@/db";
+import { getDb } from "@/db";
 import { posts, reactions, reports, comments, commentReactions } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
-
-initDb();
-
 export async function DELETE(req: Request) {
+  const db = await getDb();
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const { postId } = await req.json();
+  const { postId } = (await req.json()) as { postId?: number };
   if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
 
   const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);

@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
-import { db, initDb } from "@/db";
+import { getDb } from "@/db";
 import { reports, posts } from "@/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
 import { getKV, initTables } from "@/lib/db";
 import { resolveProfileDisplayName } from "@/lib/profileImage";
-
-initDb();
-
 export async function GET() {
+  const db = await getDb();
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -43,10 +41,11 @@ export async function GET() {
 }
 
 export async function DELETE(req: Request) {
+  const db = await getDb();
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const { reportId } = await req.json();
+  const { reportId } = (await req.json()) as { reportId?: number };
   if (!reportId) return NextResponse.json({ error: "reportId required" }, { status: 400 });
 
   await db.delete(reports).where(eq(reports.id, reportId));

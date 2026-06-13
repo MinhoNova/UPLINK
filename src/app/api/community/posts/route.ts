@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db, initDb } from "@/db";
+import { getDb } from "@/db";
 import { posts, reactions, reports } from "@/db/schema";
 import { desc, eq, and, inArray, gte } from "drizzle-orm";
 import sharp from "sharp";
@@ -9,9 +9,6 @@ import { getKV, initTables } from "@/lib/db";
 import { canViewPost } from "@/lib/postVisibility";
 import path from "path";
 import fs from "fs";
-
-initDb();
-
 const MAX_DAILY_POSTS = 10;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 4096;
@@ -53,6 +50,7 @@ async function validateAndNormalizeImage(buffer: Buffer, preferGif = false) {
 }
 
 export async function GET(req: NextRequest) {
+  const db = await getDb();
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -106,6 +104,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const db = await getDb();
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -200,6 +199,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const db = await getDb();
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

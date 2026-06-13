@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db, initDb } from "@/db";
+import { getDb } from "@/db";
 import { posts, comments, reactions } from "@/db/schema";
 import { eq, inArray, ne, and, desc } from "drizzle-orm";
-
-initDb();
-
 const REACTION_EMOJI: Record<string, string> = {
   LOL: "😂",
   Love: "❤️",
@@ -15,6 +12,7 @@ const REACTION_EMOJI: Record<string, string> = {
 };
 
 export async function GET() {
+  const db = await getDb();
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

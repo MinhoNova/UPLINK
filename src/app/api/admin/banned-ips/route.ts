@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json().catch(() => ({}));
+  const body = (await req.json().catch(() => ({}))) as { ip?: string; reason?: string };
   const ip = String(body?.ip || "").trim();
   const reason = body?.reason ? String(body.reason).slice(0, 200) : undefined;
 
@@ -49,7 +49,7 @@ export async function DELETE(req: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json().catch(() => ({}));
+  const body = (await req.json().catch(() => ({}))) as { ip?: string; reason?: string };
   const ip = String(body?.ip || "").trim();
 
   const result = await unbanIp(ip, { id: auth.user.id, username: auth.user.username });
