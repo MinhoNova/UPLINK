@@ -4,22 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { getDb } from "@/db";
 import { posts, reactions, reports } from "@/db/schema";
 import { desc, eq, and, inArray, gte } from "drizzle-orm";
-import sharp from "sharp";
+import { normalizeCommunityImage } from "@/lib/imageProcess";
 import { getKV, initTables } from "@/lib/db";
 import { canViewPost } from "@/lib/postVisibility";
 import path from "path";
 import fs from "fs";
+
 const MAX_DAILY_POSTS = 10;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION = 4096;
-const MAX_PIXELS = MAX_IMAGE_DIMENSION * MAX_IMAGE_DIMENSION;
-const ALLOWED_IMAGE_MIME = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/avif",
-]);
 
 function ensureUploadDir() {
   const uploadDir = path.join(process.cwd(), "public", "uploads", "community");
@@ -28,25 +20,7 @@ function ensureUploadDir() {
 }
 
 async function validateAndNormalizeImage(buffer: Buffer, preferGif = false) {
-  const meta = await sharp(buffer, { animated: true }).metadata();
-  const mime = meta.format ? `image/${meta.format}` : "";
-  const isGif = meta.format === "gif" || preferGif;
-
-  if (!meta.width || !meta.height) throw new Error("Invalid image dimensions");
-  if (meta.width > MAX_IMAGE_DIMENSION || meta.height > MAX_IMAGE_DIMENSION) throw new Error("Image too large");
-  if ((meta.width || 0) * (meta.height || 0) > MAX_PIXELS) throw new Error("Image pixel count too large");
-  if (!mime || !ALLOWED_IMAGE_MIME.has(mime)) throw new Error("Unsupported image type");
-
-  if (isGif) {
-    return { buffer, ext: "gif" };
-  }
-
-  const normalized = await sharp(buffer, { animated: true })
-    .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toBuffer();
-
-  return { buffer: normalized, ext: "webp" };
+  return normalizeCommunityImage(buffer, preferGif);
 }
 
 export async function GET(req: NextRequest) {

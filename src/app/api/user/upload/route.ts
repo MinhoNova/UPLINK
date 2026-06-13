@@ -7,7 +7,7 @@ import { isSecretClubTier } from "@/lib/userProfile";
 import { checkUploadQuota, incrementUploadQuota, validateMagicBytes } from "@/lib/imageSecurity";
 import { logAudit } from "@/lib/auditLog";
 import { rateLimitByUser } from "@/lib/rateLimit";
-import sharp from "sharp";
+import { getImageMetadata, normalizeProfileImage } from "@/lib/imageProcess";
 import path from "path";
 import fs from "fs";
 
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   if (!validateMagicBytes(buffer)) return NextResponse.json({ error: "Invalid file signature" }, { status: 400 });
 
   let meta;
-  try { meta = await sharp(buffer, { animated: true }).metadata(); }
+  try { meta = await getImageMetadata(buffer); }
   catch { return NextResponse.json({ error: "Invalid image" }, { status: 400 }); }
 
   if (!meta.format || !["jpeg", "png", "webp", "gif", "avif"].includes(meta.format))
@@ -58,16 +58,13 @@ export async function POST(req: Request) {
   let normalized: Buffer;
   let ext = "webp";
   try {
-    if (isGifUpload && (field === "profileGif" || isBanner)) {
-      normalized = buffer;
-      ext = "gif";
-    } else {
-      normalized = await sharp(buffer, { animated: true })
-        .rotate()
-        .resize(maxDim, maxDim, { fit: "inside", withoutEnlargement: true })
-        .webp({ quality: isBanner ? 82 : 85 })
-        .toBuffer();
-    }
+    const result = await normalizeProfileImage(buffer, {
+      maxDim,
+      isGifUpload: !!(isGifUpload && (field === "profileGif" || isBanner)),
+      isBanner,
+    });
+    normalized = result.buffer;
+    ext = result.ext;
   } catch {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
