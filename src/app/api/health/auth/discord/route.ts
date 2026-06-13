@@ -18,6 +18,7 @@ export async function GET() {
         grant_type: "client_credentials",
         client_id: clientId,
         client_secret: clientSecret,
+        scope: "identify",
       }),
     });
 
@@ -28,6 +29,12 @@ export async function GET() {
       status: res.status,
       error: data.error ?? null,
       errorDescription: data.error_description ?? null,
+      hint:
+        data.error === "invalid_client"
+          ? "Update DISCORD_CLIENT_SECRET in Cloudflare to match Discord Developer Portal."
+          : res.ok
+            ? "Discord client ID and secret are valid."
+            : null,
     });
   } catch {
     return Response.json({ ok: false, reason: "fetch_failed" });
