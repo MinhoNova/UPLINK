@@ -1,0 +1,185 @@
+
+<style>
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:2rem 0;background:#000;border-radius:12px}
+.controls{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.ctrl{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#888}
+select,button{font-size:12px;padding:3px 8px;background:#111;color:#ccc;border:0.5px solid #333;border-radius:6px;cursor:pointer}
+button{padding:6px 14px}
+</style>
+
+<div class="wrap">
+<canvas id="c" width="360" height="360"></canvas>
+<div class="controls">
+  <div class="ctrl"><label>سرعة</label><input type="range" id="spd" min="1" max="8" value="4" step="1" style="width:80px"></div>
+  <div class="ctrl"><label>ارتفاع اللهب</label><input type="range" id="height" min="10" max="50" value="28" step="2" style="width:80px"></div>
+  <div class="ctrl"><label>لون</label>
+    <select id="pal">
+      <option value="fire">نار كلاسيك</option>
+      <option value="blue">نار زرقاء</option>
+      <option value="green">نار خضراء</option>
+      <option value="white">نار بيضاء</option>
+    </select>
+  </div>
+</div>
+<button onclick="sendPrompt('اعمل لي الكود الكامل لـ fire ring effect أحطه في سايتي')">اعمل لي الكود ↗</button>
+</div>
+
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=360,H=360,CX=W/2,CY=H/2,R=118;
+
+let spd=4,flameH=28,pal='fire';
+document.getElementById('spd').oninput=e=>spd=+e.target.value;
+document.getElementById('height').oninput=e=>flameH=+e.target.value;
+document.getElementById('pal').onchange=e=>pal=e.target.value;
+
+function turb(a,t,oct){
+  let v=0,amp=1,tot=0;
+  for(let o=0;o<oct;o++){
+    const f=Math.pow(2,o);
+    v+=Math.sin(a*f*3+t*(0.5+o*0.3)+o*1.7)*amp;
+    v+=Math.cos(a*f*5-t*(0.4+o*0.2)+o*2.3)*amp*0.5;
+    tot+=amp*1.5; amp*=0.55;
+  }
+  return v/tot;
+}
+
+function getColors(frac, alpha){
+  // frac 0=base 1=tip
+  if(pal==='fire'){
+    const r=255;
+    const g=frac<0.5 ? Math.floor(frac*2*160) : Math.floor(160+frac*95);
+    const b=frac>0.7 ? Math.floor((frac-0.7)/0.3*80) : 0;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  if(pal==='blue'){
+    const b=255;
+    const r=Math.floor(frac*120);
+    const g=Math.floor(80+frac*175);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  if(pal==='green'){
+    const g=255;
+    const r=Math.floor(frac*180);
+    const b=Math.floor(frac*60);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  if(pal==='white'){
+    const base=Math.floor(180+frac*75);
+    return `rgba(${base},${base},${base},${alpha})`;
+  }
+}
+
+let t=0;
+
+function drawFire(){
+  const STEPS=180;
+  const LAYERS=18;
+
+  for(let li=0;li<LAYERS;li++){
+    const layerFrac=li/LAYERS; // 0=inner(base) 1=outer(tip)
+
+    for(let si=0;si<STEPS;si++){
+      const angle=(si/STEPS)*Math.PI*2;
+      const nextAngle=((si+1)/STEPS)*Math.PI*2;
+
+      // flame flicker — each point on ring has its own flame height
+      const flicker1 = turb(angle, t, 3);
+      const flicker2 = turb(nextAngle, t, 3);
+
+      // flame shoots outward from ring surface
+      const flameOffset1 = layerFrac * flameH * (0.5 + flicker1*0.7);
+      const flameOffset2 = layerFrac * flameH * (0.5 + flicker2*0.7);
+
+      // inner edge stays tight on ring, outer edge flickers wildly
+      const innerR = R + (li===0 ? -2 : (li-1)/LAYERS * flameH * (0.5 + turb(angle, t*0.8, 2)*0.5));
+      const r1 = R + flameOffset1;
+      const r2 = R + flameOffset2;
+
+      const x1=CX+Math.cos(angle)*r1,   y1=CY+Math.sin(angle)*r1;
+      const x2=CX+Math.cos(nextAngle)*r2, y2=CY+Math.sin(nextAngle)*r2;
+
+      // opacity: bright at base, fades at tip
+      const baseFade=1-layerFrac;
+      const flicker=0.5+Math.abs(flicker1)*0.5;
+      const alpha=baseFade*baseFade*flicker*0.7;
+
+      ctx.strokeStyle=getColors(layerFrac, Math.min(alpha,0.85));
+      ctx.lineWidth=(1-layerFrac)*3.5+0.5;
+      ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+    }
+  }
+
+  // inner glow at ring base
+  const glowR=ctx.createRadialGradient(CX,CY,R-6,CX,CY,R+8);
+  if(pal==='fire'){
+    glowR.addColorStop(0,'rgba(255,80,0,0)');
+    glowR.addColorStop(0.5,'rgba(255,120,0,0.18)');
+    glowR.addColorStop(1,'rgba(255,60,0,0)');
+  } else if(pal==='blue'){
+    glowR.addColorStop(0,'rgba(0,150,255,0)');
+    glowR.addColorStop(0.5,'rgba(0,180,255,0.18)');
+    glowR.addColorStop(1,'rgba(0,100,255,0)');
+  } else if(pal==='green'){
+    glowR.addColorStop(0,'rgba(0,255,80,0)');
+    glowR.addColorStop(0.5,'rgba(50,255,80,0.18)');
+    glowR.addColorStop(1,'rgba(0,200,0,0)');
+  } else {
+    glowR.addColorStop(0,'rgba(200,200,200,0)');
+    glowR.addColorStop(0.5,'rgba(255,255,255,0.12)');
+    glowR.addColorStop(1,'rgba(200,200,200,0)');
+  }
+  ctx.beginPath();
+  ctx.arc(CX,CY,R+4,0,Math.PI*2);
+  ctx.lineWidth=14;
+  ctx.strokeStyle=glowR;
+  ctx.stroke();
+}
+
+function frame(){
+  ctx.clearRect(0,0,W,H);
+
+  // background avatar
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX,CY,R-2,0,Math.PI*2);
+  ctx.fillStyle='#0d0d0d';
+  ctx.fill();
+  ctx.restore();
+
+  drawFire();
+
+  // mask inside
+  ctx.save();
+  ctx.globalCompositeOperation='destination-out';
+  ctx.beginPath();
+  ctx.arc(CX,CY,R-3,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,1)';
+  ctx.fill();
+  ctx.restore();
+
+  // avatar on top
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX,CY,R-3,0,Math.PI*2);
+  ctx.fillStyle='#0d0d0d';
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,120,0,0.15)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.15)';
+  ctx.font='12px sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('صورة البروفايل',CX,CY);
+  ctx.restore();
+
+  t+=0.018*spd;
+  requestAnimationFrame(frame);
+}
+frame();
+</script>

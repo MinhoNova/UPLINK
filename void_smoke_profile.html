@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Void Smoke Profile</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #080200;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c" width="320" height="320" style="background:#080200;"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const W=320, H=320, CX=160, CY=160, R=100;
+
+function drawProfile() {
+  ctx.beginPath(); ctx.arc(CX,CY-17,25,0,Math.PI*2);
+  ctx.fillStyle='rgba(240,160,80,0.85)'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(CX,CY+48,40,30,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(240,160,80,0.72)'; ctx.fill();
+}
+
+function loop() {
+  ctx.clearRect(0,0,W,H);
+  drawProfile();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

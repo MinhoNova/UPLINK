@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galaxy Smoke Profile</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #050210;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c" width="320" height="320" style="background:#050210;"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const W=320, H=320, CX=160, CY=160, R=100;
+
+// نجوم خلفية
+const stars = Array.from({length:60}, () => ({
+  x: Math.random()*W,
+  y: Math.random()*H,
+  r: Math.random()*0.9,
+  a: Math.random(),
+  as: (Math.random()-0.5)*0.008
+}));
+
+class Puff {
+  constructor(i, total) {
+    this.total = total;
+    this.init(i);
+  }
+  init(i) {
+    this.angle = (i !== undefined ? (i/this.total) : Math.random()) * Math.PI*2;
+    this.speed = (0.0025 + Math.random()*0.004) * (Math.random()<0.5 ? 1 : -1);
+    this.radR  = R + (Math.random()-0.5)*25;
+    this.wobA  = Math.random()*Math.PI*2;
+    this.wobS  = 0.015 + Math.random()*0.02;
+    this.wobAmp= 7 + Math.random()*13;
+    this.size  = 15 + Math.random()*20;
+    this.life  = i !== undefined ? Math.random() : 0;
+    this.lifeS = 0.0015 + Math.random()*0.002;
+    this.rot   = Math.random()*Math.PI*2;
+    this.rotS  = (Math.random()-0.5)*0.012;
+    // موف/بنفسجي — 270-295 بس
+    this.hue   = 270 + Math.random()*25;
+    this.sat   = 80 + Math.random()*15;
+    this.light = 45 + Math.random()*20;
+  }
+  get alpha() {
+    const t = this.life;
+    if (t < 0.15) return t/0.15;
+    if (t > 0.72) return (1-t)/0.28;
+    return 1;
+  }
+  update() {
+    this.angle += this.speed;
+    this.wobA  += this.wobS;
+    this.life  += this.lifeS;
+    this.rot   += this.rotS;
+    if (this.life >= 1) this.init();
+  }
+  draw() {
+    const r = this.radR + Math.sin(this.wobA)*this.wobAmp;
+    const x = CX + Math.cos(this.angle)*r;
+    const y = CY + Math.sin(this.angle)*r;
+    const s = this.size;
+    const a = this.alpha * 0.6;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(this.rot);
+    const g = ctx.createRadialGradient(0,0,0, 0,0,s);
+    g.addColorStop(0,   `hsla(${this.hue},${this.sat}%,${this.light+22}%,${a})`);
+    g.addColorStop(0.2, `hsla(${this.hue},${this.sat}%,${this.light+10}%,${a*0.75})`);
+    g.addColorStop(0.5, `hsla(${this.hue},${this.sat}%,${this.light}%,${a*0.4})`);
+    g.addColorStop(0.8, `hsla(${this.hue},${this.sat}%,${this.light-10}%,${a*0.12})`);
+    g.addColorStop(1,   `hsla(${this.hue},${this.sat}%,${this.light-15}%,0)`);
+    ctx.beginPath();
+    ctx.arc(0,0,s,0,Math.PI*2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+class Sparkle {
+  constructor() { this.reset(); }
+  reset() {
+    this.angle = Math.random()*Math.PI*2;
+    this.speed = 0.005 + Math.random()*0.007;
+    this.r     = R + (Math.random()-0.5)*30;
+    this.size  = 0.5 + Math.random()*1;
+    this.life  = Math.random();
+    this.lifeS = 0.003 + Math.random()*0.004;
+    this.hue   = 260 + Math.random()*40;
+  }
+  update() {
+    this.angle += this.speed;
+    this.life  += this.lifeS;
+    if (this.life >= 1) this.reset();
+  }
+  get alpha() {
+    const t = this.life;
+    if (t < 0.2) return t/0.2;
+    if (t > 0.7) return (1-t)/0.3;
+    return 1;
+  }
+  draw() {
+    const x = CX + Math.cos(this.angle)*this.r;
+    const y = CY + Math.sin(this.angle)*this.r;
+    ctx.beginPath();
+    ctx.arc(x, y, this.size, 0, Math.PI*2);
+    ctx.fillStyle = `hsla(${this.hue},90%,90%,${this.alpha})`;
+    ctx.fill();
+  }
+}
+
+const N = 150;
+const puffs    = Array.from({length:N},   (_,i) => new Puff(i, N));
+const sparkles = Array.from({length:40},  ()    => new Sparkle());
+
+function drawStars() {
+  stars.forEach(s => {
+    s.a += s.as;
+    if (s.a > 1 || s.a < 0) s.as *= -1;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(190,160,255,${s.a*0.5})`;
+    ctx.fill();
+  });
+}
+
+function drawProfile() {
+  // glow موف خارجي
+  const gl = ctx.createRadialGradient(CX,CY,R-40, CX,CY,R+50);
+  gl.addColorStop(0,    'rgba(90,20,180,0)');
+  gl.addColorStop(0.4,  'rgba(110,30,200,0.25)');
+  gl.addColorStop(0.75, 'rgba(80,15,160,0.1)');
+  gl.addColorStop(1,    'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(CX,CY,R+50,0,Math.PI*2);
+  ctx.fillStyle = gl; ctx.fill();
+
+  // امسح جوا الدايرة
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath(); ctx.arc(CX,CY,R-2,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,1)'; ctx.fill();
+  ctx.restore();
+
+  // profile galaxy bg
+  const ig = ctx.createRadialGradient(CX-20,CY-20,4, CX,CY,R-2);
+  ig.addColorStop(0,   '#4a1a90');
+  ig.addColorStop(0.5, '#1e0850');
+  ig.addColorStop(1,   '#080318');
+  ctx.beginPath(); ctx.arc(CX,CY,R-2,0,Math.PI*2);
+  ctx.fillStyle = ig; ctx.fill();
+
+  // نجوم جوا الصورة
+  for (let i=0; i<20; i++) {
+    const ang = i*(Math.PI*2/20) + Date.now()*0.00005;
+    const rr  = 15 + ((i*29)%45);
+    const sx  = CX + Math.cos(ang)*rr;
+    const sy  = CY + Math.sin(ang)*rr;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 0.5+((i*11)%4)*0.2, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(210,180,255,${0.25+((i*7)%5)*0.08})`;
+    ctx.fill();
+  }
+
+  // silhouette
+  ctx.beginPath(); ctx.arc(CX,CY-17,25,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(175,130,245,0.9)'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(CX,CY+48,40,30,0,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(175,130,245,0.8)'; ctx.fill();
+
+  // حد الدايرة
+  ctx.beginPath(); ctx.arc(CX,CY,R-2,0,Math.PI*2);
+  ctx.strokeStyle = 'rgba(170,100,255,0.7)';
+  ctx.lineWidth = 1.2; ctx.stroke();
+
+  ctx.beginPath(); ctx.arc(CX,CY,R+2,0,Math.PI*2);
+  ctx.strokeStyle = 'rgba(130,60,230,0.18)';
+  ctx.lineWidth = 2.5; ctx.stroke();
+}
+
+function loop() {
+  ctx.clearRect(0,0,W,H);
+  drawStars();
+  puffs.forEach(p    => { p.update(); p.draw(); });
+  sparkles.forEach(s => { s.update(); s.draw(); });
+  drawProfile();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { rateLimitByIp } from "@/lib/rateLimitIp";
+
+const UPLOAD_PATHS = ["/api/user/upload", "/api/community/posts"];
+const STRICT_PATHS = ["/api/dm", "/api/friends", "/api/discord/broadcast"];
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+export function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  if (!path.startsWith("/api/")) return NextResponse.next();
+  if (path.startsWith("/api/auth")) return NextResponse.next();
+
+  const ip = getClientIp(req);
+  let limit = 150;
+  if (path.startsWith("/api/livekit")) limit = 400;
+  if (UPLOAD_PATHS.some((p) => path.startsWith(p))) limit = 30;
+  if (STRICT_PATHS.some((p) => path.startsWith(p))) limit = 80;
+
+  const result = rateLimitByIp(ip, path, limit, 60_000);
+  if (!result.ok) {
+    return new NextResponse(
+      JSON.stringify({ error: "Too many requests", retryAfterMs: result.retryAfterMs }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil(result.retryAfterMs / 1000)),
+        },
+      }
+    );
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: "/api/:path*",
+};

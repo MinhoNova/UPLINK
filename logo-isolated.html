@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uplink Isolated Logo</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #030308;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .logo-container {
+    width: 200px;
+    height: 200px;
+  }
+  
+  /* CSS Animations replacing Framer Motion */
+  @keyframes stroke-flow {
+    0%   { stroke-dashoffset: 32; }
+    40%  { stroke-dashoffset: 0; }
+    50%  { stroke-dashoffset: 0; }
+    90%  { stroke-dashoffset: 32; }
+    100% { stroke-dashoffset: 32; }
+  }
+
+  @keyframes left-circle {
+    0%   { fill: #00ffff; transform: scale(1.6); }
+    10%  { fill: #00ffff; transform: scale(1); }
+    88%  { fill: #00ffff; transform: scale(1); }
+    92%  { fill: #ff007f; transform: scale(1.6); }
+    96%  { fill: #ff007f; transform: scale(1); }
+    100% { fill: #00ffff; transform: scale(1.6); }
+  }
+
+  @keyframes right-circle {
+    0%   { fill: #ff007f; transform: scale(1); }
+    38%  { fill: #ff007f; transform: scale(1); }
+    42%  { fill: #00ffff; transform: scale(1.6); }
+    46%  { fill: #00ffff; transform: scale(1); }
+    50%  { fill: #ff007f; transform: scale(1.6); }
+    54%  { fill: #ff007f; transform: scale(1); }
+    100% { fill: #ff007f; transform: scale(1); }
+  }
+
+  .animated-path {
+    stroke-dasharray: 32;
+    animation: stroke-flow 4s linear infinite;
+  }
+
+  .left-dot {
+    transform-origin: 8px 20px;
+    animation: left-circle 4s ease-in-out infinite;
+  }
+
+  .right-dot {
+    transform-origin: 32px 20px;
+    animation: right-circle 4s ease-in-out infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="logo-container">
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible; shape-rendering:geometricPrecision;">
+    <rect width="40" height="40" rx="12" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="1" />
+    <path d="M8 20 Q20 9 32 20" fill="none" stroke="white" stroke-opacity="0.05" stroke-width="6.5" stroke-linecap="round" />
+    <path d="M8 20 Q20 9 32 20" fill="none" stroke="#ff007f" stroke-width="5.5" stroke-linecap="round" stroke-opacity="0.85" />
+    <path class="animated-path" d="M8 20 Q20 9 32 20" fill="none" stroke="#00ffff" stroke-width="5.5" stroke-linecap="round" />
+    <circle class="left-dot" cx="8" cy="20" r="3.25" />
+    <circle class="right-dot" cx="32" cy="20" r="3.25" />
+  </svg>
+</div>
+
+</body>
+</html>

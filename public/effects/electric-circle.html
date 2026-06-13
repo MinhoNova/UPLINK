@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glitch Neon Circle</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    width: 100vw; height: 100vh; overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%; height: 100%;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const THEMES = [
+  { name:'Galaxy',     h:['rgba(55,10,130,0.5)','rgba(90,25,190,0.6)','rgba(130,55,220,0.7)','rgba(165,85,250,0.85)','rgba(55,170,255,0.65)','rgba(195,135,255,0.9)','rgba(90,205,255,0.75)','rgba(240,228,255,0.95)'], glow:'#b060ff', dot:'#9040ee' },
+  { name:'Neon Red',   h:['rgba(180,10,10,0.5)','rgba(220,30,30,0.55)','rgba(40,60,200,0.65)','rgba(60,100,240,0.75)','rgba(60,180,255,0.65)','rgba(255,60,60,0.85)','rgba(80,200,255,0.80)','rgba(255,255,255,0.95)'], glow:'#ff3030', dot:'#ff2020' },
+  { name:'Cyber Teal', h:['rgba(0,80,80,0.5)','rgba(0,140,130,0.55)','rgba(0,200,180,0.65)','rgba(0,240,210,0.75)','rgba(80,255,230,0.65)','rgba(0,255,200,0.9)','rgba(180,255,245,0.75)','rgba(255,255,255,0.95)'], glow:'#00ffc8', dot:'#00ddaa' },
+  { name:'Solar Gold', h:['rgba(120,50,0,0.5)','rgba(200,90,0,0.55)','rgba(220,140,0,0.65)','rgba(255,180,0,0.80)','rgba(255,220,80,0.65)','rgba(255,200,0,0.9)','rgba(255,240,150,0.75)','rgba(255,255,255,0.95)'], glow:'#ffcc00', dot:'#ffaa00' },
+  { name:'Toxic Green',h:['rgba(0,80,10,0.5)','rgba(20,160,20,0.55)','rgba(40,220,40,0.65)','rgba(80,255,60,0.80)','rgba(160,255,80,0.65)','rgba(50,255,50,0.9)','rgba(180,255,140,0.75)','rgba(255,255,255,0.95)'], glow:'#40ff40', dot:'#20ee20' },
+  { name:'Crimson',    h:['rgba(120,0,60,0.5)','rgba(200,0,80,0.55)','rgba(240,20,100,0.65)','rgba(255,40,120,0.80)','rgba(255,100,180,0.65)','rgba(255,20,100,0.9)','rgba(255,160,210,0.75)','rgba(255,255,255,0.95)'], glow:'#ff2060', dot:'#ff1050' },
+  { name:'Ice Blue',   h:['rgba(0,20,80,0.5)','rgba(0,60,160,0.55)','rgba(0,120,240,0.65)','rgba(40,160,255,0.80)','rgba(120,210,255,0.65)','rgba(60,180,255,0.9)','rgba(180,230,255,0.75)','rgba(255,255,255,0.95)'], glow:'#40aaff', dot:'#2080ff' },
+  { name:'Void White', h:['rgba(60,60,80,0.4)','rgba(100,100,130,0.5)','rgba(150,150,190,0.6)','rgba(200,200,230,0.75)','rgba(220,220,255,0.65)','rgba(240,240,255,0.9)','rgba(200,200,255,0.75)','rgba(255,255,255,0.95)'], glow:'#ddddff', dot:'#bbbbee' },
+];
+
+const urlParams = new URLSearchParams(window.location.search);
+let current = Math.min(parseInt(urlParams.get('color') || '0'), THEMES.length - 1);
+
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+
+// Render at a crisp internal size, browser smooth-scales to fit container
+const S = 400;
+C.width = S; C.height = S;
+const cx = S/2, cy = S/2;
+// Ring radii and widths are proportional to S
+const R = S * 0.34;
+const TAU = Math.PI*2;
+const k = S / 400; // = 1 at default, scales proportionally
+
+let t = 0, glitchTimer = 0, glitching = false, glitchLife = 0;
+
+function noiz(r) { return (Math.random() - 0.5) * r * k; }
+
+function noisyCircle(segments, jitter){
+  const pts = [];
+  for(let i=0;i<=segments;i++){
+    const a=(i/segments)*TAU;
+    pts.push([cx+Math.cos(a)*(R+noiz(jitter)), cy+Math.sin(a)*(R+noiz(jitter))]);
+  }
+  pts[pts.length-1]=pts[0]; return pts;
+}
+
+function ringPass(w, alpha, blur, color, jitter, segments){
+  const pts=noisyCircle(segments,jitter);
+  ctx.save(); ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.closePath();
+  ctx.strokeStyle=color; ctx.lineWidth=w*k;
+  ctx.shadowBlur=blur*k; ctx.shadowColor=color;
+  ctx.globalAlpha=alpha; ctx.stroke(); ctx.restore();
+}
+
+function jag(x1,y1,x2,y2,depth){
+  if(depth<=0){ ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); return; }
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  const dx=x2-x1, dy=y2-y1;
+  const len=Math.sqrt(dx*dx+dy*dy);
+  const off=(Math.random()-.5)*len*.55;
+  const px=mx-(dy/len)*off, py=my+(dx/len)*off;
+  jag(x1,y1,px,py,depth-1);
+  jag(px,py,x2,y2,depth-1);
+  if(Math.random()<.25 && depth===2){
+    jag(px,py,px+noiz(60),py+noiz(60),1);
+  }
+}
+
+function bolt(x1,y1,x2,y2, wF,wM,wC, aF,aM,aC, bF,bC, colF,colM,life){
+  const e=life*life;
+  ctx.save(); ctx.beginPath(); jag(x1,y1,x2,y2,3);
+  ctx.strokeStyle=colF; ctx.lineWidth=wF*k;
+  ctx.shadowBlur=bF*k*1.4; ctx.shadowColor=colF;
+  ctx.globalAlpha=e*aF; ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.beginPath(); jag(x1,y1,x2,y2,3);
+  ctx.strokeStyle=colM; ctx.lineWidth=wM*k;
+  ctx.shadowBlur=bF*k*.7; ctx.shadowColor=colM;
+  ctx.globalAlpha=e*aM; ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.beginPath(); jag(x1,y1,x2,y2,2);
+  ctx.strokeStyle='rgba(255,255,255,0.98)'; ctx.lineWidth=wC*k*1.5;
+  ctx.shadowBlur=bC*k*2; ctx.shadowColor='#ffffff';
+  ctx.globalAlpha=e*aC; ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.beginPath(); jag(x1,y1,x2,y2,2);
+  ctx.strokeStyle='rgba(255,255,255,1)'; ctx.lineWidth=wC*k*.6;
+  ctx.shadowBlur=bC*k; ctx.shadowColor='#ffffff';
+  ctx.globalAlpha=e*aC*.85; ctx.stroke(); ctx.restore();
+}
+
+function onRing(a){ return [cx+Math.cos(a)*R, cy+Math.sin(a)*R]; }
+
+function drawChord(a1,a2,life){
+  const th=THEMES[current];
+  const [x1,y1]=onRing(a1), [x2,y2]=onRing(a2);
+  bolt(x1,y1,x2,y2, 22,6,1.2, .35,.80,.98, 90,14, th.h[0],th.h[3],life);
+}
+
+function drawWeb(angle,life){
+  const th=THEMES[current];
+  const [x1,y1]=onRing(angle);
+  const ir=30*k+Math.random()*(R*.85);
+  const ia=Math.random()*TAU;
+  const x2=cx+Math.cos(ia)*ir, y2=cy+Math.sin(ia)*ir;
+  bolt(x1,y1,x2,y2, 18,5,1.0, .32,.75,.95, 80,10, th.h[1],th.h[4],life);
+  if(Math.random()<.6){
+    const mx=(x1+x2)/2+noiz(30), my=(y1+y2)/2+noiz(30);
+    bolt(mx,my,mx+noiz(90),my+noiz(90), 10,2.5,.8, .25,.58,.88, 50,7, th.h[2],th.h[5],life*.7);
+  }
+}
+
+function drawBurst(angle,life){
+  const th=THEMES[current];
+  const [bx,by]=onRing(angle);
+  const count=5+Math.floor(Math.random()*5);
+  for(let i=0;i<count;i++){
+    const sa=angle + (i/count)*TAU*.6 - TAU*.3 + noiz(.5);
+    const sl=(30+Math.random()*70)*k;
+    bolt(bx,by,bx+Math.cos(sa)*sl*.55,by+Math.sin(sa)*sl*.55, 12,3,.8, .28,.70,.92, 55,8, th.h[0],th.h[4],life);
+  }
+  ctx.save(); ctx.shadowBlur=60*k; ctx.shadowColor=th.glow;
+  ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.globalAlpha=life*life;
+  ctx.beginPath(); ctx.arc(bx,by,7*k,0,TAU); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.shadowBlur=30*k; ctx.shadowColor=th.glow;
+  ctx.fillStyle=th.glow; ctx.globalAlpha=life*life*.5;
+  ctx.beginPath(); ctx.arc(bx,by,14*k,0,TAU); ctx.fill(); ctx.restore();
+}
+
+function drawGlitch(){
+  if(!glitching) return;
+  glitchLife-=0.065;
+  if(glitchLife<=0){glitching=false;return;}
+  const th=THEMES[current];
+  [[6,0,'rgba(255,0,80,0.35)'],[6,0,'rgba(0,255,220,0.35)'],[0,5,'rgba(120,0,255,0.25)']].forEach(([dx,dy,col])=>{
+    ctx.save(); ctx.translate(dx*k,dy*k);
+    ringPass(5,glitchLife*.45,14,col,18,80);
+    ctx.restore();
+  });
+  for(let i=0;i<3;i++){
+    const a=Math.random()*TAU, l=.3+Math.random()*.9;
+    ctx.save(); ctx.globalAlpha=glitchLife*.55;
+    ctx.strokeStyle=th.h[5]; ctx.lineWidth=(2+Math.random()*4)*k;
+    ctx.shadowBlur=14*k; ctx.shadowColor=th.glow;
+    ctx.beginPath(); ctx.arc(cx,cy,R+noiz(15),a,a+l);
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+const EVENTS=[];
+let spawnT=0;
+function spawn(){
+  const r=Math.random();
+  if(r<.35){
+    const a1=Math.random()*TAU;
+    EVENTS.push({type:'chord',a1,a2:a1+.6+Math.random()*TAU*.5,life:1,decay:.016+Math.random()*.012});
+  } else if(r<.68){
+    EVENTS.push({type:'web',angle:Math.random()*TAU,life:1,decay:.020+Math.random()*.016});
+  } else {
+    EVENTS.push({type:'burst',angle:Math.random()*TAU,life:1,decay:.024+Math.random()*.020});
+  }
+}
+
+function frame(){
+  ctx.clearRect(0,0,S,S);
+  const th=THEMES[current];
+
+  ringPass(42,.05,130,th.h[0],3,60);
+  ringPass(28,.09,95,th.h[1],5,70);
+  ringPass(18,.16,65,th.h[2],8,80);
+  ringPass(10,.28,44,th.h[3],12,90);
+  ringPass(6,.22,34,th.h[4],10,95);
+  ringPass(3,.55,30,th.h[5],14,100);
+  ringPass(1.7,.45,22,th.h[6],12,100);
+  ringPass(.7,.90,10,th.h[7],6,120);
+  ringPass(.3,1,4,'rgba(255,255,255,0.8)',2,150);
+
+  drawGlitch();
+
+  spawnT++;
+  if(spawnT>=12+Math.floor(Math.random()*18)){
+    spawnT=0; spawn();
+    if(Math.random()<.35) spawn();
+  }
+  glitchTimer++;
+  if(glitchTimer>100+Math.random()*120){glitchTimer=0;glitching=true;glitchLife=1;}
+
+  for(let i=EVENTS.length-1;i>=0;i--){
+    const ev=EVENTS[i];
+    ev.life-=ev.decay;
+    if(ev.life<=0){EVENTS.splice(i,1);continue;}
+    if(ev.type==='chord') drawChord(ev.a1,ev.a2,ev.life);
+    else if(ev.type==='web') drawWeb(ev.angle,ev.life);
+    else if(ev.type==='burst') drawBurst(ev.angle,ev.life);
+  }
+
+  t++;
+  requestAnimationFrame(frame);
+}
+
+frame();
+</script>
+</body>
+</html>

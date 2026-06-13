@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smoke Ring Effect</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .profile-ring {
+      position: relative;
+      width: 360px;
+      height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #smokeCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* ---- صورة البروفايل ---- */
+    .profile-img {
+      position: relative;
+      z-index: 2;
+      width: 210px;
+      height: 210px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #0d0d0d;
+      border: 1px solid rgba(180,130,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.15);
+      font-size: 13px;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<div class="profile-ring">
+  <canvas id="smokeCanvas" width="360" height="360"></canvas>
+
+  <!--
+    استبدل الـ div ده بـ:
+    <img class="profile-img" src="YOUR_IMAGE.jpg" alt="Profile">
+  -->
+  <div class="profile-img">صورتك هنا</div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('smokeCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 360, H = 360, CX = W / 2, CY = H / 2, R = 118;
+
+  // ---- إعدادات ----
+  const CONFIG = {
+    speed:  3,    // سرعة الحركة  (1-8)
+    thick:  26,   // سُمك الحلقة  (10-50)
+    color: [170, 110, 255],  // RGB — البنفسجي الافتراضي
+  };
+
+  // ---- noise عضوي متعدد الطبقات ----
+  function noise(a, t, seed) {
+    return (
+      Math.sin(a * 2.1 + t * 0.6 + seed)        * 0.30 +
+      Math.sin(a * 3.7 - t * 0.4 + seed * 1.4)  * 0.25 +
+      Math.sin(a * 5.3 + t * 0.9 + seed * 0.8)  * 0.20 +
+      Math.sin(a * 8.1 - t * 0.7 + seed * 2.1)  * 0.15 +
+      Math.sin(a * 13  + t * 0.3 + seed * 1.1)  * 0.10
+    );
+  }
+
+  // offscreen canvas للـ blur الناعم
+  const ofc  = document.createElement('canvas');
+  ofc.width  = W;
+  ofc.height = H;
+  const oCtx = ofc.getContext('2d');
+
+  function drawSmoke(c) {
+    const STEPS  = 300;
+    const LAYERS = 22;
+    const [r, g, b] = CONFIG.color;
+
+    for (let li = 0; li < LAYERS; li++) {
+      const lf   = li / LAYERS;
+      const band = Math.sin(lf * Math.PI); // أقوى في المنتصف
+
+      for (let si = 0; si < STEPS; si++) {
+        const a0 = (si       / STEPS) * Math.PI * 2;
+        const a1 = ((si + 1) / STEPS) * Math.PI * 2;
+
+        const n0 = noise(a0, t, li * 0.6);
+        const n1 = noise(a1, t, li * 0.6);
+
+        const offset = (lf - 0.5) * CONFIG.thick;
+        const r0 = R + offset + n0 * CONFIG.thick * 0.55;
+        const r1 = R + offset + n1 * CONFIG.thick * 0.55;
+
+        const x0 = CX + Math.cos(a0) * r0,  y0 = CY + Math.sin(a0) * r0;
+        const x1 = CX + Math.cos(a1) * r1,  y1 = CY + Math.sin(a1) * r1;
+
+        // veins لامعة جوا الدخان
+        const vein  = Math.max(0, Math.sin(a0 * 17 - t * 3 + li * 0.9) * 0.5 + 0.2);
+        const alpha = band * (0.055 + vein * 0.055);
+
+        c.strokeStyle = `rgba(${r},${g},${b},${Math.min(alpha, 0.5)})`;
+        c.lineWidth   = (CONFIG.thick / LAYERS) * 1.6;
+        c.lineCap     = 'round';
+        c.beginPath();
+        c.moveTo(x0, y0);
+        c.lineTo(x1, y1);
+        c.stroke();
+      }
+    }
+  }
+
+  let t = 0;
+
+  function frame() {
+    // رسم على الـ offscreen
+    oCtx.clearRect(0, 0, W, H);
+    drawSmoke(oCtx);
+
+    ctx.clearRect(0, 0, W, H);
+
+    // glow ناعم خلف الدخان
+    const [r, g, b] = CONFIG.color;
+    const gr = ctx.createRadialGradient(CX, CY, R - 18, CX, CY, R + 18);
+    gr.addColorStop(0,   `rgba(${r},${g},${b},0)`);
+    gr.addColorStop(0.5, `rgba(${r},${g},${b},0.07)`);
+    gr.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.lineWidth   = 42;
+    ctx.strokeStyle = gr;
+    ctx.stroke();
+
+    // رسم الدخان — passes متعددة لـ softness
+    for (const [ox, oy, al] of [
+      [0,  0,  1  ],
+      [0,  0,  0.5],  // مرتين = أكثف
+      [2,  2,  0.15],
+      [-2,-2,  0.15],
+      [2, -2,  0.1 ],
+      [-2, 2,  0.1 ],
+    ]) {
+      ctx.globalAlpha = al;
+      ctx.drawImage(ofc, ox, oy);
+    }
+    ctx.globalAlpha = 1;
+
+    // مسح داخل الـ avatar
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(CX, CY, R - CONFIG.thick / 2 - 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fill();
+    ctx.restore();
+
+    t += 0.014 * CONFIG.speed;
+    requestAnimationFrame(frame);
+  }
+
+  frame();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,564 @@
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectErrorBoundary router={{...}}>
+      <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+        <SegmentViewNode type="page" pagePath="page.tsx">
+          <SegmentTrieNode>
+          <ClientPageRoot Component={function HomePage} serverProvidedParams={{...}}>
+            <HomePage params={Promise} searchParams={Promise}>
+              <div className="min-h-scre...">
+                <div className="fixed inse...">
+                  <HeroBackground>
+                    <div className="jsx-56333f...">
+                      <div>
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.6550198415387878
+-                           width: "3.98274px"
++                           height: 1.6550198415387878
+-                           height: "3.98274px"
++                           left: "18.636936842387254%"
+-                           left: "12.2926%"
++                           top: "13.63470214880066%"
+-                           top: "23.9663%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 3.3508277967805107
+-                           width: "1.90945px"
++                           height: 3.3508277967805107
+-                           height: "1.90945px"
++                           left: "81.32544888997627%"
+-                           left: "16.4372%"
++                           top: "39.64059808567141%"
+-                           top: "15.2458%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.1314172938569875
+-                           width: "2.36241px"
++                           height: 1.1314172938569875
+-                           height: "2.36241px"
++                           left: "59.409373518075114%"
+-                           left: "52.4185%"
++                           top: "14.575047392735375%"
+-                           top: "5.92411%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.9141059403754275
+-                           width: "1.80512px"
++                           height: 1.9141059403754275
+-                           height: "1.80512px"
++                           left: "47.278244557430135%"
+-                           left: "66.9242%"
++                           top: "88.43462879647458%"
+-                           top: "58.7979%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.0104859292761486
+-                           width: "1.95151px"
++                           height: 2.0104859292761486
+-                           height: "1.95151px"
++                           left: "6.883265910256542%"
+-                           left: "62.2413%"
++                           top: "45.377293612174554%"
+-                           top: "28.9603%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.0850367717602274
+-                           width: "3.60032px"
++                           height: 2.0850367717602274
+-                           height: "3.60032px"
++                           left: "49.07509144592386%"
+-                           left: "91.5221%"
++                           top: "68.31534422961406%"
+-                           top: "84.7925%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.3129801304631514
+-                           width: "2.90409px"
++                           height: 2.3129801304631514
+-                           height: "2.90409px"
++                           left: "50.672944854104394%"
+-                           left: "81.603%"
++                           top: "20.63454216652387%"
+-                           top: "97.3531%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 3.2667611855556054
+-                           width: "3.4063px"
++                           height: 3.2667611855556054
+-                           height: "3.4063px"
++                           left: "72.65266249275902%"
+-                           left: "53.6592%"
++                           top: "18.914905569601682%"
+-                           top: "34.6891%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.4115561410963609
+-                           width: "2.4038px"
++                           height: 1.4115561410963609
+-                           height: "2.4038px"
++                           left: "81.37367500432165%"
+-                           left: "74.2145%"
++                           top: "73.90103116638736%"
+-                           top: "42.5972%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.3668143578358058
+-                           width: "2.22642px"
++                           height: 1.3668143578358058
+-                           height: "2.22642px"
++                           left: "11.170397594014947%"
+-                           left: "98.1724%"
++                           top: "3.190982848210655%"
+-                           top: "37.7992%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 3.0537151474692097
+-                           width: "1.93877px"
++                           height: 3.0537151474692097
+-                           height: "1.93877px"
++                           left: "56.96255388730111%"
+-                           left: "1.34213%"
++                           top: "7.7147459227683735%"
+-                           top: "95.4979%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.0928859566652571
+-                           width: "2.70371px"
++                           height: 1.0928859566652571
+-                           height: "2.70371px"
++                           left: "92.17026463381691%"
+-                           left: "66.737%"
++                           top: "78.11987269473816%"
+-                           top: "34.9484%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      ...
+                  ...
+        ...
+      ...
+ 
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectErrorBoundary router={{...}}>
+      <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+        <SegmentViewNode type="page" pagePath="page.tsx">
+          <SegmentTrieNode>
+          <ClientPageRoot Component={function HomePage} serverProvidedParams={{...}}>
+            <HomePage params={Promise} searchParams={Promise}>
+              <div className="min-h-scre...">
+                <div className="fixed inse...">
+                  <HeroBackground>
+                    <div className="jsx-56333f...">
+                      <div>
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.497012320863753
+-                           width: "3.75718px"
++                           height: 2.497012320863753
+-                           height: "3.75718px"
++                           left: "12.500590065494233%"
+-                           left: "9.737%"
++                           top: "27.0988655687048%"
+-                           top: "79.2103%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.8019372070812216
+-                           width: "2.29894px"
++                           height: 2.8019372070812216
+-                           height: "2.29894px"
++                           left: "93.68025080769281%"
+-                           left: "8.52184%"
++                           top: "56.90303168043641%"
+-                           top: "26.4536%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.1887860632546734
+-                           width: "2.59514px"
++                           height: 1.1887860632546734
+-                           height: "2.59514px"
++                           left: "20.771654948532415%"
+-                           left: "3.94504%"
++                           top: "71.56191347857063%"
+-                           top: "85.9633%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.1215219594712855
+-                           width: "2.66223px"
++                           height: 2.1215219594712855
+-                           height: "2.66223px"
++                           left: "10.92743382901068%"
+-                           left: "92.8899%"
++                           top: "51.8749713619425%"
+-                           top: "8.36553%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.5500195263879797
+-                           width: "2.47326px"
++                           height: 2.5500195263879797
+-                           height: "2.47326px"
++                           left: "94.81328693888526%"
+-                           left: "67.973%"
++                           top: "30.837370435534705%"
+-                           top: "56.626%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.3535045480221426
+-                           width: "3.6126px"
++                           height: 1.3535045480221426
+-                           height: "3.6126px"
++                           left: "0.6708022294127924%"
+-                           left: "66.6033%"
++                           top: "71.55655852654155%"
+-                           top: "58.6809%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(0, 255, 255)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 3.85820969363028
+-                           width: "1.63124px"
++                           height: 3.85820969363028
+-                           height: "1.63124px"
++                           left: "5.936092382676494%"
+-                           left: "29.3308%"
++                           top: "27.69127580542371%"
+-                           top: "65.2866%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.990377598062743
+-                           width: "2.94989px"
++                           height: 2.990377598062743
+-                           height: "2.94989px"
++                           left: "74.89652244726292%"
+-                           left: "93.385%"
++                           top: "32.67551971338002%"
+-                           top: "12.7767%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 2.4794250957177506
+-                           width: "1.41533px"
++                           height: 2.4794250957177506
+-                           height: "1.41533px"
++                           left: "6.862613981478338%"
+-                           left: "26.0698%"
++                           top: "37.0110313154203%"
+-                           top: "44.2884%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.3249142697737042
+-                           width: "3.1849px"
++                           height: 1.3249142697737042
+-                           height: "3.1849px"
++                           left: "46.051896969904405%"
+-                           left: "25.5733%"
++                           top: "63.979509967422345%"
+-                           top: "41.9549%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 1.7535695510642757
+-                           width: "2.29742px"
++                           height: 1.7535695510642757
+-                           height: "2.29742px"
++                           left: "93.88580691449076%"
+-                           left: "77.019%"
++                           top: "54.7599924807712%"
+-                           top: "50.0665%"
++                           backgroundColor: "#ff007f"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      <motion.div className="absolute r..." style={{...}} animate={{y:[...], ...}} transition={{...}}>
+                        <div
+                          className="absolute rounded-full"
+                          style={{
++                           width: 3.767086346063901
+-                           width: "3.08561px"
++                           height: 3.767086346063901
+-                           height: "3.08561px"
++                           left: "40.75126166618324%"
+-                           left: "93.3947%"
++                           top: "18.631405266906633%"
+-                           top: "43.5801%"
++                           backgroundColor: "#00ffff"
++                           willChange: "transform, opacity"
+-                           background-color: "rgb(255, 0, 127)"
+-                           will-change: "transform, opacity"
+                          }}
+                          ref={function useMotionRef.useCallback}
+                        >
+                      ...
+                  ...
+        ...
+      ...
+ 
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[browser] Uncaught Error: Internal Next.js error: Router action dispatched before initialization.
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+⨯ ReferenceError: _isFormPost is not defined
+    at POST (src\app\api\guilds\[id]\route.ts:60:3)
+  58 |
+  59 |   let body: any = {};
+> 60 |   if (_isFormPost) {
+     |   ^
+  61 |     const formData = await req.formData();
+  62 |     body = Object.fromEntries(formData.entries());
+  63 |   } else {
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled
+[next-auth][warn][DEBUG_ENABLED] 
+https://next-auth.js.org/warnings#debug_enabled

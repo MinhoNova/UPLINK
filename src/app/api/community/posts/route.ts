@@ -1,0 +1,219 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { db, initDb } from "@/db";
+import { posts, reactions, reports } from "@/db/schema";
+import { desc, eq, and, inArray, gte } from "drizzle-orm";
+import sharp from "sharp";
+import { getKV, initTables } from "@/lib/db";
+import { canViewPost } from "@/lib/postVisibility";
+import path from "path";
+import fs from "fs";
+
+initDb();
+
+const MAX_DAILY_POSTS = 10;
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 4096;
+const MAX_PIXELS = MAX_IMAGE_DIMENSION * MAX_IMAGE_DIMENSION;
+const ALLOWED_IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+
+function ensureUploadDir() {
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "community");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  return uploadDir;
+}
+
+async function validateAndNormalizeImage(buffer: Buffer, preferGif = false) {
+  const meta = await sharp(buffer, { animated: true }).metadata();
+  const mime = meta.format ? `image/${meta.format}` : "";
+  const isGif = meta.format === "gif" || preferGif;
+
+  if (!meta.width || !meta.height) throw new Error("Invalid image dimensions");
+  if (meta.width > MAX_IMAGE_DIMENSION || meta.height > MAX_IMAGE_DIMENSION) throw new Error("Image too large");
+  if ((meta.width || 0) * (meta.height || 0) > MAX_PIXELS) throw new Error("Image pixel count too large");
+  if (!mime || !ALLOWED_IMAGE_MIME.has(mime)) throw new Error("Unsupported image type");
+
+  if (isGif) {
+    return { buffer, ext: "gif" };
+  }
+
+  const normalized = await sharp(buffer, { animated: true })
+    .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  return { buffer: normalized, ext: "webp" };
+}
+
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const tag = searchParams.get("tag");
+  const userId = searchParams.get("userId");
+
+  let query = db.select().from(posts).orderBy(desc(posts.createdAt)).limit(50);
+  let rows = await query;
+
+  if (tag) {
+    rows = rows.filter((p: any) => {
+      const tags = JSON.parse(p.tags || "[]");
+      return tags.includes(tag);
+    });
+  }
+
+  if (userId) {
+    rows = rows.filter((p: any) => p.userId === userId);
+  }
+
+  await initTables();
+  const friends = (await getKV("friends")) || [];
+  const viewerId = (session.user as { id?: string }).id || "";
+  rows = rows.filter((p: any) => canViewPost(viewerId, p, friends));
+
+  const postIds = rows.map((p: any) => p.id);
+  const allReactions = postIds.length > 0
+    ? await db.select().from(reactions).where(inArray(reactions.postId, postIds))
+    : [];
+
+  const reactionMap: Record<number, { type: string; count: number; userReacted: boolean }[]> = {};
+  for (const r of allReactions as any[]) {
+    if (!reactionMap[r.postId]) reactionMap[r.postId] = [];
+    const existing = reactionMap[r.postId].find((x) => x.type === r.type);
+    if (existing) {
+      existing.count++;
+      if (r.userId === (session.user as any).id) existing.userReacted = true;
+    } else {
+      reactionMap[r.postId].push({ type: r.type, count: 1, userReacted: r.userId === (session.user as any).id });
+    }
+  }
+
+  const result = rows.map((p: any) => ({
+    ...p,
+    reactions: reactionMap[p.id] || [],
+    tags: JSON.parse(p.tags || "[]"),
+  }));
+
+  return NextResponse.json(result);
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const contentType = req.headers.get("content-type") || "";
+  let content: string, tagsRaw: string, imageUrl: string | null, visibilityRaw: string;
+  let file: File | null = null;
+
+  if (contentType.includes("application/json")) {
+    const json = await req.json();
+    content = json.content || "";
+    tagsRaw = json.tags || "[]";
+    imageUrl = json.imageUrl || null;
+    visibilityRaw = json.visibility || "public";
+  } else {
+    const formData = await req.formData();
+    content = formData.get("content") as string;
+    tagsRaw = formData.get("tags") as string;
+    imageUrl = formData.get("imageUrl") as string | null;
+    visibilityRaw = (formData.get("visibility") as string) || "public";
+    file = formData.get("image") as File | null;
+  }
+
+  const visibility = ["public", "friends", "friends_of_friends"].includes(visibilityRaw)
+    ? visibilityRaw
+    : "public";
+
+  if (!content?.trim() && !imageUrl && !file?.size) return NextResponse.json({ error: "Content or image required" }, { status: 400 });
+
+  const tags = tagsRaw ? JSON.parse(tagsRaw) : [];
+  let imagePath: string | null = null;
+  const currentUserId = (session.user as any).id;
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const todayPosts = await db.select().from(posts).where(and(
+    eq(posts.userId, currentUserId),
+    gte(posts.createdAt, startOfDay.getTime())
+  ));
+  if (todayPosts.length >= MAX_DAILY_POSTS) {
+    return NextResponse.json({ error: "Daily post limit reached" }, { status: 429 });
+  }
+
+  // Handle file upload
+  if (file && file.size > 0) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: "File too large" }, { status: 413 });
+    }
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const normalized = await validateAndNormalizeImage(buffer, file.name.match(/\.(gif)$/i) ? true : false);
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${normalized.ext}`;
+    const savePath = path.join(ensureUploadDir(), fileName);
+    fs.writeFileSync(savePath, normalized.buffer);
+    imagePath = `/uploads/community/${fileName}`;
+  }
+
+  // Ensure upload directory exists
+  const uploadDir = ensureUploadDir();
+
+  // Handle URL image (download + compress)
+  if (!imagePath && imageUrl) {
+    try {
+      const resp = await fetch(imageUrl, {
+        headers: { "User-Agent": "UPLINK/1.0" },
+      });
+      if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      const contentType = resp.headers.get("content-type") || "";
+      if (!contentType.startsWith("image/")) throw new Error("URL is not an image");
+      if (buffer.byteLength > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
+      const normalized = await validateAndNormalizeImage(buffer, imageUrl.match(/\.(gif)(?:$|\?)/i) ? true : false);
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${normalized.ext}`;
+      const savePath = path.join(uploadDir, fileName);
+      fs.writeFileSync(savePath, normalized.buffer);
+      imagePath = `/uploads/community/${fileName}`;
+    } catch (e) {
+      console.error("Failed to download image from URL:", e);
+      return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+    }
+  }
+
+  const result = await db.insert(posts).values({
+    userId: (session.user as any).id,
+    userName: session.user.name || "Unknown",
+    userImage: session.user.image || "",
+    content: content.trim(),
+    image: imagePath,
+    tags: JSON.stringify(tags),
+    visibility,
+    createdAt: Date.now(),
+  }).returning();
+
+  return NextResponse.json(result[0]);
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { postId } = await req.json();
+  if (!postId) return NextResponse.json({ error: "Missing postId" }, { status: 400 });
+
+  const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+  if (post.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (post[0].userId !== (session.user as any).id && (session.user as any).id !== "1497295886223544471") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  await db.delete(reactions).where(eq(reactions.postId, postId));
+  await db.delete(reports).where(eq(reports.postId, postId));
+  await db.delete(posts).where(eq(posts.id, postId));
+
+  return NextResponse.json({ success: true });
+}

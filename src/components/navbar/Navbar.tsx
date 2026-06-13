@@ -1,0 +1,376 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useSession, signIn } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
+import { Swords, Trophy, Bell, DoorOpen, DoorClosed, MessageCircle, Zap, ArrowLeft } from "lucide-react";
+import { ProtocolMark } from "@/components/ProtocolMark";
+import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
+import { effectiveAvatarEffect } from "@/lib/userProfile";
+import { useThemePreference } from "@/hooks/useThemePreference";
+
+export default function Navbar() {
+  const { data: session, status } = useSession();
+  const { theme, toggleTheme } = useThemePreference();
+  const pathname = usePathname();
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > lastScrollY.current && currentY > 80) {
+        setNavVisible(false);
+      } else {
+        setNavVisible(true);
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [dmUnreadCount, setDmUnreadCount] = useState(0);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const currentUserId = (session?.user as any)?.id || "";
+  const currentHandle = (session?.user as any)?.username || "";
+
+  const [autoApplyEnabled, setAutoApplyEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("uplink_auto_apply") === "true";
+  });
+  const [autoFeaturesLocked, setAutoFeaturesLocked] = useState(false);
+
+  useEffect(() => {
+    const syncLockState = (event: Event) => {
+      setAutoFeaturesLocked(!!(event as CustomEvent<{ locked?: boolean }>).detail?.locked);
+    };
+    window.addEventListener("set-auto-features-locked", syncLockState);
+    return () => window.removeEventListener("set-auto-features-locked", syncLockState);
+  }, []);
+
+  useEffect(() => {
+    const syncAutoApplyState = (event: Event) => {
+      const detail = (event as CustomEvent<{ enabled?: boolean }>).detail;
+      const enabled = typeof detail?.enabled === "boolean"
+        ? detail.enabled
+        : localStorage.getItem("uplink_auto_apply") === "true";
+      setAutoApplyEnabled(enabled);
+    };
+    window.addEventListener('set-auto-apply-enabled', syncAutoApplyState);
+    window.addEventListener('storage', syncAutoApplyState);
+    return () => {
+      window.removeEventListener('set-auto-apply-enabled', syncAutoApplyState);
+      window.removeEventListener('storage', syncAutoApplyState);
+    };
+  }, []);
+
+  const fetchData = useCallback(() => {
+    if (!currentUserId) return;
+    fetch("/api/data")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.registeredUsers) setRegisteredUsers(data.registeredUsers);
+        if (data.notifications) {
+          const mine = data.notifications.filter((n: any) => String(n.targetId) === String(currentUserId));
+          setNotifications(mine);
+        }
+        
+        // Calculate unread DM count (friends only, excluding muted)
+        if (data.directMessages && data.registeredUsers) {
+          const directMessages = data.directMessages || [];
+          const readMessages = data.readMessages || {};
+          let muted: string[] = [];
+          try {
+            muted = JSON.parse(localStorage.getItem(`muted_users_${currentHandle}`) || "[]");
+          } catch { /* ignore */ }
+          const friendIds = new Set(
+            (data.friends || [])
+              .filter((f: any) => f.status === "accepted" && (f.requester === currentUserId || f.target === currentUserId))
+              .map((f: any) => String(f.requester === currentUserId ? f.target : f.requester))
+          );
+
+          let totalUnread = 0;
+          data.registeredUsers.forEach((user: any) => {
+            if (!friendIds.has(String(user.id))) return;
+            if (muted.includes(user.username)) return;
+            const userMessages = directMessages.filter((m: any) => m.from === user.username && m.to === currentHandle);
+            const readIds = readMessages[currentHandle]?.[user.username] || [];
+            const unreadCount = userMessages.filter((m: any) => !readIds.includes(m.timestamp || `${m.from}-${m.to}-${m.text}`)).length;
+            totalUnread += unreadCount;
+          });
+          setDmUnreadCount(totalUnread);
+        }
+      })
+      .catch(() => {});
+  }, [currentUserId, currentHandle]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    const onFocus = () => fetchData();
+    window.addEventListener("focus", onFocus);
+    
+    // Poll for DM updates every 8 seconds
+    const pollInterval = setInterval(() => fetchData(), 8000);
+    
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      clearInterval(pollInterval);
+    };
+  }, [fetchData]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Force register admin if missing
+  useEffect(() => {
+    const adminHandle = "minhonovazen";
+    const adminId = "1497295886223544471";
+    
+    if (currentHandle === adminHandle && registeredUsers.length > 0 && !registeredUsers.find(u => u.id === adminId)) {
+        console.log("Auto-registering admin...");
+        fetch("/api/data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                registeredUsers: [...registeredUsers, {
+                    id: adminId,
+                    name: "Minho Nova",
+                    username: adminHandle,
+                    avatar: session?.user?.image || ""
+                }]
+            })
+        });
+    }
+  }, [currentHandle, registeredUsers, session]);
+
+  if (status !== "loading" && !session) return null;
+
+  // Use session user as fallback if not in registeredUsers
+  const currentUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId)) || {
+    id: currentUserId,
+    name: session?.user?.name,
+    avatar: session?.user?.image,
+    username: (session?.user as any)?.username
+  };
+
+  const adminHandle = "minhonovazen";
+  const adminId = "1497295886223544471";
+
+  const getUserTier = (userId: string) => {
+    const handle = (session?.user as any)?.username || "";
+    if (handle === adminHandle || userId === adminId) return "secret_club";
+    const u = registeredUsers.find((uu: any) => String(uu.id) === String(userId));
+    return u?.subscription?.tier || "free";
+  };
+
+  const getUserTierLabel = (userId: string) => {
+    const u = registeredUsers.find((uu: any) => String(uu.id) === String(userId));
+    if (!u?.subscription?.tier) return null;
+    if (u.subscription.tier === "secret_club") return { label: "★ CLUB", color: "text-purple-400 bg-purple-500/10 border-purple-500/30" };
+    return null;
+  };
+
+  const getEffectiveAvatar = () => {
+    if (!currentUser) return session?.user?.image || "";
+    return currentUser.profileGif || session?.user?.image || "";
+  };
+
+  const getAvatarForEffect = () => {
+    return currentUser?.profileGif || currentUser?.avatar || session?.user?.image || "";
+  };
+
+  const renderDualColorName = (name: string) => {
+    const parts = name.split(" ");
+    if (parts.length < 2) return <span className="bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">{name}</span>;
+    return (
+      <span>
+        <span className="bg-gradient-to-r from-[#00ffff] to-[#c4b5fd] bg-clip-text text-transparent">{parts.slice(0, -1).join(" ")}</span>{" "}
+        <span className="bg-gradient-to-r from-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">{parts[parts.length - 1]}</span>
+      </span>
+    );
+  };
+
+  const dismissNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  return (
+    <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
+      <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
+              <ProtocolMark variant={1} className="h-full w-full" gold={pathname === '/community'} />
+            </div>
+            <span className="hidden sm:block text-2xl font-black uppercase tracking-[0.18em] pointer-events-none select-none" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
+              <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
+                {pathname === '/community' ? 'CLUB' : 'Uplink'}
+              </span>
+            </span>
+
+          <div className="flex bg-black/5 dark:bg-black/20 p-1.5 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
+            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
+              <div className="w-9 h-9 shrink-0 overflow-hidden rounded-md -my-2.5">
+                <ProtocolMark variant={1} className="h-full w-full" gold={pathname !== '/community'} />
+              </div>
+              {pathname === '/community' ? 'Uplink' : 'CLUB'}
+            </motion.button>
+            {pathname === '/leaderboard' ? (
+              <motion.a title="Back to Home" href="/" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </motion.a>
+            ) : (
+              <motion.a title="Leaderboard" href="/leaderboard" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30">
+                <Trophy className="w-4 h-4" /> Top
+              </motion.a>
+            )}
+            <motion.button title="Direct Messages" onClick={() => {
+              window.dispatchEvent(new CustomEvent('toggle-dm'));
+            }} className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative">
+              <MessageCircle className="w-4 h-4" /> DM
+              {dmUnreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)]">
+                  {dmUnreadCount > 99 ? '99+' : dmUnreadCount}
+                </span>
+              )}
+            </motion.button>
+            <motion.button title="Auto-Apply" onClick={() => {
+              if (getUserTier(currentUserId) === "free") {
+                window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Auto-Apply is a Secret Club feature. Subscribe to unlock.', type: 'error' } }));
+                return;
+              }
+              if (autoFeaturesLocked) {
+                window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Leave your current offer before enabling Auto-Apply.', type: 'error' } }));
+                return;
+              }
+              const newVal = !autoApplyEnabled;
+              setAutoApplyEnabled(newVal);
+              localStorage.setItem("uplink_auto_apply", newVal ? "true" : "false");
+              window.dispatchEvent(new CustomEvent('set-auto-apply-enabled', { detail: { enabled: newVal } }));
+            }} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+              <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
+            </motion.button>
+            <motion.button title="Auto-Apply Settings" onClick={() => {
+              if (getUserTier(currentUserId) === "free") return;
+              if (window.location.pathname === '/') {
+                window.dispatchEvent(new CustomEvent('toggle-auto-apply-settings'));
+              } else {
+                window.location.href = '/';
+              }
+            }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
+              ⚙️
+            </motion.button>
+            <motion.button title="Toggle Theme" onClick={toggleTheme} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
+              {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
+              {theme === 'dark' ? 'Dark' : 'Light'}
+            </motion.button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 relative">
+          {status === "loading" ? (
+            <div className="w-32 h-14 bg-white/5 animate-pulse rounded-full" />
+          ) : session ? (
+            <div className="flex items-center gap-4">
+              <div className="relative" ref={notifRef}>
+                <motion.button onClick={() => setIsNotifOpen(!isNotifOpen)} className={`p-3 ${theme === 'light' ? 'bg-black/5' : 'bg-white/5'} hover:bg-[#00ffff]/10 rounded-full transition-all border border-white/10 relative`}>
+                  <Bell className={`w-6 h-6 ${notifications.length > 0 ? 'animate-alarm-flash' : 'text-gray-400'}`} />
+                  {notifications.length > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-[#ff007f] rounded-full border-2 border-black"></span>}
+                </motion.button>
+                {isNotifOpen && (
+                  <div className={`absolute top-full mt-4 right-0 w-80 ${theme === 'light' ? 'bg-white shadow-2xl border-black/10' : 'bg-[#0a0a16] border-[#00ffff]/30'} border-2 rounded-2xl p-4 z-50`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-black uppercase text-gray-400 tracking-widest">Alerts</h4>
+                      {notifications.length > 0 && (
+                        <button onClick={() => setNotifications([])} className="text-[9px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 px-2 py-1 rounded-lg hover:bg-white/5 transition-all">
+                          CLEAR ALL
+                        </button>
+                      )}
+                    </div>
+                    {notifications.length === 0 ? (
+                      <p className="text-xs text-center text-gray-500 py-4 italic">No alerts</p>
+                    ) : (
+                      notifications.map((n: any) => (
+                        <div key={n.id} className={`relative ${theme === 'light' ? 'bg-gray-100' : 'bg-white/5'} p-3 rounded-xl border border-white/10 mb-2 transition-all group`}>
+                          <button onClick={() => dismissNotification(n.id)} className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/40 text-gray-500 hover:text-red-400 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-black">
+                            ✕
+                          </button>
+                          <p className="text-xs mb-1 pr-4"><strong>{n.fromUser}</strong>: {n.message}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {pathname === '/community' && session?.user && (
+              <button onClick={() => {
+                if (window.location.pathname === '/community') {
+                  window.dispatchEvent(new CustomEvent('toggle-community-profile'));
+                } else {
+                  window.location.href = '/community';
+                }
+              }} className="flex items-center gap-3 pr-4 pl-1.5 py-1.5 rounded-full border border-[#00ffff]/30 hover:border-[#00ffff] transition-all bg-white/5 hover:bg-[#00ffff]/5">
+                <ProfileAvatarWithEffect
+                  src={currentUser?.profileGif || session.user.image || "/default-avatar.png"}
+                  effect={currentUser?.effect || "none"}
+                  className="w-9 h-9"
+                />
+                <span className="text-xs font-black uppercase tracking-widest hidden sm:block text-white/80 truncate max-w-[100px]">{currentUser?.name || session.user.name}</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-[#00ffff] px-2 py-0.5 rounded-md bg-[#00ffff]/10">MY PROFILE</span>
+              </button>
+              )}
+
+              {pathname !== '/community' && (
+              <div className={`flex items-center gap-5 overflow-visible ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} border-2 pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}>
+                <button
+                  type="button"
+                  title="View profile"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-dm-profile"))}
+                  className="shrink-0 rounded-full transition-all hover:ring-2 hover:ring-[#00ffff]/40 overflow-visible"
+                >
+                  <ProfileAvatarWithEffect
+                    src={getAvatarForEffect()}
+                    effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
+                    className="w-14 h-14"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.location.pathname === '/') {
+                      window.dispatchEvent(new CustomEvent('open-armory-modal'));
+                    } else {
+                      window.location.href = '/';
+                    }
+                  }}
+                  className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || "Operative")}</span>
+                  {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</span> : null; })()}
+                </button>
+              </div>
+              )}
+            </div>
+          ) : (
+            <motion.button onClick={() => signIn("discord")} className="px-8 py-4 rounded-xl border-2 border-[#00ffff] text-[#00ffff] font-black text-lg uppercase tracking-widest hover:bg-[#00ffff] hover:text-black transition-all shadow-xl">
+              ACCESS TERMINAL
+            </motion.button>
+          )}
+        </div>
+      </div>
+    </motion.nav>
+  );
+}
