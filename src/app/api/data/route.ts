@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
     return NextResponse.json(scoped);
   } catch (error) {
-    console.error("Error reading from Neon:", error);
+    console.error("Error reading from D1:", error);
     return NextResponse.json(
       { lobbies: [], goldOffers: [], notifications: [], registeredUsers: [], characters: [], applications: [], bannedUsers: [] },
       { status: 500 }
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error writing to Neon:", error);
+    console.error("Error writing to D1:", error);
     return NextResponse.json({ success: false, error: 'Failed' }, { status: 500 });
   }
 }

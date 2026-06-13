@@ -28,10 +28,28 @@ async function getSqliteDrizzle(): Promise<SqliteDrizzle> {
   return sqliteDrizzle;
 }
 
+async function isCloudflareRuntime(): Promise<boolean> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    try {
+      getCloudflareContext();
+      return true;
+    } catch {
+      await getCloudflareContext({ async: true });
+      return true;
+    }
+  } catch {
+    return false;
+  }
+}
+
 export async function getDb(): Promise<SqliteDrizzle> {
   const d1 = await ensureD1Schema();
   if (d1) {
     return drizzleD1(d1, { schema }) as unknown as SqliteDrizzle;
+  }
+  if (await isCloudflareRuntime()) {
+    throw new Error("D1 database binding (DB) is not available on Cloudflare");
   }
   return getSqliteDrizzle();
 }

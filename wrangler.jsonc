@@ -30,5 +30,11 @@
       "binding": "KV_BINDING",
       "id": "d14e5f2da43a43d18c1d5ad068c92d02"
     }
-  ]
+  ],
+  "vars": {
+    "AUTH_TRUST_HOST": "true",
+    "NEXTAUTH_URL": "https://uplink.avahome25.workers.dev",
+    "NEXT_PUBLIC_LIVEKIT_URL": "wss://uplink-sist6urm.livekit.cloud",
+    "DISCORD_CLIENT_ID": "1497303962687115294"
+  }
 }

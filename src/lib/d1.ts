@@ -64,10 +64,19 @@ let d1SchemaReady = false;
 export async function getD1(): Promise<D1Database | null> {
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const { env } = await getCloudflareContext({ async: true });
+    let env: { DB?: D1Database };
+    try {
+      ({ env } = getCloudflareContext());
+    } catch {
+      ({ env } = await getCloudflareContext({ async: true }));
+    }
     const db = (env as { DB?: D1Database }).DB;
+    if (!db) {
+      console.error("D1 binding DB is missing from Cloudflare env");
+    }
     return db ?? null;
-  } catch {
+  } catch (e) {
+    console.error("getD1 failed:", e);
     return null;
   }
 }
@@ -101,12 +110,40 @@ async function seedD1KvIfEmpty(d1: D1Database) {
   }
 }
 
+async function d1TableExists(d1: D1Database, name: string): Promise<boolean> {
+  const row = await d1
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .bind(name)
+    .first<{ name: string }>();
+  return !!row;
+}
+
+async function runD1Statements(d1: D1Database, sql: string) {
+  const statements = sql
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const statement of statements) {
+    await d1.prepare(statement).run();
+  }
+}
+
 export async function ensureD1Schema() {
   const d1 = await getD1();
   if (!d1 || d1SchemaReady) return d1;
 
-  await d1.exec(KV_SCHEMA_SQL);
-  await d1.exec(COMMUNITY_SCHEMA_SQL);
+  // Tables are created via `npm run db:migrate:remote`. Runtime d1.exec() can fail on
+  // Workers, so only bootstrap when migrations have not been applied yet.
+  if (!(await d1TableExists(d1, "kv_store"))) {
+    await d1
+      .prepare('CREATE TABLE IF NOT EXISTS kv_store ("key" TEXT PRIMARY KEY, value TEXT NOT NULL)')
+      .run();
+  }
+
+  if (!(await d1TableExists(d1, "posts"))) {
+    await runD1Statements(d1, COMMUNITY_SCHEMA_SQL);
+  }
+
   await seedD1KvIfEmpty(d1);
   d1SchemaReady = true;
   return d1;
