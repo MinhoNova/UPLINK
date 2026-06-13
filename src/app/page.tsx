@@ -4710,9 +4710,9 @@ export default function HomePage() {
                     {/* ZOOMED WRAPPER - 75% scale with space both sides */}
                     <div className="px-[5%] xl:px-12 py-4 -mt-16">
                     <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
-                          <div className="max-w-[1650px] mx-auto flex flex-col gap-2 pb-16">
-                        {/* tabs + offers + ongoing */}
-                           <div className="flex flex-col gap-2 min-w-0 w-full">
+                          <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
+                        {/* LEFT COLUMN: tabs + content */}
+                           <div className="flex flex-col gap-2 min-w-0 flex-1">
                            <button
                               type="button"
                               onClick={() => {
@@ -4749,8 +4749,7 @@ export default function HomePage() {
                             )}
                           </div>
 
-                          <div className="flex flex-col xl:flex-row gap-6 items-start w-full">
-                              <div className={`flex-1 min-w-0 ${activeMainTab !== "admin" ? 'w-full' : ''}`}>
+                              <div className={`${activeMainTab !== "admin" ? 'w-full' : ''}`}>
                            {activeMainTab === "boosts" && (
                               <div className="grid gap-2 overflow-visible -mt-5">
                                  <div className="flex flex-col gap-4">
@@ -5205,6 +5204,7 @@ export default function HomePage() {
                              </motion.div>
                           )}
                          </div>
+                              </div>
                              {session && (
                                 <OngoingMissionsPanel
                                    lobbies={lobbies}
@@ -5218,8 +5218,6 @@ export default function HomePage() {
                                    alignWithOfferBanners
                                 />
                              )}
-                          </div>
-                           </div>
                     </div>
                     </div>
                     </div>
