@@ -21,6 +21,7 @@ type Props = {
     showOnModal: boolean;
   };
   onOpenMission: (lobbyId: string) => void;
+  alignWithOfferBanners?: boolean;
 };
 
 export default function OngoingMissionsPanel({
@@ -32,6 +33,7 @@ export default function OngoingMissionsPanel({
   roleIconUrl,
   getVfxSettings,
   onOpenMission,
+  alignWithOfferBanners = false,
 }: Props) {
   const ownerMissions = getOwnerOngoingMissions(lobbies, currentUserId);
   const joinedMissions = getJoinedOngoingMissions(lobbies, currentUserId);
@@ -157,7 +159,11 @@ export default function OngoingMissionsPanel({
   );
 
   return (
-    <div className="w-full xl:w-[300px] shrink-0 flex flex-col self-stretch">
+    <div
+      className={`w-full xl:w-[300px] shrink-0 flex flex-col self-stretch ${
+        alignWithOfferBanners ? "xl:-mt-5" : ""
+      }`}
+    >
       <div
         className={`p-6 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden flex flex-col flex-1 min-h-[132px] transition-colors duration-500 ${
           theme === "light"
@@ -171,15 +177,19 @@ export default function OngoingMissionsPanel({
           }`}
         />
         <h3
-          className={`text-[13px] font-black uppercase tracking-[0.3em] mb-4 flex items-center gap-2 relative z-10 ${
-            theme === "light" ? "text-[#00ffff]" : "text-white/90"
-          }`}
+          className={`text-[13px] font-black uppercase tracking-[0.3em] flex items-center gap-2 relative z-10 ${
+            alignWithOfferBanners ? "mb-3 xl:absolute xl:top-4 xl:left-6 xl:right-6 xl:mb-0" : "mb-4"
+          } ${theme === "light" ? "text-[#00ffff]" : "text-white/90"}`}
         >
           <Clock className="w-5 h-5 text-[#ff007f]" />
           Ongoing Missions
         </h3>
 
-        <div className="space-y-4 relative z-10 w-full flex flex-col flex-1 min-h-[180px]">
+        <div
+          className={`space-y-4 relative z-10 w-full flex flex-col flex-1 min-h-[180px] ${
+            alignWithOfferBanners ? "xl:pt-9" : ""
+          }`}
+        >
           {ownerMissions.map(renderMissionCard)}
           {joinedMissions.map(renderMissionCard)}
           {!hasActiveMissions && (
