@@ -1,7 +1,39 @@
 export type LeaderboardRole = "all" | "dps" | "healer" | "tank";
 export type LeaderboardPeriod = "daily" | "weekly" | "monthly" | "season";
-export type LeaderboardMetric = "performance" | "runs";
+export type LeaderboardMetric = "performance" | "runs" | "class_leaders";
 export type LeaderboardClassFilter = "all" | string;
+
+export const WOW_CLASSES = [
+  "Warrior",
+  "Paladin",
+  "Hunter",
+  "Rogue",
+  "Priest",
+  "Death Knight",
+  "Shaman",
+  "Mage",
+  "Warlock",
+  "Monk",
+  "Druid",
+  "Demon Hunter",
+  "Evoker",
+] as const;
+
+export const CLASS_ROLE_OPTIONS: Record<string, string[]> = {
+  Evoker: ["dps", "healer"],
+  "Demon Hunter": ["dps", "tank"],
+  Druid: ["dps", "healer", "tank"],
+  Monk: ["dps", "healer", "tank"],
+  Paladin: ["dps", "healer", "tank"],
+  Priest: ["dps", "healer"],
+  Shaman: ["dps", "healer"],
+  Warrior: ["dps", "tank"],
+  "Death Knight": ["dps", "tank"],
+  Hunter: ["dps"],
+  Rogue: ["dps"],
+  Mage: ["dps"],
+  Warlock: ["dps"],
+};
 
 export type LeaderboardEntry = {
   userId: string;
@@ -9,6 +41,16 @@ export type LeaderboardEntry = {
   topChar: any;
   user: any | null;
   role: string;
+  roleScore: number;
+};
+
+export type ClassChampionEntry = {
+  className: string;
+  role: string;
+  userId: string | null;
+  runCount: number;
+  topChar: any | null;
+  user: any | null;
   roleScore: number;
 };
 
@@ -77,14 +119,105 @@ function getRoleScore(char: any, role: string): number {
   return Number(char.dpsValue || char.stats?.dps || char.score || 0);
 }
 
-function pickTopChar(userId: string, characters: any[], classFilter: LeaderboardClassFilter): any {
+function pickTopChar(
+  userId: string,
+  characters: any[],
+  classFilter: LeaderboardClassFilter,
+  roleFilter: LeaderboardRole = "all"
+): any {
   const mine = characters.filter((c: any) => String(c.userId) === String(userId));
   if (!mine.length) return { name: "Operative", role: "dps", score: 0 };
+  if (classFilter !== "all" && roleFilter !== "all") {
+    const match = mine.find(
+      (c) => c.class === classFilter && (c.role || "dps").toLowerCase() === roleFilter
+    );
+    if (match) return match;
+  }
   if (classFilter !== "all") {
     const match = mine.find((c) => c.class === classFilter);
     if (match) return match;
   }
   return mine.reduce((a, b) => (Number(b.score) > Number(a.score) ? b : a));
+}
+
+function pickCharForClassRole(userId: string, characters: any[], className: string, role: string): any {
+  const mine = characters.filter((c: any) => String(c.userId) === String(userId));
+  const match = mine.find(
+    (c) => c.class === className && (c.role || "dps").toLowerCase() === role
+  );
+  if (match) return match;
+  const classMatch = mine.find((c) => c.class === className);
+  if (classMatch) return classMatch;
+  return mine[0] || { name: "Operative", class: className, role, score: 0 };
+}
+
+function bucketKey(className: string, role: string): string {
+  return `${className}|${role}`;
+}
+
+function aggregateRunBuckets(records: RunRecord[]): Map<string, Map<string, number>> {
+  const buckets = new Map<string, Map<string, number>>();
+  for (const r of records) {
+    if (!r.className || r.className === "Unknown") continue;
+    const key = bucketKey(r.className, r.role);
+    if (!buckets.has(key)) buckets.set(key, new Map());
+    const userCounts = buckets.get(key)!;
+    userCounts.set(r.userId, (userCounts.get(r.userId) || 0) + 1);
+  }
+  return buckets;
+}
+
+function pickBucketWinner(userCounts: Map<string, number>): { userId: string; runCount: number } | null {
+  let bestUserId = "";
+  let bestCount = 0;
+  for (const [uid, count] of userCounts) {
+    if (count > bestCount) {
+      bestCount = count;
+      bestUserId = uid;
+    }
+  }
+  return bestCount > 0 ? { userId: bestUserId, runCount: bestCount } : null;
+}
+
+function buildClassChampionSlots(
+  buckets: Map<string, { userId: string; runCount: number; char?: any } | null>,
+  characters: any[],
+  users: any[],
+  roleFilter: LeaderboardRole
+): ClassChampionEntry[] {
+  const userMap = new Map(users.map((u: any) => [String(u.id), u]));
+  const champions: ClassChampionEntry[] = [];
+
+  for (const className of WOW_CLASSES) {
+    for (const role of CLASS_ROLE_OPTIONS[className] || ["dps"]) {
+      if (roleFilter !== "all" && role !== roleFilter) continue;
+      const winner = buckets.get(bucketKey(className, role)) || null;
+      if (winner) {
+        const topChar = winner.char || pickCharForClassRole(winner.userId, characters, className, role);
+        champions.push({
+          className,
+          role,
+          userId: winner.userId,
+          runCount: winner.runCount,
+          topChar,
+          user: userMap.get(winner.userId) || null,
+          roleScore: getRoleScore(topChar, role),
+        });
+      } else {
+        champions.push({
+          className,
+          role,
+          userId: null,
+          runCount: 0,
+          topChar: null,
+          user: null,
+          roleScore: 0,
+        });
+      }
+    }
+  }
+
+  return champions;
 }
 
 export function buildRunLeaderboard(
@@ -116,7 +249,7 @@ export function buildRunLeaderboard(
   const entries: LeaderboardEntry[] = [];
   for (const [userId, runCount] of counts) {
     const role = rolesSeen.get(userId) || "dps";
-    const topChar = pickTopChar(userId, characters, classFilter);
+    const topChar = pickTopChar(userId, characters, classFilter, roleFilter);
     entries.push({
       userId,
       runCount,
@@ -205,4 +338,59 @@ export function buildScoreLeaderboard(
     })
     .sort((a, b) => b.roleScore - a.roleScore)
     .slice(0, 100);
+}
+
+/** Top run-count player per class + role slot (mission sync). */
+export function buildClassRunChampions(
+  lobbies: any[],
+  characters: any[],
+  users: any[],
+  roleFilter: LeaderboardRole,
+  period: LeaderboardPeriod,
+  seasonStartMs: number
+): ClassChampionEntry[] {
+  const periodStart = getPeriodStart(period, seasonStartMs);
+  const records = collectRunRecords(lobbies, characters).filter((r) => r.completedAt >= periodStart);
+  const rawBuckets = aggregateRunBuckets(records);
+  const buckets = new Map<string, { userId: string; runCount: number } | null>();
+
+  for (const className of WOW_CLASSES) {
+    for (const role of CLASS_ROLE_OPTIONS[className] || ["dps"]) {
+      const winner = pickBucketWinner(rawBuckets.get(bucketKey(className, role)) || new Map());
+      buckets.set(bucketKey(className, role), winner);
+    }
+  }
+
+  return buildClassChampionSlots(buckets, characters, users, roleFilter);
+}
+
+/** Top run-count player per class + role slot (Raider.io fallback). */
+export function buildRaiderClassRunChampions(
+  characters: any[],
+  users: any[],
+  roleFilter: LeaderboardRole
+): ClassChampionEntry[] {
+  const buckets = new Map<string, { userId: string; runCount: number; char: any } | null>();
+
+  for (const className of WOW_CLASSES) {
+    for (const role of CLASS_ROLE_OPTIONS[className] || ["dps"]) {
+      buckets.set(bucketKey(className, role), null);
+    }
+  }
+
+  for (const c of characters) {
+    const className = c.class;
+    const role = (c.role || "dps").toLowerCase();
+    if (!className) continue;
+    if (roleFilter !== "all" && role !== roleFilter) continue;
+    const runCount = Array.isArray(c.runs) ? c.runs.length : 0;
+    if (runCount <= 0) continue;
+    const key = bucketKey(className, role);
+    const existing = buckets.get(key);
+    if (!existing || runCount > existing.runCount) {
+      buckets.set(key, { userId: String(c.userId), runCount, char: c });
+    }
+  }
+
+  return buildClassChampionSlots(buckets, characters, users, roleFilter);
 }

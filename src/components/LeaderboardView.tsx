@@ -2,17 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Swords, Heart, Shield, Repeat2, Zap } from "lucide-react";
+import { Trophy, Medal, Swords, Heart, Shield, Repeat2, Zap, Crown } from "lucide-react";
 import { HeroBackground } from "@/components/HeroBackground";
 import {
   buildRunLeaderboard,
   buildScoreLeaderboard,
   buildRaiderRunsLeaderboard,
+  buildClassRunChampions,
+  buildRaiderClassRunChampions,
   collectRunRecords,
+  WOW_CLASSES,
   type LeaderboardRole,
   type LeaderboardPeriod,
   type LeaderboardMetric,
   type LeaderboardClassFilter,
+  type ClassChampionEntry,
 } from "@/lib/leaderboard";
 import { classThumbUrl, CLASS_THUMB_PX } from "@/lib/classThumb";
 import type { MythicSeasonInfo } from "@/lib/mythicSeason";
@@ -34,6 +38,7 @@ const PERIOD_TABS: { id: LeaderboardPeriod; label: string }[] = [
 const METRIC_TABS: { id: LeaderboardMetric; label: string; icon: typeof Zap }[] = [
   { id: "performance", label: "Performance", icon: Zap },
   { id: "runs", label: "Most Runs", icon: Repeat2 },
+  { id: "class_leaders", label: "Class Leaders", icon: Crown },
 ];
 
 const CLASS_FILTER_TABS: LeaderboardClassFilter[] = [
@@ -159,6 +164,18 @@ function getDamageLabel(role: string): string {
   return "DPS";
 }
 
+function roleLabel(role: string): string {
+  if (role === "healer") return "Healer";
+  if (role === "tank") return "Tank";
+  return "DPS";
+}
+
+function roleAccent(role: string): string {
+  if (role === "healer") return "text-pink-400 border-pink-500/30 bg-pink-500/10";
+  if (role === "tank") return "text-sky-400 border-sky-500/30 bg-sky-500/10";
+  return "text-red-400 border-red-500/30 bg-red-500/10";
+}
+
 function getIoScore(char: any, role: string): number {
   const rs = char?.roleScores;
   if (rs) {
@@ -190,6 +207,7 @@ export default function LeaderboardView({
   );
 
   const entries = useMemo(() => {
+    if (metric === "class_leaders") return [];
     if (metric === "runs") {
       if (hasSyncedRuns) {
         return buildRunLeaderboard(lobbies, characters, users, roleFilter, period, season.startMs, classFilter);
@@ -202,8 +220,26 @@ export default function LeaderboardView({
     return buildScoreLeaderboard(characters, users, roleFilter);
   }, [lobbies, characters, users, roleFilter, period, season.startMs, hasSyncedRuns, metric, classFilter]);
 
-  const usingRuns = metric === "runs" || hasSyncedRuns;
+  const classChampions = useMemo(() => {
+    if (metric !== "class_leaders") return [];
+    if (hasSyncedRuns) {
+      return buildClassRunChampions(lobbies, characters, users, roleFilter, period, season.startMs);
+    }
+    return buildRaiderClassRunChampions(characters, users, roleFilter);
+  }, [lobbies, characters, users, roleFilter, period, season.startMs, hasSyncedRuns, metric]);
+
+  const championsByClass = useMemo(() => {
+    const map = new Map<string, ClassChampionEntry[]>();
+    for (const champ of classChampions) {
+      if (!map.has(champ.className)) map.set(champ.className, []);
+      map.get(champ.className)!.push(champ);
+    }
+    return map;
+  }, [classChampions]);
+
+  const usingRuns = metric === "runs" || metric === "class_leaders" || hasSyncedRuns;
   const runsPrimary = metric === "runs";
+  const classLeadersPrimary = metric === "class_leaders";
 
   return (
     <div className="relative min-h-screen text-white">
@@ -222,9 +258,11 @@ export default function LeaderboardView({
                     Leaderboard
                   </h1>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-500">
-                    {runsPrimary
-                      ? `${season.name} · most runs · any key level`
-                      : `${season.name} · synced runs from missions`}
+                    {classLeadersPrimary
+                      ? `${season.name} · top player per class & role · any key`
+                      : runsPrimary
+                        ? `${season.name} · most runs · any key level`
+                        : `${season.name} · synced runs from missions`}
                   </p>
                 </div>
               </div>
@@ -301,7 +339,97 @@ export default function LeaderboardView({
           </div>
 
           <div className="space-y-2">
-            {entries.map((entry, i) => {
+            {classLeadersPrimary ? (
+              <>
+                {WOW_CLASSES.map((className, classIdx) => {
+                  const slots = championsByClass.get(className) || [];
+                  if (!slots.length) return null;
+                  const classColor = CLASS_COLORS[className] || "#9ca3af";
+                  return (
+                    <motion.div
+                      key={className}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: classIdx * 0.02 }}
+                      className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm overflow-hidden"
+                    >
+                      <div
+                        className="flex items-center gap-3 px-4 py-3 border-b border-white/10"
+                        style={{ background: `linear-gradient(90deg, ${classColor}18, transparent)` }}
+                      >
+                        <div className="w-10 h-10 shrink-0 rounded-lg border border-white/10 bg-black/60 flex items-center justify-center overflow-hidden">
+                          <img
+                            src={getClassIcon(className)}
+                            alt={className}
+                            width={CLASS_THUMB_PX}
+                            height={CLASS_THUMB_PX}
+                            className="w-8 h-8 object-contain"
+                            decoding="async"
+                          />
+                        </div>
+                        <p
+                          className="text-sm font-black uppercase tracking-widest"
+                          style={{ color: classColor, textShadow: `0 0 14px ${classColor}55` }}
+                        >
+                          {className}
+                        </p>
+                      </div>
+                      <div className="divide-y divide-white/5">
+                        {slots.map((slot) => {
+                          const player = slot.user
+                            ? resolvePlayerVisual(slot.user, slot.topChar?.userName || slot.topChar?.name || "", slot.topChar?.userAvatar || "")
+                            : null;
+                          const avatar = player?.avatar?.trim()
+                            ? player.avatar
+                            : player
+                              ? `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=0b1020&color=00ffff&size=128&bold=true`
+                              : "";
+                          return (
+                            <div key={`${slot.className}-${slot.role}`} className="flex items-center gap-3 px-4 py-3">
+                              <span className={`shrink-0 h-7 min-w-[4.5rem] px-2 rounded-lg border text-[8px] font-black uppercase tracking-widest flex items-center justify-center ${roleAccent(slot.role)}`}>
+                                {roleLabel(slot.role)}
+                              </span>
+                              {slot.runCount > 0 && player ? (
+                                <>
+                                  <div className="w-9 h-9 shrink-0 rounded-full overflow-hidden border border-white/15 bg-black">
+                                    <img src={avatar} alt={player.name} className="w-full h-full object-cover" />
+                                  </div>
+                                  <p className="text-sm font-black uppercase tracking-wide text-white truncate min-w-0 flex-1">
+                                    {player.name}
+                                  </p>
+                                  <div className="shrink-0 text-right">
+                                    <div className="text-lg font-black tabular-nums text-orange-400 leading-none">
+                                      {slot.runCount}
+                                    </div>
+                                    <div className="text-[7px] font-black uppercase tracking-widest text-gray-600 mt-0.5">
+                                      runs
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">
+                                  No runs yet
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {classChampions.every((c) => c.runCount === 0) && (
+                  <div className="flex flex-col items-center justify-center py-24 text-center border border-white/5 rounded-[2rem] bg-white/[0.02]">
+                    <Crown className="w-14 h-14 text-gray-600 mb-4 opacity-40" />
+                    <p className="text-sm font-black text-gray-500 uppercase tracking-widest">No class leaders yet</p>
+                    <p className="text-xs text-gray-600 mt-2 max-w-sm">
+                      Complete missions to crown the top DPS, Healer, and Tank for each class.
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              entries.map((entry, i) => {
               const rank = i + 1;
               const c = entry.topChar;
               const user = entry.user;
@@ -410,7 +538,7 @@ export default function LeaderboardView({
               );
             })}
 
-            {entries.length === 0 && (
+            {!classLeadersPrimary && entries.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-center border border-white/5 rounded-[2rem] bg-white/[0.02]">
                 <Trophy className="w-14 h-14 text-gray-600 mb-4 opacity-40" />
                 <p className="text-sm font-black text-gray-500 uppercase tracking-widest">No entries yet</p>
@@ -418,6 +546,7 @@ export default function LeaderboardView({
                   Runs sync when missions complete on UPLINK. Sync your character in the Armory for scores.
                 </p>
               </div>
+            )}
             )}
           </div>
         </div>
