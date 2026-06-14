@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -276,10 +276,7 @@ const VoiceRoomContent = ({ roomName, onDisconnect, inline, users, currentUserId
   );
 };
 
-const VoiceRoom = ({ roomName, token, onDisconnect, inline, users }: { roomName: string; token: string; onDisconnect: () => void; inline?: boolean; users?: any[] }) => {
-  const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-  if (!serverUrl) return null;
-
+const VoiceRoom = ({ roomName, token, serverUrl, onDisconnect, inline, users }: { roomName: string; token: string; serverUrl: string; onDisconnect: () => void; inline?: boolean; users?: any[] }) => {
   return (
     <LiveKitRoom
       audio={true}
@@ -523,13 +520,15 @@ export default function HomePage() {
    const [bannedUsers, setBannedUsers] = useState<string[]>([]);
    const [globalCharacters, setGlobalCharacters] = useState<any[]>([]);
    const [applications, setApplications] = useState<any[]>([]);
-    const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(true);
+    const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(() => {
+       if (typeof window === "undefined") return false;
+       return localStorage.getItem("uplink_is_registered") !== "true";
+    });
+    const [globalDataReady, setGlobalDataReady] = useState(false);
     const [isWelcomePlansOpen, setIsWelcomePlansOpen] = useState(false);
-    useEffect(() => {
-       setIsOnboardingModalOpen(localStorage.getItem("uplink_is_registered") !== "true");
-    }, []);
     const [onboardingData, setOnboardingData] = useState({ interests: [] as string[], raiderLink: "", battleTag: "" });
     const [voiceToken, setVoiceToken] = useState<string | null>(null);
+    const [voiceServerUrl, setVoiceServerUrl] = useState<string | null>(null);
     const [isJoiningVoice, setIsJoiningVoice] = useState(false);
     const [holdProgress, setHoldProgress] = useState(0);
      const holdTimerRef = useRef<any>(null);
@@ -850,17 +849,18 @@ export default function HomePage() {
    }, [inviteToReview]);
 
    useEffect(() => {
-      if (status === 'authenticated' && session?.user && registeredUsers) {
-         const isRegistered = registeredUsers.some((u: any) => u.id === currentUserId || u.username === currentUserDiscordHandle);
-         if (!isRegistered) {
-            setIsOnboardingModalOpen(true);
-            localStorage.setItem("uplink_is_registered", "false");
-         } else {
-            setIsOnboardingModalOpen(false);
-            localStorage.setItem("uplink_is_registered", "true");
-         }
+      if (status !== "authenticated" || !session?.user || !globalDataReady) return;
+      const isRegistered = registeredUsers.some(
+         (u: any) => u.id === currentUserId || u.username === currentUserDiscordHandle
+      );
+      if (!isRegistered) {
+         setIsOnboardingModalOpen(true);
+         localStorage.setItem("uplink_is_registered", "false");
+      } else {
+         setIsOnboardingModalOpen(false);
+         localStorage.setItem("uplink_is_registered", "true");
       }
-   }, [status, session, registeredUsers, currentUserId, currentUserDiscordHandle]);
+   }, [status, session, registeredUsers, currentUserId, currentUserDiscordHandle, globalDataReady]);
 
    useEffect(() => {
       if (status !== "authenticated" || !session?.user || isOnboardingModalOpen) return;
@@ -1396,7 +1396,11 @@ export default function HomePage() {
    const [bankRealm, setBankRealm] = useState("");
    const [bankRegion, setBankRegion] = useState("eu");
    const [isVerifyingBank, setIsVerifyingBank] = useState(false);
-   const [expandedLobbyId, setExpandedLobbyId] = useState<string | null>(null);
+   const [expandedLobbyId, setExpandedLobbyId] = useState<string | null>(() => {
+      if (typeof window === "undefined") return null;
+      return sessionStorage.getItem("uplink_expanded_lobby") || null;
+   });
+   const scrollRestoredRef = useRef(false);
 
    const handleSyncBank = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1961,7 +1965,9 @@ export default function HomePage() {
                   }
             }
          }
-      } catch (e) { }
+      } catch (e) { } finally {
+         setGlobalDataReady(true);
+      }
    };
 
    useEffect(() => {
@@ -1997,6 +2003,29 @@ export default function HomePage() {
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(myCharacters)); }, [myCharacters, currentUserId]);
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_TEAM_${currentUserId}`, JSON.stringify(myTeam)); }, [myTeam, currentUserId]);
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_BANK_${currentUserId}`, JSON.stringify(bankCharacters)); }, [bankCharacters, currentUserId]);
+
+   useEffect(() => {
+      if (expandedLobbyId) sessionStorage.setItem("uplink_expanded_lobby", expandedLobbyId);
+      else sessionStorage.removeItem("uplink_expanded_lobby");
+   }, [expandedLobbyId]);
+
+   useEffect(() => {
+      const saveScroll = () => sessionStorage.setItem("uplink_scroll_y", String(window.scrollY));
+      window.addEventListener("scroll", saveScroll, { passive: true });
+      return () => window.removeEventListener("scroll", saveScroll);
+   }, []);
+
+   useEffect(() => {
+      if (scrollRestoredRef.current || status !== "authenticated" || isOnboardingModalOpen) return;
+      const y = parseInt(sessionStorage.getItem("uplink_scroll_y") || "0", 10);
+      if (!y) { scrollRestoredRef.current = true; return; }
+      const delay = expandedLobbyId ? 150 : 80;
+      const timer = setTimeout(() => {
+         window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
+         scrollRestoredRef.current = true;
+      }, delay);
+      return () => clearTimeout(timer);
+   }, [lobbies.length, expandedLobbyId, status, isOnboardingModalOpen]);
 
    useEffect(() => {
       if (session?.user && currentUserDiscordHandle) {
@@ -3489,13 +3518,9 @@ export default function HomePage() {
          return;
       }
 
-      if (!process.env.NEXT_PUBLIC_LIVEKIT_URL) {
-         addToast("Voice is not configured on this server. Contact admin.", "error");
-         return;
-      }
-
       if (voiceToken) {
          setVoiceToken(null);
+         setVoiceServerUrl(null);
          localStorage.removeItem('uplink_voice_lobby');
          return;
       }
@@ -3515,8 +3540,11 @@ export default function HomePage() {
          const data = await resp.json().catch(() => ({}));
          if (data.token) {
              setVoiceToken(data.token);
+             if (data.serverUrl) setVoiceServerUrl(String(data.serverUrl));
              localStorage.setItem('uplink_voice_lobby', String(lobbyId));
              addToast("Voice link established.", "success");
+         } else if (resp.status === 503) {
+            addToast(data.error || "Voice is not configured on this server. Contact admin.", "error");
          } else if (resp.status === 429) {
             const waitSec = data.retryAfterMs ? Math.ceil(Number(data.retryAfterMs) / 1000) : 5;
             voiceJoinCooldownUntil.current = Date.now() + waitSec * 1000;
@@ -3543,6 +3571,7 @@ export default function HomePage() {
       if (voiceToken && targetLobby) {
            if (!isVoiceLobbyOpen(targetLobby)) {
              setVoiceToken(null);
+             setVoiceServerUrl(null);
              localStorage.removeItem('uplink_voice_lobby');
              addToast("Voice link closed.", "info");
          }
@@ -3774,6 +3803,11 @@ export default function HomePage() {
    };
 
    const deleteLobby = (id: string) => {
+      const lobby = lobbies.find((l) => String(l.id) === String(id));
+      if (lobby && !canOwnerCancelLobby(lobby)) {
+         addToast("Cannot delete — squad has members or mission already started.", "error");
+         return;
+      }
       const updated = lobbies.filter(l => l.id !== id);
       setLobbies(updated);
       saveGlobalData({ lobbies: updated });
@@ -4620,11 +4654,16 @@ export default function HomePage() {
        );
      }
 
+     const likelyRegistered =
+        typeof window !== "undefined" && localStorage.getItem("uplink_is_registered") === "true";
+     const showOnboarding =
+        isOnboardingModalOpen && (!likelyRegistered || globalDataReady);
+
      return (
         <PageContext.Provider value={pageContextValue}>
          <div className={`min-h-screen ${theme === 'light' ? 'bg-[#f8f9fc] text-[#1a1a2e]' : 'bg-[#06060c] text-gray-200'} selection:bg-[#ff007f]/30 font-[family-name:var(--font-outfit)] overflow-x-hidden transition-colors duration-700`}>
            {status !== 'unauthenticated' ? (
-             isOnboardingModalOpen ? (
+             showOnboarding ? (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#030308]">
                    <HeroBackground />
 
@@ -4955,7 +4994,7 @@ export default function HomePage() {
                                               {(currentUserId === lobby.ownerId || isAdmin) ? (
                                                  <div className="flex flex-col gap-2 w-full">
 <motion.button onClick={() => { setTargetLobby(lobby); setIsManageModalOpen(true); }} className={`w-full py-2 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all text-center flex justify-center gap-2 items-center ${lobby.category === 'leveling' ? 'bg-[#8a2be2]/10 border border-[#8a2be2]/30 text-[#8a2be2] hover:bg-[#8a2be2] hover:text-white shadow-[0_0_15px_rgba(138,43,226,0.1)]' : 'bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff] hover:text-black shadow-[0_0_15px_rgba(0,255,255,0.1)]'}`}><Crosshair className="w-3.5 h-3.5" /> Manage</motion.button>
-                                                      {lobby.status !== 'completed' && (
+                                                      {canOwnerCancelLobby(lobby) && (
                                                          <motion.button onClick={() => deleteLobby(lobby.id)} className="w-full py-2 bg-red-900/20 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white transition-all text-center flex justify-center gap-2 items-center"><Trash2 className="w-3.5 h-3.5" /> Delete</motion.button>
                                                       )}
                                                    </div>
@@ -5921,8 +5960,10 @@ export default function HomePage() {
 
                </>
                   );
-                   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-                   if (!serverUrl) return innerAppContent;
+                   const serverUrl =
+                     voiceServerUrl ||
+                     process.env.NEXT_PUBLIC_LIVEKIT_URL ||
+                     "wss://uplink-sist6urm.livekit.cloud";
                    return (
                      <LiveKitRoom
                        audio={!!voiceToken}
@@ -5933,10 +5974,15 @@ export default function HomePage() {
                        onError={(err) => {
                           console.error("LiveKit error:", err);
                           setVoiceToken(null);
+                          setVoiceServerUrl(null);
                           localStorage.removeItem("uplink_voice_lobby");
                           addToast("Voice connection failed. Try again.", "error");
                        }}
-                       onDisconnected={() => { setVoiceToken(null); localStorage.removeItem('uplink_voice_lobby'); }}
+                       onDisconnected={() => {
+                         setVoiceToken(null);
+                         setVoiceServerUrl(null);
+                         localStorage.removeItem('uplink_voice_lobby');
+                       }}
                      >
                        {innerAppContent}
                        {voiceToken ? <RoomAudioRenderer /> : null}

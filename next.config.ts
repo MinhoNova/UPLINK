@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
     NEXTAUTH_URL:
       process.env.NEXTAUTH_URL ??
       (process.env.NODE_ENV === "development" ? "http://localhost:3000" : productionUrl),
+    NEXT_PUBLIC_LIVEKIT_URL:
+      process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "wss://uplink-sist6urm.livekit.cloud",
   },
   serverExternalPackages: ["better-sqlite3"],
   typescript: {

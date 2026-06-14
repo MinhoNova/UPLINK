@@ -545,9 +545,9 @@ const BlockClassSection = memo(function BlockClassSection({
           );
 
           return (
-            <div key={group} className="bg-white/5 rounded-lg p-2 min-w-0">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[8px] font-black uppercase tracking-[0.3em] text-white/60">{group}</label>
+            <div key={group} className="bg-white/5 rounded-lg p-2 min-w-0 overflow-hidden">
+              <div className="flex items-center justify-between mb-1.5 gap-1">
+                <label className="text-[8px] font-black uppercase tracking-[0.3em] text-white/60 truncate">{group}</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -583,7 +583,7 @@ const BlockClassSection = memo(function BlockClassSection({
                     const roles = classRoleOptions[cls] || ["dps"];
 
                     return (
-                      <div key={cls} className="flex flex-row items-center gap-1.5">
+                      <div key={cls} className="min-w-0 overflow-hidden">
                         <button
                           type="button"
                           onClick={() => {
@@ -592,14 +592,15 @@ const BlockClassSection = memo(function BlockClassSection({
                               : [...(blockedRoles || []), ...(roles as string[]).map(r => ({ class: cls, role: r }))];
                             dispatch({ type: "SET", payload: { blockedRoles: updated } });
                           }}
-                          className={`relative flex items-center gap-2 rounded-lg transition-colors px-3 py-2 shrink-0 ${
+                          className={`relative w-full flex items-center gap-1.5 rounded-lg transition-colors px-2 py-1.5 ${
                             allBlocked ? "bg-red-500/20" : "bg-white/10 hover:bg-white/15"
                           }`}
                         >
-                          <img src={`/classes-thumb/${cls === "Death Knight" ? "DEATH KNIGHT" : cls === "Demon Hunter" ? "DEMON HUNTER" : cls.toUpperCase()}.png`} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" decoding="async" />
-                          <span className="text-[9px] font-black uppercase tracking-wider text-white/80">{cls}</span>
+                          <img src={`/classes-thumb/${cls === "Death Knight" ? "DEATH KNIGHT" : cls === "Demon Hunter" ? "DEMON HUNTER" : cls.toUpperCase()}.png`} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" decoding="async" />
+                          <span className="text-[8px] font-black uppercase tracking-wider text-white/80 truncate flex-1 text-left">{cls}</span>
                           {allBlocked && <X className="w-3 h-3 text-red-400 shrink-0" />}
                         </button>
+                        <div className="flex flex-wrap gap-1 mt-1">
                         {(roles as string[]).map((role: string) => {
                           const isBlocked = blockedForClass.some((b: any) => b.role === role);
                           return (
@@ -615,14 +616,15 @@ const BlockClassSection = memo(function BlockClassSection({
                                   : [...(blockedRoles || []), { class: cls, role }];
                                 dispatch({ type: "SET", payload: { blockedRoles: updated } });
                               }}
-                              className={`flex items-center justify-center w-9 h-9 rounded-md transition shrink-0 ${
+                              className={`flex items-center justify-center w-7 h-7 rounded-md transition shrink-0 ${
                                 isBlocked ? "bg-red-500/20" : "bg-white/10 hover:bg-white/15"
                               }`}
                             >
-                              <img src={`/classes-thumb/${role === "tank" ? "TANK" : role === "healer" ? "HEALER" : "DPS"}.png`} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" decoding="async" />
+                              <img src={`/classes-thumb/${role === "tank" ? "TANK" : role === "healer" ? "HEALER" : "DPS"}.png`} alt="" className="w-5 h-5 rounded object-cover flex-shrink-0" decoding="async" />
                             </button>
                           );
                         })}
+                        </div>
                       </div>
                     );
                   })}

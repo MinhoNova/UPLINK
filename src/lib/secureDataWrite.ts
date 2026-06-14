@@ -1,5 +1,6 @@
 import { isSecretClubTier } from "@/lib/userProfile";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { canOwnerCancelLobby } from "@/lib/lobbyLifecycle";
 
 export const ADMIN_ID = "1497295886223544471";
 export const ADMIN_HANDLE = "minhonovazen";
@@ -172,6 +173,9 @@ export function validateLobbies(
     if (!(incoming as any[]).some((l) => String(l.id) === id)) {
       if (String((ex as any).ownerId) !== String(userId)) {
         return { ok: false, error: "Cannot delete lobby you do not own" };
+      }
+      if (!canOwnerCancelLobby(ex)) {
+        return { ok: false, error: "Cannot delete lobby with active squad or mission progress" };
       }
     }
   }
