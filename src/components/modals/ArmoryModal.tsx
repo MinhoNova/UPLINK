@@ -249,6 +249,9 @@ const ArmoryModal = ({
                                                     );
                                                     return;
                                                  }
+                                              } else {
+                                                 addToast("URL must be a GIF — use a direct .gif link or upload a file.", "error");
+                                                 return;
                                               }
 
                                               const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
@@ -257,7 +260,7 @@ const ArmoryModal = ({
                                                  updatedUsers[userIdx] = {
                                                     ...updatedUsers[userIdx],
                                                     profileGif: finalUrl,
-                                                    ...(thumbUrl ? { profileGifThumb: thumbUrl } : {}),
+                                                    profileGifThumb: thumbUrl ?? null,
                                                  };
                                                  setRegisteredUsers(updatedUsers);
                                                  const ok = await saveGlobalData({ registeredUsers: updatedUsers });
@@ -442,8 +445,11 @@ const ArmoryModal = ({
                                                            const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
                                                            if (userIdx !== -1) {
                                                               const updatedUsers = [...registeredUsers];
-                                                              const { profileGif: _, profileGifThumb: __, ...rest } = updatedUsers[userIdx];
-                                                              updatedUsers[userIdx] = rest;
+                                                              updatedUsers[userIdx] = {
+                                                                 ...updatedUsers[userIdx],
+                                                                 profileGif: null,
+                                                                 profileGifThumb: null,
+                                                              };
                                                               setRegisteredUsers(updatedUsers);
                                                               const ok = await saveGlobalData({ registeredUsers: updatedUsers });
                                                               if (!ok) {

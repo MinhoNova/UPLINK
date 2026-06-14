@@ -1,13 +1,14 @@
 import { isSecretClubTier } from "@/lib/userProfile";
 
-/** Secret Club + hidden identity — no public name or custom image anywhere. */
-export function shouldHidePublicIdentity(user: any): boolean {
+/** Secret Club hidden identity — mask only on public offer party cards (not thread/DM/community). */
+export function shouldHidePublicIdentity(user: any, viewerUserId?: string): boolean {
+  if (!user) return false;
+  if (viewerUserId && String(user.id) === String(viewerUserId)) return false;
   return isSecretClubTier(user) && user?.hiddenIdentity === true;
 }
 
 /** Resolve best profile image URL for display (GIF, custom avatar, or Discord avatar). */
 export function resolveProfileImage(user: any, fallbackName = "U"): string {
-  if (shouldHidePublicIdentity(user)) return "";
   const src =
     user?.profileGif ||
     user?.customAvatar ||
@@ -19,7 +20,6 @@ export function resolveProfileImage(user: any, fallbackName = "U"): string {
 
 /** Display name only — never Discord username/handle. */
 export function resolveProfileDisplayName(user: any, fallback = "Member"): string {
-  if (shouldHidePublicIdentity(user)) return "";
   return user?.displayName || user?.name || user?.discordDisplayName || fallback;
 }
 
@@ -29,14 +29,11 @@ export type PublicAuthorFields = {
   hiddenIdentity: boolean;
 };
 
-/** Author fields for community posts/comments (respects GIF + hidden identity). */
+/** Author fields for community posts/comments — always show real identity. */
 export function resolvePublicAuthorFields(
   user: any | undefined,
   sessionFallback?: { name?: string | null; image?: string | null }
 ): PublicAuthorFields {
-  if (user && shouldHidePublicIdentity(user)) {
-    return { userName: "", userImage: "", hiddenIdentity: true };
-  }
   if (user) {
     return {
       userName: resolveProfileDisplayName(user, sessionFallback?.name || "Member"),

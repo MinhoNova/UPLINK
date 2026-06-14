@@ -139,11 +139,15 @@ export function mergeRegisteredUsersFromServer(
       profileGif:
         u.profileGif && String(u.profileGif).trim()
           ? u.profileGif
-          : localSelf.profileGif,
+          : localSelf.profileGif === null
+            ? undefined
+            : localSelf.profileGif,
       profileGifThumb:
         u.profileGifThumb && String(u.profileGifThumb).trim()
           ? u.profileGifThumb
-          : localSelf.profileGifThumb,
+          : localSelf.profileGifThumb === null
+            ? undefined
+            : localSelf.profileGifThumb,
       customAvatar: u.customAvatar || localSelf.customAvatar,
       effect: u.effect && u.effect !== "none" ? u.effect : localSelf.effect,
       activeVfx: u.activeVfx || localSelf.activeVfx,

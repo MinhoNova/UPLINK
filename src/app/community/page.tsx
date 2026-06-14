@@ -11,8 +11,7 @@ import {
   Trash2, Swords, AlertTriangle, X, Loader2,
   Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
-import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, shouldHidePublicIdentity } from "@/lib/profileImage";
-import SecretClubCard from "@/components/SecretClubCard";
+import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -116,17 +115,14 @@ export default function CommunityPage() {
 
   const getUserDisplay = (userId: string) => {
     const u = registeredUsers.find((uu: any) => String(uu.id) === String(userId));
-    if (u && shouldHidePublicIdentity(u)) return { name: null, avatar: null, hidden: true };
     return {
       name: u ? resolveProfileDisplayName(u) : null,
       avatar: u ? resolveProfileImage(u) : null,
-      hidden: false,
     };
   };
 
   const renderAuthorName = (userId: string, storedName?: string) => {
     const d = getUserDisplay(userId);
-    if (d.hidden) return <SecretClubCard variant="inline" />;
     const name = d.name || storedName;
     if (!name) return <span className="text-gray-500">Member</span>;
     return <>{name}</>;
@@ -134,13 +130,6 @@ export default function CommunityPage() {
 
   const UserAvatar = ({ src, userId, className = "" }: { src: string; userId?: string; className?: string }) => {
     const profileUser = userId ? registeredUsers.find((u: any) => String(u.id) === String(userId)) : null;
-    if (profileUser && shouldHidePublicIdentity(profileUser)) {
-      return (
-        <div className={`relative ${className} shrink-0 flex items-center justify-center`}>
-          <SecretClubCard variant="compact" />
-        </div>
-      );
-    }
     const imgSrc = profileUser ? resolveProfileImage(profileUser) : (src?.trim() || "");
 
     return (

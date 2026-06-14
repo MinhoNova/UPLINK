@@ -320,6 +320,7 @@ export default function Navbar() {
                   src={getAvatarForEffect()}
                   effect={currentUser?.effect || "none"}
                   className="w-9 h-9"
+                  fallbackName={currentUser?.name || session?.user?.name || "U"}
                 />
                 <span className="text-xs font-black uppercase tracking-widest hidden sm:block text-white/80 truncate max-w-[100px]">{currentUser?.name || session.user.name}</span>
                 <span className="text-[8px] font-black uppercase tracking-widest text-[#00ffff] px-2 py-0.5 rounded-md bg-[#00ffff]/10">MY PROFILE</span>
@@ -338,6 +339,7 @@ export default function Navbar() {
                     src={getAvatarForEffect()}
                     effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
                     className="w-14 h-14"
+                    fallbackName={currentUser?.name || session?.user?.name || "U"}
                   />
                 </button>
                 <button

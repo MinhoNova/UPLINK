@@ -1946,12 +1946,17 @@ export default function HomePage() {
                   const aaEnabled = localStorage.getItem("uplink_auto_accept") === "true";
                   const aaEnd = parseInt(localStorage.getItem("uplink_auto_accept_end") || "0") || 0;
                   const aaActive = aaEnabled && aaEnd > now;
-                  const autoNotif = (activeNotifs || []).find((n: any) =>
-                     notificationMatchesUser(n, currentUserId, handleRef.current!, data.registeredUsers || []) &&
-                     !shownNotifIds.current.includes(n.id) &&
-                     (n.type === 'lobby_accept' || n.type === 'lobby_confirm') &&
-                     aaActive
-                  );
+                  const autoNotif = (activeNotifs || []).find((n: any) => {
+                     if (!notificationMatchesUser(n, currentUserId, handleRef.current!, data.registeredUsers || [])) return false;
+                     if (shownNotifIds.current.includes(n.id)) return false;
+                     if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
+                     if (!aaActive) return false;
+                     const lobby = finalLobbies.find((l: any) => String(l.id) === String(n.lobbyId));
+                     if (!lobby) return false;
+                     if (userIsActiveInDungeonOffer(finalLobbies, currentUserId)) return false;
+                     if (isLevelingOffer(lobby) && !canAutoAcceptLevelingInvite(finalLobbies, currentUserId)) return false;
+                     return true;
+                  });
                   if (autoNotif) {
                      const lobby = finalLobbies.find((l: any) => String(l.id) === String(autoNotif.lobbyId));
                      const uid = String(currentUserId);
@@ -2119,7 +2124,7 @@ export default function HomePage() {
       const interval = setInterval(() => {
          if (typeof document !== "undefined" && document.hidden) return;
          fetchGlobalData();
-      }, 5000);
+      }, 2000);
       return () => {
          window.removeEventListener('data-refresh', fetchGlobalData);
          clearInterval(interval);
@@ -2214,7 +2219,7 @@ export default function HomePage() {
      };
 
       const isUserHidden = (userId?: string) => {
-         if (!userId) return false;
+         if (!userId || String(userId) === String(currentUserId)) return false;
          const user = registeredUsers.find((u: any) => String(u.id) === String(userId));
          return getUserTier(userId) === "secret_club" && user?.hiddenIdentity === true;
       };
@@ -2940,18 +2945,13 @@ export default function HomePage() {
    };
 
    const resolveChatIdentity = useCallback((userId?: string, stored?: { from?: string; fromAvatar?: string; fromHandle?: string }) => {
-      const resolveFromUser = (user: any) => {
-         if (getUserTier(user.id) === "secret_club" && user.hiddenIdentity === true) {
-            return { name: "", avatar: "" };
-         }
+      const user = userId ? registeredUsers.find((u: any) => String(u.id) === String(userId)) : null;
+      if (user) {
          return {
             name: resolveProfileDisplayName(user, stored?.from || "Operative"),
             avatar: resolveProfileImage(user, user.name || "U") || stored?.fromAvatar || "",
          };
-      };
-
-      const user = userId ? registeredUsers.find((u: any) => String(u.id) === String(userId)) : null;
-      if (user) return resolveFromUser(user);
+      }
 
       const lookup = (stored?.fromHandle || stored?.from || "").toLowerCase().trim();
       if (lookup) {
@@ -2960,10 +2960,15 @@ export default function HomePage() {
             (u.name || "").toLowerCase() === lookup ||
             (u.discordDisplayName || "").toLowerCase() === lookup
          );
-         if (matched) return resolveFromUser(matched);
+         if (matched) {
+            return {
+               name: resolveProfileDisplayName(matched, stored?.from || "Operative"),
+               avatar: resolveProfileImage(matched, matched.name || "U") || stored?.fromAvatar || "",
+            };
+         }
       }
       return { name: stored?.from || "Unknown", avatar: stored?.fromAvatar || "" };
-   }, [registeredUsers, getUserTier]);
+   }, [registeredUsers]);
 
    const buildRatingTargets = useCallback((l: any) => {
       const uid = String(currentUserId);
@@ -3635,16 +3640,13 @@ export default function HomePage() {
       autoConfirmInFlightRef.current = true;
       (async () => {
          try {
-            let levelingSquads = countUserActiveLevelingSquads(lobbies, currentUserId);
-            for (const notif of pending) {
-               const lobby = lobbies.find((l: any) => String(l.id) === String(notif.lobbyId));
-               if (lobby && isLevelingOffer(lobby)) {
-                  if (levelingSquads >= MAX_LEVELING_AUTO_ACCEPT) continue;
-                  levelingSquads += 1;
-               }
-               shownNotifIds.current.push(notif.id);
-               await handleConfirmLobby(notif);
+            const notif = pending[0];
+            const lobby = lobbiesRef.current.find((l: any) => String(l.id) === String(notif.lobbyId));
+            if (lobby && isLevelingOffer(lobby) && !canAutoAcceptLevelingInvite(lobbiesRef.current, currentUserId)) {
+               return;
             }
+            shownNotifIds.current.push(notif.id);
+            await handleConfirmLobby(notif);
          } finally {
             autoConfirmInFlightRef.current = false;
          }

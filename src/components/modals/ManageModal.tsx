@@ -7,7 +7,6 @@ import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
 import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
 import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
-import SecretClubCard from "@/components/SecretClubCard";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
@@ -118,7 +117,6 @@ const ManageModal = ({
     getUserTierLabel,
     getVfxSettings,
     renderDualColorName,
-    isUserHidden,
     resolveMemberVisual,
     resolveChatIdentity,
     openRatePicker,
@@ -613,7 +611,7 @@ const ManageModal = ({
                                                                 const blockedStatus = userForPreview ? isUserBlocked(userForPreview.id) : false;
                                                                 return (
                                                                    <div className="relative">
-                                                                      <InteractivePartyCard role={roleType} accepted={occupant} visual={resolveMemberVisual(occupant)} AvatarComponent={AvatarWithEffect} hideIdentity={isUserHidden(occupant.applicantId || occupant.userId)} onAvatarClick={(u: any) => setPreviewUser(u)} userData={userForPreview} />
+                                                                      <InteractivePartyCard role={roleType} accepted={occupant} visual={resolveMemberVisual(occupant)} AvatarComponent={AvatarWithEffect} hideIdentity={false} onAvatarClick={(u: any) => setPreviewUser(u)} userData={userForPreview} />
                                                                        {userForPreview && blockedStatus && (
                                                                          <span className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 bg-yellow-500/20 text-yellow-400 text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border border-yellow-500/30">Blocked</span>
                                                                       )}
@@ -698,25 +696,18 @@ const ManageModal = ({
                                                          const ioScore = app.roleScores?.[app.role] ?? app.score ?? 0;
                                                          const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
                                                          const dungeonShort = dungeon?.short || (dungeon?.name ? dungeon.name.slice(0, 2).toUpperCase() : "");
-                                                         const appHidden = isUserHidden(app.applicantId || app.userId);
                                                          return (
                                                          <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 group hover:border-[#00ffff]/30 transition-all">
                                                             <div className="flex items-center gap-1.5 min-h-[40px]">
                                                                <div className="flex flex-col items-center shrink-0 w-[42px]">
-                                                                  {appHidden ? (
-                                                                     <SecretClubCard variant="compact" />
-                                                                  ) : (
-                                                                     <>
-                                                                        <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
-                                                                           <img
-                                                                              src={profileImg}
-                                                                              alt=""
-                                                                              className={profileImgClass(profileImg)}
-                                                                           />
-                                                                        </div>
-                                                                        <p className="mt-0.5 text-[6px] font-black text-white truncate max-w-[68px] leading-tight text-center">{renderDualColorName(displayName)}</p>
-                                                                     </>
-                                                                  )}
+                                                                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
+                                                                     <img
+                                                                        src={profileImg}
+                                                                        alt=""
+                                                                        className={profileImgClass(profileImg)}
+                                                                     />
+                                                                  </div>
+                                                                  <p className="mt-0.5 text-[6px] font-black text-white truncate max-w-[68px] leading-tight text-center">{renderDualColorName(displayName)}</p>
                                                                </div>
 
                                                                <div className="flex items-center shrink-0" style={{ width: 54 }}>

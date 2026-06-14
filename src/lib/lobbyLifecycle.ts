@@ -620,9 +620,9 @@ export function mergeOwnerLobbyFromServer(
     mergedAccepted.map((a) => memberIdentityKey(a)).filter(Boolean)
   );
 
-  const applicantPool = localHasMoreAccepted
-    ? localLobby.applicants || []
-    : mergeApplicantsList(serverLobby.applicants || [], localLobby.applicants || []);
+  const applicantPool = saveInFlight
+    ? mergeApplicantsList(serverLobby.applicants || [], localLobby.applicants || [])
+    : serverLobby.applicants || [];
   const applicants = applicantPool.filter(
     (a: any) => !acceptedIds.has(memberIdentityKey(a))
   );
@@ -729,10 +729,15 @@ export function mergeLobbiesFromServer(
     );
 
     if (localHasApp && !serverHasApp) {
-      return {
-        ...serverLobby,
-        applicants: mergeApplicantsList(serverLobby.applicants || [], localLobby.applicants || []),
-      };
+      const selfLocalOnly = (localLobby.applicants || []).some(
+        (a: any) => String(a.applicantId || a.userId || a.id) === uid
+      );
+      if (selfLocalOnly) {
+        return {
+          ...serverLobby,
+          applicants: mergeApplicantsList(serverLobby.applicants || [], localLobby.applicants || []),
+        };
+      }
     }
 
     return serverLobby;
