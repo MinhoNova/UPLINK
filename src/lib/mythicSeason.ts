@@ -14,13 +14,15 @@ const FALLBACK: MythicSeasonInfo = {
   expansionId: 11,
 };
 
+export { FALLBACK as MYTHIC_SEASON_FALLBACK };
+
 export async function getCurrentMythicPlusSeason(): Promise<MythicSeasonInfo> {
   const now = Date.now();
   for (const expansionId of [11, 10]) {
     try {
       const res = await fetch(
         `https://raider.io/api/v1/mythic-plus/static-data?expansion_id=${expansionId}`,
-        { next: { revalidate: 3600 } }
+        { cache: "no-store" }
       );
       if (!res.ok) continue;
       const data = await res.json();

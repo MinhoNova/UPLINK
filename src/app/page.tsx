@@ -1943,7 +1943,10 @@ export default function HomePage() {
       }
 
       window.addEventListener('data-refresh', fetchGlobalData);
-      const interval = setInterval(fetchGlobalData, 1000);
+      const interval = setInterval(() => {
+         if (typeof document !== "undefined" && document.hidden) return;
+         fetchGlobalData();
+      }, 5000);
       return () => {
          window.removeEventListener('data-refresh', fetchGlobalData);
          clearInterval(interval);
@@ -4655,7 +4658,7 @@ export default function HomePage() {
                         </div>
                      )}
                       {/* HERO */}
-                       <section className={`relative w-full pt-24 pb-20 md:pt-32 md:pb-28 flex flex-col items-center justify-center transition-colors duration-700 ${theme === 'light' ? 'bg-white' : ''} overflow-hidden z-[1]`}>
+                       <section className={`relative w-full pt-24 pb-20 md:pt-32 md:pb-28 flex flex-col items-center justify-center transition-colors duration-700 ${theme === 'light' ? 'bg-white' : ''} overflow-hidden z-[1] pointer-events-none`}>
 
                        {/* Light mode fallback background if needed */}
                       {theme === 'light' && (
@@ -4665,7 +4668,7 @@ export default function HomePage() {
                          </div>
                       )}
 
-                        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full mx-auto mt-5">
+                        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full mx-auto mt-5 pointer-events-auto">
                           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-col items-center">
                              <motion.button
                                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -4709,20 +4712,18 @@ export default function HomePage() {
                     </section>
 
                     {/* ZOOMED WRAPPER - 75% scale with space both sides */}
-                    <div className="px-[5%] xl:px-12 py-4 -mt-16">
-                    <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
-                          <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
-                        {/* LEFT COLUMN: tabs + content */}
-                           <div className="flex flex-col gap-2 min-w-0 flex-1">
+                    <div className="px-[5%] xl:px-12 py-4 -mt-16 relative z-20">
+                    <div className="flex justify-end mb-3 relative z-30">
                            <button
                               type="button"
-                              onClick={() => {
+                              onClick={(e) => {
+                                 e.stopPropagation();
                                  const next = !offerSoundsEnabled;
                                  setOfferSoundsEnabled(next);
                                  localStorage.setItem("uplink_offer_sounds", next.toString());
                                  addToast(next ? "New offer sounds on." : "New offer sounds muted.", "info");
                               }}
-                              className={`self-end flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all backdrop-blur-md ${
+                              className={`relative z-30 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all backdrop-blur-md cursor-pointer ${
                                  offerSoundsEnabled
                                     ? theme === 'light'
                                        ? 'border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/20'
@@ -4739,6 +4740,11 @@ export default function HomePage() {
                                  {offerSoundsEnabled ? 'ON' : 'OFF'}
                               </span>
                            </button>
+                    </div>
+                    <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
+                          <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
+                        {/* LEFT COLUMN: tabs + content */}
+                           <div className="flex flex-col gap-2 min-w-0 flex-1">
 <div className={`flex p-1.5 rounded-2xl border backdrop-blur-xl shadow-2xl ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-black/40 border-white/5'}`}>
 <button onClick={() => setActiveMainTab("boosts")} className={`flex-1 py-3 px-4 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] outline-none cursor-pointer text-center transition-all ${activeMainTab === "boosts" ? "bg-[#ff007f] shadow-[0_0_30px_rgba(255,0,127,0.4)] text-white" : `${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-white hover:text-white/80'}`}`}>
 ⚡ Offers
@@ -4772,7 +4778,7 @@ export default function HomePage() {
                                         });
                                         return sorted.map(lobby => (
                                            <div key={lobby.id} className="relative overflow-visible">
-                                   <div className={`relative w-full rounded-[2.5rem] shadow-2xl group border overflow-hidden ${expandedLobbyId === lobby.id ? (lobby.category === 'leveling' ? 'border-[#8a2be2]/50 shadow-[0_0_30px_rgba(138,43,226,0.15)]' : 'border-[#00ffff]/50 shadow-[0_0_30px_rgba(0,255,255,0.15)]') : 'border-white/10 hover:border-white/30'} bg-black/80`}>
+                                   <div className={`relative w-full rounded-[2.5rem] shadow-2xl group border overflow-visible ${expandedLobbyId === lobby.id ? (lobby.category === 'leveling' ? 'border-[#8a2be2]/50 shadow-[0_0_30px_rgba(138,43,226,0.15)]' : 'border-[#00ffff]/50 shadow-[0_0_30px_rgba(0,255,255,0.15)]') : 'border-white/10 hover:border-white/30'} bg-black/80`}>
                                            {/* FULL-WIDTH SEAMLESS DYNAMIC BACKGROUND */}
                                             {(() => {
                                                    const ownerUser = registeredUsers.find(u => u.id === lobby.ownerId);
@@ -4911,12 +4917,13 @@ export default function HomePage() {
                                                         </motion.button>
 
                                                        {hoveredLockedId === lobby.id && !isUserEligibleForLobby(lobby) && (
-                                                           <div className="absolute left-1/2 z-[999] pointer-events-none" style={{ bottom: 'calc(100% + 12px)', transform: 'translateX(-50%)' }}>
-                                                                <div className="bg-[#0a0a16] text-white text-sm font-bold px-7 py-5 border border-[#ff007f]/50 relative rounded-2xl shadow-[0_0_20px_rgba(255,0,127,0.3)] min-w-[380px] max-w-[90vw] text-left whitespace-normal">
-                                                                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-[#ff007f]/10">
-                                                                   <span className="text-[14px] text-[#ff007f] font-black uppercase tracking-[0.12em]">⛔ ACCESS DENIED</span>
+                                                           <div className="absolute left-1/2 z-[9999] pointer-events-none w-max max-w-[min(420px,calc(100vw-2rem))]" style={{ top: 'calc(100% + 10px)', transform: 'translateX(-50%)' }}>
+                                                                <div className="bg-[#0a0a16]/98 text-white text-sm font-bold px-6 py-5 border-2 border-[#ff007f]/60 relative rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_30px_rgba(255,0,127,0.25)] backdrop-blur-xl text-left whitespace-normal">
+                                                                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#ff007f]/20">
+                                                                   <span className="text-lg leading-none">⛔</span>
+                                                                   <span className="text-[13px] text-[#ff007f] font-black uppercase tracking-[0.14em]">Access Denied</span>
                                                                 </div>
-                                                                <div className="flex flex-col gap-3 text-[15px] leading-relaxed">
+                                                                <div className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-white/90">
                                                                   {(() => {
                                                                      const reason = getEligibilityReason(lobby);
                                                                      if (reason === "ALREADY DEPLOYED IN ANOTHER LOBBY") return <p className="text-white/80">You are already assigned to another active operation. Complete or withdraw before deploying here.</p>;
@@ -4929,11 +4936,11 @@ export default function HomePage() {
                                                                             .replace(/^(\w+) SLOTS FULL$/i, '🔸 $1 — No open slots available')
                                                                             .replace(/^(\w+) (\w+) BLOCKED$/i, '🔸 $1 $2 is blacklisted for this role')
                                                                             .replace(/^(\w+) CHARACTER MISSING$/i, '🔸 You have no characters on $1');
-                                                                          return <p key={i} className="text-white/80">{cleaned}</p>;
+                                                                          return <p key={i} className="text-white/90">{cleaned}</p>;
                                                                      });
                                                                   })()}
                                                                </div>
-                                                               <div className="absolute top-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-t-[#0a0a16]"></div>
+                                                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-b-[#0a0a16]" />
                                                             </div>
                                                        </div>
                                                    )}
