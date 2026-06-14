@@ -555,16 +555,16 @@ export default function CommunityPage() {
           <div className="flex-1 min-w-0 w-full max-w-3xl mx-auto relative z-10">
             {/* My Profile — Facebook-style banner */}
             {showProfileHeader && profileSubject && (
-              <div className="mb-6 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden border border-white/5 bg-black shadow-xl">
-                <div className="relative h-28 sm:h-32 w-full overflow-hidden group">
+              <div className="mb-6 rounded-[2rem] overflow-hidden border border-white/5 bg-gradient-to-br from-[#0a0a16] to-black shadow-xl backdrop-blur-xl">
+                <div className="relative h-40 sm:h-44 w-full overflow-hidden group">
                   {profileSubject?.banner ? (
                     <img
                       src={profileSubject.banner}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+                      className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#ff007f]/30 via-[#8a2be2]/25 to-[#00ffff]/30" />
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-[#ff007f]/30 via-[#8a2be2]/25 to-[#00ffff]/30" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
                   {showMyPosts && (
