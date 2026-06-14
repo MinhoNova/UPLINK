@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canAutoAcceptLevelingInvite, canAutoApplyToLeveling, canOwnerCancelLobby, confirmApplicantJoin, countUserActiveLevelingSquads, countUserLevelingApplications, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, MAX_LEVELING_AUTO_ACCEPT, MAX_LEVELING_AUTO_APPLY, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -1222,20 +1222,20 @@ export default function HomePage() {
    const playerLockedInOffer = playerLockedInDungeon;
    const tryEnableAutoApply = useCallback(
       (enabled: boolean) => {
-         if (
-            enabled &&
-            autoApplyCategory !== "leveling" &&
-            userIsActiveInDungeonOffer(lobbies, currentUserId)
-         ) {
-            addToast("Leave your current dungeon run before enabling dungeon Auto-Apply.", "error");
+         if (enabled && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
+            addToast("Leave your dungeon run before enabling Auto-Apply.", "error");
             return;
          }
          syncAutoApplyEnabled(enabled);
       },
-      [lobbies, currentUserId, autoApplyCategory, syncAutoApplyEnabled]
+      [lobbies, currentUserId, syncAutoApplyEnabled]
    );
    const tryEnableAutoAccept = useCallback(
       (enabled: boolean) => {
+         if (enabled && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
+            addToast("Leave your dungeon run before enabling Auto-Accept.", "error");
+            return;
+         }
          if (enabled) {
             const end = Date.now() + AUTO_ACCEPT_DURATION_MS;
             setAutoAcceptEndTime(end);
@@ -1251,16 +1251,22 @@ export default function HomePage() {
    useEffect(() => {
       window.dispatchEvent(
          new CustomEvent("set-auto-features-locked", {
-            detail: { locked: playerLockedInDungeon, category: autoApplyCategory },
+            detail: { locked: playerLockedInDungeon },
          })
       );
-   }, [playerLockedInDungeon, autoApplyCategory]);
+   }, [playerLockedInDungeon]);
    useEffect(() => {
       if (!playerLockedInDungeon) return;
-      if (autoApplyEnabled && autoApplyCategory !== "leveling") {
-         syncAutoApplyEnabled(false);
+      if (autoApplyEnabled) syncAutoApplyEnabled(false);
+      if (autoAcceptEnabled) {
+         setAutoAcceptEnabled(false);
+         setAutoAcceptEndTime(0);
+         if (typeof window !== "undefined") {
+            localStorage.setItem("uplink_auto_accept", "false");
+            localStorage.setItem("uplink_auto_accept_end", "0");
+         }
       }
-   }, [playerLockedInDungeon, autoApplyEnabled, autoApplyCategory, syncAutoApplyEnabled]);
+   }, [playerLockedInDungeon, autoApplyEnabled, autoAcceptEnabled, syncAutoApplyEnabled]);
    useEffect(() => {
       const onNavbarToggle = (event: Event) => {
          const enabled = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled;
@@ -1756,7 +1762,8 @@ export default function HomePage() {
            currentUserId === "1497295886223544471" ||
            (sub?.tier === "secret_club" && (!sub.endDate || Date.now() <= sub.endDate));
         if (!autoApplyEnabled || !isSecretClub) return;
-        if (autoApplyCategory !== "leveling" && playerLockedInDungeon) return;
+        if (playerLockedInDungeon) return;
+        if (autoApplyCategory === "leveling" && !canAutoApplyToLeveling(lobbies, currentUserId)) return;
         if (myCharacters.length === 0 || !autoApplyCharId) return;
         const selectedChar = myCharacters.find((c) => String(c.id) === String(autoApplyCharId));
         if (!selectedChar) return;
@@ -1765,6 +1772,13 @@ export default function HomePage() {
         const run = async () => {
            const snapshot = lobbiesRef.current;
            const appliedSnapshot = autoAppliedRef.current;
+           if (userIsActiveInDungeonOffer(snapshot, currentUserId)) return;
+           if (
+              autoApplyCategory === "leveling" &&
+              countUserLevelingApplications(snapshot, currentUserId) >= MAX_LEVELING_AUTO_APPLY
+           ) {
+              return;
+           }
            const openLobbies = snapshot.filter((l) => {
               if (!isLobbyListedInPublicFeed(l)) return false;
               if (String(l.ownerId) === String(currentUserId)) return false;
@@ -1789,6 +1803,7 @@ export default function HomePage() {
               if (applyingLobbyIds.current.has(lobbyKey)) continue;
               if (isAutoApplyCancelled(lobbyKey)) continue;
               if (isAutoApplyBlocked(lobby)) continue;
+              if (lobby.category === "leveling" && !canAutoApplyToLeveling(snapshot, currentUserId)) continue;
               if (lobby.category !== "leveling" && userIsActiveInDungeonOffer(snapshot, currentUserId)) continue;
 
               const char = selectedChar;
@@ -3635,14 +3650,16 @@ export default function HomePage() {
    const autoConfirmInFlightRef = useRef(false);
    useEffect(() => {
       if (!playerAutoAcceptActive || autoConfirmInFlightRef.current) return;
+      if (userIsActiveInDungeonOffer(lobbies, currentUserId)) return;
       const pending = notifications.filter(
          (n: any) => {
             if (!notificationMatchesUser(n, currentUserId, currentUserDiscordHandle, registeredUsers)) return false;
             if (shownNotifIds.current.includes(n.id)) return false;
             if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
             const lobby = lobbies.find((l: any) => String(l.id) === String(n.lobbyId));
-            if (lobby && lobby.category !== "leveling" && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
-               return false;
+            if (!lobby) return false;
+            if (isLevelingOffer(lobby)) {
+               return canAutoAcceptLevelingInvite(lobbies, currentUserId);
             }
             return true;
          }
@@ -3652,7 +3669,13 @@ export default function HomePage() {
       autoConfirmInFlightRef.current = true;
       (async () => {
          try {
+            let levelingSquads = countUserActiveLevelingSquads(lobbies, currentUserId);
             for (const notif of pending) {
+               const lobby = lobbies.find((l: any) => String(l.id) === String(notif.lobbyId));
+               if (lobby && isLevelingOffer(lobby)) {
+                  if (levelingSquads >= MAX_LEVELING_AUTO_ACCEPT) continue;
+                  levelingSquads += 1;
+               }
                shownNotifIds.current.push(notif.id);
                await handleConfirmLobby(notif);
             }
@@ -5597,14 +5620,14 @@ export default function HomePage() {
                                        <button type="button" onClick={() => {
                                           if (!canUseSecret) return addToast("Auto-Accept is a Secret Club feature.", "error");
                                           tryEnableAutoAccept(!autoAcceptEnabled);
-                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseSecret ? autoAcceptEnabled ? 'border-[#00ffff]/50 bg-[#00ffff]/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`}>
+                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseSecret && !playerLockedInDungeon ? autoAcceptEnabled ? 'border-[#00ffff]/50 bg-[#00ffff]/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInDungeon}>
                                           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{canUseSecret ? <Zap className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Auto Accept</div>
                                           <p className="mt-1 text-[7px] font-black uppercase tracking-widest text-gray-500">{canUseSecret ? (autoAcceptEnabled ? '10 minute session on' : '10 minute session off') : 'Secret Club only'}</p>
                                        </button>
                                        <button type="button" onClick={() => {
                                            if (!canUseAutoApply) return addToast("Auto-Apply is a Secret Club feature. Subscribe to unlock.", "error");
                                           tryEnableAutoApply(!autoApplyEnabled);
-                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseAutoApply && !(playerLockedInDungeon && autoApplyCategory !== "leveling") ? autoApplyEnabled ? 'border-green-500/50 bg-green-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInDungeon && autoApplyCategory !== "leveling"}>
+                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseAutoApply && !playerLockedInDungeon ? autoApplyEnabled ? 'border-green-500/50 bg-green-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInDungeon}>
                                           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{canUseAutoApply ? <Radio className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Auto Apply</div>
                                            <p className="mt-1 text-[7px] font-black uppercase tracking-widest text-gray-500">{canUseAutoApply ? (autoApplyEnabled ? 'Scanning on' : 'Scanning off') : 'Secret Club only'}</p>
                                        </button>

@@ -152,6 +152,46 @@ export function userIsActiveInOffer(lobbies: any[], userId: string): boolean {
   return userIsActiveInDungeonOffer(lobbies, userId);
 }
 
+export const MAX_LEVELING_AUTO_APPLY = 10;
+export const MAX_LEVELING_AUTO_ACCEPT = 2;
+
+function userHasActiveLevelingSlot(lobby: any, userId: string): boolean {
+  const uid = String(userId);
+  if (!isLevelingOffer(lobby)) return false;
+  const status = lobby.status || "standby";
+  if (!["standby", "in_progress"].includes(status)) return false;
+  return (lobby.accepted || []).some((a: any) => {
+    if (memberIdentityKey(a) !== uid) return false;
+    const slotStatus = a.status;
+    return !slotStatus || slotStatus === "confirmed" || slotStatus === "invited";
+  });
+}
+
+/** Pending leveling applications (open applicant rows). */
+export function countUserLevelingApplications(lobbies: any[], userId: string): number {
+  const uid = String(userId);
+  return (lobbies || []).filter(
+    (l) =>
+      isLevelingOffer(l) &&
+      (l.applicants || []).some((a: any) => memberIdentityKey(a) === uid)
+  ).length;
+}
+
+/** Confirmed or invited leveling squad slots — caps Auto-Accept at 2. */
+export function countUserActiveLevelingSquads(lobbies: any[], userId: string): number {
+  return (lobbies || []).filter((l) => userHasActiveLevelingSlot(l, userId)).length;
+}
+
+export function canAutoApplyToLeveling(lobbies: any[], userId: string): boolean {
+  if (userIsActiveInDungeonOffer(lobbies, userId)) return false;
+  return countUserLevelingApplications(lobbies, userId) < MAX_LEVELING_AUTO_APPLY;
+}
+
+export function canAutoAcceptLevelingInvite(lobbies: any[], userId: string): boolean {
+  if (userIsActiveInDungeonOffer(lobbies, userId)) return false;
+  return countUserActiveLevelingSquads(lobbies, userId) < MAX_LEVELING_AUTO_ACCEPT;
+}
+
 /** Joined player Ongoing sidebar — active squad or unpaid foot only (not leave 0 runs). */
 export function userHasJoinedOngoingMission(lobby: any, userId: string, allLobbies: any[] = []): boolean {
   const uid = String(userId);
