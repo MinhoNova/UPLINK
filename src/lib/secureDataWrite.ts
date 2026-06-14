@@ -5,7 +5,7 @@ import { canOwnerCancelLobby } from "@/lib/lobbyLifecycle";
 export const ADMIN_ID = "1497295886223544471";
 export const ADMIN_HANDLE = "minhonovazen";
 
-const BLOCKED_KEYS = new Set(["directMessages", "readMessages", "friends"]);
+const BLOCKED_KEYS = new Set(["directMessages", "readMessages", "deliveredMessages", "friends"]);
 const ADMIN_ONLY_KEYS = new Set(["bannedUsers", "bannedIps"]);
 
 /** Strip admin from ban lists — admin account must never be suspended. */

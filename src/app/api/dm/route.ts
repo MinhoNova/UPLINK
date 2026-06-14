@@ -146,14 +146,39 @@ export async function POST(req: Request) {
     const readMessages: Record<string, Record<string, string[]>> = (await getKV("readMessages")) || {};
     if (!readMessages[currentHandle]) readMessages[currentHandle] = {};
 
+    const deliveredMessages: Record<string, Record<string, string[]>> =
+      (await getKV("deliveredMessages")) || {};
+    if (!deliveredMessages[currentHandle]) deliveredMessages[currentHandle] = {};
+
     const incoming = directMessages.filter(
       (m) => m.from === fromUsername && m.to === currentHandle
     );
     const ids = incoming.map((m) => String(m.timestamp));
     readMessages[currentHandle][fromUsername] = ids;
+    deliveredMessages[currentHandle][fromUsername] = ids;
 
     await setKV("readMessages", readMessages);
-    return NextResponse.json({ success: true, readMessages });
+    await setKV("deliveredMessages", deliveredMessages);
+    return NextResponse.json({ success: true, readMessages, deliveredMessages });
+  }
+
+  if (action === "markDelivered") {
+    const fromUsername = String(body?.fromUsername || "").trim();
+    if (!fromUsername) return NextResponse.json({ error: "Missing fromUsername" }, { status: 400 });
+
+    const deliveredMessages: Record<string, Record<string, string[]>> =
+      (await getKV("deliveredMessages")) || {};
+    if (!deliveredMessages[currentHandle]) deliveredMessages[currentHandle] = {};
+
+    const incoming = directMessages.filter(
+      (m) => m.from === fromUsername && m.to === currentHandle
+    );
+    const existing = new Set(deliveredMessages[currentHandle][fromUsername] || []);
+    for (const m of incoming) existing.add(String(m.timestamp));
+    deliveredMessages[currentHandle][fromUsername] = [...existing];
+
+    await setKV("deliveredMessages", deliveredMessages);
+    return NextResponse.json({ success: true, deliveredMessages });
   }
 
   if (action === "react") {

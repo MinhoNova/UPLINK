@@ -1,4 +1,5 @@
 import { isAdminUser } from "@/lib/secureDataWrite";
+import { computeDeliveredReceiptsFrom, computeReadReceiptsFrom } from "@/lib/dmHelpers";
 
 const OTHER_USER_STRIP = ["blocked", "friendRequests", "email"] as const;
 
@@ -28,9 +29,21 @@ export function filterDataForUser(
   }
 
   if (filtered.readMessages && typeof filtered.readMessages === "object") {
-    const all = filtered.readMessages as Record<string, unknown>;
+    const all = data.readMessages as Record<string, Record<string, unknown>>;
     filtered.readMessages = handle in all ? { [handle]: all[handle] } : {};
+    filtered.readReceiptsFrom = computeReadReceiptsFrom(
+      data.readMessages as Record<string, Record<string, (string | number)[]>>,
+      handle
+    );
   }
+
+  if (data.deliveredMessages && typeof data.deliveredMessages === "object") {
+    filtered.deliveredReceiptsFrom = computeDeliveredReceiptsFrom(
+      data.deliveredMessages as Record<string, Record<string, (string | number)[]>>,
+      handle
+    );
+  }
+  delete filtered.deliveredMessages;
 
   if (Array.isArray(filtered.tickets)) {
     filtered.tickets = (filtered.tickets as { userId?: string }[]).filter(

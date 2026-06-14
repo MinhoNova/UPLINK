@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { posts, reactions, reports } from "@/db/schema";
-import { desc, eq, and, inArray, gte } from "drizzle-orm";
+import { eq, and, inArray, gte } from "drizzle-orm";
 import { normalizeCommunityImage } from "@/lib/imageProcess";
 import { getKV, initTables } from "@/lib/db";
 import { canViewPost } from "@/lib/postVisibility";
@@ -38,8 +38,17 @@ export async function GET(req: NextRequest) {
   const tag = searchParams.get("tag");
   const userId = searchParams.get("userId");
 
-  let query = db.select().from(posts).orderBy(desc(posts.createdAt)).limit(50);
-  let rows = await query;
+  let rows = await db.select().from(posts).limit(100);
+
+  rows = [...rows].sort((a: any, b: any) => {
+    const aPin = a.pinnedAt ?? 0;
+    const bPin = b.pinnedAt ?? 0;
+    if (aPin && !bPin) return -1;
+    if (!aPin && bPin) return 1;
+    if (aPin && bPin && aPin !== bPin) return bPin - aPin;
+    return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+  });
+  rows = rows.slice(0, 50);
 
   if (tag) {
     rows = rows.filter((p: any) => {

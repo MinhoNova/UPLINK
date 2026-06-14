@@ -321,8 +321,11 @@ export default function DirectCommsPanel() {
   const markAsRead = async (fromUsername: string) => {
     try {
       const result = await dmRequest({ action: "markRead", fromUsername });
-      if (result.readMessages) {
-        setData((prev: any) => ({ ...prev, readMessages: result.readMessages }));
+      if (result.readMessages || result.deliveredMessages) {
+        setData((prev: any) => ({
+          ...prev,
+          ...(result.readMessages ? { readMessages: result.readMessages } : {}),
+        }));
       }
       window.dispatchEvent(new CustomEvent("data-refresh"));
     } catch {}
@@ -332,6 +335,24 @@ export default function DirectCommsPanel() {
       return updated;
     });
   };
+
+  const markDelivered = async (fromUsername: string) => {
+    try {
+      await dmRequest({ action: "markDelivered", fromUsername });
+      window.dispatchEvent(new CustomEvent("data-refresh"));
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!isOpen || !currentHandle || !directMessages.length) return;
+    const peers = new Set<string>();
+    for (const m of directMessages) {
+      if (m.to === currentHandle && m.from) peers.add(m.from);
+    }
+    for (const peer of peers) {
+      void markDelivered(peer);
+    }
+  }, [isOpen, directMessages.length, currentHandle]);
 
   useEffect(() => {
     if (!selectedUser || !isOpen) return;
@@ -623,6 +644,8 @@ export default function DirectCommsPanel() {
                       currentHandle={currentHandle}
                       messages={directMessages}
                       chatError={chatError}
+                      readReceiptsFromPeer={data?.readReceiptsFrom?.[selectedUser.username] || []}
+                      deliveredReceiptsFromPeer={data?.deliveredReceiptsFrom?.[selectedUser.username] || []}
                       onSend={(text, image) => sendMessage(selectedUser.username, text, image)}
                       onEdit={handleSaveEdit}
                       onDelete={handleDeleteMsg}

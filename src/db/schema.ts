@@ -9,6 +9,8 @@ export const posts = sqliteTable("posts", {
   image: text("image"),
   tags: text("tags").default("[]"),
   visibility: text("visibility").default("public"),
+  pinnedAt: integer("pinnedAt"),
+  pinnedBy: text("pinnedBy"),
   createdAt: integer("createdAt").notNull(),
 });
 

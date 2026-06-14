@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS posts (
   image TEXT,
   tags TEXT DEFAULT '[]',
   visibility TEXT DEFAULT 'public',
+  pinnedAt INTEGER,
+  pinnedBy TEXT,
   createdAt INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS reactions (
@@ -142,6 +144,17 @@ export async function ensureD1Schema() {
 
   if (!(await d1TableExists(d1, "posts"))) {
     await runD1Statements(d1, COMMUNITY_SCHEMA_SQL);
+  } else {
+    try {
+      await d1.prepare("ALTER TABLE posts ADD COLUMN pinnedAt INTEGER").run();
+    } catch {
+      /* column may exist */
+    }
+    try {
+      await d1.prepare("ALTER TABLE posts ADD COLUMN pinnedBy TEXT").run();
+    } catch {
+      /* column may exist */
+    }
   }
 
   await seedD1KvIfEmpty(d1);

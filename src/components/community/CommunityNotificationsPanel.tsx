@@ -167,8 +167,9 @@ export default function CommunityNotificationsPanel() {
 
   const markAsRead = async (fromUsername: string) => {
     try {
-      const result = await dmRequest({ action: "markRead", fromUsername });
-      if (result.readMessages) setData((prev: any) => ({ ...prev, readMessages: result.readMessages }));
+      await dmRequest({ action: "markRead", fromUsername });
+      loadData();
+      window.dispatchEvent(new CustomEvent("data-refresh"));
     } catch {}
     setUnreadCounts((prev) => {
       const next = { ...prev };
@@ -176,6 +177,20 @@ export default function CommunityNotificationsPanel() {
       return next;
     });
   };
+
+  const markDelivered = async (fromUsername: string) => {
+    try {
+      await dmRequest({ action: "markDelivered", fromUsername });
+      loadData();
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!mobileOpen || !currentHandle || !directMessages.length) return;
+    for (const m of directMessages) {
+      if (m.to === currentHandle && m.from) void markDelivered(m.from);
+    }
+  }, [mobileOpen, directMessages.length, currentHandle]);
 
   const sendMessage = async (to: string, text: string, image?: string) => {
     const trimmed = text.trim();
@@ -388,6 +403,8 @@ export default function CommunityNotificationsPanel() {
               currentHandle={currentHandle}
               messages={directMessages}
               chatError={chatError}
+              readReceiptsFromPeer={data?.readReceiptsFrom?.[selectedChatUser.username] || []}
+              deliveredReceiptsFromPeer={data?.deliveredReceiptsFrom?.[selectedChatUser.username] || []}
               scrollClassName="max-h-[min(520px,calc(100vh-18rem))]"
               onSend={(text, image) => sendMessage(selectedChatUser.username, text, image)}
               onEdit={handleSaveEdit}

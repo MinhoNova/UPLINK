@@ -9,7 +9,7 @@ import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
 import {
   MessageSquare, Send, Flag,
   Trash2, Swords, AlertTriangle, X, Loader2,
-  Zap, Lock, ImagePlus,
+  Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl } from "@/lib/profileImage";
 
@@ -78,7 +78,8 @@ export default function CommunityPage() {
   const [replyTo, setReplyTo] = useState<{ postId: number; parentId: number } | null>(null);
   const [replyText, setReplyText] = useState("");
   const [showMyPosts, setShowMyPosts] = useState(false);
-  const [postVisibility, setPostVisibility] = useState<"public" | "friends" | "friends_of_friends">("public");
+  const [postVisibility, setPostVisibility] = useState<"public" | "friends_of_friends">("public");
+  const [reactionPickerPostId, setReactionPickerPostId] = useState<number | null>(null);
   const [friends, setFriends] = useState<any[]>([]);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -302,6 +303,15 @@ export default function CommunityPage() {
       body: JSON.stringify({ postId }),
     });
     fetchPosts();
+  };
+
+  const handlePinPost = async (postId: number, pinned: boolean) => {
+    const res = await fetch("/api/community/posts/pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId, pinned }),
+    });
+    if (res.ok) fetchPosts();
   };
 
   const toggleComments = async (postId: number) => {
@@ -536,20 +546,28 @@ export default function CommunityPage() {
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Audience</span>
-                      {([
-                        { v: "public" as const, label: "Public" },
-                        { v: "friends" as const, label: "Friends" },
-                        { v: "friends_of_friends" as const, label: "FoF" },
-                      ]).map((opt) => (
-                        <button
-                          key={opt.v}
-                          type="button"
-                          onClick={() => setPostVisibility(opt.v)}
-                          className={`text-[8px] font-black uppercase px-2 py-1 rounded-lg transition ${postVisibility === opt.v ? "bg-[#ff007f]/20 text-[#ff007f]" : "text-gray-600 hover:text-gray-400"}`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setPostVisibility("public")}
+                        className={`flex items-center gap-1.5 text-[8px] font-black uppercase px-2.5 py-1.5 rounded-lg border transition ${
+                          postVisibility === "public"
+                            ? "border-[#00ffff]/40 bg-[#00ffff]/10 text-[#00ffff]"
+                            : "border-white/10 text-gray-600 hover:text-gray-400"
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" /> Public
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPostVisibility("friends_of_friends")}
+                        className={`flex items-center gap-1.5 text-[8px] font-black uppercase px-2.5 py-1.5 rounded-lg border transition ${
+                          postVisibility === "friends_of_friends"
+                            ? "border-[#ff007f]/40 bg-[#ff007f]/10 text-[#ff007f]"
+                            : "border-white/10 text-gray-600 hover:text-gray-400"
+                        }`}
+                      >
+                        <Users className="w-3.5 h-3.5" /> Friends
+                      </button>
                     </div>
                     <div className="flex items-center gap-2 ml-auto">
                       <input ref={imageInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleImageSelect} />
@@ -587,19 +605,31 @@ export default function CommunityPage() {
             ) : (
               <div className="space-y-4">
                 {posts.map((post: any, idx: number) => (
-                  <motion.div id={`post-${post.id}`} key={post.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 shadow-xl backdrop-blur-xl relative overflow-hidden hover:border-white/10 transition-all">
+                  <motion.div id={`post-${post.id}`} key={post.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className={`bg-gradient-to-br from-[#0a0a16] to-black border rounded-[2rem] p-5 shadow-xl backdrop-blur-xl relative overflow-hidden hover:border-white/10 transition-all ${post.pinnedAt ? "border-yellow-500/30 ring-1 ring-yellow-500/20" : "border-white/5"}`}>
                     <div className="absolute top-0 right-0 w-16 h-16 bg-[#ff007f]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
+                    {post.pinnedAt && (
+                      <div className="absolute top-4 right-4 z-20 flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/15 border border-yellow-500/30 text-[8px] font-black uppercase tracking-widest text-yellow-400">
+                        <Pin className="w-3 h-3" /> Pinned
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mb-3 relative z-10">
                       <UserAvatar src={post.userImage || ""} userId={post.userId || ""} className="w-9 h-9" />
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-black text-white/90 truncate block">{(() => { const d = getUserDisplay(post.userId); return d.name || post.userName; })()}</span>
                         <span className="text-[9px] text-gray-500 font-black">{new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                        {post.visibility && post.visibility !== "public" && (
-                          <span className="text-[8px] font-black uppercase text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Lock className="w-3 h-3" />
-                            {post.visibility === "friends" ? "Friends only" : "Friends of friends"}
-                          </span>
-                        )}
+                        <span className="text-[8px] font-black uppercase flex items-center gap-1 mt-0.5 text-gray-500">
+                          {post.visibility === "friends_of_friends" || post.visibility === "friends" ? (
+                            <>
+                              <Users className="w-3 h-3 text-[#ff007f]/80" />
+                              <span className="text-[#ff007f]/80">Friends</span>
+                            </>
+                          ) : (
+                            <>
+                              <Globe className="w-3 h-3 text-[#00ffff]/80" />
+                              <span className="text-[#00ffff]/80">Public</span>
+                            </>
+                          )}
+                        </span>
                       </div>
                     </div>
                     <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">{post.content}</p>
@@ -616,26 +646,62 @@ export default function CommunityPage() {
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-3 border-t border-white/5 relative z-10">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {REACTION_TYPES.map((rt) => {
                           const reaction = post.reactions?.find((r: any) => r.type === rt.type);
+                          if (!reaction?.count) return null;
                           const active = reaction?.userReacted;
                           return (
-                            <div key={rt.type} className="relative group">
-                              <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleReaction(post.id, rt.type)} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-base transition-all ${
-                                active ? "bg-[#00ffff]/15 shadow-[0_0_12px_rgba(0,255,255,0.1)]" : "bg-white/[0.04] hover:bg-white/10 border border-white/5"
-                              }`}>
-                                <span>{rt.icon}</span>
-                                {reaction?.count > 0 && <span className={`text-[10px] font-black ${active ? "text-[#00ffff]" : "text-gray-500"}`}>{reaction.count}</span>}
-                              </motion.button>
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-black/90 border border-white/10 rounded-lg text-[9px] font-black text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                {rt.label}
-                              </div>
-                            </div>
+                            <button
+                              key={rt.type}
+                              type="button"
+                              onClick={() => handleReaction(post.id, rt.type)}
+                              className={`flex items-center gap-1 px-2 py-1 rounded-xl text-sm transition-all ${
+                                active ? "bg-[#00ffff]/15 border border-[#00ffff]/30" : "bg-white/[0.04] border border-white/5 hover:bg-white/10"
+                              }`}
+                            >
+                              <span>{rt.icon}</span>
+                              <span className={`text-[10px] font-black ${active ? "text-[#00ffff]" : "text-gray-500"}`}>{reaction.count}</span>
+                            </button>
                           );
                         })}
+                        {reactionPickerPostId === post.id ? (
+                          <div className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-black/60 border border-white/10">
+                            {REACTION_TYPES.map((rt) => (
+                              <button
+                                key={rt.type}
+                                type="button"
+                                onClick={() => { handleReaction(post.id, rt.type); setReactionPickerPostId(null); }}
+                                className="text-base hover:scale-125 transition-transform px-0.5"
+                                title={rt.label}
+                              >
+                                {rt.icon}
+                              </button>
+                            ))}
+                            <button type="button" onClick={() => setReactionPickerPostId(null)} className="p-0.5 text-gray-500 hover:text-white ml-1">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setReactionPickerPostId(post.id)}
+                            className="flex items-center justify-center w-8 h-8 rounded-xl bg-white/[0.04] border border-white/5 hover:bg-white/10 hover:border-[#00ffff]/30 transition"
+                            title="React"
+                          >
+                            <Smile className="w-4 h-4 text-gray-400" />
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
+                        {isAdmin && (
+                          <button
+                            onClick={() => handlePinPost(post.id, !post.pinnedAt)}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black transition ${post.pinnedAt ? "text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20" : "text-gray-600 hover:text-yellow-400 hover:bg-yellow-500/5"}`}
+                          >
+                            <Pin className="w-3 h-3" /> {post.pinnedAt ? "Unpin" : "Pin"}
+                          </button>
+                        )}
                         <button onClick={() => toggleComments(post.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-[#00ffff] hover:bg-[#00ffff]/5 transition">
                           <MessageSquare className="w-3 h-3" /> {openComments.has(post.id) ? "Hide" : `Comment${(comments[post.id]?.length || 0) > 0 ? ` (${comments[post.id].length})` : ""}`}
                         </button>

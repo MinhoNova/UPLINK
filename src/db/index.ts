@@ -21,6 +21,8 @@ async function getSqliteDrizzle(): Promise<SqliteDrizzle> {
       if (!cols.includes("parentId")) sqlite.exec("ALTER TABLE comments ADD COLUMN parentId INTEGER");
       const postCols = (sqlite.pragma("table_info(posts)") as { name: string }[]).map((c) => c.name);
       if (!postCols.includes("visibility")) sqlite.exec("ALTER TABLE posts ADD COLUMN visibility TEXT DEFAULT 'public'");
+      if (!postCols.includes("pinnedAt")) sqlite.exec("ALTER TABLE posts ADD COLUMN pinnedAt INTEGER");
+      if (!postCols.includes("pinnedBy")) sqlite.exec("ALTER TABLE posts ADD COLUMN pinnedBy TEXT");
       sqliteSchemaReady = true;
     }
     sqliteDrizzle = drizzleSqlite(sqlite, { schema });

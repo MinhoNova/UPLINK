@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageSquare, Pencil, Trash2, ImagePlus, X, Smile } from "lucide-react";
-import { DM_REACTION_EMOJIS, getDmMsgKey, type DmMessage } from "@/lib/dmHelpers";
+import { MessageSquare, Pencil, Trash2, ImagePlus, X, Smile, Check, CheckCheck } from "lucide-react";
+import { DM_REACTION_EMOJIS, getDmMsgKey, isMessageReceipted, type DmMessage } from "@/lib/dmHelpers";
 
 type Props = {
   peerUsername: string;
   currentHandle: string;
   messages: DmMessage[];
   chatError: string | null;
+  readReceiptsFromPeer?: string[];
+  deliveredReceiptsFromPeer?: string[];
   onSend: (text: string, image?: string) => Promise<void>;
   onEdit: (msg: DmMessage, text: string) => Promise<void>;
   onDelete: (msg: DmMessage) => Promise<void>;
@@ -26,6 +28,8 @@ export default function DmThreadView({
   onDelete,
   onReact,
   scrollClassName = "max-h-[min(480px,calc(100vh-22rem))]",
+  readReceiptsFromPeer = [],
+  deliveredReceiptsFromPeer = [],
 }: Props) {
   const [msgInput, setMsgInput] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -174,6 +178,18 @@ export default function DmThreadView({
                   )}
                   {msg.text ? <span className="whitespace-pre-wrap break-words">{msg.text}</span> : null}
                   {msg.edited && <span className="block text-[9px] opacity-50 mt-0.5 font-bold uppercase tracking-wider">edited</span>}
+                </div>
+              )}
+
+              {!isEditing && isMine && (
+                <div className="flex items-center gap-0.5 mt-0.5 mr-1 opacity-60" title={isMessageReceipted(msg.timestamp, readReceiptsFromPeer) ? "Seen" : isMessageReceipted(msg.timestamp, deliveredReceiptsFromPeer) ? "Delivered" : "Sent"}>
+                  {isMessageReceipted(msg.timestamp, readReceiptsFromPeer) ? (
+                    <CheckCheck className="w-3 h-3 text-[#00ffff]" />
+                  ) : isMessageReceipted(msg.timestamp, deliveredReceiptsFromPeer) ? (
+                    <CheckCheck className="w-3 h-3 text-gray-400" />
+                  ) : (
+                    <Check className="w-3 h-3 text-gray-500" />
+                  )}
                 </div>
               )}
 

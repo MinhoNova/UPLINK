@@ -67,6 +67,42 @@ export function getDmConversationPeernames(
   return peers;
 }
 
+export function isMessageReceipted(
+  timestamp: number,
+  receiptIds: Array<string | number> | undefined
+): boolean {
+  if (!receiptIds?.length) return false;
+  return receiptIds.some((id) => String(id) === String(timestamp));
+}
+
+export function computeDeliveredReceiptsFrom(
+  deliveredMessages: Record<string, Record<string, (string | number)[]>> | undefined,
+  currentHandle: string
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  if (!currentHandle || !deliveredMessages) return out;
+  for (const [recipient, senders] of Object.entries(deliveredMessages)) {
+    if (recipient === currentHandle) continue;
+    const ids = senders[currentHandle];
+    if (ids?.length) out[recipient] = ids.map(String);
+  }
+  return out;
+}
+
+export function computeReadReceiptsFrom(
+  readMessages: Record<string, Record<string, (string | number)[]>> | undefined,
+  currentHandle: string
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  if (!currentHandle || !readMessages) return out;
+  for (const [reader, senders] of Object.entries(readMessages)) {
+    if (reader === currentHandle) continue;
+    const ids = senders[currentHandle];
+    if (ids?.length) out[reader] = ids.map(String);
+  }
+  return out;
+}
+
 export function filterThreadMessages(messages: DmMessage[], handle: string, peer: string) {
   return messages.filter(
     (m) => (m.from === handle && m.to === peer) || (m.to === handle && m.from === peer)
