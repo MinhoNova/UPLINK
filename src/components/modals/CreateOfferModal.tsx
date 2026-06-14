@@ -528,11 +528,11 @@ const BlockClassSection = memo(function BlockClassSection({
   dispatch: React.Dispatch<FormAction>;
 }) {
   return (
-    <div className="bg-white/10 p-3 rounded-xl">
+    <div className="bg-white/10 p-3 rounded-xl w-full min-w-0 flex-1 flex flex-col h-full">
       <label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-wide flex items-center gap-2">
         <ShieldCheck className="w-4 h-4 text-white/60" /> BLOCK CLASS
       </label>
-      <div className="grid grid-cols-4 gap-2 min-w-0 w-full">
+      <div className="grid grid-cols-4 gap-1.5 min-w-0 w-full flex-1">
         {Object.entries(classGroups).map(([group, classes]) => {
           const allRolesInGroup: { class: string; role: string }[] = [];
           (classes as string[]).forEach(cls => {
@@ -1126,8 +1126,8 @@ function CreateOfferModal({
                 dungeons={dungeons}
               />
             </div>
-            <div className="flex flex-col xl:flex-row gap-2 justify-between items-stretch min-w-0">
-              <div className="flex flex-1 min-w-0" style={{ willChange: "transform" }}>
+            <div className="flex flex-col xl:flex-row gap-2 items-stretch min-w-0 w-full">
+              <div className="flex flex-[1_1_0%] min-w-0 w-full">
                 <BlockClassSection
                   blockedRoles={formState.blockedRoles}
                   classGroups={classGroups}
@@ -1135,7 +1135,7 @@ function CreateOfferModal({
                   dispatch={dispatch}
                 />
               </div>
-              <div className="flex flex-col gap-2 shrink-0 w-full xl:w-[260px] min-w-0">
+              <div className="flex flex-col gap-2 shrink-0 w-full xl:w-[230px] xl:max-w-[230px] min-w-0">
                 <RolesNeededSection roles={formState.roles} dispatch={dispatch} variant="dungeon" />
                 <div className="bg-white/10 p-3 rounded-xl flex flex-col gap-2 flex-1">
                   <div className="flex flex-col gap-2 pt-0 border-t-0">

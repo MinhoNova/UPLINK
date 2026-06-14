@@ -1247,6 +1247,16 @@ export function squadRolesFilled(roles: Record<string, number>) {
   return Object.values(roles || {}).every((open) => Number(open || 0) === 0);
 }
 
+/** Public offer feed — open recruiting banners only (full squads move to Ongoing). */
+export function isLobbyListedInPublicFeed(lobby: any): boolean {
+  if (!lobby) return false;
+  const cat = lobby.category;
+  if (cat && cat !== "dungeon" && cat !== "leveling") return false;
+  const status = lobby.status || "standby";
+  if (status !== "standby") return false;
+  return !squadRolesFilled(lobby.roles || {});
+}
+
 /** Banner / party row slot keys (e.g. tank, healer, dps-1, dps-2). */
 export function getPartyDisplaySlots(lobby: any): string[] {
   const template = getSquadTemplate(lobby);

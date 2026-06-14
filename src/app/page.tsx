@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -1699,8 +1699,7 @@ export default function HomePage() {
            const snapshot = lobbiesRef.current;
            const appliedSnapshot = autoAppliedRef.current;
            const openLobbies = snapshot.filter((l) => {
-              const status = l.status || "standby";
-              if (status !== "standby") return false;
+              if (!isLobbyListedInPublicFeed(l)) return false;
               if (String(l.ownerId) === String(currentUserId)) return false;
               const cat = l.category || "dungeon";
               if (cat === "raid") return false;
@@ -2052,14 +2051,7 @@ export default function HomePage() {
      }, [registeredUsers]);
 
      const activeBoostLobbyIds = useMemo(() => {
-        const activeLobbies = lobbies.filter((l) => {
-           const cat = l.category;
-           if (cat && cat !== "dungeon" && cat !== "leveling") return false;
-           const status = l.status || "standby";
-           if (status === "standby") return true;
-           if (status === "in_progress" && String(l.ownerId) === String(currentUserId)) return true;
-           return false;
-        });
+        const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));
         const sorted = [...activeLobbies].sort((a, b) => {
            const tierA = getUserTier(a.ownerId);
            const tierB = getUserTier(b.ownerId);
@@ -2068,7 +2060,7 @@ export default function HomePage() {
            return 0;
         });
         return sorted.map((l) => String(l.id));
-     }, [lobbies, currentUserId, getUserTier]);
+     }, [lobbies, getUserTier]);
 
      const getUserTierLabel = (userId?: string) => {
         const tier = getUserTier(userId);
@@ -4873,14 +4865,7 @@ export default function HomePage() {
                               <div className="grid gap-2 overflow-visible mt-2">
                                  <div className="flex flex-col gap-4">
                                      {(() => {
-                                        const activeLobbies = lobbies.filter((l) => {
-                                           const cat = l.category;
-                                           if (cat && cat !== "dungeon" && cat !== "leveling") return false;
-                                           const status = l.status || "standby";
-                                           if (status === "standby") return true;
-                                           if (status === "in_progress" && String(l.ownerId) === String(currentUserId)) return true;
-                                           return false;
-                                        });
+                                        const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));
                                         const sorted = [...activeLobbies].sort((a, b) => {
                                            const tierA = getUserTier(a.ownerId);
                                            const tierB = getUserTier(b.ownerId);

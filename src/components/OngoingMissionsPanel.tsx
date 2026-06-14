@@ -186,7 +186,7 @@ export default function OngoingMissionsPanel({
   return (
     <div
       className={`w-full xl:w-[300px] shrink-0 flex flex-col self-start ${
-        alignWithOfferBanners ? "mt-[5.75rem]" : ""
+        alignWithOfferBanners ? "mt-[4.5rem]" : ""
       }`}
     >
       <div
