@@ -591,7 +591,7 @@ const BlockClassSection = memo(function BlockClassSection({
                     return (
                       <div
                         key={cls}
-                        className={`relative min-w-0 overflow-hidden rounded-lg border flex items-center gap-0.5 px-1 py-1 ${
+                        className={`relative min-w-0 overflow-hidden rounded-lg border flex items-center justify-between gap-1 px-1.5 py-1.5 min-h-[2.75rem] ${
                           allBlocked ? "border-red-500/30 bg-red-500/10" : "border-white/5 bg-white/[0.04]"
                         }`}
                       >
@@ -603,23 +603,24 @@ const BlockClassSection = memo(function BlockClassSection({
                               : [...(blockedRoles || []), ...(roles as string[]).map(r => ({ class: cls, role: r }))];
                             dispatch({ type: "SET", payload: { blockedRoles: updated } });
                           }}
-                          className="flex items-center gap-0.5 min-w-0 flex-1 transition-colors hover:bg-white/[0.06] rounded-md py-0.5 pr-0.5"
+                          className="flex items-center gap-1 min-w-0 flex-1 transition-colors hover:bg-white/[0.06] rounded-md py-0.5 pr-1"
                         >
-                          <div className="w-7 h-7 rounded-md bg-black/30 flex items-center justify-center overflow-hidden shrink-0">
+                          <div className="w-9 h-9 rounded-md bg-black/30 flex items-center justify-center overflow-hidden shrink-0">
                             <img
                               src={classThumbSrc(cls)}
                               alt=""
-                              className="w-7 h-7 object-contain"
+                              className="w-9 h-9 object-contain"
                               decoding="async"
                             />
                           </div>
-                          <span className="text-[5px] font-black uppercase tracking-wide text-white/75 truncate min-w-0 leading-none">
+                          <span className="text-[7px] font-black uppercase tracking-wide text-white/80 truncate min-w-0 leading-tight">
                             {cls}
                           </span>
                         </button>
-                        <div className="flex gap-px shrink-0">
+                        <div className="flex gap-0.5 shrink-0">
                           {(roles as string[]).map((role: string) => {
                             const isBlocked = blockedForClass.some((b: any) => b.role === role);
+                            const roleScale = role === "healer" ? 1.18 : 1.05;
                             return (
                               <button
                                 key={role}
@@ -633,14 +634,15 @@ const BlockClassSection = memo(function BlockClassSection({
                                     : [...(blockedRoles || []), { class: cls, role }];
                                   dispatch({ type: "SET", payload: { blockedRoles: updated } });
                                 }}
-                                className={`flex items-center justify-center w-6 h-6 rounded-md transition shrink-0 overflow-hidden ${
+                                className={`flex items-center justify-center w-8 h-8 rounded-md transition shrink-0 overflow-hidden ${
                                   isBlocked ? "bg-red-500/25 ring-1 ring-red-400/40" : "bg-white/10 hover:bg-white/15"
                                 }`}
                               >
                                 <img
                                   src={roleThumbSrc(role)}
                                   alt=""
-                                  className="w-5 h-5 object-contain"
+                                  className="w-7 h-7 object-contain"
+                                  style={{ transform: `scale(${roleScale})`, transformOrigin: "center" }}
                                   decoding="async"
                                 />
                               </button>
