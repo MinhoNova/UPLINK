@@ -92,21 +92,60 @@ export function normalizeCharacterRoleScores(char: any) {
   };
 }
 
+/** Stable key for name/realm/region — used for merge + removal tracking. */
+export function characterStorageKey(char: { name: string; realm: string; region?: string }): string {
+  return `${String(char.name).toLowerCase()}|${String(char.realm).toLowerCase()}|${String(char.region || "").toLowerCase()}`;
+}
+
+const removedCharsKey = (userId: string) => `UL_CHARS_REMOVED_${userId}`;
+
+export function getRemovedCharacterKeys(userId: string): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(removedCharsKey(userId));
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+export function markCharacterRemoved(userId: string, char: { name: string; realm: string; region?: string }) {
+  if (typeof window === "undefined") return;
+  const keys = getRemovedCharacterKeys(userId);
+  keys.add(characterStorageKey(char));
+  localStorage.setItem(removedCharsKey(userId), JSON.stringify([...keys]));
+}
+
+export function clearRemovedCharacterKey(userId: string, char: { name: string; realm: string; region?: string }) {
+  if (typeof window === "undefined") return;
+  const keys = getRemovedCharacterKeys(userId);
+  keys.delete(characterStorageKey(char));
+  localStorage.setItem(removedCharsKey(userId), JSON.stringify([...keys]));
+}
+
 /** Merge server-linked characters into My Characters (local) without dropping local-only prefs. */
-export function mergeMyCharactersFromServer(local: any[], serverForUser: any[]): any[] {
+export function mergeMyCharactersFromServer(
+  local: any[],
+  serverForUser: any[],
+  removedKeys?: Set<string>
+): any[] {
   if (!serverForUser.length) return local;
-  const byKey = new Map(
-    local.map((c) => [`${String(c.name).toLowerCase()}|${String(c.realm).toLowerCase()}|${String(c.region || "").toLowerCase()}`, c])
-  );
+  const skip = removedKeys ?? new Set<string>();
+  const byKey = new Map(local.map((c) => [characterStorageKey(c), c]));
   let changed = false;
   for (const sc of serverForUser) {
-    const k = `${String(sc.name).toLowerCase()}|${String(sc.realm).toLowerCase()}|${String(sc.region || "").toLowerCase()}`;
+    const k = characterStorageKey(sc);
+    if (skip.has(k)) continue;
     if (!byKey.has(k)) {
       byKey.set(k, normalizeCharacterRoleScores(sc));
       changed = true;
     }
   }
   if (!changed && local.length) return local;
-  if (!local.length) return serverForUser.map(normalizeCharacterRoleScores);
+  if (!local.length) {
+    return serverForUser
+      .filter((sc) => !skip.has(characterStorageKey(sc)))
+      .map(normalizeCharacterRoleScores);
+  }
   return Array.from(byKey.values());
 }

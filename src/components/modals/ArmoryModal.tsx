@@ -10,6 +10,7 @@ import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob } from "@/lib/clientImagePoster";
+import { markCharacterRemoved } from "@/lib/raiderCharacter";
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -360,7 +361,26 @@ const ArmoryModal = ({
                                                    <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">IO</p>
                                                    <p className="text-xl font-black text-[#8a2be2]">{char.roleScores?.[char.role] ?? char.score}</p>
                                                  </div>
-                                                 <motion.button onClick={() => setMyCharacters(prev => prev.filter(c => c.id !== char.id))} className="p-4 bg-red-500/10 text-red-500 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition-all text-center">
+                                                 <motion.button
+                                                    onClick={async () => {
+                                                       const updatedMy = myCharacters.filter((c) => c.id !== char.id);
+                                                       const updatedGlobal = globalCharacters.filter(
+                                                          (c) => !(c.id === char.id && String(c.userId) === String(currentUserId))
+                                                       );
+                                                       setMyCharacters(updatedMy);
+                                                       setGlobalCharacters(updatedGlobal);
+                                                       markCharacterRemoved(currentUserId, char);
+                                                       const ok = await saveGlobalData({ characters: updatedGlobal });
+                                                       if (!ok) {
+                                                          setMyCharacters(myCharacters);
+                                                          setGlobalCharacters(globalCharacters);
+                                                          addToast("Failed to remove character — try again.", "error");
+                                                          return;
+                                                       }
+                                                       addToast("Character removed.", "info");
+                                                    }}
+                                                    className="p-4 bg-red-500/10 text-red-500 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition-all text-center"
+                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </motion.button>
                                              </div>

@@ -1,14 +1,17 @@
-/** Lightweight 32×32 PNG thumbnails — avoid multi-MB SVG decode in lists. */
+/** Pre-rasterized WebP thumbs — sharp Lanczos from SVG; avoids multi-MB SVG decode in modals. */
+export const CLASS_THUMB_PX = 48;
+export const ROLE_THUMB_PX = 32;
+
 export function classThumbUrl(name: string): string {
   const n = name.trim();
-  if (/death\s*knight/i.test(n)) return "/classes-thumb/DEATH KNIGHT.png";
-  if (/demon\s*hunter/i.test(n)) return "/classes-thumb/DEMON HUNTER.png";
-  if (/raider\s*io/i.test(n)) return "/classes-thumb/RAIDER IO.png";
-  if (/battle\.?net/i.test(n)) return "/classes-thumb/Battle.net.png";
+  if (/death\s*knight/i.test(n)) return "/classes-thumb/DEATH KNIGHT.webp";
+  if (/demon\s*hunter/i.test(n)) return "/classes-thumb/DEMON HUNTER.webp";
+  if (/raider\s*io/i.test(n)) return "/classes-thumb/RAIDER IO.webp";
+  if (/battle\.?net/i.test(n)) return "/classes-thumb/Battle.net.webp";
   const roleMap: Record<string, string> = { dps: "DPS", tank: "TANK", healer: "HEALER" };
   const role = roleMap[n.toLowerCase()];
-  if (role) return `/classes-thumb/${role}.png`;
-  return `/classes-thumb/${n.toUpperCase()}.png`;
+  if (role) return `/classes-thumb/${role}.webp`;
+  return `/classes-thumb/${n.toUpperCase()}.webp`;
 }
 
 export function roleIconUrl(role: string): string {

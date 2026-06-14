@@ -57,7 +57,7 @@ import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets
 import { validateBattleTag } from "@/lib/battleTagValidation";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote, sanitizeApplicantNoteDraft } from "@/lib/applicantNote";
-import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer } from "@/lib/raiderCharacter";
+import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer, getRemovedCharacterKeys, clearRemovedCharacterKey } from "@/lib/raiderCharacter";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
 import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
@@ -2099,7 +2099,7 @@ export default function HomePage() {
       if (currentUserId === "guest") return;
       const serverMine = globalCharacters.filter((c) => String(c.userId) === String(currentUserId));
       if (!serverMine.length) return;
-      setMyCharacters((prev) => mergeMyCharactersFromServer(prev, serverMine));
+      setMyCharacters((prev) => mergeMyCharactersFromServer(prev, serverMine, getRemovedCharacterKeys(currentUserId)));
    }, [globalCharacters, currentUserId]);
 
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(myCharacters)); }, [myCharacters, currentUserId]);
@@ -4069,6 +4069,7 @@ export default function HomePage() {
                   return;
                }
                const { updatedMy, updatedGlobal, isNewToMy } = upsertSyncedRaiderCharacter(data);
+               clearRemovedCharacterKey(currentUserId, { name: data.name, realm: data.realm, region: data.region });
                setMyCharacters(updatedMy);
                setGlobalCharacters(updatedGlobal);
                localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
@@ -4128,6 +4129,7 @@ export default function HomePage() {
          }
 
          const { updatedMy, updatedGlobal } = upsertSyncedRaiderCharacter(data);
+         clearRemovedCharacterKey(currentUserId, { name: data.name, realm: data.realm, region: data.region });
          setMyCharacters(updatedMy);
          setGlobalCharacters(updatedGlobal);
          localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
@@ -5259,7 +5261,7 @@ export default function HomePage() {
                                                                           const someBlocked = blockedRolesForClass.length > 0 && !allBlocked;
                                                                           return (
                                                                              <div key={cls} className={`flex flex-col items-center p-2.5 rounded-xl border transition-colors ${allBlocked ? 'bg-red-500/10 border-red-500/20 opacity-20 grayscale' : someBlocked ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-green-500/10 border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.1)]'}`}>
-                                                                                <img src={classThumbUrl(cls)} width={44} height={44} className="w-11 h-11 object-contain drop-shadow-md" alt={cls} />
+                                                                                <img src={classThumbUrl(cls)} width={48} height={48} className="w-11 h-11 object-contain drop-shadow-md" alt={cls} decoding="async" />
                                                                                {someBlocked && <span className="text-[7px] text-yellow-500 font-black mt-1">{blockedRolesForClass.map((b: any) => b.role.substring(0, 1).toUpperCase()).join('')}</span>}
                                                                             </div>
                                                                          );

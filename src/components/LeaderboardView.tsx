@@ -2,15 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Swords, Heart, Shield } from "lucide-react";
+import { Trophy, Medal, Swords, Heart, Shield, Repeat2, Zap } from "lucide-react";
 import { HeroBackground } from "@/components/HeroBackground";
 import {
   buildRunLeaderboard,
   buildScoreLeaderboard,
+  buildRaiderRunsLeaderboard,
   collectRunRecords,
   type LeaderboardRole,
   type LeaderboardPeriod,
+  type LeaderboardMetric,
+  type LeaderboardClassFilter,
 } from "@/lib/leaderboard";
+import { classThumbUrl, CLASS_THUMB_PX } from "@/lib/classThumb";
 import type { MythicSeasonInfo } from "@/lib/mythicSeason";
 
 const ROLE_TABS: { id: LeaderboardRole; label: string; icon: typeof Swords }[] = [
@@ -27,6 +31,28 @@ const PERIOD_TABS: { id: LeaderboardPeriod; label: string }[] = [
   { id: "season", label: "Seasonal" },
 ];
 
+const METRIC_TABS: { id: LeaderboardMetric; label: string; icon: typeof Zap }[] = [
+  { id: "performance", label: "Performance", icon: Zap },
+  { id: "runs", label: "Most Runs", icon: Repeat2 },
+];
+
+const CLASS_FILTER_TABS: LeaderboardClassFilter[] = [
+  "all",
+  "Warrior",
+  "Paladin",
+  "Hunter",
+  "Rogue",
+  "Priest",
+  "Death Knight",
+  "Shaman",
+  "Mage",
+  "Warlock",
+  "Monk",
+  "Druid",
+  "Demon Hunter",
+  "Evoker",
+];
+
 const RANK_STYLES: Record<number, { border: string; glow: string; label: string }> = {
   1: { border: "border-yellow-500/50", glow: "shadow-[0_0_30px_rgba(234,179,8,0.2)]", label: "text-yellow-400" },
   2: { border: "border-gray-300/40", glow: "shadow-[0_0_20px_rgba(192,192,192,0.15)]", label: "text-gray-300" },
@@ -34,13 +60,8 @@ const RANK_STYLES: Record<number, { border: string; glow: string; label: string 
 };
 
 function getClassIcon(className?: string): string {
-  if (!className) return "/classes/DPS.svg";
-  const map: Record<string, string> = {
-    "Death Knight": "DEATH KNIGHT",
-    "Demon Hunter": "DEMON HUNTER",
-  };
-  const file = map[className] || className.toUpperCase();
-  return `/classes/${file}.svg`;
+  if (!className) return classThumbUrl("DPS");
+  return classThumbUrl(className);
 }
 
 const CLASS_SPEC_COLORS: Record<string, string> = {
@@ -160,6 +181,8 @@ export default function LeaderboardView({
 }) {
   const [roleFilter, setRoleFilter] = useState<LeaderboardRole>("all");
   const [period, setPeriod] = useState<LeaderboardPeriod>("season");
+  const [metric, setMetric] = useState<LeaderboardMetric>("performance");
+  const [classFilter, setClassFilter] = useState<LeaderboardClassFilter>("all");
 
   const hasSyncedRuns = useMemo(
     () => collectRunRecords(lobbies, characters).length > 0,
@@ -167,13 +190,20 @@ export default function LeaderboardView({
   );
 
   const entries = useMemo(() => {
+    if (metric === "runs") {
+      if (hasSyncedRuns) {
+        return buildRunLeaderboard(lobbies, characters, users, roleFilter, period, season.startMs, classFilter);
+      }
+      return buildRaiderRunsLeaderboard(characters, users, roleFilter, classFilter);
+    }
     if (hasSyncedRuns) {
-      return buildRunLeaderboard(lobbies, characters, users, roleFilter, period, season.startMs);
+      return buildRunLeaderboard(lobbies, characters, users, roleFilter, period, season.startMs, classFilter);
     }
     return buildScoreLeaderboard(characters, users, roleFilter);
-  }, [lobbies, characters, users, roleFilter, period, season.startMs, hasSyncedRuns]);
+  }, [lobbies, characters, users, roleFilter, period, season.startMs, hasSyncedRuns, metric, classFilter]);
 
-  const usingRuns = hasSyncedRuns;
+  const usingRuns = metric === "runs" || hasSyncedRuns;
+  const runsPrimary = metric === "runs";
 
   return (
     <div className="relative min-h-screen text-white">
@@ -192,7 +222,9 @@ export default function LeaderboardView({
                     Leaderboard
                   </h1>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-500">
-                    {season.name} · synced runs from missions
+                    {runsPrimary
+                      ? `${season.name} · most runs · any key level`
+                      : `${season.name} · synced runs from missions`}
                   </p>
                 </div>
               </div>
@@ -200,6 +232,22 @@ export default function LeaderboardView({
                 Season resets via Raider.io
               </span>
             </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-3">
+            {METRIC_TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setMetric(id)}
+                className={`h-9 px-4 rounded-xl font-black uppercase text-[9px] tracking-widest flex items-center gap-1.5 transition-all border ${
+                  metric === id
+                    ? "bg-[#8a2be2]/15 text-[#c084fc] border-[#8a2be2]/40"
+                    : "bg-white/5 text-gray-500 border-white/10 hover:text-white"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" /> {label}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-wrap gap-2 mb-3">
@@ -217,6 +265,24 @@ export default function LeaderboardView({
               </button>
             ))}
           </div>
+
+          {runsPrimary && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {CLASS_FILTER_TABS.map((cls) => (
+                <button
+                  key={cls}
+                  onClick={() => setClassFilter(cls)}
+                  className={`h-7 px-2.5 rounded-lg font-black uppercase text-[7px] tracking-widest transition-all border ${
+                    classFilter === cls
+                      ? "bg-orange-500/15 text-orange-300 border-orange-500/40"
+                      : "bg-white/[0.03] text-gray-600 border-white/5 hover:text-gray-400"
+                  }`}
+                >
+                  {cls === "all" ? "All Classes" : cls}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2 mb-6">
             {PERIOD_TABS.map(({ id, label }) => (
@@ -281,8 +347,11 @@ export default function LeaderboardView({
                       <img
                         src={getClassIcon(c.class)}
                         alt={c.class || "class"}
+                        width={CLASS_THUMB_PX}
+                        height={CLASS_THUMB_PX}
                         className="w-8 h-8 object-contain"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "/classes/DPS.svg"; }}
+                        decoding="async"
+                        onError={(e) => { (e.target as HTMLImageElement).src = classThumbUrl("DPS"); }}
                       />
                     </div>
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -301,21 +370,40 @@ export default function LeaderboardView({
                     </div>
                   </div>
 
-                  {/* Right: overall damage */}
+                  {/* Right: runs or overall damage */}
                   <div className="shrink-0 text-right pl-2">
-                    <div className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-0.5">Overall</div>
-                    {damage > 0 ? (
-                      <div className="text-xl sm:text-2xl font-black tabular-nums leading-none text-white drop-shadow-[0_0_16px_rgba(0,255,255,0.5)]">
-                        {Math.round(damage).toLocaleString()}
-                      </div>
+                    {runsPrimary ? (
+                      <>
+                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-0.5">Runs</div>
+                        <div className="text-xl sm:text-2xl font-black tabular-nums leading-none text-orange-400 drop-shadow-[0_0_16px_rgba(251,146,60,0.45)]">
+                          {entry.runCount > 0 ? entry.runCount.toLocaleString() : "—"}
+                        </div>
+                        <div className="text-[8px] font-black uppercase tracking-widest text-orange-400/80 mt-0.5">
+                          {classFilter === "all" ? "any key" : classFilter}
+                        </div>
+                        {damage > 0 && (
+                          <div className="text-[7px] font-black uppercase tracking-widest text-gray-600 mt-1">
+                            {Math.round(damage).toLocaleString()} {damageLabel}
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <div className="text-lg font-black text-gray-600 leading-none">—</div>
-                    )}
-                    <div className="text-[8px] font-black uppercase tracking-widest text-[#00ffff]/80 mt-0.5">{damageLabel}</div>
-                    {usingRuns && entry.runCount > 0 && (
-                      <div className="text-[7px] font-black uppercase tracking-widest text-gray-600 mt-1">
-                        {entry.runCount} run{entry.runCount !== 1 ? "s" : ""}
-                      </div>
+                      <>
+                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-0.5">Overall</div>
+                        {damage > 0 ? (
+                          <div className="text-xl sm:text-2xl font-black tabular-nums leading-none text-white drop-shadow-[0_0_16px_rgba(0,255,255,0.5)]">
+                            {Math.round(damage).toLocaleString()}
+                          </div>
+                        ) : (
+                          <div className="text-lg font-black text-gray-600 leading-none">—</div>
+                        )}
+                        <div className="text-[8px] font-black uppercase tracking-widest text-[#00ffff]/80 mt-0.5">{damageLabel}</div>
+                        {usingRuns && entry.runCount > 0 && (
+                          <div className="text-[7px] font-black uppercase tracking-widest text-gray-600 mt-1">
+                            {entry.runCount} run{entry.runCount !== 1 ? "s" : ""}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </motion.div>

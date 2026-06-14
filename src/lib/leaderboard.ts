@@ -1,5 +1,7 @@
 export type LeaderboardRole = "all" | "dps" | "healer" | "tank";
 export type LeaderboardPeriod = "daily" | "weekly" | "monthly" | "season";
+export type LeaderboardMetric = "performance" | "runs";
+export type LeaderboardClassFilter = "all" | string;
 
 export type LeaderboardEntry = {
   userId: string;
@@ -10,7 +12,7 @@ export type LeaderboardEntry = {
   roleScore: number;
 };
 
-type RunRecord = { userId: string; role: string; completedAt: number };
+type RunRecord = { userId: string; role: string; className: string; completedAt: number };
 
 function resolveRole(userId: string, lobby: any, characters: any[]): string {
   const member = (lobby.accepted || []).find(
@@ -19,6 +21,16 @@ function resolveRole(userId: string, lobby: any, characters: any[]): string {
   if (member?.role) return String(member.role).toLowerCase();
   const char = characters.find((c: any) => String(c.userId) === String(userId));
   return (char?.role || "dps").toLowerCase();
+}
+
+function resolveClass(userId: string, lobby: any, characters: any[]): string {
+  const member = (lobby.accepted || []).find(
+    (a: any) => String(a.applicantId || a.userId) === String(userId)
+  );
+  if (member?.class) return String(member.class);
+  const mine = characters.filter((c: any) => String(c.userId) === String(userId));
+  if (!mine.length) return "Unknown";
+  return mine.reduce((a, b) => (Number(b.score) > Number(a.score) ? b : a)).class || "Unknown";
 }
 
 export function collectRunRecords(lobbies: any[], characters: any[]): RunRecord[] {
@@ -32,6 +44,7 @@ export function collectRunRecords(lobbies: any[], characters: any[]): RunRecord[
       records.push({
         userId: String(memberId),
         role: resolveRole(memberId, lobby, characters),
+        className: resolveClass(memberId, lobby, characters),
         completedAt: ts,
       });
     }
@@ -64,17 +77,31 @@ function getRoleScore(char: any, role: string): number {
   return Number(char.dpsValue || char.stats?.dps || char.score || 0);
 }
 
+function pickTopChar(userId: string, characters: any[], classFilter: LeaderboardClassFilter): any {
+  const mine = characters.filter((c: any) => String(c.userId) === String(userId));
+  if (!mine.length) return { name: "Operative", role: "dps", score: 0 };
+  if (classFilter !== "all") {
+    const match = mine.find((c) => c.class === classFilter);
+    if (match) return match;
+  }
+  return mine.reduce((a, b) => (Number(b.score) > Number(a.score) ? b : a));
+}
+
 export function buildRunLeaderboard(
   lobbies: any[],
   characters: any[],
   users: any[],
   roleFilter: LeaderboardRole,
   period: LeaderboardPeriod,
-  seasonStartMs: number
+  seasonStartMs: number,
+  classFilter: LeaderboardClassFilter = "all"
 ): LeaderboardEntry[] {
   const periodStart = getPeriodStart(period, seasonStartMs);
   const records = collectRunRecords(lobbies, characters).filter(
-    (r) => r.completedAt >= periodStart && (roleFilter === "all" || r.role === roleFilter)
+    (r) =>
+      r.completedAt >= periodStart &&
+      (roleFilter === "all" || r.role === roleFilter) &&
+      (classFilter === "all" || r.className === classFilter)
   );
 
   const counts = new Map<string, number>();
@@ -85,17 +112,11 @@ export function buildRunLeaderboard(
   }
 
   const userMap = new Map(users.map((u: any) => [String(u.id), u]));
-  const charByUser = new Map<string, any>();
-  for (const c of characters) {
-    const uid = String(c.userId);
-    const existing = charByUser.get(uid);
-    if (!existing || Number(c.score) > Number(existing.score)) charByUser.set(uid, c);
-  }
 
   const entries: LeaderboardEntry[] = [];
   for (const [userId, runCount] of counts) {
     const role = rolesSeen.get(userId) || "dps";
-    const topChar = charByUser.get(userId) || { name: "Operative", role, score: 0 };
+    const topChar = pickTopChar(userId, characters, classFilter);
     entries.push({
       userId,
       runCount,
@@ -107,6 +128,48 @@ export function buildRunLeaderboard(
   }
 
   return entries.sort((a, b) => b.runCount - a.runCount || b.roleScore - a.roleScore).slice(0, 100);
+}
+
+/** Raider.io run counts on synced characters — any key level, used when mission sync is empty. */
+export function buildRaiderRunsLeaderboard(
+  characters: any[],
+  users: any[],
+  roleFilter: LeaderboardRole,
+  classFilter: LeaderboardClassFilter = "all"
+): LeaderboardEntry[] {
+  const userMap = new Map(users.map((u: any) => [String(u.id), u]));
+  const counts = new Map<string, number>();
+  const charByUser = new Map<string, any>();
+
+  for (const c of characters) {
+    const role = (c.role || "dps").toLowerCase();
+    if (roleFilter !== "all" && role !== roleFilter) continue;
+    if (classFilter !== "all" && c.class !== classFilter) continue;
+    const runCount = Array.isArray(c.runs) ? c.runs.length : 0;
+    if (runCount <= 0) continue;
+    const uid = String(c.userId);
+    counts.set(uid, (counts.get(uid) || 0) + runCount);
+    const existing = charByUser.get(uid);
+    if (!existing || runCount > (Array.isArray(existing.runs) ? existing.runs.length : 0)) {
+      charByUser.set(uid, c);
+    }
+  }
+
+  return [...counts.entries()]
+    .map(([userId, runCount]) => {
+      const topChar = charByUser.get(userId) || { name: "Operative", role: "dps", score: 0 };
+      const role = (topChar.role || "dps").toLowerCase();
+      return {
+        userId,
+        runCount,
+        topChar,
+        user: userMap.get(userId) || null,
+        role,
+        roleScore: getRoleScore(topChar, role),
+      };
+    })
+    .sort((a, b) => b.runCount - a.runCount || b.roleScore - a.roleScore)
+    .slice(0, 100);
 }
 
 /** Score-based board (Raider.io) filtered by role — used when no synced runs yet. */

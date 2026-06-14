@@ -3,6 +3,7 @@
 import { X, Coins, Send, Zap, TrendingUp, ShieldCheck, ChevronDown, Key, Minus, Plus, RefreshCw, Bookmark, Trash2 } from "lucide-react";
 import { memo, useMemo, useState, useCallback, useEffect, useReducer, useRef } from "react";
 import { createPortal } from "react-dom";
+import { CLASS_THUMB_PX, ROLE_THUMB_PX, classIconClass, classThumbUrl, roleIconClass, roleIconUrl } from "@/lib/classThumb";
 
 interface CreateOfferModalProps {
   isOpen: boolean;
@@ -527,14 +528,8 @@ const BlockClassSection = memo(function BlockClassSection({
   classRoleOptions: Record<string, string[]>;
   dispatch: React.Dispatch<FormAction>;
 }) {
-  const classThumbSrc = (cls: string) => {
-    const key =
-      cls === "Death Knight" ? "DEATH KNIGHT" : cls === "Demon Hunter" ? "DEMON HUNTER" : cls.toUpperCase();
-    return `/classes-thumb/${key}.png`;
-  };
-
-  const roleThumbSrc = (role: string) =>
-    `/classes-thumb/${role === "tank" ? "TANK" : role === "healer" ? "HEALER" : "DPS"}.png`;
+  const classThumbSrc = (cls: string) => classThumbUrl(cls);
+  const roleThumbSrc = (role: string) => roleIconUrl(role);
 
   return (
     <div className="bg-white/10 p-2 rounded-xl w-full min-w-0 shrink-0 flex flex-col">
@@ -609,7 +604,9 @@ const BlockClassSection = memo(function BlockClassSection({
                             <img
                               src={classThumbSrc(cls)}
                               alt=""
-                              className="w-10 h-10 object-contain"
+                              width={CLASS_THUMB_PX}
+                              height={CLASS_THUMB_PX}
+                              className={`w-10 h-10 object-contain drop-shadow-sm ${classIconClass(allBlocked ? "blocked" : "accepted")}`}
                               decoding="async"
                             />
                           </div>
@@ -641,7 +638,9 @@ const BlockClassSection = memo(function BlockClassSection({
                                 <img
                                   src={roleThumbSrc(role)}
                                   alt=""
-                                  className="w-8 h-8 object-contain"
+                                  width={ROLE_THUMB_PX}
+                                  height={ROLE_THUMB_PX}
+                                  className={`w-8 h-8 object-contain drop-shadow-sm ${roleIconClass(role)} ${isBlocked ? "opacity-55 brightness-[0.6] saturate-[0.75]" : ""}`}
                                   style={{ transform: `scale(${roleScale})`, transformOrigin: "center" }}
                                   decoding="async"
                                 />
@@ -692,7 +691,7 @@ const RolesNeededSection = memo(function RolesNeededSection({
             roles?.tank > 0 ? activeBg : "bg-white/5 opacity-50 hover:opacity-100"
           }`}
         >
-          <img src="/classes-thumb/TANK.png" className="w-8 h-8 mb-1" decoding="async" alt="" />
+          <img src={roleIconUrl("tank")} width={ROLE_THUMB_PX} height={ROLE_THUMB_PX} className="w-8 h-8 mb-1 object-contain drop-shadow-sm" decoding="async" alt="" />
           <span className="text-[9px] font-black uppercase text-white">Tank</span>
           <div
             className="w-2 h-2 rounded-full mt-1"
@@ -709,7 +708,7 @@ const RolesNeededSection = memo(function RolesNeededSection({
               roles?.healer > 0 ? activeBg : "bg-white/5 opacity-50 hover:opacity-100"
             }`}
           >
-            <img src="/classes-thumb/HEALER.png" className="w-8 h-8 mb-1" decoding="async" alt="" />
+            <img src={roleIconUrl("healer")} width={ROLE_THUMB_PX} height={ROLE_THUMB_PX} className="w-8 h-8 mb-1 object-contain drop-shadow-sm" decoding="async" alt="" />
             <span className="text-[9px] font-black uppercase text-white">Heal</span>
             <div
               className="w-2 h-2 rounded-full mt-1"
@@ -727,7 +726,7 @@ const RolesNeededSection = memo(function RolesNeededSection({
               roles?.dps > 0 ? activeBg : "bg-white/5 opacity-50 hover:opacity-100"
             }`}
           >
-            <img src="/classes-thumb/DPS.png" className="w-8 h-8 mb-1" decoding="async" alt="" />
+            <img src={roleIconUrl("dps")} width={ROLE_THUMB_PX} height={ROLE_THUMB_PX} className="w-8 h-8 mb-1 object-contain drop-shadow-sm" decoding="async" alt="" />
             <span className="text-[9px] font-black uppercase text-white">DPS</span>
             <div
               className="w-2 h-2 rounded-full mt-1"
@@ -743,7 +742,7 @@ const RolesNeededSection = memo(function RolesNeededSection({
               roles?.dps > 0 ? activeBg : "bg-white/5 opacity-50 hover:opacity-100"
             }`}
           >
-            <img src="/classes-thumb/DPS.png" className="w-8 h-8 mb-1" decoding="async" alt="" />
+            <img src={roleIconUrl("dps")} width={ROLE_THUMB_PX} height={ROLE_THUMB_PX} className="w-8 h-8 mb-1 object-contain drop-shadow-sm" decoding="async" alt="" />
             <span className="text-[9px] font-black uppercase text-white">DPS</span>
             <div className="flex items-center gap-1.5 mt-1">
               <button
