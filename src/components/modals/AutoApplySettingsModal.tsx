@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Settings, ChevronDown, Key, Coins, Lock, Zap, TrendingUp, Shield, Eye, MessageSquare } from "lucide-react";
 import { usePage } from "@/contexts/PageContext";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
-import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { sanitizeApplicantNoteDraft } from "@/lib/applicantNote";
 import AutoAcceptTimer from "@/components/AutoAcceptTimer";
 import SecretClubCard from "@/components/SecretClubCard";
 
@@ -245,7 +245,7 @@ const AutoApplySettingsModal = ({
                                           </label>
                                           <textarea
                                              value={applyNote}
-                                             onChange={(e) => setApplyNote(sanitizeApplicantNote(e.target.value))}
+                                             onChange={(e) => setApplyNote(sanitizeApplicantNoteDraft(e.target.value))}
                                              placeholder="Optional note for the offer owner..."
                                              rows={2}
                                              className="min-h-[52px] w-full bg-black/50 border border-white/10 rounded-2xl px-3 py-2 text-white text-sm font-medium outline-none focus:border-[#8a2be2]/50 transition-all resize-none placeholder:text-gray-600"

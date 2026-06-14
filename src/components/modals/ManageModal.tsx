@@ -1,6 +1,6 @@
 ﻿"use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Radio, Phone, Zap, ShieldCheck, CircleDollarSign, Star, Lock } from "lucide-react";
+import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Radio, Phone, Zap, ShieldCheck, CircleDollarSign, Star, Lock, ArrowDown } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
@@ -725,27 +725,32 @@ const ManageModal = ({
                                                                </div>
 
                                                                {dungeon ? (
-                                                                  <div className="flex items-center gap-1 shrink-0 rounded-lg border border-white/8 bg-black/30 px-1.5 py-1 max-w-[96px] ml-auto">
-                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-6 h-6 rounded-md object-cover border border-white/10 shrink-0" />
+                                                                  <div className="flex items-center gap-2 shrink-0 rounded-xl border border-[#00ffff]/20 bg-black/40 px-2 py-1.5 min-w-[108px]">
+                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-9 h-9 rounded-lg object-cover border border-white/15 shrink-0" />
                                                                      <div className="min-w-0">
-                                                                        <p className="text-[9px] font-black text-white uppercase leading-none">{dungeonShort}</p>
-                                                                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                                                           {keyLvl ? <span className="text-[10px] font-black text-yellow-400 tabular-nums leading-none">+{keyLvl}</span> : null}
-                                                                           {dropLvl ? <span className="text-[8px] font-black text-[#00d4ff] tabular-nums leading-none">↓{dropLvl}</span> : null}
+                                                                        <p className="text-[10px] font-black text-white uppercase leading-none tracking-wide">{dungeonShort}</p>
+                                                                        <div className="flex items-center gap-1.5 mt-1">
+                                                                           {keyLvl ? <span className="text-xs font-black text-yellow-400 tabular-nums leading-none">+{keyLvl}</span> : null}
+                                                                           {dropLvl ? (
+                                                                              <span className="inline-flex items-center gap-0.5 text-[11px] font-black text-[#00d4ff] tabular-nums leading-none">
+                                                                                 <ArrowDown className="w-3 h-3 stroke-[3]" />
+                                                                                 {dropLvl}
+                                                                              </span>
+                                                                           ) : null}
                                                                         </div>
                                                                      </div>
                                                                   </div>
                                                                ) : (
-                                                                  <div className="shrink-0 w-[44px] rounded-lg border border-dashed border-white/8 px-1 py-1 flex items-center justify-center ml-auto">
-                                                                     <p className="text-[6px] font-black uppercase tracking-widest text-gray-600">No Key</p>
+                                                                  <div className="shrink-0 min-w-[72px] rounded-xl border border-dashed border-white/10 px-2 py-1.5 flex items-center justify-center">
+                                                                     <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">No Key</p>
                                                                   </div>
                                                                )}
 
-                                                               <div className={`shrink-0 w-[88px] rounded-lg border px-1.5 py-1 ml-1 ${note ? 'border-[#8a2be2]/25 bg-[#8a2be2]/8' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
+                                                               <div className={`flex-1 min-w-0 rounded-lg border px-2 py-1 ml-1 ${note ? 'border-[#8a2be2]/25 bg-[#8a2be2]/8' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
                                                                   <p className="text-[6px] font-black uppercase tracking-widest text-[#8a2be2] mb-0.5 flex items-center gap-0.5">
                                                                      <MessageSquare className="w-2 h-2" /> Note
                                                                   </p>
-                                                                  <p className={`text-[8px] leading-snug line-clamp-2 break-words ${note ? 'text-gray-200' : 'text-gray-600'}`}>
+                                                                  <p className={`text-[9px] leading-snug line-clamp-2 break-words ${note ? 'text-gray-200' : 'text-gray-600'}`}>
                                                                      {note || "—"}
                                                                   </p>
                                                                </div>

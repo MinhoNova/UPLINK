@@ -205,14 +205,14 @@ export default function Navbar() {
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
               <ProtocolMark variant={1} className="h-full w-full" gold={pathname === '/community'} />
             </div>
-            <div className="hidden sm:flex flex-col leading-none pointer-events-none select-none">
+            <div className="hidden sm:flex flex-col items-center leading-none pointer-events-none select-none">
               <span className="text-2xl font-black uppercase tracking-[0.18em]" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
                 <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
                   {pathname === '/community' ? 'CLUB' : 'Uplink'}
                 </span>
               </span>
               {pathname !== '/community' && (
-                <span className="mt-1 text-[7px] font-black uppercase tracking-[0.55em] text-amber-400/90 pl-0.5">
+                <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.28em] text-amber-400/95">
                   Beta
                 </span>
               )}

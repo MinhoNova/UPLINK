@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -56,7 +56,8 @@ import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets";
 import { validateBattleTag } from "@/lib/battleTagValidation";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
-import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { sanitizeApplicantNote, sanitizeApplicantNoteDraft } from "@/lib/applicantNote";
+import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer } from "@/lib/raiderCharacter";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
 import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
@@ -1619,6 +1620,47 @@ export default function HomePage() {
         }
      }, [currentUserId]);
 
+     const updateApplicationInLobby = useCallback(async (lobbyId: string, applicant: any) => {
+        const lobbyKey = String(lobbyId);
+        const uid = String(currentUserId);
+
+        setLobbies((prev) =>
+           prev.map((l) => {
+              if (String(l.id) !== lobbyKey) return l;
+              const applicants = (l.applicants || []).map((a: any) =>
+                 memberMatchesUser(a, uid) ? { ...a, ...applicant, applicantId: uid } : a
+              );
+              return { ...l, applicants };
+           })
+        );
+        setTargetLobby((prev: any) => {
+           if (!prev || String(prev.id) !== lobbyKey) return prev;
+           const applicants = (prev.applicants || []).map((a: any) =>
+              memberMatchesUser(a, uid) ? { ...a, ...applicant, applicantId: uid } : a
+           );
+           return { ...prev, applicants };
+        });
+
+        try {
+           const res = await fetch("/api/lobbies/apply", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ lobbyId: lobbyKey, applicant }),
+           });
+           if (!res.ok) return false;
+           const data = await res.json();
+           if (data.lobby) {
+              setLobbies((prev) => prev.map((l) => (String(l.id) === lobbyKey ? data.lobby : l)));
+              setTargetLobby((prev: any) => (prev && String(prev.id) === lobbyKey ? data.lobby : prev));
+           }
+           window.dispatchEvent(new CustomEvent("data-refresh"));
+           return true;
+        } catch {
+           return false;
+        }
+     }, [currentUserId]);
+
      const withdrawFromLobby = useCallback(async (lobbyId: string) => {
         const lobbyKey = String(lobbyId);
         const uid = String(currentUserId);
@@ -1757,7 +1799,7 @@ export default function HomePage() {
                  keystone: resolveDungeonSelection(autoApplyKey)?.name || autoApplyKey || "",
                  applicantKeyLevel: autoApplyKeyLevel,
                  applicantDropLevel: autoApplyDropLevel,
-                 applicantNote: applyNote.trim() || undefined,
+                 applicantNote: sanitizeApplicantNote(applyNote) || undefined,
               });
 
               const ok = await applyToLobby(lobbyKey, applicant);
@@ -1800,6 +1842,57 @@ export default function HomePage() {
         buildApplicantPayload,
         isAutoApplyBlocked,
         isAutoApplyCancelled,
+     ]);
+
+     // Push note / role / key changes to pending applications (live for offer owner)
+     useEffect(() => {
+        const uid = String(currentUserId);
+        if (!uid || uid === "guest") return;
+        const char = myCharacters.find((c) => String(c.id) === String(autoApplyCharId));
+        if (!char) return;
+
+        const timer = setTimeout(() => {
+           const pending = lobbiesRef.current.filter((l) =>
+              (l.applicants || []).some((a: any) => memberMatchesUser(a, uid))
+           );
+           if (!pending.length) return;
+
+           const note = sanitizeApplicantNote(applyNote) || undefined;
+           const payload = buildApplicantPayload(char, {
+              keystone: resolveDungeonSelection(autoApplyKey)?.name || autoApplyKey || "",
+              applicantKeyLevel: autoApplyKeyLevel,
+              applicantDropLevel: autoApplyDropLevel,
+              applicantNote: note,
+           });
+           for (const lobby of pending) {
+              const existing = (lobby.applicants || []).find((a: any) => memberMatchesUser(a, uid));
+              if (!existing) continue;
+              const same =
+                 String(existing.id) === String(payload.id) &&
+                 String(existing.role) === String(payload.role) &&
+                 String(existing.class) === String(payload.class) &&
+                 String(existing.score) === String(payload.score) &&
+                 String(existing.ilvl) === String(payload.ilvl) &&
+                 String(existing.keystone || "") === String(payload.keystone || "") &&
+                 String(existing.applicantKeyLevel ?? "") === String(payload.applicantKeyLevel ?? "") &&
+                 String(existing.applicantDropLevel ?? "") === String(payload.applicantDropLevel ?? "") &&
+                 String(existing.applicantNote || "") === String(note || "");
+              if (same) continue;
+              void updateApplicationInLobby(String(lobby.id), payload);
+           }
+        }, 600);
+
+        return () => clearTimeout(timer);
+     }, [
+        applyNote,
+        autoApplyKey,
+        autoApplyKeyLevel,
+        autoApplyDropLevel,
+        autoApplyCharId,
+        myCharacters,
+        currentUserId,
+        buildApplicantPayload,
+        updateApplicationInLobby,
      ]);
 
    const fetchGlobalData = async () => {
@@ -1998,6 +2091,25 @@ export default function HomePage() {
          clearInterval(interval);
       };
    }, [currentUserId]);
+
+   // Faster lobby sync while Manage modal is open (live applications list)
+   useEffect(() => {
+      if (!isManageModalOpen) return;
+      fetchGlobalData();
+      const interval = setInterval(() => {
+         if (typeof document !== "undefined" && document.hidden) return;
+         fetchGlobalData();
+      }, 2000);
+      return () => clearInterval(interval);
+   }, [isManageModalOpen, targetLobby?.id]);
+
+   // Hydrate My Characters from server-linked Raider.io records (first login / new device)
+   useEffect(() => {
+      if (currentUserId === "guest") return;
+      const serverMine = globalCharacters.filter((c) => String(c.userId) === String(currentUserId));
+      if (!serverMine.length) return;
+      setMyCharacters((prev) => mergeMyCharactersFromServer(prev, serverMine));
+   }, [globalCharacters, currentUserId]);
 
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(myCharacters)); }, [myCharacters, currentUserId]);
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_TEAM_${currentUserId}`, JSON.stringify(myTeam)); }, [myTeam, currentUserId]);
@@ -3259,7 +3371,7 @@ export default function HomePage() {
         // Owner may stay on any thread they opened (unpaid ledger, standby repost, in-progress, etc.)
 
         const lobbySnapshot = (l: any) =>
-           `${l.status || "standby"}|${(l.applicants || []).length}|${(l.accepted || [])
+           `${l.status || "standby"}|${applicantsLiveSnapshot(l.applicants || [])}|${(l.accepted || [])
               .map((a: any) => `${memberIdentityKey(a)}:${a.status || ""}`)
               .join(",")}`;
         if (lobbySnapshot(current) !== lobbySnapshot(targetLobby)) {
@@ -3886,6 +3998,35 @@ export default function HomePage() {
       addToast("Market listing refined.", "success");
    };
 
+   const upsertSyncedRaiderCharacter = (data: any) => {
+      const existingMyChar = myCharacters.find(
+         (c) => c.name === data.name && c.realm === data.realm
+      );
+      const existingGlobalChar = globalCharacters.find(
+         (c) => String(c.userId) === String(currentUserId) && c.name === data.name && c.realm === data.realm
+      );
+      const char = buildCharacterFromRaiderProfile(data, {
+         userId: currentUserId,
+         userName: currentUserDisplay,
+         userAvatar: session?.user?.image || "",
+         discordName: currentUserDiscordHandle,
+         existingId: existingMyChar?.id || existingGlobalChar?.id,
+      });
+      const updatedMy = existingMyChar
+         ? myCharacters.map((c) => (c.id === existingMyChar.id ? char : c))
+         : [char, ...myCharacters];
+      const updatedGlobal = existingGlobalChar
+         ? globalCharacters.map((c) => (c.id === existingGlobalChar.id ? char : c))
+         : [...globalCharacters, char];
+      return {
+         char,
+         updatedMy,
+         updatedGlobal,
+         isNewToMy: !existingMyChar,
+         isNewToGlobal: !existingGlobalChar,
+      };
+   };
+
    const handleSyncRaiderIo = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!raiderLink) return;
@@ -3894,100 +4035,33 @@ export default function HomePage() {
       if (match) {
          const [_, region, realm, name] = match;
          try {
-            const res = await fetch(`https://raider.io/api/v1/characters/profile?region=${region}&realm=${realm}&name=${name}&fields=mythic_plus_scores_by_season:current,gear,mythic_plus_best_runs:all`);
+            const res = await fetch(
+               `https://raider.io/api/v1/characters/profile?region=${region}&realm=${realm}&name=${name}&fields=mythic_plus_scores_by_season:current,gear,mythic_plus_best_runs:all`
+            );
             if (res.ok) {
                const data = await res.json();
-                const scoresAll = data.mythic_plus_scores_by_season?.[0]?.scores;
-                let rRole = data.active_spec_role === "TANK" ? "tank" : data.active_spec_role === "HEALER" || data.active_spec_role === "HEALING" ? "healer" : "dps";
-                let score = scoresAll?.[rRole]?.toString() || scoresAll?.all?.toString() || "0";
-                const runs = (data.mythic_plus_best_runs || []).map((run: any) => ({ dungeon: run.short_name, level: run.mythic_level, timed: run.num_keystone_upgrades > 0 }));
-
-                let stats = { dps: 0, tank: 0, healer: 0 };
-                const fScore = parseFloat(scoresAll?.all?.toString() || "0") || 0;
-
-                const dpsValue = rRole === 'dps' ? (fScore * 59.2) : 0;
-                const hpsValue = rRole === 'healer' ? (fScore * 35.5) : 0;
-                const tankValue = rRole === 'tank' ? (fScore * 28.4) : 0;
-
-                if (rRole === "dps") stats.dps = dpsValue;
-                else if (rRole === "healer") stats.healer = hpsValue;
-                else if (rRole === "tank") stats.tank = tankValue;
-                const roleScores = { dps: scoresAll?.dps?.toString() || "0", healer: scoresAll?.healer?.toString() || "0", tank: scoresAll?.tank?.toString() || "0" };
-
- const existingMyChar = myCharacters.find(c => c.name === data.name && c.realm === data.realm);
-                 const existingGlobalChar = globalCharacters.find(c => c.userId === currentUserId && c.name === data.name && c.realm === data.realm);
-
-                 if (existingMyChar || existingGlobalChar) {
-                    const mergedId = existingMyChar?.id || existingGlobalChar?.id || Date.now();
-                    const updatedChar = {
-                       id: mergedId,
-                       name: data.name,
-                       discordName: currentUserDiscordHandle,
-                       realm: data.realm,
-                       region: data.region,
-                       ilvl: data.gear?.item_level_equipped || 0,
-                       score,
-                       class: data.class,
-                       role: rRole,
-                       roleScores,
-                       stats,
-                       dpsValue,
-                       hpsValue,
-                       tankValue,
-                       runs,
-                       userId: currentUserId,
-                       userName: currentUserDisplay,
-                       userAvatar: session?.user?.image
-                    };
-                    const updatedMy = existingMyChar
-                       ? myCharacters.map(c => c.id === existingMyChar.id ? updatedChar : c)
-                       : [updatedChar, ...myCharacters];
-                    setMyCharacters(updatedMy);
-                    const updatedGlobal = existingGlobalChar
-                       ? globalCharacters.map(c => c.id === existingGlobalChar.id ? updatedChar : c)
-                       : [...globalCharacters, updatedChar];
-                    setGlobalCharacters(updatedGlobal);
-                    saveGlobalData({ characters: updatedGlobal });
-                    setRaiderLink("");
-                    addToast(existingMyChar ? "Character data refreshed (role scores updated)." : "Character identity synced.", "success");
-                    setIsSyncing(false);
-                    return;
-                 }
-                 const crossUserDup = globalCharacters.some(c => c.name === data.name && c.realm === data.realm && c.userId !== currentUserId);
-                 if (crossUserDup) {
-                    addToast("CRITICAL: Character identity already registered by another operative.", "error");
-                    setIsSyncing(false);
-                    return;
-                 }
-
-                  const newChar = {
-                     id: Date.now(),
-                     name: data.name,
-                     discordName: currentUserDiscordHandle,
-                     realm: data.realm,
-                     region: data.region,
-                     ilvl: data.gear?.item_level_equipped || 0,
-                     score,
-                     class: data.class,
-                     role: rRole,
-                     roleScores,
-                     stats,
-                     dpsValue,
-                     hpsValue,
-                     tankValue,
-                     runs,
-                     userId: currentUserId,
-                     userName: currentUserDisplay,
-                     userAvatar: session?.user?.image
-                  };
-                  setMyCharacters(prev => [newChar, ...prev]);
-                  const updatedGlobalChars = [...globalCharacters, newChar];
-                 setGlobalCharacters(updatedGlobalChars);
-                saveGlobalData({ characters: updatedGlobalChars });
+               const crossUserDup = globalCharacters.some(
+                  (c) => c.name === data.name && c.realm === data.realm && String(c.userId) !== String(currentUserId)
+               );
+               if (crossUserDup) {
+                  addToast("CRITICAL: Character identity already registered by another operative.", "error");
+                  setIsSyncing(false);
+                  return;
+               }
+               const { updatedMy, updatedGlobal, isNewToMy } = upsertSyncedRaiderCharacter(data);
+               setMyCharacters(updatedMy);
+               setGlobalCharacters(updatedGlobal);
+               localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
+               await saveGlobalData({ characters: updatedGlobal });
                setRaiderLink("");
-               addToast("Character identity synced.", "success");
+               addToast(
+                  isNewToMy ? "Character added to My Characters." : "Character data refreshed (role scores updated).",
+                  "success"
+               );
             } else addToast("Character not found on terminal.", "error");
-         } catch (err) { addToast("Connection lost with IO Server.", "error"); }
+         } catch {
+            addToast("Connection lost with IO Server.", "error");
+         }
       }
       setIsSyncing(false);
    };
@@ -4017,111 +4091,30 @@ export default function HomePage() {
          }
 
          const data = verifyData.profile;
-         const scoresAll = data.mythic_plus_scores_by_season?.[0]?.scores;
-         const rRole =
-            data.active_spec_role === "TANK"
-               ? "tank"
-               : data.active_spec_role === "HEALER" || data.active_spec_role === "HEALING"
-                 ? "healer"
-                 : "dps";
-         const score = scoresAll?.[rRole]?.toString() || scoresAll?.all?.toString() || "0";
-         const runs = (data.mythic_plus_best_runs || []).map((run: any) => ({
-            dungeon: run.short_name,
-            level: run.mythic_level,
-            timed: run.num_keystone_upgrades > 0,
-         }));
-         const stats = { dps: 0, tank: 0, healer: 0 };
-         const fScore = parseFloat(scoresAll?.all?.toString() || "0") || 0;
-         const dpsValue = rRole === "dps" ? fScore * 59.2 : 0;
-         const hpsValue = rRole === "healer" ? fScore * 35.5 : 0;
-         const tankValue = rRole === "tank" ? fScore * 28.4 : 0;
-         if (rRole === "dps") stats.dps = dpsValue;
-         else if (rRole === "healer") stats.healer = hpsValue;
-         else if (rRole === "tank") stats.tank = tankValue;
-         const roleScores = {
-            dps: scoresAll?.dps?.toString() || "0",
-            healer: scoresAll?.healer?.toString() || "0",
-            tank: scoresAll?.tank?.toString() || "0",
-         };
-
-         const existingMyChar = myCharacters.find(
-            (c) => c.name === data.name && c.realm === data.realm
-         );
-         const existingGlobalChar = globalCharacters.find(
-            (c) => c.userId === currentUserId && c.name === data.name && c.realm === data.realm
-         );
-
-         if (existingMyChar || existingGlobalChar) {
-            const mergedId = existingMyChar?.id || existingGlobalChar?.id || Date.now();
-            const updatedChar = {
-               id: mergedId,
-               name: data.name,
-               discordName: currentUserDiscordHandle,
-               realm: data.realm,
-               region: data.region,
-               ilvl: data.gear?.item_level_equipped || 0,
-               score,
-               class: data.class,
-               role: rRole,
-               roleScores,
-               stats,
-               dpsValue,
-               hpsValue,
-               tankValue,
-               runs,
-               userId: currentUserId,
-               userName: currentUserDisplay,
-               userAvatar: session?.user?.image,
-            };
-            const updatedMy = existingMyChar
-               ? myCharacters.map((c) => (c.id === existingMyChar.id ? updatedChar : c))
-               : [updatedChar, ...myCharacters];
-            setMyCharacters(updatedMy);
-            const updatedGlobal = existingGlobalChar
-               ? globalCharacters.map((c) => (c.id === existingGlobalChar.id ? updatedChar : c))
-               : [...globalCharacters, updatedChar];
-            setGlobalCharacters(updatedGlobal);
-            saveGlobalData({ characters: updatedGlobal });
-            setRaiderLink("");
-            addToast(
-               existingMyChar
-                  ? "Character data refreshed (role scores updated)."
-                  : "Character identity synced.",
-               "success"
-            );
-            return;
-         }
-
          const crossUserDup = globalCharacters.some(
-            (c) => c.name === data.name && c.realm === data.realm && c.userId !== currentUserId
+            (c) => c.name === data.name && c.realm === data.realm && String(c.userId) !== String(currentUserId)
          );
          if (crossUserDup) {
             addToast("CRITICAL: Character identity already registered by another operative.", "error");
             return;
          }
 
-         const newChar = {
-            id: Date.now(),
-            name: data.name,
-            discordName: currentUserDiscordHandle,
-            realm: data.realm,
-            region: data.region,
-            ilvl: data.gear?.item_level_equipped || 0,
-            score,
-            class: data.class,
-            role: rRole,
-            roleScores,
-            stats,
-            dpsValue,
-            hpsValue,
-            tankValue,
-            runs,
-            userId: currentUserId,
-            userName: currentUserDisplay,
-            userAvatar: session?.user?.image,
-         };
+         const { updatedMy, updatedGlobal } = upsertSyncedRaiderCharacter(data);
+         setMyCharacters(updatedMy);
+         setGlobalCharacters(updatedGlobal);
+         localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
 
-         setMyCharacters((prev) => [newChar, ...prev]);
+         const alreadyRegistered = registeredUsers.some(
+            (u) => String(u.id) === String(currentUserId) || u.username === currentUserDiscordHandle
+         );
+
+         if (alreadyRegistered) {
+            await saveGlobalData({ characters: updatedGlobal });
+            localStorage.setItem("uplink_is_registered", "true");
+            setIsOnboardingModalOpen(false);
+            addToast("Character added to My Characters.", "success");
+            return;
+         }
 
          const newUser = {
             id: currentUserId,
@@ -4133,18 +4126,16 @@ export default function HomePage() {
 
          const updatedUsers = [...registeredUsers, newUser];
          setRegisteredUsers(updatedUsers);
-         const updatedChars = [...globalCharacters, newChar];
-         setGlobalCharacters(updatedChars);
 
          await saveGlobalData({
             registeredUsers: updatedUsers,
-            characters: updatedChars,
+            characters: updatedGlobal,
          });
 
          localStorage.setItem("uplink_is_registered", "true");
          setIsOnboardingModalOpen(false);
          setIsWelcomePlansOpen(true);
-         addToast("Terminal Access Granted. Character Synchronized.", "success");
+         addToast("Terminal Access Granted. Character added to My Characters.", "success");
       } catch {
          addToast("Uplink to Raider.io failed.", "error");
       } finally {
@@ -4199,14 +4190,44 @@ export default function HomePage() {
          addToast("CRITICAL ERROR: Admin database is protected.", "error");
          return;
       }
-      const updatedUsers = registeredUsers.filter(u => u.id !== userId);
-      const updatedChars = globalCharacters.filter(c => c.userId !== userId);
-      const updatedApps = applications.filter(a => a.userId !== userId);
+      const uid = String(userId);
+      const updatedUsers = registeredUsers.filter((u) => String(u.id) !== uid);
+      const updatedChars = globalCharacters.filter((c) => String(c.userId) !== uid);
+      const updatedApps = applications.filter((a) => String(a.userId) !== uid);
+      const updatedLobbies = lobbies.map((l) => {
+         const applicants = (l.applicants || []).filter((a: any) => !memberMatchesUser(a, uid));
+         const accepted = (l.accepted || []).filter((a: any) => !memberMatchesUser(a, uid));
+         if (applicants.length === (l.applicants || []).length && accepted.length === (l.accepted || []).length) {
+            return l;
+         }
+         return { ...l, applicants, accepted };
+      });
+      const updatedNotifs = notifications.filter(
+         (n) => String(n.fromId) !== uid && String(n.toUserId) !== uid && String(n.applicantId) !== uid
+      );
       setRegisteredUsers(updatedUsers);
       setGlobalCharacters(updatedChars);
       setApplications(updatedApps);
-      await saveGlobalData({ registeredUsers: updatedUsers, characters: updatedChars, applications: updatedApps });
-      addToast(`Database cleared for ${username}. They can now register again.`, "success");
+      setLobbies(updatedLobbies);
+      setNotifications(updatedNotifs);
+      if (String(currentUserId) === uid) {
+         setMyCharacters([]);
+         setMyTeam([]);
+         setBankCharacters([]);
+         localStorage.removeItem(`UL_CHARS_${uid}`);
+         localStorage.removeItem(`UL_TEAM_${uid}`);
+         localStorage.removeItem(`UL_BANK_${uid}`);
+         localStorage.setItem("uplink_is_registered", "false");
+         setIsOnboardingModalOpen(true);
+      }
+      await saveGlobalData({
+         registeredUsers: updatedUsers,
+         characters: updatedChars,
+         applications: updatedApps,
+         lobbies: updatedLobbies,
+         notifications: updatedNotifs,
+      });
+      addToast(`Player data cleared for ${username}. They can register via Raider.io again.`, "success");
    };
 
     const handleUnbanUser = async (username: string) => {
@@ -4401,7 +4422,7 @@ export default function HomePage() {
           syncDetectedRunsFromServer(String(targetLobby.id));
           const interval = setInterval(() => {
              syncDetectedRunsFromServer(String(targetLobby.id));
-          }, 60000);
+          }, 30000);
           return () => clearInterval(interval);
        }
     }, [targetLobby?.id, targetLobby?.status, targetLobby?.missionStartTime, syncDetectedRunsFromServer]);

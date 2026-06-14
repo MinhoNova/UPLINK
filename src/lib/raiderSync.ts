@@ -11,6 +11,10 @@ const DUNGEON_BY_SHORT: Record<string, { name: string; img: string }> = {
   WS: { name: "Windrunner Spire", img: "/classes/Windrunner Spire.webp" },
 };
 
+const DUNGEON_NAME_TO_SHORT: Record<string, string> = Object.fromEntries(
+  Object.entries(DUNGEON_BY_SHORT).map(([short, info]) => [info.name.toLowerCase(), short])
+);
+
 export function getMemberRaiderProfile(member: any): {
   region: string;
   realm: string;
@@ -30,24 +34,46 @@ function parseKeyLevel(keyLevel?: string): number {
   return parseInt(String(keyLevel || "+10").replace("+", ""), 10) || 10;
 }
 
-function runMatchesOffer(run: any, lobby: any): boolean {
+function offerAllowedShorts(lobby: any): Set<string> | null {
+  const sd = lobby?.selectedDungeons;
+  if (!sd || typeof sd !== "object") return null;
+  const names = Object.keys(sd).filter((k) => Number(sd[k]) > 0);
+  if (!names.length) return null;
+  const shorts = new Set<string>();
+  for (const name of names) {
+    const short = DUNGEON_NAME_TO_SHORT[name.toLowerCase()];
+    if (short) shorts.add(short);
+    else if (DUNGEON_BY_SHORT[name.toUpperCase()]) shorts.add(name.toUpperCase());
+  }
+  return shorts.size ? shorts : null;
+}
+
+function runMatchesOffer(run: any, lobby: any, allowedShorts: Set<string> | null): boolean {
+  if (allowedShorts && !allowedShorts.has(run.short_name)) return false;
   const minKey = parseKeyLevel(lobby.keyLevel);
   if (Number(run.mythic_level) < minKey) return false;
   if (!lobby.missionStartTime) return true;
-  return new Date(run.completed_at).getTime() >= Number(lobby.missionStartTime);
+  const completedAt = new Date(run.completed_at).getTime();
+  if (Number.isNaN(completedAt)) return false;
+  return completedAt >= Number(lobby.missionStartTime);
 }
 
-async function fetchRecentRuns(profile: { region: string; realm: string; name: string }) {
+async function fetchRaiderRuns(profile: { region: string; realm: string; name: string }) {
   const url = new URL("https://raider.io/api/v1/characters/profile");
   url.searchParams.set("region", profile.region);
   url.searchParams.set("realm", profile.realm);
   url.searchParams.set("name", profile.name);
-  url.searchParams.set("fields", "mythic_plus_recent_runs");
+  url.searchParams.set("fields", "mythic_plus_recent_runs,mythic_plus_best_runs");
 
   const res = await fetch(url.toString(), { next: { revalidate: 0 } });
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.mythic_plus_recent_runs || []) as any[];
+  const merged = new Map<string, any>();
+  for (const run of [...(data.mythic_plus_recent_runs || []), ...(data.mythic_plus_best_runs || [])]) {
+    const key = run.url || `${run.short_name}-${run.mythic_level}-${run.completed_at || ""}`;
+    merged.set(key, run);
+  }
+  return [...merged.values()];
 }
 
 export type DetectedRun = {
@@ -66,16 +92,42 @@ export type DetectedRun = {
   memberEffect?: string;
 };
 
+/** Squad members whose Raider.io runs should be checked (owner + confirmed boosters). */
+export function getLobbyRunSyncMembers(lobby: any, characters: any[] = []): any[] {
+  const confirmed = (lobby.accepted || []).filter(
+    (a: any) => !a.status || a.status === "confirmed"
+  );
+  const members = [...confirmed];
+  const ownerId = String(lobby.ownerId || "");
+  if (ownerId && !members.some((m) => memberIdentityKey(m) === ownerId)) {
+    const ownerChar = characters.find((c) => String(c.userId) === ownerId);
+    if (ownerChar && getMemberRaiderProfile(ownerChar)) {
+      members.push({
+        ...ownerChar,
+        applicantId: ownerId,
+        applicantName: lobby.ownerDiscordName,
+        applicantAvatar: lobby.ownerImage,
+        applicantEffect: lobby.ownerEffect,
+        raiderRegion: String(ownerChar.region || lobby.serverRegion || "us").toLowerCase(),
+        raiderRealm: ownerChar.realm,
+        raiderName: ownerChar.name,
+      });
+    }
+  }
+  return members;
+}
+
 /** Server-side Raider.io sync — only runs after missionStartTime, deduped by URL. */
-export async function syncLobbyDetectedRuns(lobby: any): Promise<DetectedRun[]> {
+export async function syncLobbyDetectedRuns(
+  lobby: any,
+  characters: any[] = []
+): Promise<DetectedRun[]> {
   if (!lobby?.missionStartTime || lobby.category === "leveling") {
     return Array.isArray(lobby?.detectedRuns) ? lobby.detectedRuns : [];
   }
 
-  const confirmedMembers = (lobby.accepted || []).filter(
-    (a: any) => !a.status || a.status === "confirmed"
-  );
-  if (!confirmedMembers.length) {
+  const syncMembers = getLobbyRunSyncMembers(lobby, characters);
+  if (!syncMembers.length) {
     return Array.isArray(lobby.detectedRuns) ? lobby.detectedRuns : [];
   }
 
@@ -87,17 +139,18 @@ export async function syncLobbyDetectedRuns(lobby: any): Promise<DetectedRun[]> 
     ) ||
     1;
 
+  const allowedShorts = offerAllowedShorts(lobby);
   const memberDungeons: Record<string, Set<string>> = {};
 
-  for (const member of confirmedMembers) {
+  for (const member of syncMembers) {
     const profile = getMemberRaiderProfile(member);
     if (!profile) continue;
     const memberId = memberIdentityKey(member);
     try {
-      const recentRuns = await fetchRecentRuns(profile);
+      const runs = await fetchRaiderRuns(profile);
       const names = new Set<string>();
-      for (const run of recentRuns) {
-        if (!runMatchesOffer(run, lobby)) continue;
+      for (const run of runs) {
+        if (!runMatchesOffer(run, lobby, allowedShorts)) continue;
         names.add(run.short_name);
       }
       if (names.size) memberDungeons[memberId] = names;
@@ -114,7 +167,16 @@ export async function syncLobbyDetectedRuns(lobby: any): Promise<DetectedRun[]> 
     );
   } else if (memberIds.length === 1) {
     commonNames = [...memberDungeons[memberIds[0]]];
-  } else {
+  }
+
+  // If party intersection is empty (e.g. buyers in accepted without runs), use union of runner dungeons.
+  if (!commonNames.length && memberIds.length) {
+    const union = new Set<string>();
+    for (const id of memberIds) memberDungeons[id].forEach((d) => union.add(d));
+    commonNames = [...union];
+  }
+
+  if (!commonNames.length) {
     return Array.isArray(lobby.detectedRuns) ? lobby.detectedRuns : [];
   }
 
@@ -125,17 +187,17 @@ export async function syncLobbyDetectedRuns(lobby: any): Promise<DetectedRun[]> 
   }
 
   for (const memberId of memberIds) {
-    const member = confirmedMembers.find((m: any) => memberIdentityKey(m) === memberId);
+    const member = syncMembers.find((m: any) => memberIdentityKey(m) === memberId);
     if (!member) continue;
     const profile = getMemberRaiderProfile(member);
     if (!profile) continue;
 
     try {
-      const recentRuns = await fetchRecentRuns(profile);
-      for (const run of recentRuns) {
+      const runs = await fetchRaiderRuns(profile);
+      for (const run of runs) {
         if (!commonNames.includes(run.short_name)) continue;
-        if (!runMatchesOffer(run, lobby)) continue;
-        const key = run.url || `${run.short_name}-${run.mythic_level}`;
+        if (!runMatchesOffer(run, lobby, allowedShorts)) continue;
+        const key = run.url || `${run.short_name}-${run.mythic_level}-${run.completed_at || ""}`;
         if (existing.has(key)) continue;
         if (existing.size >= maxRuns) break;
 

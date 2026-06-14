@@ -35,7 +35,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const detectedRuns = await syncLobbyDetectedRuns(lobby);
+  const characters = Array.isArray(data.characters) ? data.characters : [];
+  const detectedRuns = await syncLobbyDetectedRuns(lobby, characters);
   const updatedLobby = { ...lobby, detectedRuns };
   lobbies[idx] = updatedLobby;
   await setKV("lobbies", lobbies);

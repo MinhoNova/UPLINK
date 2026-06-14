@@ -692,15 +692,43 @@ export function mergeLobbiesFromServer(
   return [...merged, ...localOnly];
 }
 
-/** Merge applicant lists by applicantId / char id (union, server wins on conflict). */
+/** Merge applicant lists by applicantId / char id (union; server wins on conflict). */
 export function mergeApplicantsList(serverApps: any[] = [], localApps: any[] = []): any[] {
   const map = new Map<string, any>();
-  for (const a of [...serverApps, ...localApps]) {
-    const key = String(a.applicantId || a.id || "");
+  for (const a of localApps) {
+    const key = String(a.applicantId || a.userId || a.id || "");
+    if (!key) continue;
+    map.set(key, a);
+  }
+  for (const a of serverApps) {
+    const key = String(a.applicantId || a.userId || a.id || "");
     if (!key) continue;
     map.set(key, a);
   }
   return Array.from(map.values());
+}
+
+/** Fingerprint pending applicants for live Manage modal sync. */
+export function applicantsLiveSnapshot(applicants: any[] = []): string {
+  return applicants
+    .map((a) => {
+      const id = memberIdentityKey(a);
+      const note = String(a.applicantNote ?? a.note ?? "");
+      return [
+        id,
+        a.id,
+        a.role,
+        a.class,
+        a.score,
+        a.ilvl,
+        a.keystone,
+        a.applicantKeyLevel ?? a.keyLevel ?? "",
+        a.applicantDropLevel ?? a.dropLevel ?? "",
+        note,
+      ].join(":");
+    })
+    .sort()
+    .join("|");
 }
 
 export function deductRunsFromDungeons(
