@@ -69,11 +69,19 @@ export function sanitizeLobby(lobby: any): any {
 
 export const LOBBY_DATA_VERSION = 2;
 
-/** Remove a user from every lobby's open applications (not confirmed squads) except one lobby. */
-export function withdrawUserFromAllLobbies(lobbies: any[], userId: string, exceptLobbyId?: string) {
+/** Remove a user from every lobby's open applications (not confirmed squads) except one lobby.
+ *  When joining a leveling offer, other leveling lobbies are left untouched (multi-buyer flow). */
+export function withdrawUserFromAllLobbies(
+  lobbies: any[],
+  userId: string,
+  exceptLobbyId?: string,
+  joiningLobby?: any
+) {
   const uid = String(userId);
+  const joiningIsLeveling = joiningLobby ? isLevelingOffer(joiningLobby) : false;
   return lobbies.map((l) => {
     if (exceptLobbyId && String(l.id) === String(exceptLobbyId)) return l;
+    if (joiningIsLeveling && isLevelingOffer(l)) return l;
 
     const hasApp = (l.applicants || []).some((a: any) => memberIdentityKey(a) === uid);
     const pendingInvite = (l.accepted || []).find(
@@ -123,10 +131,11 @@ export function getEffectiveOfferStatus(lobby: any): string {
   return lobby.status || "standby";
 }
 
-/** Player is in an active squad slot (confirmed or pending invite) — locks auto-apply / auto-accept. */
-export function userIsActiveInOffer(lobbies: any[], userId: string): boolean {
+/** Player is in an active dungeon/M+ squad slot — one dungeon run at a time. */
+export function userIsActiveInDungeonOffer(lobbies: any[], userId: string): boolean {
   const uid = String(userId);
   return (lobbies || []).some((l) => {
+    if (isLevelingOffer(l)) return false;
     if (String(l.ownerId) === uid) return false;
     const status = l.status || "standby";
     if (!["standby", "in_progress"].includes(status)) return false;
@@ -136,6 +145,11 @@ export function userIsActiveInOffer(lobbies: any[], userId: string): boolean {
       return !slotStatus || slotStatus === "confirmed" || slotStatus === "invited";
     });
   });
+}
+
+/** Player is in an active squad slot (confirmed or pending invite) — locks auto-apply / auto-accept for dungeon runs. */
+export function userIsActiveInOffer(lobbies: any[], userId: string): boolean {
+  return userIsActiveInDungeonOffer(lobbies, userId);
 }
 
 /** Joined player Ongoing sidebar — active squad or unpaid foot only (not leave 0 runs). */
@@ -429,16 +443,18 @@ export function userExitBlockedFromLobby(lobby: any, allLobbies: any[], userId: 
   return false;
 }
 
-/** Confirm join on one lobby and withdraw the same user from all other open applications. */
+/** Confirm join on one lobby and withdraw the same user from other open applications (dungeon-only mutual exclusion). */
 export function acceptApplicantAcrossLobbies(lobbies: any[], lobbyId: string, applicant: any): any[] {
   const key = memberIdentityKey(applicant);
   if (!key) return lobbies;
+  const joiningLobby = lobbies.find((l) => String(l.id) === String(lobbyId));
   return withdrawUserFromAllLobbies(
     lobbies.map((l) =>
       String(l.id) === String(lobbyId) ? confirmApplicantJoin(l, applicant) : l
     ),
     key,
-    lobbyId
+    lobbyId,
+    joiningLobby
   );
 }
 

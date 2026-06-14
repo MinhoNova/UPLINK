@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -1025,16 +1025,11 @@ export default function HomePage() {
         return () => clearInterval(scanInterval);
      }, [lobbies, syncDetectedRunsFromServer]);
 
-    // Turn off Auto-Apply once the player is already accepted into an offer.
+    // Turn off Auto-Apply when accepted into a dungeon run (leveling allows multiple buyers).
       useEffect(() => {
-         const isAcceptedInAnyLobby = lobbies.some(l => 
-             (l.status === 'standby' || l.status === 'in_progress') && 
-             (l.accepted || []).some((a: any) => String(a.applicantId) === String(currentUserId))
-         );
-         if (isAcceptedInAnyLobby) {
-             if (autoApplyEnabled) {
-                 syncAutoApplyEnabled(false);
-             }
+         const inDungeonRun = userIsActiveInDungeonOffer(lobbies, currentUserId);
+         if (inDungeonRun && autoApplyEnabled) {
+             syncAutoApplyEnabled(false);
          }
      }, [lobbies, currentUserId, autoApplyEnabled, syncAutoApplyEnabled]);
 
@@ -3261,6 +3256,9 @@ export default function HomePage() {
       if ((targetLobby.applicants || []).some((a: any) => String(a.applicantId) === String(currentUserId) || String(a.id) === String(char.id))) {
          return addToast("Already applied!", "error");
       }
+      if (targetLobby.category !== "leveling" && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
+         return addToast("You are already in a dungeon run. Leave it before applying to another dungeon.", "error");
+      }
 
       const applicant = buildApplicantPayload(char, {
          keystone: resolveDungeonSelection(autoApplyKey)?.name || autoApplyKey || userKeystone || "",
@@ -3303,7 +3301,8 @@ export default function HomePage() {
         updated = withdrawUserFromAllLobbies(
            updated,
            memberIdentityKey(acceptedApplicant),
-           targetLobby.id
+           targetLobby.id,
+           targetLobby
         );
         let newNotifications = notifications;
         if (!isAuto) {
