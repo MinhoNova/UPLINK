@@ -196,44 +196,44 @@ export default function Navbar() {
   };
 
   return (
-    <motion.nav animate={{ y: navVisible ? 0 : -64 }} className={`fixed top-0 w-full z-50 h-16 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
+    <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
       <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5 shrink-0">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
               <ProtocolMark variant={1} className="h-full w-full" gold={pathname === '/community'} />
             </div>
             <div className="hidden sm:flex flex-col items-center leading-none pointer-events-none select-none pt-[6px]">
-              <span className="text-xl font-black uppercase tracking-[0.18em] leading-none" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
+              <span className="text-2xl font-black uppercase tracking-[0.18em] leading-none" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
                 <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
                   {pathname === '/community' ? 'CLUB' : 'Uplink'}
                 </span>
               </span>
               {pathname !== '/community' && (
-                <span className="mt-0.5 text-[9px] font-black uppercase tracking-[0.28em] text-amber-400/95 leading-none">
+                <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.28em] text-amber-400/95 leading-none">
                   Beta
                 </span>
               )}
             </div>
             </div>
 
-          <div className="flex bg-black/5 dark:bg-black/20 p-1 rounded-2xl gap-1.5 ml-4 sm:ml-6 border border-black/5 dark:border-white/5 transition-all shadow-inner">
-            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
+          <div className="flex items-center bg-black/5 dark:bg-black/20 px-1.5 py-1 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
+            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`h-8 px-5 rounded-lg flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
               <ProtocolMark variant={1} className="w-5 h-5 shrink-0" gold={pathname !== '/community'} />
               {pathname === '/community' ? 'Uplink' : 'CLUB'}
             </motion.button>
             {pathname === '/leaderboard' ? (
-              <motion.a title="Back to Home" href="/" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
+              <motion.a title="Back to Home" href="/" className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
                 <ArrowLeft className="w-4 h-4" /> Back
               </motion.a>
             ) : (
-              <motion.a title="Leaderboard" href="/leaderboard" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30">
+              <motion.a title="Leaderboard" href="/leaderboard" className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30">
                 <Trophy className="w-4 h-4" /> Top
               </motion.a>
             )}
             <motion.button title="Direct Messages" onClick={() => {
               window.dispatchEvent(new CustomEvent('toggle-dm'));
-            }} className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative">
+            }} className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative">
               <MessageCircle className="w-4 h-4" /> DM
               {dmUnreadCount > 0 && (
                 <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)]">
@@ -254,7 +254,7 @@ export default function Navbar() {
               setAutoApplyEnabled(newVal);
               localStorage.setItem("uplink_auto_apply", newVal ? "true" : "false");
               window.dispatchEvent(new CustomEvent('set-auto-apply-enabled', { detail: { enabled: newVal } }));
-            }} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+            }} className={`h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
               <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
             </motion.button>
             <motion.button title="Auto-Apply Settings" onClick={() => {
@@ -264,10 +264,10 @@ export default function Navbar() {
               } else {
                 window.location.href = '/';
               }
-            }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
+            }} className={`h-8 px-3 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
               ⚙️
             </motion.button>
-            <motion.button title="Toggle Theme" onClick={toggleTheme} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
+            <motion.button title="Toggle Theme" onClick={toggleTheme} className={`h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
               {theme === 'dark' ? 'Dark' : 'Light'}
             </motion.button>
@@ -276,7 +276,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-6 relative">
           {status === "loading" ? (
-            <div className="w-28 h-10 bg-white/5 animate-pulse rounded-full" />
+            <div className="w-32 h-14 bg-white/5 animate-pulse rounded-full" />
           ) : session ? (
             <div className="flex items-center gap-4">
               <div className="relative" ref={notifRef}>
@@ -330,7 +330,7 @@ export default function Navbar() {
               )}
 
               {pathname !== '/community' && (
-              <div className={`flex items-center gap-4 overflow-visible ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} border-2 pr-5 pl-1 py-0.5 rounded-full shadow-xl h-11`}>
+              <div className={`flex items-center gap-5 overflow-visible ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} border-2 pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}>
                 <button
                   type="button"
                   title="View profile"
@@ -340,7 +340,7 @@ export default function Navbar() {
                   <ProfileAvatarWithEffect
                     src={getAvatarForEffect()}
                     effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
-                    className="w-9 h-9"
+                    className="w-14 h-14"
                     fallbackName={currentUser?.name || session?.user?.name || "U"}
                   />
                 </button>
@@ -355,7 +355,7 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  <span className="text-base font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || "Operative")}</span>
+                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || "Operative")}</span>
                   {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</span> : null; })()}
                 </button>
               </div>
