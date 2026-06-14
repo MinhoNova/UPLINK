@@ -6106,7 +6106,7 @@ export default function HomePage() {
                     )}
                  </motion.div>    </div>
            )}
-           {status !== "unauthenticated" && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
+           {status === "authenticated" && session?.user && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
               <>
               <HomeFloatingActions
                  onOpenSupport={() => setSupportWidgetOpen(true)}

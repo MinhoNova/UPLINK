@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { MessageSquare, ShoppingBag, Star } from "lucide-react";
 import ShopModal from "@/components/modals/ShopModal";
@@ -19,10 +20,13 @@ export default function HomeFloatingActions({
   currentUserId = "",
   isAdmin = false,
 }: Props) {
+  const { data: session, status } = useSession();
   const [shopOpen, setShopOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
 
-  const buttons = [
+  if (status !== "authenticated" || !session?.user) return null;
+
+const buttons = [
     {
       id: "reviews",
       label: "Reviews",
