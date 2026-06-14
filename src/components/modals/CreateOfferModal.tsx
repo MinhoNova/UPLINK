@@ -537,11 +537,11 @@ const BlockClassSection = memo(function BlockClassSection({
     `/classes-thumb/${role === "tank" ? "TANK" : role === "healer" ? "HEALER" : "DPS"}.png`;
 
   return (
-    <div className="bg-white/10 p-3 rounded-xl w-full min-w-0 flex-1 flex flex-col h-full">
-      <label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-wide flex items-center gap-2">
+    <div className="bg-white/10 p-2 rounded-xl w-full min-w-0 shrink-0 flex flex-col">
+      <label className="block text-[10px] font-black text-white/70 uppercase mb-1.5 tracking-wide flex items-center gap-2">
         <ShieldCheck className="w-4 h-4 text-white/60" /> BLOCK CLASS
       </label>
-      <div className="grid grid-cols-4 gap-1.5 min-w-0 w-full flex-1">
+      <div className="grid grid-cols-4 gap-1 min-w-0 w-full">
         {Object.entries(classGroups).map(([group, classes]) => {
           const allRolesInGroup: { class: string; role: string }[] = [];
           (classes as string[]).forEach(cls => {
@@ -551,8 +551,8 @@ const BlockClassSection = memo(function BlockClassSection({
           });
 
           return (
-            <div key={group} className="bg-white/5 rounded-lg p-1.5 min-w-0 overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between mb-1 gap-0.5 shrink-0">
+            <div key={group} className="bg-white/5 rounded-lg p-1 min-w-0 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-0.5 gap-0.5 shrink-0">
                 <label className="text-[7px] font-black uppercase tracking-[0.25em] text-white/60 truncate">{group}</label>
                 <button
                   type="button"
@@ -576,7 +576,7 @@ const BlockClassSection = memo(function BlockClassSection({
                   BLOCK ALL
                 </button>
               </div>
-              <div className="flex flex-col gap-1 flex-1 min-h-0">
+              <div className="flex flex-col gap-0.5">
                 {(classes as string[])
                   .sort((a: string, b: string) => {
                     const stackA = (classRoleOptions[a] || ["dps"]).length;
@@ -591,7 +591,7 @@ const BlockClassSection = memo(function BlockClassSection({
                     return (
                       <div
                         key={cls}
-                        className={`relative min-w-0 overflow-hidden rounded-lg border flex items-center justify-between gap-1 px-1.5 py-1.5 min-h-[2.75rem] ${
+                        className={`relative min-w-0 overflow-hidden rounded-lg border flex items-center justify-between gap-1 px-1 py-1 ${
                           allBlocked ? "border-red-500/30 bg-red-500/10" : "border-white/5 bg-white/[0.04]"
                         }`}
                       >
@@ -603,13 +603,13 @@ const BlockClassSection = memo(function BlockClassSection({
                               : [...(blockedRoles || []), ...(roles as string[]).map(r => ({ class: cls, role: r }))];
                             dispatch({ type: "SET", payload: { blockedRoles: updated } });
                           }}
-                          className="flex items-center gap-1 min-w-0 flex-1 transition-colors hover:bg-white/[0.06] rounded-md py-0.5 pr-1"
+                          className="flex items-center gap-1 min-w-0 flex-1 transition-colors hover:bg-white/[0.06] rounded-md py-0.5 pr-0.5"
                         >
-                          <div className="w-9 h-9 rounded-md bg-black/30 flex items-center justify-center overflow-hidden shrink-0">
+                          <div className="w-10 h-10 rounded-md bg-black/30 flex items-center justify-center overflow-hidden shrink-0">
                             <img
                               src={classThumbSrc(cls)}
                               alt=""
-                              className="w-9 h-9 object-contain"
+                              className="w-10 h-10 object-contain"
                               decoding="async"
                             />
                           </div>
@@ -620,7 +620,7 @@ const BlockClassSection = memo(function BlockClassSection({
                         <div className="flex gap-0.5 shrink-0">
                           {(roles as string[]).map((role: string) => {
                             const isBlocked = blockedForClass.some((b: any) => b.role === role);
-                            const roleScale = role === "healer" ? 1.18 : 1.05;
+                            const roleScale = role === "healer" ? 1.18 : 1.08;
                             return (
                               <button
                                 key={role}
@@ -634,14 +634,14 @@ const BlockClassSection = memo(function BlockClassSection({
                                     : [...(blockedRoles || []), { class: cls, role }];
                                   dispatch({ type: "SET", payload: { blockedRoles: updated } });
                                 }}
-                                className={`flex items-center justify-center w-8 h-8 rounded-md transition shrink-0 overflow-hidden ${
+                                className={`flex items-center justify-center w-9 h-9 rounded-md transition shrink-0 overflow-hidden ${
                                   isBlocked ? "bg-red-500/25 ring-1 ring-red-400/40" : "bg-white/10 hover:bg-white/15"
                                 }`}
                               >
                                 <img
                                   src={roleThumbSrc(role)}
                                   alt=""
-                                  className="w-7 h-7 object-contain"
+                                  className="w-8 h-8 object-contain"
                                   style={{ transform: `scale(${roleScale})`, transformOrigin: "center" }}
                                   decoding="async"
                                 />
@@ -870,15 +870,15 @@ const NotesField = memo(function NotesField({
 }) {
   const isLeveling = variant === "leveling";
   return (
-    <div className="bg-white/10 p-3 rounded-xl">
-        <label className={`block text-[9px] font-black uppercase mb-2 tracking-wide ${isLeveling ? "text-[#8a2be2]" : "text-gray-400"}`}>Notes</label>
+    <div className="bg-white/10 p-2 rounded-xl">
+        <label className={`block text-[9px] font-black uppercase mb-1.5 tracking-wide ${isLeveling ? "text-[#8a2be2]" : "text-gray-400"}`}>Notes</label>
         <textarea
           rows={rows}
           placeholder="Any additional requirements..."
           value={value}
           onChange={e => dispatch({ type: "SET", payload: { notes: e.target.value } })}
-          className={`w-full bg-black/40 border rounded-lg px-3 py-2 text-white font-black text-xs outline-none resize-none ${
-            isLeveling ? "border-[#8a2be2]/30 focus:border-[#8a2be2]/60 min-h-[140px]" : "border-white/10 focus:border-[#00ffff]/50"
+          className={`w-full bg-black/40 border rounded-lg px-3 py-2 text-white font-black text-xs outline-none resize-none overflow-y-auto custom-scrollbar ${
+            isLeveling ? "border-[#8a2be2]/30 focus:border-[#8a2be2]/60 min-h-[120px] max-h-[140px]" : "border-white/10 focus:border-[#00ffff]/50 max-h-[88px]"
           }`}
           style={{ resize: "none" }}
         />
@@ -1143,7 +1143,7 @@ function CreateOfferModal({
 
         {formState.category === "dungeon" && (
           <div className="space-y-2 mt-2">
-            <div className="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+            <div className="bg-white/[0.02] border border-white/5 p-2 rounded-xl">
               <label className="block text-xs font-black text-[#00ffff] uppercase mb-2 tracking-wide">
                 Dungeons
               </label>
@@ -1153,8 +1153,8 @@ function CreateOfferModal({
                 dungeons={dungeons}
               />
             </div>
-            <div className="flex flex-col xl:flex-row gap-2 items-stretch min-w-0 w-full">
-              <div className="flex flex-[1_1_0%] min-w-0 w-full">
+            <div className="flex flex-col xl:flex-row gap-2 items-start min-w-0 w-full">
+              <div className="flex min-w-0 w-full xl:flex-[1_1_0%]">
                 <BlockClassSection
                   blockedRoles={formState.blockedRoles}
                   classGroups={classGroups}
@@ -1195,7 +1195,7 @@ function CreateOfferModal({
                 </div>
               </div>
             </div>
-            <NotesField value={formState.notes} dispatch={dispatch} rows={7} />
+            <NotesField value={formState.notes} dispatch={dispatch} rows={4} />
           </div>
         )}
 
