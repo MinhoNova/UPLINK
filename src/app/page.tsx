@@ -60,6 +60,7 @@ import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
 import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
+import { OfferFeedAvatar as OfferFeedAvatarBase } from "@/components/OfferFeedAvatar";
 
 const VoiceParticipant = ({ participant }: { participant: Participant }) => {
   const isSpeaking = useIsSpeaking(participant);
@@ -377,7 +378,7 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
                                <div className="mb-0.5 flex justify-center">
                                   <ClassRoleIcons className={accepted.class || 'DPS'} role={role} size={24} overlap={8} />
                                </div>
-                              {AvatarComponent && (
+                              {isFlipped && AvatarComponent && (
                                   <div onClick={(e) => { e.stopPropagation(); if (onAvatarClick && userData) onAvatarClick(userData); }}>
                                      <AvatarComponent src={visual?.avatar || accepted.avatar} effect={visual?.effect} fallbackName={accepted.applicantName || accepted.raiderName || "Operative"} className="w-10 h-10 rounded-full border-2 border-[#ff007f] object-cover mb-0.5" userId={accepted.applicantId || accepted.userId} />
                                   </div>
@@ -2693,7 +2694,12 @@ export default function HomePage() {
       }, [deleteConfirmation, setDeleteConfirmation, EFFECTS, EFFECT_IMG, electricColor]);
      const { AvatarWithEffect } = stableComps;
 
-   const OfferFeedAvatar = AvatarWithEffect;
+   const OfferFeedAvatar = useCallback(
+      (props: { src: string; effect?: string; className?: string; fallbackName?: string; userId?: string }) => (
+         <OfferFeedAvatarBase {...props} registeredUsers={registeredUsers} />
+      ),
+      [registeredUsers]
+   );
 
    const resolveUserVisual = (identifier?: string, userId?: string) => {
       const lookup = (identifier || "").toLowerCase().trim();
@@ -4758,7 +4764,12 @@ export default function HomePage() {
 
                     {/* ZOOMED WRAPPER - 75% scale with space both sides */}
                     <div className="px-[5%] xl:px-12 py-4 -mt-16 relative z-20">
-                    <div className="flex justify-end mb-3 relative z-30">
+                    <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
+                          <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
+                        {/* LEFT COLUMN: tabs + content */}
+                           <div className="flex flex-col gap-2 min-w-0 flex-1">
+<div className="flex flex-col gap-1.5">
+                           <div className="flex justify-end">
                            <button
                               type="button"
                               onClick={(e) => {
@@ -4766,30 +4777,26 @@ export default function HomePage() {
                                  const next = !offerSoundsEnabled;
                                  setOfferSoundsEnabled(next);
                                  localStorage.setItem("uplink_offer_sounds", next.toString());
-                                 addToast(next ? "New offer sounds on." : "New offer sounds muted.", "info");
+                                 addToast(next ? "New offer alert sounds on." : "New offer alert sounds muted.", "info");
                               }}
-                              className={`relative z-30 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all backdrop-blur-md cursor-pointer ${
+                              className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] transition-all backdrop-blur-md cursor-pointer ${
                                  offerSoundsEnabled
                                     ? theme === 'light'
                                        ? 'border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/20'
-                                       : 'border-[#00ffff]/25 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/15 shadow-[0_0_20px_rgba(0,255,255,0.08)]'
+                                       : 'border-[#00ffff]/25 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/15'
                                     : theme === 'light'
                                        ? 'border-gray-200 bg-white/80 text-gray-400 hover:text-gray-600'
-                                       : 'border-white/10 bg-black/30 text-white/40 hover:text-white/70'
+                                       : 'border-white/10 bg-black/40 text-white/45 hover:text-white/70'
                               }`}
-                              title={offerSoundsEnabled ? "Mute new offer sounds" : "Enable new offer sounds"}
+                              title={offerSoundsEnabled ? "Mute new offer alert sounds" : "Enable new offer alert sounds"}
                            >
-                              {offerSoundsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                              <span>Offer Sounds</span>
-                              <span className={`rounded-md px-2 py-0.5 text-[8px] tracking-widest ${offerSoundsEnabled ? 'bg-[#00ffff]/20 text-[#00ffff]' : 'bg-white/5 text-white/35'}`}>
+                              {offerSoundsEnabled ? <Volume2 className="w-3 h-3 shrink-0" /> : <VolumeX className="w-3 h-3 shrink-0" />}
+                              <span className="whitespace-nowrap">New Offer Alert Sounds</span>
+                              <span className={`rounded px-1 py-px text-[6px] tracking-widest ${offerSoundsEnabled ? 'bg-[#00ffff]/20 text-[#00ffff]' : 'bg-white/5 text-white/35'}`}>
                                  {offerSoundsEnabled ? 'ON' : 'OFF'}
                               </span>
                            </button>
-                    </div>
-                    <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
-                          <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
-                        {/* LEFT COLUMN: tabs + content */}
-                           <div className="flex flex-col gap-2 min-w-0 flex-1">
+                           </div>
 <div className={`flex p-1.5 rounded-2xl border backdrop-blur-xl shadow-2xl ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-black/40 border-white/5'}`}>
 <button onClick={() => setActiveMainTab("boosts")} className={`flex-1 py-3 px-4 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] outline-none cursor-pointer text-center transition-all ${activeMainTab === "boosts" ? "bg-[#ff007f] shadow-[0_0_30px_rgba(255,0,127,0.4)] text-white" : `${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-white hover:text-white/80'}`}`}>
 ⚡ Offers
@@ -4800,10 +4807,11 @@ export default function HomePage() {
                                </motion.button>
                             )}
                           </div>
+</div>
 
                               <div className={`${activeMainTab !== "admin" ? 'w-full' : ''}`}>
                            {activeMainTab === "boosts" && (
-                              <div className="grid gap-2 overflow-visible -mt-5">
+                              <div className="grid gap-2 overflow-visible mt-2">
                                  <div className="flex flex-col gap-4">
                                      {(() => {
                                         const activeLobbies = lobbies.filter((l) => {
