@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
-import ClassRoleIcons from "@/components/ClassRoleIcons";
+import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
 import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
@@ -697,43 +697,54 @@ const ManageModal = ({
                                                          const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
                                                          const dungeonShort = dungeon?.short || (dungeon?.name ? dungeon.name.slice(0, 2).toUpperCase() : "");
                                                          return (
-                                                         <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1.5 group hover:border-[#00ffff]/30 transition-all">
-                                                            <div className="flex items-center gap-2 min-h-[40px]">
-                                                               <div className="flex flex-col items-center shrink-0 w-10">
-                                                                  <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
+                                                         <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 group hover:border-[#00ffff]/30 transition-all">
+                                                            <div className="flex items-center gap-1.5 min-h-[40px]">
+                                                               <div className="flex flex-col items-center shrink-0 w-[42px]">
+                                                                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
                                                                      <img
                                                                         src={profileImg}
                                                                         alt=""
                                                                         className={profileImgClass(profileImg)}
                                                                      />
                                                                   </div>
-                                                                  <p className="mt-0.5 text-[7px] font-black text-white truncate max-w-[72px] leading-tight text-center">{renderDualColorName(displayName)}</p>
+                                                                  <p className="mt-0.5 text-[6px] font-black text-white truncate max-w-[68px] leading-tight text-center">{renderDualColorName(displayName)}</p>
                                                                </div>
 
-                                                               <ClassRoleIcons className={app.class} role={app.role} size={28} overlap={9} classImgClassName="opacity-95" roleImgClassName="opacity-95" />
+                                                               <div className="flex items-center shrink-0" style={{ width: 54 }}>
+                                                                  <img
+                                                                     src={classThumbUrl(app.class)}
+                                                                     alt={app.class || "Class"}
+                                                                     className={`w-9 h-9 object-contain drop-shadow-md ${classIconClass()}`}
+                                                                  />
+                                                                  <img
+                                                                     src={roleIconUrl(app.role)}
+                                                                     alt={app.role || "Role"}
+                                                                     className={`w-9 h-9 object-contain drop-shadow-md -ml-3 ${roleIconClass(app.role, "lg")}`}
+                                                                  />
+                                                               </div>
 
-                                                               <div className="flex items-center gap-2 shrink-0 ml-1">
-                                                                  <div className="text-center">
-                                                                     <p className="text-[7px] text-gray-500 uppercase font-black">IO</p>
-                                                                     <p className="text-[10px] font-black text-orange-400 tabular-nums leading-none">{ioScore}</p>
+                                                               <div className="flex items-center gap-2 shrink-0">
+                                                                  <div className="text-center min-w-[34px]">
+                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">IO</p>
+                                                                     <p className="text-sm font-black text-orange-400 tabular-nums leading-tight">{ioScore}</p>
                                                                   </div>
-                                                                  <div className="text-center">
-                                                                     <p className="text-[7px] text-gray-500 uppercase font-black">iLvl</p>
-                                                                     <p className="text-[10px] font-black text-[#a335ee] tabular-nums leading-none">{app.ilvl || "—"}</p>
+                                                                  <div className="text-center min-w-[28px]">
+                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">iLvl</p>
+                                                                     <p className="text-sm font-black text-[#c084fc] tabular-nums leading-tight">{app.ilvl || "—"}</p>
                                                                   </div>
-                                                                  <div className="w-2.5 h-2.5 rounded-full bg-[#00ffff] shadow-[0_0_8px_rgba(0,255,255,0.45)] shrink-0" />
+                                                                  <div className="w-3 h-3 rounded-full bg-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.55)] shrink-0" />
                                                                </div>
 
                                                                {dungeon ? (
-                                                                  <div className="flex items-center gap-2 shrink-0 rounded-xl border border-[#00ffff]/20 bg-black/40 px-2 py-1.5 min-w-[108px]">
-                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-9 h-9 rounded-lg object-cover border border-white/15 shrink-0" />
+                                                                  <div className="flex items-center gap-1.5 shrink-0 rounded-lg border border-[#00ffff]/30 bg-black/50 px-1.5 py-1">
+                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-10 h-10 rounded-md object-cover border border-white/20 shrink-0" />
                                                                      <div className="min-w-0">
-                                                                        <p className="text-[10px] font-black text-white uppercase leading-none tracking-wide">{dungeonShort}</p>
-                                                                        <div className="flex items-center gap-1.5 mt-1">
-                                                                           {keyLvl ? <span className="text-xs font-black text-yellow-400 tabular-nums leading-none">+{keyLvl}</span> : null}
+                                                                        <p className="text-sm font-black text-[#00ffff] uppercase leading-none tracking-wider drop-shadow-[0_0_8px_rgba(0,255,255,0.35)]">{dungeonShort}</p>
+                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                           {keyLvl ? <span className="text-base font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
                                                                            {dropLvl ? (
-                                                                              <span className="inline-flex items-center gap-0.5 text-[11px] font-black text-[#00d4ff] tabular-nums leading-none">
-                                                                                 <ArrowDown className="w-3 h-3 stroke-[3]" />
+                                                                              <span className="inline-flex items-center gap-0.5 text-base font-black text-[#00eaff] tabular-nums leading-none drop-shadow-[0_0_6px_rgba(0,234,255,0.4)]">
+                                                                                 <ArrowDown className="w-4 h-4 stroke-[3]" />
                                                                                  {dropLvl}
                                                                               </span>
                                                                            ) : null}
@@ -741,16 +752,13 @@ const ManageModal = ({
                                                                      </div>
                                                                   </div>
                                                                ) : (
-                                                                  <div className="shrink-0 min-w-[72px] rounded-xl border border-dashed border-white/10 px-2 py-1.5 flex items-center justify-center">
+                                                                  <div className="shrink-0 min-w-[64px] rounded-lg border border-dashed border-white/10 px-2 py-1 flex items-center justify-center">
                                                                      <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">No Key</p>
                                                                   </div>
                                                                )}
 
-                                                               <div className={`flex-1 min-w-0 rounded-lg border px-2 py-1 ml-1 ${note ? 'border-[#8a2be2]/25 bg-[#8a2be2]/8' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
-                                                                  <p className="text-[6px] font-black uppercase tracking-widest text-[#8a2be2] mb-0.5 flex items-center gap-0.5">
-                                                                     <MessageSquare className="w-2 h-2" /> Note
-                                                                  </p>
-                                                                  <p className={`text-[9px] leading-snug line-clamp-2 break-words ${note ? 'text-gray-200' : 'text-gray-600'}`}>
+                                                               <div className={`flex-1 min-w-0 rounded-lg border px-2 py-1 flex items-center ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
+                                                                  <p className={`text-[11px] leading-snug line-clamp-2 break-words font-semibold w-full ${note ? 'text-gray-100' : 'text-gray-600'}`}>
                                                                      {note || "—"}
                                                                   </p>
                                                                </div>

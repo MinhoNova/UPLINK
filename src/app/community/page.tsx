@@ -437,20 +437,7 @@ export default function CommunityPage() {
         </>
       )}
 
-      {/* Navbar — transparent like main page so hero bg shows through */}
-      <nav className="w-full z-50 h-20 flex items-center bg-transparent">
-        <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center">
-              <Swords className="w-5 h-5 text-yellow-500 drop-shadow-[0_0_8px_rgba(255,200,0,0.5)]" />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-          </div>
-        </div>
-      </nav>
-
-      <div className="pt-16 sm:pt-20 px-3 sm:px-6 lg:pr-[400px]">
+      <div className="pt-24 sm:pt-28 px-3 sm:px-6 lg:pr-[400px]">
 
         <div className="max-w-[1600px] mx-auto py-4 sm:py-6">
           <div className="flex-1 min-w-0 w-full max-w-3xl mx-auto relative z-10">

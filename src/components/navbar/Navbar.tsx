@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Swords, Trophy, Bell, DoorOpen, DoorClosed, MessageCircle, Zap, ArrowLeft } from "lucide-react";
+import { Trophy, Bell, DoorOpen, DoorClosed, MessageCircle, Zap, ArrowLeft } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -219,10 +219,7 @@ export default function Navbar() {
             </div>
 
           <div className="flex bg-black/5 dark:bg-black/20 p-1.5 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
-            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
-              <div className="w-9 h-9 shrink-0 overflow-hidden rounded-md -my-2.5">
-                <ProtocolMark variant={1} className="h-full w-full" gold={pathname !== '/community'} />
-              </div>
+            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-5 py-2.5 rounded-xl flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
               {pathname === '/community' ? 'Uplink' : 'CLUB'}
             </motion.button>
             {pathname === '/leaderboard' ? (
