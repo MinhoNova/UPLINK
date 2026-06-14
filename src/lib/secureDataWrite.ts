@@ -1,6 +1,7 @@
 import { isSecretClubTier } from "@/lib/userProfile";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby } from "@/lib/lobbyLifecycle";
+import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 
 export const ADMIN_ID = "1497295886223544471";
 export const ADMIN_HANDLE = "minhonovazen";
@@ -351,6 +352,36 @@ export function validateGoldOffers(
   return { ok: true, value: incoming };
 }
 
+async function enforceOfferDailyLimitsOnLobbyWrites(
+  existing: any[],
+  incoming: any[],
+  userId: string,
+  registeredUsers: any[],
+  isAdmin: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (isAdmin) return { ok: true };
+  const user = registeredUsers.find((u) => String(u.id) === String(userId));
+  const existingById = new Map(existing.map((l) => [String(l.id), l]));
+  const uid = String(userId);
+
+  for (const lobby of incoming) {
+    const ex = existingById.get(String(lobby.id));
+    if (!ex && String(lobby.ownerId) === uid) {
+      const check = await checkAndRecordOfferAction(uid, user);
+      if (!check.ok) return check;
+      continue;
+    }
+    if (!ex) continue;
+    const exHad = (ex.applicants || []).some((a: any) => memberUserId(a) === uid);
+    const nextHas = (lobby.applicants || []).some((a: any) => memberUserId(a) === uid);
+    if (!exHad && nextHas) {
+      const check = await checkAndRecordOfferAction(uid, user);
+      if (!check.ok) return check;
+    }
+  }
+  return { ok: true };
+}
+
 export async function validateDataWrites(
   updates: Record<string, unknown>,
   existing: Record<string, unknown>,
@@ -374,9 +405,19 @@ export async function validateDataWrites(
       case "registeredUsers":
         result = validateRegisteredUsers((existing.registeredUsers as unknown[]) || [], value, userId, isAdmin);
         break;
-      case "lobbies":
+      case "lobbies": {
         result = validateLobbies((existing.lobbies as unknown[]) || [], value, userId, isAdmin);
+        if (!result.ok) break;
+        const limitCheck = await enforceOfferDailyLimitsOnLobbyWrites(
+          (existing.lobbies as any[]) || [],
+          result.value as any[],
+          userId,
+          (existing.registeredUsers as any[]) || [],
+          isAdmin
+        );
+        if (!limitCheck.ok) return limitCheck;
         break;
+      }
       case "characters":
         result = validateCharacters((existing.characters as unknown[]) || [], value, userId, isAdmin);
         break;

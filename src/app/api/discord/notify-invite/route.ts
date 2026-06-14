@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKVPairs, initTables } from "@/lib/db";
-import { sendDiscordInviteDM } from "@/lib/discord";
+import { sendDiscordInviteDM, sendDiscordConfirmedDM } from "@/lib/discord";
 
 export async function POST(req: Request) {
   const auth = await requireSession(req);
@@ -11,9 +11,13 @@ export async function POST(req: Request) {
   const lobbyId = String(body?.lobbyId || "");
   const notifId = body?.notifId;
   const applicantDiscordId = String(body?.applicantDiscordId || "");
+  const mode = body?.mode === "confirmed" ? "confirmed" : "invite";
 
-  if (!lobbyId || notifId == null || !applicantDiscordId) {
-    return NextResponse.json({ error: "Missing lobbyId, notifId, or applicantDiscordId" }, { status: 400 });
+  if (!lobbyId || !applicantDiscordId) {
+    return NextResponse.json({ error: "Missing lobbyId or applicantDiscordId" }, { status: 400 });
+  }
+  if (mode === "invite" && notifId == null) {
+    return NextResponse.json({ error: "Missing notifId for invite" }, { status: 400 });
   }
 
   await initTables();
@@ -26,7 +30,10 @@ export async function POST(req: Request) {
   }
 
   const ownerUser = (data.registeredUsers || []).find((u: any) => String(u.id) === String(auth.user.id));
-  const sent = await sendDiscordInviteDM(applicantDiscordId, lobby, ownerUser, notifId);
+  const sent =
+    mode === "confirmed"
+      ? await sendDiscordConfirmedDM(applicantDiscordId, lobby, ownerUser)
+      : await sendDiscordInviteDM(applicantDiscordId, lobby, ownerUser, notifId);
 
   return NextResponse.json({ ok: sent });
 }

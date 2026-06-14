@@ -8,6 +8,7 @@ import {
   repairLobbyRoles,
 } from "@/lib/lobbyLifecycle";
 import { notificationMatchesUser } from "@/lib/userProfile";
+import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
   return String(member.applicantId || member.userId || member.id || "");
@@ -55,6 +56,11 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       ok: false as const,
       error: "Sync a character on UPLINK first (Armory → Raider.io), then apply from Discord.",
     };
+  }
+
+  const limitCheck = await checkAndRecordOfferAction(uid, user);
+  if (!limitCheck.ok) {
+    return { ok: false as const, error: limitCheck.error };
   }
 
   const nextApplicant = {

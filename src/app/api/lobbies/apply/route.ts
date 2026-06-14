@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/authz";
 import { getKVPairs, setKV, initTables } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { withdrawApplicantFromOfferFamily } from "@/lib/lobbyLifecycle";
+import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
   return String(member.applicantId || member.userId || member.id || "");
@@ -50,6 +51,13 @@ export async function POST(req: Request) {
   const charId = String(applicant.id || "");
   if (charId && applicants.some((a: any) => String(a.id) === charId)) {
     return NextResponse.json({ error: "Character already applied" }, { status: 409 });
+  }
+
+  const registeredUsers: any[] = existing.registeredUsers || [];
+  const user = registeredUsers.find((u) => String(u.id) === uid);
+  const limitCheck = await checkAndRecordOfferAction(uid, user || auth.user);
+  if (!limitCheck.ok) {
+    return NextResponse.json({ error: limitCheck.error }, { status: 429 });
   }
 
   const nextApplicant = {

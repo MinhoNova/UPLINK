@@ -1524,8 +1524,15 @@ export default function HomePage() {
               credentials: "include",
               body: JSON.stringify(rest),
            });
-           if (res.ok) window.dispatchEvent(new CustomEvent("data-refresh"));
-           return res.ok;
+           if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              if (err.error) {
+                 window.dispatchEvent(new CustomEvent("show-toast", { detail: { msg: err.error, type: "error" } }));
+              }
+              return false;
+           }
+           window.dispatchEvent(new CustomEvent("data-refresh"));
+           return true;
         } catch (e) {
            console.error("saveGlobalData failed:", e);
            return false;
@@ -1592,6 +1599,10 @@ export default function HomePage() {
                        : l
                  )
               );
+              const err = await res.json().catch(() => ({}));
+              if (res.status === 429 && err.error) {
+                 window.dispatchEvent(new CustomEvent("show-toast", { detail: { msg: err.error, type: "error" } }));
+              }
               return false;
            }
            const data = await res.json();
@@ -3014,7 +3025,7 @@ export default function HomePage() {
       addToast("Draft deleted.", "info");
    }, [currentUserId, addToast, saveGlobalData]);
 
-     const handleCreateLobby = (e: React.FormEvent, data?: any) => {
+     const handleCreateLobby = async (e: React.FormEvent, data?: any) => {
         e.preventDefault();
         const fd = data || formData;
         if (editingLobby) {
@@ -3126,7 +3137,13 @@ export default function HomePage() {
              };
              const newLobbies = [newLobby, ...lobbies];
               setLobbies(newLobbies);
-              saveGlobalData({ lobbies: newLobbies });
+              const saved = await saveGlobalData({ lobbies: newLobbies });
+              if (!saved) {
+                 setLobbies(lobbies);
+                 addToast("Could not deploy mission. You may have reached the daily offer limit (3/day for free accounts).", "error");
+                 setIsCreateModalOpen(false);
+                 return;
+              }
               const updatedUsers = registeredUsers.map((u: any) => {
                  if (String(u.id) === String(currentUserId)) {
                     const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
@@ -3177,7 +3194,13 @@ export default function HomePage() {
              };
              const newLobbies = [newLobby, ...lobbies];
              setLobbies(newLobbies);
-             saveGlobalData({ lobbies: newLobbies });
+             const saved = await saveGlobalData({ lobbies: newLobbies });
+             if (!saved) {
+                setLobbies(lobbies);
+                addToast("Could not deploy squad. You may have reached the daily offer limit (3/day for free accounts).", "error");
+                setIsCreateModalOpen(false);
+                return;
+             }
              const updatedUsers = registeredUsers.map((u: any) => {
                 if (String(u.id) === String(currentUserId)) {
                    const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
@@ -3298,6 +3321,16 @@ export default function HomePage() {
                  lobbyId: targetLobby.id,
                  notifId,
                  applicantDiscordId: String(applicant.applicantId || applicant.userId),
+              }),
+           }).catch(() => {});
+        } else if (isAuto && applicant.applicantId) {
+           fetch("/api/discord/notify-invite", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                 lobbyId: targetLobby.id,
+                 applicantDiscordId: String(applicant.applicantId || applicant.userId),
+                 mode: "confirmed",
               }),
            }).catch(() => {});
         }

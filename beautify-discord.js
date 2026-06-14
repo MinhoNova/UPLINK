@@ -15,7 +15,9 @@ if (!TOKEN) {
 const channelMap = {
   'welcome-briefing': '👋・welcome',
   'uplink-announcements': '📢・announcements',
-  'lfg-retail-wow': '🎮・retail-wow',
+  'lfg-retail-wow': '⚔️・mythic-plus',
+  '🎮・retail-wow': '⚔️・mythic-plus',
+  'retail-wow': '⚔️・mythic-plus',
   'leveling-squads': '🚀・leveling-squads',
   'Lobby Alpha': '🔊 Lobby Alpha',
   'Lobby Bravo': '🔊 Lobby Bravo'

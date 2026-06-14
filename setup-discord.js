@@ -59,9 +59,10 @@ client.once('ready', async () => {
     });
 
     await guild.channels.create({
-      name: 'lfg-retail-wow',
+      name: 'lfg-mythic-plus',
       type: ChannelType.GuildText,
       parent: lfgCategory.id,
+      topic: 'Mythic+ offers — posted automatically by UPLINK',
     });
 
     await guild.channels.create({
