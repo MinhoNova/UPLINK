@@ -1215,26 +1215,27 @@ export default function HomePage() {
       }
    };
 
-   const playerLockedInOffer = useMemo(
-      () => currentUserId !== "guest" && userIsActiveInOffer(lobbies, currentUserId),
+   const playerLockedInDungeon = useMemo(
+      () => currentUserId !== "guest" && userIsActiveInDungeonOffer(lobbies, currentUserId),
       [lobbies, currentUserId]
    );
+   const playerLockedInOffer = playerLockedInDungeon;
    const tryEnableAutoApply = useCallback(
       (enabled: boolean) => {
-         if (enabled && userIsActiveInOffer(lobbies, currentUserId)) {
-            addToast("Leave your current offer before enabling Auto-Apply.", "error");
+         if (
+            enabled &&
+            autoApplyCategory !== "leveling" &&
+            userIsActiveInDungeonOffer(lobbies, currentUserId)
+         ) {
+            addToast("Leave your current dungeon run before enabling dungeon Auto-Apply.", "error");
             return;
          }
          syncAutoApplyEnabled(enabled);
       },
-      [lobbies, currentUserId, syncAutoApplyEnabled]
+      [lobbies, currentUserId, autoApplyCategory, syncAutoApplyEnabled]
    );
    const tryEnableAutoAccept = useCallback(
       (enabled: boolean) => {
-         if (enabled && userIsActiveInOffer(lobbies, currentUserId)) {
-            addToast("Leave your current offer before enabling Auto-Accept.", "error");
-            return;
-         }
          if (enabled) {
             const end = Date.now() + AUTO_ACCEPT_DURATION_MS;
             setAutoAcceptEndTime(end);
@@ -1249,21 +1250,17 @@ export default function HomePage() {
    );
    useEffect(() => {
       window.dispatchEvent(
-         new CustomEvent("set-auto-features-locked", { detail: { locked: playerLockedInOffer } })
+         new CustomEvent("set-auto-features-locked", {
+            detail: { locked: playerLockedInDungeon, category: autoApplyCategory },
+         })
       );
-   }, [playerLockedInOffer]);
+   }, [playerLockedInDungeon, autoApplyCategory]);
    useEffect(() => {
-      if (!playerLockedInOffer) return;
-      if (autoApplyEnabled) syncAutoApplyEnabled(false);
-      if (autoAcceptEnabled) {
-         setAutoAcceptEnabled(false);
-         setAutoAcceptEndTime(0);
-         if (typeof window !== "undefined") {
-            localStorage.setItem("uplink_auto_accept", "false");
-            localStorage.setItem("uplink_auto_accept_end", "0");
-         }
+      if (!playerLockedInDungeon) return;
+      if (autoApplyEnabled && autoApplyCategory !== "leveling") {
+         syncAutoApplyEnabled(false);
       }
-   }, [playerLockedInOffer, autoApplyEnabled, autoAcceptEnabled, syncAutoApplyEnabled]);
+   }, [playerLockedInDungeon, autoApplyEnabled, autoApplyCategory, syncAutoApplyEnabled]);
    useEffect(() => {
       const onNavbarToggle = (event: Event) => {
          const enabled = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled;
@@ -1758,7 +1755,8 @@ export default function HomePage() {
         const isSecretClub =
            currentUserId === "1497295886223544471" ||
            (sub?.tier === "secret_club" && (!sub.endDate || Date.now() <= sub.endDate));
-        if (!autoApplyEnabled || !isSecretClub || playerLockedInOffer) return;
+        if (!autoApplyEnabled || !isSecretClub) return;
+        if (autoApplyCategory !== "leveling" && playerLockedInDungeon) return;
         if (myCharacters.length === 0 || !autoApplyCharId) return;
         const selectedChar = myCharacters.find((c) => String(c.id) === String(autoApplyCharId));
         if (!selectedChar) return;
@@ -1791,6 +1789,7 @@ export default function HomePage() {
               if (applyingLobbyIds.current.has(lobbyKey)) continue;
               if (isAutoApplyCancelled(lobbyKey)) continue;
               if (isAutoApplyBlocked(lobby)) continue;
+              if (lobby.category !== "leveling" && userIsActiveInDungeonOffer(snapshot, currentUserId)) continue;
 
               const char = selectedChar;
               const matchRole = (lobby.roles?.[char.role] || 0) > 0;
@@ -1851,7 +1850,7 @@ export default function HomePage() {
         };
      }, [
         autoApplyEnabled,
-        playerLockedInOffer,
+        playerLockedInDungeon,
         registeredUsers,
         myCharacters,
         currentUserId,
@@ -3637,10 +3636,16 @@ export default function HomePage() {
    useEffect(() => {
       if (!playerAutoAcceptActive || autoConfirmInFlightRef.current) return;
       const pending = notifications.filter(
-         (n: any) =>
-            notificationMatchesUser(n, currentUserId, currentUserDiscordHandle, registeredUsers) &&
-            !shownNotifIds.current.includes(n.id) &&
-            (n.type === "lobby_accept" || n.type === "lobby_confirm")
+         (n: any) => {
+            if (!notificationMatchesUser(n, currentUserId, currentUserDiscordHandle, registeredUsers)) return false;
+            if (shownNotifIds.current.includes(n.id)) return false;
+            if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
+            const lobby = lobbies.find((l: any) => String(l.id) === String(n.lobbyId));
+            if (lobby && lobby.category !== "leveling" && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
+               return false;
+            }
+            return true;
+         }
       );
       if (!pending.length) return;
 
@@ -3655,7 +3660,7 @@ export default function HomePage() {
             autoConfirmInFlightRef.current = false;
          }
       })();
-   }, [notifications, playerAutoAcceptActive, currentUserId, currentUserDiscordHandle, registeredUsers]);
+   }, [notifications, playerAutoAcceptActive, currentUserId, currentUserDiscordHandle, registeredUsers, lobbies]);
 
    const handleJoinVoice = async (lobbyId: string) => {
       if (!session?.user || currentUserId === "guest") {
@@ -5592,14 +5597,14 @@ export default function HomePage() {
                                        <button type="button" onClick={() => {
                                           if (!canUseSecret) return addToast("Auto-Accept is a Secret Club feature.", "error");
                                           tryEnableAutoAccept(!autoAcceptEnabled);
-                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseSecret && !playerLockedInOffer ? autoAcceptEnabled ? 'border-[#00ffff]/50 bg-[#00ffff]/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInOffer}>
+                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseSecret ? autoAcceptEnabled ? 'border-[#00ffff]/50 bg-[#00ffff]/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`}>
                                           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{canUseSecret ? <Zap className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Auto Accept</div>
                                           <p className="mt-1 text-[7px] font-black uppercase tracking-widest text-gray-500">{canUseSecret ? (autoAcceptEnabled ? '10 minute session on' : '10 minute session off') : 'Secret Club only'}</p>
                                        </button>
                                        <button type="button" onClick={() => {
                                            if (!canUseAutoApply) return addToast("Auto-Apply is a Secret Club feature. Subscribe to unlock.", "error");
                                           tryEnableAutoApply(!autoApplyEnabled);
-                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseAutoApply && !playerLockedInOffer ? autoApplyEnabled ? 'border-green-500/50 bg-green-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInOffer}>
+                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseAutoApply && !(playerLockedInDungeon && autoApplyCategory !== "leveling") ? autoApplyEnabled ? 'border-green-500/50 bg-green-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInDungeon && autoApplyCategory !== "leveling"}>
                                           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{canUseAutoApply ? <Radio className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Auto Apply</div>
                                            <p className="mt-1 text-[7px] font-black uppercase tracking-widest text-gray-500">{canUseAutoApply ? (autoApplyEnabled ? 'Scanning on' : 'Scanning off') : 'Secret Club only'}</p>
                                        </button>
@@ -5994,7 +5999,7 @@ export default function HomePage() {
                     setHiddenIdentity={setHiddenIdentity}
                     registeredUsers={registeredUsers}
                     setRegisteredUsers={setRegisteredUsers}
-                    autoFeaturesLocked={playerLockedInOffer}
+                    autoFeaturesLocked={playerLockedInDungeon}
                     onToggleAutoAccept={tryEnableAutoAccept}
                   />
 

@@ -350,10 +350,9 @@ const AutoApplySettingsModal = ({
                                           }`}>
                                              <div className="flex items-center gap-4 mb-4">
                                                      <motion.button
-                                                       disabled={!canUseSecret || autoFeaturesLocked}
+                                                       disabled={!canUseSecret}
                                                        onClick={() => {
                                                           if (!canUseSecret) return addToast("Secret Club feature. Upgrade to unlock.", "error");
-                                                          if (autoFeaturesLocked) return addToast("Leave your current offer before enabling Auto-Accept.", "error");
                                                           if (onToggleAutoAccept) {
                                                              onToggleAutoAccept(!autoAcceptEnabled);
                                                              if (!autoAcceptEnabled) addToast("Auto-Accept activated for 10 minutes!", "success");
@@ -373,7 +372,7 @@ const AutoApplySettingsModal = ({
                                                        }}
                                                        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.85 }}
                                                        className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-500 ${
-                                                          !canUseSecret || autoFeaturesLocked
+                                                          !canUseSecret
                                                              ? 'cursor-not-allowed opacity-30 bg-black/15'
                                                              : aaOn
                                                                 ? 'bg-black/15 border border-[#00ffff]/30'

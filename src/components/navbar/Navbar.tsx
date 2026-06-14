@@ -46,10 +46,15 @@ export default function Navbar() {
     return localStorage.getItem("uplink_auto_apply") === "true";
   });
   const [autoFeaturesLocked, setAutoFeaturesLocked] = useState(false);
+  const [autoLockCategory, setAutoLockCategory] = useState("dungeon");
+
+  const autoApplyBlocked = autoFeaturesLocked && autoLockCategory !== "leveling";
 
   useEffect(() => {
     const syncLockState = (event: Event) => {
-      setAutoFeaturesLocked(!!(event as CustomEvent<{ locked?: boolean }>).detail?.locked);
+      const detail = (event as CustomEvent<{ locked?: boolean; category?: string }>).detail;
+      setAutoFeaturesLocked(!!detail?.locked);
+      if (detail?.category) setAutoLockCategory(detail.category);
     };
     window.addEventListener("set-auto-features-locked", syncLockState);
     return () => window.removeEventListener("set-auto-features-locked", syncLockState);
@@ -243,16 +248,16 @@ export default function Navbar() {
                 window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Auto-Apply is a Secret Club feature. Subscribe to unlock.', type: 'error' } }));
                 return;
               }
-              if (autoFeaturesLocked) {
-                window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Leave your current offer before enabling Auto-Apply.', type: 'error' } }));
+              if (autoApplyBlocked) {
+                window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Leave your current dungeon run before enabling dungeon Auto-Apply.', type: 'error' } }));
                 return;
               }
               const newVal = !autoApplyEnabled;
               setAutoApplyEnabled(newVal);
               localStorage.setItem("uplink_auto_apply", newVal ? "true" : "false");
               window.dispatchEvent(new CustomEvent('set-auto-apply-enabled', { detail: { enabled: newVal } }));
-            }} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
-              <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
+            }} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoApplyBlocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+              <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoApplyBlocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
             </motion.button>
             <motion.button title="Auto-Apply Settings" onClick={() => {
               if (getUserTier(currentUserId) === "free") return;
