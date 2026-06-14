@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsActiveInOtherDungeonOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -1898,8 +1898,7 @@ export default function HomePage() {
                      if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
                      if (!aaActive) return false;
                      const lobby = finalLobbies.find((l: any) => String(l.id) === String(n.lobbyId));
-                     if (!lobby) return false;
-                     if (!isLevelingOffer(lobby) && userIsActiveInDungeonOffer(finalLobbies, currentUserId)) return false;
+                     if (!lobby || !isLevelingOffer(lobby)) return false;
                      return true;
                   });
                   if (autoNotif) {
@@ -2022,18 +2021,20 @@ export default function HomePage() {
                 }
              }
 
-             // Auto-popup logic for new notifications (skip invite modal when auto-accept is active)
+             // Auto-popup: leveling auto-confirms silently; dungeon always shows 60s accept modal.
             if (handleRef.current) {
                const aaEnabled = localStorage.getItem("uplink_auto_accept") === "true";
                const aaEnd = parseInt(localStorage.getItem("uplink_auto_accept_end") || "0") || 0;
                const aaActive = aaEnabled && aaEnd > now;
-               const myNewNotifs = activeNotifs.filter((n: any) =>
-                  notificationMatchesUser(n, currentUserId, handleRef.current, data.registeredUsers || []) &&
-                  !shownNotifIds.current.includes(n.id) &&
-                  (
-                     !aaActive && (n.type === 'lobby_accept' || n.type === 'lobby_confirm')
-                  )
-               );
+               const popupLobbies = data.lobbies || lobbiesRef.current || [];
+               const myNewNotifs = activeNotifs.filter((n: any) => {
+                  if (!notificationMatchesUser(n, currentUserId, handleRef.current, data.registeredUsers || [])) return false;
+                  if (shownNotifIds.current.includes(n.id)) return false;
+                  if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
+                  if (!aaActive) return true;
+                  const lobby = popupLobbies.find((l: any) => String(l.id) === String(n.lobbyId));
+                  return !!(lobby && !isLevelingOffer(lobby));
+               });
 
                  if (myNewNotifs.length > 0) {
                     const latest = myNewNotifs[myNewNotifs.length - 1];
@@ -3243,10 +3244,11 @@ export default function HomePage() {
         const ownerUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
         const isAuto =
            isSecretClubTier(ownerUser) && autoAcceptEnabled && Date.now() <= autoAcceptEndTime;
+        const instantJoin = isAuto && isLevelingOffer(targetLobby);
         const notifId = Date.now();
         let updated = lobbies.map((l) => {
            if (l.id === targetLobby.id) {
-              if (isAuto) return confirmApplicantJoin(l, acceptedApplicant);
+              if (instantJoin) return confirmApplicantJoin(l, acceptedApplicant);
               return inviteApplicantToLobby(l, acceptedApplicant, notifId);
            }
            return l;
@@ -3258,7 +3260,7 @@ export default function HomePage() {
            targetLobby
         );
         let newNotifications = notifications;
-        if (!isAuto) {
+        if (!instantJoin) {
            const newNotif = {
               id: notifId,
               toUser: resolveNotificationRecipient(applicant, registeredUsers),
@@ -3281,9 +3283,9 @@ export default function HomePage() {
         setTargetLobby(updated.find(l => l.id === targetLobby.id));
         await saveGlobalData({
            lobbies: updated,
-           ...(isAuto ? {} : { notifications: newNotifications }),
+           ...(instantJoin ? {} : { notifications: newNotifications }),
         });
-        if (!isAuto && applicant.applicantId) {
+        if (!instantJoin && applicant.applicantId) {
            fetch("/api/discord/notify-invite", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -3293,7 +3295,7 @@ export default function HomePage() {
                  applicantDiscordId: String(applicant.applicantId || applicant.userId),
               }),
            }).catch(() => {});
-        } else if (isAuto && applicant.applicantId) {
+        } else if (instantJoin && applicant.applicantId) {
            fetch("/api/discord/notify-invite", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -3304,7 +3306,7 @@ export default function HomePage() {
               }),
            }).catch(() => {});
         }
-        addToast(isAuto ? `${applicant.name} auto-accepted!` : `${applicant.name} invited! 60s.`, "success");
+        addToast(instantJoin ? `${applicant.name} auto-accepted!` : `${applicant.name} invited! 60s.`, "success");
      };
 
      // Auto-accept: batch-process ALL pending applicants across ALL user lobbies
@@ -3457,35 +3459,59 @@ export default function HomePage() {
               seen.add(key);
               pending.push({ lobbyId: String(l.id), app });
            }
-
-           for (const member of l.accepted || []) {
-              if (member.status !== "invited") continue;
-              const key = `${l.id}:${memberIdentityKey(member)}`;
-              if (!key || seen.has(key)) continue;
-              seen.add(key);
-              pending.push({ lobbyId: String(l.id), app: member });
-           }
         }
         if (!pending.length) return;
 
         autoAcceptBusyRef.current = true;
         let next = [...lobbies];
+        let newNotifications = [...notifications];
         for (const { lobbyId, app } of pending) {
+           const lobby = next.find((l) => String(l.id) === lobbyId);
+           if (!lobby) continue;
            const visual = resolveMemberVisual(app);
            const enriched = {
               ...app,
               applicantAvatar: app.applicantAvatar || visual.avatar || "",
               applicantEffect: app.applicantEffect || visual.effect || "none",
            };
-           next = acceptApplicantAcrossLobbies(next, lobbyId, enriched);
+           if (isLevelingOffer(lobby)) {
+              next = acceptApplicantAcrossLobbies(next, lobbyId, enriched);
+           } else {
+              const notifId = Date.now() + Math.floor(Math.random() * 1000);
+              next = next.map((l) =>
+                 String(l.id) === lobbyId ? inviteApplicantToLobby(l, enriched, notifId) : l
+              );
+              next = withdrawUserFromAllLobbies(
+                 next,
+                 memberIdentityKey(enriched),
+                 lobbyId,
+                 lobby
+              );
+              newNotifications.push({
+                 id: notifId,
+                 toUser: resolveNotificationRecipient(app, registeredUsers),
+                 fromUser: currentUserDisplay,
+                 fromHandle: currentUserDiscordHandle,
+                 fromAvatar: session?.user?.image,
+                 message: `Invited to ${lobby.title}!`,
+                 type: "lobby_accept",
+                 lobbyId: lobby.id,
+                 applicantId: app.id,
+                 applicantName: app.applicantName || app.name,
+                 applicantData: enriched,
+                 inviteExpiresAt: Date.now() + 60000,
+                 timestamp: Date.now(),
+              });
+           }
         }
         setLobbies(next);
+        setNotifications(newNotifications);
         setTargetLobby((prev: any) => {
            if (!prev?.id) return prev;
            const updated = next.find((l) => String(l.id) === String(prev.id));
            return updated ? { ...updated } : prev;
         });
-        saveGlobalData({ lobbies: next }).finally(() => {
+        saveGlobalData({ lobbies: next, notifications: newNotifications }).finally(() => {
            setTimeout(() => {
               autoAcceptBusyRef.current = false;
            }, 800);
@@ -3525,6 +3551,14 @@ export default function HomePage() {
 
     const handleConfirmLobby = async (notif: any) => {
       const lobby = lobbies.find((l) => String(l.id) === String(notif.lobbyId));
+      if (
+         lobby &&
+         !isLevelingOffer(lobby) &&
+         userIsActiveInOtherDungeonOffer(lobbies, currentUserId, notif.lobbyId)
+      ) {
+         addToast("You already have another pending or active dungeon offer.", "error");
+         return;
+      }
       const invitedMember =
          (lobby?.accepted || []).find(
             (a: any) =>
@@ -3557,7 +3591,7 @@ export default function HomePage() {
       addToast(t("positionSecured"), "success");
    };
 
-   // Player auto-accept: confirm lobby invites instantly without showing the modal
+   // Player auto-accept: instantly confirm leveling invites only (dungeon stays 60s pending).
    const playerAutoAcceptActive =
       autoAcceptEnabled && Date.now() <= autoAcceptEndTime && getUserTier(currentUserId) === "secret_club";
    const autoConfirmInFlightRef = useRef(false);
@@ -3569,8 +3603,7 @@ export default function HomePage() {
             if (shownNotifIds.current.includes(n.id)) return false;
             if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
             const lobby = lobbies.find((l: any) => String(l.id) === String(n.lobbyId));
-            if (!lobby) return false;
-            if (!isLevelingOffer(lobby) && userIsActiveInDungeonOffer(lobbies, currentUserId)) return false;
+            if (!lobby || !isLevelingOffer(lobby)) return false;
             return true;
          }
       );

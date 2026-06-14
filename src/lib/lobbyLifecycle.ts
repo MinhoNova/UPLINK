@@ -131,6 +131,28 @@ export function getEffectiveOfferStatus(lobby: any): string {
   return lobby.status || "standby";
 }
 
+/** Player has a confirmed or pending invite slot in a dungeon offer other than `exceptLobbyId`. */
+export function userIsActiveInOtherDungeonOffer(
+  lobbies: any[],
+  userId: string,
+  exceptLobbyId?: string
+): boolean {
+  const uid = String(userId);
+  const except = exceptLobbyId ? String(exceptLobbyId) : "";
+  return (lobbies || []).some((l) => {
+    if (isLevelingOffer(l)) return false;
+    if (except && String(l.id) === except) return false;
+    if (String(l.ownerId) === uid) return false;
+    const status = l.status || "standby";
+    if (!["standby", "in_progress"].includes(status)) return false;
+    return (l.accepted || []).some((a: any) => {
+      if (memberIdentityKey(a) !== uid) return false;
+      const slotStatus = a.status;
+      return !slotStatus || slotStatus === "confirmed" || slotStatus === "invited";
+    });
+  });
+}
+
 /** Player is in an active dungeon/M+ squad slot — one dungeon run at a time. */
 export function userIsActiveInDungeonOffer(lobbies: any[], userId: string): boolean {
   const uid = String(userId);
