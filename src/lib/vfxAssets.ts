@@ -12,12 +12,11 @@ export function resolveVfxPoster(entry: VfxEntry): string | undefined {
   return entry.poster?.trim() || undefined;
 }
 
-/** Static/light URL for offer banners & ongoing missions (no GIF decode). */
+/** Static/light URL for offer banners & ongoing missions. Falls back to full src so GIF always shows. */
 export function resolveVfxBannerUrl(entry: VfxEntry): string {
   const src = resolveVfxSrc(entry);
   const poster = resolveVfxPoster(entry);
   if (poster) return poster;
-  if (src && !isAnimatedImageUrl(src)) return src;
   return src;
 }
 

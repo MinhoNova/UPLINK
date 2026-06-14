@@ -39,13 +39,13 @@ export function profileImgClass(url: string, base = "w-full h-full"): string {
   return `${base} ${isAnimatedImageUrl(url) ? "object-contain bg-black" : "object-cover"}`;
 }
 
-/** Static image for the offers feed — prefers GIF poster, not Discord avatar. */
+/** Static image for the offers feed — show the user's GIF (poster or full) before Discord avatar. */
 export function resolveOfferFeedProfileImage(user: any, fallbackName = "U"): string {
   if (user?.profileGifThumb?.trim()) return user.profileGifThumb;
+  if (user?.profileGif?.trim()) return user.profileGif;
   for (const src of [user?.customAvatar, user?.avatar]) {
     if (src?.trim() && !isAnimatedImageUrl(src)) return src;
   }
-  if (user?.profileGif?.trim()) return user.profileGif;
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || fallbackName)}&background=0b1020&color=00ffff&size=128&bold=true`;
 }
 

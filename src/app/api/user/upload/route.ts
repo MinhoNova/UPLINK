@@ -29,6 +29,7 @@ export async function POST(req: Request) {
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
+  const posterFile = formData.get("poster") as File | null;
   const rawField = formData.get("field");
   const field =
     rawField === "profileGif" ? "profileGif" :
@@ -80,11 +81,20 @@ export async function POST(req: Request) {
   try {
     url = await storeUserMediaFile(userId, normalized, ext, contentType);
     if (field === "profileGif" && ext === "gif") {
-      try {
-        const poster = await extractGifPoster(buffer, MAX_DIM);
-        thumbUrl = await storeUserMediaFile(userId, poster, "webp", "image/webp");
-      } catch {
-        /* poster optional */
+      if (posterFile?.size) {
+        thumbUrl = await storeUserMediaFile(
+          userId,
+          Buffer.from(await posterFile.arrayBuffer()),
+          "webp",
+          "image/webp"
+        );
+      } else {
+        try {
+          const poster = await extractGifPoster(buffer, MAX_DIM);
+          thumbUrl = await storeUserMediaFile(userId, poster, "webp", "image/webp");
+        } catch {
+          /* poster optional */
+        }
       }
     }
   } catch {

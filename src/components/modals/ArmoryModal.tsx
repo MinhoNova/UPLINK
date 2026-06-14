@@ -9,6 +9,7 @@ import RankBadge from "@/components/RankBadge";
 import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
+import { fetchImageBlob, uploadLobbyVfxBlob, extractGifPosterBlob } from "@/lib/clientImagePoster";
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -136,6 +137,28 @@ const ArmoryModal = ({
     setElectricColor,
   } = usePage();
 
+  const appendLobbyVfxEntry = async (entry: { src: string; poster?: string }) => {
+    const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
+    let updatedUsers = [...registeredUsers];
+    if (userIdx === -1) {
+      updatedUsers = [...registeredUsers, {
+        id: currentUserId,
+        name: currentUserDisplay || session?.user?.name || "Operative",
+        username: currentUserDiscordHandle || session?.user?.name || "",
+        avatar: session?.user?.image || "",
+        userVfx: [entry],
+      }];
+    } else {
+      updatedUsers[userIdx] = {
+        ...updatedUsers[userIdx],
+        userVfx: [...(updatedUsers[userIdx].userVfx || []), entry],
+      };
+    }
+    setRegisteredUsers(updatedUsers);
+    const ok = await saveGlobalData({ registeredUsers: updatedUsers });
+    if (!ok) throw new Error("Failed to save — try again.");
+  };
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingBattleTag, setIsEditingBattleTag] = useState(false);
   const profileName = registeredUsers.find((u: any) => u.id === currentUserId)?.name || currentUserDisplay;
@@ -226,8 +249,10 @@ const ArmoryModal = ({
                                                  try {
                                                     const blob = await (await fetch(input)).blob();
                                                     const fd = new FormData();
-                                                    fd.append('file', blob, 'profile');
+                                                    fd.append('file', blob, 'profile.gif');
                                                     fd.append('field', 'profileGif');
+                                                    const poster = await extractGifPosterBlob(blob);
+                                                    if (poster) fd.append('poster', poster, 'poster.webp');
                                                     const res = await fetch('/api/user/upload', { method: 'POST', body: fd });
                                                     const data = await res.json();
                                                     if (!res.ok || !data.url) { addToast(data.error || "Upload failed.", "error"); return; }
@@ -239,15 +264,23 @@ const ArmoryModal = ({
                                                  }
                                               } else if (isAnimatedImageUrl(input)) {
                                                  try {
-                                                    const thumbRes = await fetch('/api/user/profile-gif-thumb', {
-                                                       method: 'POST',
-                                                       headers: { 'Content-Type': 'application/json' },
-                                                       body: JSON.stringify({ gifUrl: input }),
-                                                    });
-                                                    const thumbData = await thumbRes.json();
-                                                    if (thumbRes.ok && thumbData.thumbUrl) thumbUrl = thumbData.thumbUrl;
+                                                    const blob = await fetchImageBlob(input);
+                                                    const fd = new FormData();
+                                                    fd.append("file", blob, "profile.gif");
+                                                    fd.append("field", "profileGif");
+                                                    const poster = await extractGifPosterBlob(blob);
+                                                    if (poster) fd.append("poster", poster, "poster.webp");
+                                                    const res = await fetch("/api/user/upload", { method: "POST", body: fd });
+                                                    const data = await res.json();
+                                                    if (!res.ok || !data.url) {
+                                                       addToast(data.error || "Upload failed.", "error");
+                                                       return;
+                                                    }
+                                                    finalUrl = data.url;
+                                                    thumbUrl = data.thumbUrl;
                                                  } catch {
-                                                    /* poster optional for external URLs */
+                                                    addToast("Could not load GIF URL — upload the file instead.", "error");
+                                                    return;
                                                  }
                                               }
 
@@ -657,13 +690,38 @@ const ArmoryModal = ({
                                            </div>
                                             </div>
                                             </div>
-                                     <div className="w-full max-w-2xl flex gap-4 mb-10 items-center justify-center">
+                                     <div className="w-full max-w-2xl flex flex-wrap gap-3 mb-10 items-center justify-center">
                                         <input
                                            id="new-gif-url"
                                           type="text"
                                           placeholder="Paste GIF URL here..."
-                                          className="w-1/3 shrink-0 bg-black/50 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-[#ff007f] font-bold text-sm"
+                                          className="flex-1 min-w-[200px] bg-black/50 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-[#ff007f] font-bold text-sm"
                                        />
+                                       <label className="cursor-pointer bg-white/10 hover:bg-white/15 border border-white/20 text-white font-black px-6 py-4 rounded-2xl text-sm uppercase tracking-widest">
+                                          Upload File
+                                          <input
+                                             type="file"
+                                             accept="image/gif,image/webp,image/png,image/jpeg"
+                                             className="hidden"
+                                             onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                e.target.value = "";
+                                                if (!file) return;
+                                                const tier = getUserTier(currentUserId);
+                                                const currentCount = (registeredUsers.find((u: any) => String(u.id) === String(currentUserId))?.userVfx?.length || 0);
+                                                if (tier === "free" && currentCount >= 1) return addToast("Free users can only have 1 lobby image. Join Secret Club for unlimited.", "error");
+                                                addToast("Uploading lobby background…", "info");
+                                                try {
+                                                   const isGif = file.type.includes("gif") || file.name.toLowerCase().endsWith(".gif");
+                                                   const data = await uploadLobbyVfxBlob(file, isGif ? "lobby.gif" : file.name || "lobby.webp");
+                                                   await appendLobbyVfxEntry(data.entry);
+                                                   addToast("Lobby background added.", "success");
+                                                } catch (err: any) {
+                                                   addToast(err?.message || "Upload failed.", "error");
+                                                }
+                                             }}
+                                          />
+                                       </label>
                                        <button
                                           type="button"
                                           onClick={async () => {
@@ -677,42 +735,18 @@ const ArmoryModal = ({
                                              addToast("Processing lobby background…", "info");
                                              let entry: { src: string; poster?: string };
                                              try {
-                                                const res = await fetch("/api/user/lobby-vfx", {
-                                                   method: "POST",
-                                                   headers: { "Content-Type": "application/json" },
-                                                   body: JSON.stringify({ url }),
-                                                });
-                                                const data = await res.json();
-                                                if (!res.ok || !data.entry) {
-                                                   addToast(data.error || "Upload failed.", "error");
-                                                   return;
-                                                }
+                                                const blob = await fetchImageBlob(url);
+                                                const isGif = isAnimatedImageUrl(url) || blob.type.includes("gif");
+                                                const data = await uploadLobbyVfxBlob(blob, isGif ? "lobby.gif" : "lobby.webp");
                                                 entry = data.entry;
-                                             } catch {
-                                                addToast("Upload failed.", "error");
+                                             } catch (err: any) {
+                                                addToast(err?.message || "Could not load URL — try Upload File instead.", "error");
                                                 return;
                                              }
 
-                                             const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
-                                             let updatedUsers = [...registeredUsers];
-                                             if (userIdx === -1) {
-                                                updatedUsers = [...registeredUsers, {
-                                                   id: currentUserId,
-                                                   name: currentUserDisplay || session?.user?.name || "Operative",
-                                                   username: currentUserDiscordHandle || session?.user?.name || "",
-                                                   avatar: session?.user?.image || "",
-                                                   userVfx: [entry],
-                                                }];
-                                             } else {
-                                                updatedUsers[userIdx] = {
-                                                   ...updatedUsers[userIdx],
-                                                   userVfx: [...(updatedUsers[userIdx].userVfx || []), entry],
-                                                };
-                                             }
-                                             setRegisteredUsers(updatedUsers);
-                                             await saveGlobalData({ registeredUsers: updatedUsers });
+                                             await appendLobbyVfxEntry(entry);
                                              input.value = "";
-                                             addToast("Lobby background added (optimized).", "success");
+                                             addToast("Lobby background added.", "success");
                                           }}
                                           className="bg-[#ff007f] hover:bg-[#ff007f]/80 text-white font-black px-10 py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(255,0,127,0.5)] z-[100] relative uppercase tracking-widest border border-white/20 cursor-pointer text-sm"
                                         >ADD EFFECT</button>
