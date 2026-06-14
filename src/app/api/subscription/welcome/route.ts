@@ -29,6 +29,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
+  const claims: Record<string, number> = (await getKV("welcomeFreeClaims")) || {};
+  if (claims[String(auth.user.id)]) {
+    return NextResponse.json({ error: "Welcome offer already claimed" }, { status: 409 });
+  }
+
   if (user.welcomeFreeClaimed) {
     return NextResponse.json({ error: "Welcome offer already claimed" }, { status: 409 });
   }
@@ -38,6 +43,8 @@ export async function POST(req: Request) {
     welcomePlansSeen: true,
     welcomeFreeClaimed: true,
   };
+  claims[String(auth.user.id)] = Date.now();
+  await setKV("welcomeFreeClaims", claims);
   await setKV("registeredUsers", users);
 
   return NextResponse.json({

@@ -6,9 +6,11 @@ const UPLOAD_PATHS = ["/api/user/upload", "/api/community/posts"];
 const STRICT_PATHS = ["/api/dm", "/api/friends", "/api/discord/broadcast"];
 
 function getClientIp(req: NextRequest): string {
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
   return (
+    req.headers.get("x-real-ip")?.trim() ||
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
     "unknown"
   );
 }

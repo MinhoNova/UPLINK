@@ -159,7 +159,11 @@ export async function POST(req: Request) {
 
     await setKV("readMessages", readMessages);
     await setKV("deliveredMessages", deliveredMessages);
-    return NextResponse.json({ success: true, readMessages, deliveredMessages });
+    return NextResponse.json({
+      success: true,
+      readMessages: { [currentHandle]: readMessages[currentHandle] },
+      deliveredMessages: { [currentHandle]: deliveredMessages[currentHandle] },
+    });
   }
 
   if (action === "markDelivered") {
@@ -178,7 +182,10 @@ export async function POST(req: Request) {
     deliveredMessages[currentHandle][fromUsername] = [...existing];
 
     await setKV("deliveredMessages", deliveredMessages);
-    return NextResponse.json({ success: true, deliveredMessages });
+    return NextResponse.json({
+      success: true,
+      deliveredMessages: { [currentHandle]: deliveredMessages[currentHandle] },
+    });
   }
 
   if (action === "react") {

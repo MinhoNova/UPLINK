@@ -1,5 +1,6 @@
 import { isAdminUser } from "@/lib/secureDataWrite";
 import { computeDeliveredReceiptsFrom, computeReadReceiptsFrom } from "@/lib/dmHelpers";
+import { notificationMatchesUser } from "@/lib/userProfile";
 
 const OTHER_USER_STRIP = ["blocked", "friendRequests", "email"] as const;
 
@@ -48,6 +49,13 @@ export function filterDataForUser(
   if (Array.isArray(filtered.tickets)) {
     filtered.tickets = (filtered.tickets as { userId?: string }[]).filter(
       (t) => String(t.userId) === String(userId)
+    );
+  }
+
+  if (Array.isArray(filtered.notifications)) {
+    const users = (filtered.registeredUsers as any[]) || (data.registeredUsers as any[]) || [];
+    filtered.notifications = (filtered.notifications as any[]).filter((n) =>
+      notificationMatchesUser(n, userId, handle, users)
     );
   }
 

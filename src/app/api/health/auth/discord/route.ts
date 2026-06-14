@@ -1,6 +1,12 @@
 import { syncAuthEnvFromCloudflare } from "@/lib/authEnv";
+import { requireAdmin } from "@/lib/authz";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: auth.status });
+  }
+
   await syncAuthEnvFromCloudflare();
 
   const clientId = process.env.DISCORD_CLIENT_ID;

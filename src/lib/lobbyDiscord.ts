@@ -118,7 +118,16 @@ export async function declineInviteFromDiscord(discordUserId: string, lobbyId: s
   const data = await getKVPairs();
   let lobbies: any[] = Array.isArray(data.lobbies) ? [...data.lobbies] : [];
   const notifications: any[] = data.notifications || [];
+  const notif = notifications.find((n) => String(n.id) === String(notifId));
+  if (!notif) return { ok: false as const, error: "Invite expired." };
+
   const uid = String(discordUserId);
+  const registeredUsers: any[] = data.registeredUsers || [];
+  const user = registeredUsers.find((u) => String(u.id) === uid);
+  const handle = user?.username || "";
+  if (!notificationMatchesUser(notif, uid, handle, registeredUsers)) {
+    return { ok: false as const, error: "This invite is not for you." };
+  }
 
   const idx = lobbies.findIndex((l) => String(l.id) === String(lobbyId));
   if (idx === -1) return { ok: false as const, error: "Offer not found." };

@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getD1 } from "@/lib/d1";
+import { requireAdmin } from "@/lib/authz";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   try {
     const d1 = await getD1();
     if (!d1) {
