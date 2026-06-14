@@ -72,3 +72,28 @@ export async function uploadLobbyVfxBlob(blob: Blob, filename: string): Promise<
   if (!res.ok || !data.entry) throw new Error(data.error || "Upload failed");
   return data;
 }
+
+/**
+ * Paste a GIF link: server downloads & stores first (~1s for small GIFs),
+ * then browser fallback if the host blocks our server.
+ */
+export async function importLobbyVfxFromUrl(url: string): Promise<{
+  entry: { src: string; poster?: string };
+}> {
+  const trimmed = url.trim();
+  if (!trimmed) throw new Error("URL required");
+
+  const serverRes = await fetch("/api/user/lobby-vfx", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: trimmed }),
+  });
+  const serverData = await serverRes.json();
+  if (serverRes.ok && serverData.entry) {
+    return serverData;
+  }
+
+  const blob = await fetchImageBlob(trimmed);
+  const isGif = /\.gif(\?|$)/i.test(trimmed) || blob.type.includes("gif");
+  return uploadLobbyVfxBlob(blob, isGif ? "lobby.gif" : "lobby.webp");
+}

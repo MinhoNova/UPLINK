@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
 import { getKV, initTables } from "@/lib/db";
 import { isSecretClubTier } from "@/lib/userProfile";
-import { validateMagicBytes } from "@/lib/imageSecurity";
 import { getImageMetadata, normalizeLobbyVfx } from "@/lib/imageProcess";
 import { readUserMediaFile, storeUserMediaFile } from "@/lib/userMediaStorage";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
+import { fetchExternalImageBuffer } from "@/lib/fetchExternalImage";
 import type { VfxEntry } from "@/lib/vfxAssets";
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -22,19 +22,8 @@ async function loadImageBuffer(sourceUrl: string): Promise<Buffer | null> {
       if (file?.buffer) return file.buffer;
     }
   }
-  if (!sourceUrl.startsWith("https://")) return null;
-  const res = await fetch(sourceUrl, {
-    signal: AbortSignal.timeout(20_000),
-    headers: {
-      Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-      "User-Agent": "Mozilla/5.0 (compatible; UPLINK/1.0)",
-    },
-    redirect: "follow",
-  });
-  if (!res.ok) return null;
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length > MAX_BYTES || buf.length < 8 || !validateMagicBytes(buf)) return null;
-  return buf;
+  if (!sourceUrl.startsWith("https://") && !sourceUrl.startsWith("http://")) return null;
+  return fetchExternalImageBuffer(sourceUrl, MAX_BYTES);
 }
 
 export async function POST(req: Request) {
@@ -77,13 +66,7 @@ export async function POST(req: Request) {
     isGif = isAnimatedImageUrl(url);
     imageBuffer = await loadImageBuffer(url);
     if (!imageBuffer) {
-      return NextResponse.json(
-        {
-          error:
-            "Could not load image from URL on server. Paste the link in your browser, save the GIF, then use Upload File.",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Could not load image from URL" }, { status: 400 });
     }
   }
 
@@ -109,7 +92,6 @@ export async function POST(req: Request) {
       ext = normalized.ext;
       posterBuffer = normalized.poster;
     } catch {
-      /* Sharp unavailable (Cloudflare Workers) — store original bytes */
       outBuffer = imageBuffer;
     }
   }

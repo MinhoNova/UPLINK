@@ -9,7 +9,7 @@ import RankBadge from "@/components/RankBadge";
 import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
-import { fetchImageBlob, uploadLobbyVfxBlob, extractGifPosterBlob } from "@/lib/clientImagePoster";
+import { extractGifPosterBlob, importLobbyVfxFromUrl, uploadLobbyVfxBlob } from "@/lib/clientImagePoster";
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -732,21 +732,15 @@ const ArmoryModal = ({
                                              const currentCount = (registeredUsers.find((u: any) => String(u.id) === String(currentUserId))?.userVfx?.length || 0);
                                              if (tier === "free" && currentCount >= 1) return addToast("Free users can only have 1 lobby image. Join Secret Club for unlimited.", "error");
 
-                                             addToast("Processing lobby background…", "info");
-                                             let entry: { src: string; poster?: string };
+                                             addToast("Fetching & saving GIF…", "info");
                                              try {
-                                                const blob = await fetchImageBlob(url);
-                                                const isGif = isAnimatedImageUrl(url) || blob.type.includes("gif");
-                                                const data = await uploadLobbyVfxBlob(blob, isGif ? "lobby.gif" : "lobby.webp");
-                                                entry = data.entry;
+                                                const data = await importLobbyVfxFromUrl(url);
+                                                await appendLobbyVfxEntry(data.entry);
+                                                input.value = "";
+                                                addToast("Lobby background saved.", "success");
                                              } catch (err: any) {
-                                                addToast(err?.message || "Could not load URL — try Upload File instead.", "error");
-                                                return;
+                                                addToast(err?.message || "Could not import URL — try Upload File.", "error");
                                              }
-
-                                             await appendLobbyVfxEntry(entry);
-                                             input.value = "";
-                                             addToast("Lobby background added.", "success");
                                           }}
                                           className="bg-[#ff007f] hover:bg-[#ff007f]/80 text-white font-black px-10 py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(255,0,127,0.5)] z-[100] relative uppercase tracking-widest border border-white/20 cursor-pointer text-sm"
                                         >ADD EFFECT</button>
