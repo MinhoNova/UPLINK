@@ -14,7 +14,7 @@ import {
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
 
 const VISIBILITY_OPTIONS = [
-  { id: "public" as const, label: "Public", hint: "Everyone in the club", icon: Globe, accent: "text-[#00ffff] border-[#00ffff]/40 bg-[#00ffff]/10" },
+  { id: "public" as const, label: "Public", hint: "Everyone in the club", icon: Globe, accent: "text-[#00ffff] border-[#00ffff]/60 bg-[#00ffff]/15" },
   { id: "friends" as const, label: "Friends", hint: "Friends only", icon: Users, accent: "text-[#ff007f] border-[#ff007f]/40 bg-[#ff007f]/10" },
   { id: "friends_of_friends" as const, label: "Friends of Friends", hint: "Friends + their friends", icon: Users2, accent: "text-[#8a2be2] border-[#8a2be2]/40 bg-[#8a2be2]/10" },
 ];
@@ -634,8 +634,10 @@ export default function CommunityPage() {
               )}
             </div>
             {!viewMemberId && (
-            <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 mb-6 shadow-xl backdrop-blur-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-[#00ffff]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
+            <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 mb-6 shadow-xl backdrop-blur-xl relative">
+              <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-[#00ffff]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
+              </div>
               <div className="flex gap-3 relative z-10">
                 <UserAvatar src={session?.user?.image || ""} userId={(session?.user as any)?.id || ""} className="w-10 h-10" />
                 <div className="flex-1">
@@ -659,25 +661,27 @@ export default function CommunityPage() {
                       </button>
                     </div>
                   )}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2">
-                    <div className="relative" ref={visibilityMenuRef}>
-                      <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest mr-1">Audience</span>
-                      <button
-                        type="button"
-                        onClick={() => setVisibilityMenuOpen((v) => !v)}
-                        className={`flex items-center gap-1.5 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition shadow-[0_0_20px_rgba(0,255,255,0.06)] ${selectedVisibility.accent}`}
-                      >
-                        <selectedVisibility.icon className="w-3.5 h-3.5" />
-                        {selectedVisibility.label}
-                        <ChevronDown className={`w-3 h-3 transition ${visibilityMenuOpen ? "rotate-180" : ""}`} />
-                      </button>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2 overflow-visible">
+                    <div className="relative z-40" ref={visibilityMenuRef}>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Audience</span>
+                        <button
+                          type="button"
+                          onClick={() => setVisibilityMenuOpen((v) => !v)}
+                          className={`flex items-center gap-1.5 text-[9px] font-black uppercase px-3 py-2 rounded-xl border transition shadow-[0_0_20px_rgba(0,255,255,0.12)] ${selectedVisibility.accent}`}
+                        >
+                          <selectedVisibility.icon className="w-3.5 h-3.5" />
+                          {selectedVisibility.label}
+                          <ChevronDown className={`w-3 h-3 transition ${visibilityMenuOpen ? "rotate-180" : ""}`} />
+                        </button>
+                      </div>
                       <AnimatePresence>
                         {visibilityMenuOpen && (
                           <motion.div
                             initial={{ opacity: 0, y: -6, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                            className="absolute left-0 top-full mt-2 z-30 min-w-[220px] rounded-2xl border border-white/10 bg-[#0a0a16]/95 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.55)] overflow-hidden"
+                            className="absolute left-0 bottom-full mb-2 z-50 min-w-[240px] rounded-2xl border border-white/15 bg-[#0a0a16] shadow-[0_20px_60px_rgba(0,0,0,0.75)] overflow-hidden"
                           >
                             {VISIBILITY_OPTIONS.map((opt) => (
                               <button
