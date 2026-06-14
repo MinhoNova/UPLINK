@@ -37,3 +37,11 @@ export function getAuthEnvStatus() {
     authTrustHost: process.env.AUTH_TRUST_HOST ?? null,
   };
 }
+
+/** getServerSession with Cloudflare Worker secrets synced first. */
+export async function getAppSession() {
+  await syncAuthEnvFromCloudflare();
+  const { getServerSession } = await import("next-auth");
+  const { authOptions } = await import("@/lib/auth");
+  return getServerSession(authOptions);
+}

@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { isAdminRole, isModeratorOrAbove, getUserRole, type UserRole } from "@/lib/roles";
 import { isLegacyAdmin } from "@/lib/roles";
 
@@ -17,7 +16,7 @@ export type SessionUser = {
 export async function requireSession(): Promise<
   { ok: true; user: SessionUser } | { ok: false; status: number; error: string }
 > {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user) return { ok: false, status: 401, error: "Unauthorized" };
 
   const id = (session.user as { id?: string }).id || "";

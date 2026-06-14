@@ -15,8 +15,14 @@ function getClientIp(req: NextRequest): string {
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  if (path.startsWith("/api/auth")) {
+    const res = NextResponse.next();
+    res.headers.set("Cache-Control", "private, no-cache, no-store");
+    return res;
+  }
+
   if (!path.startsWith("/api/")) return NextResponse.next();
-  if (path.startsWith("/api/auth")) return NextResponse.next();
 
   const ip = getClientIp(req);
   let limit = 150;

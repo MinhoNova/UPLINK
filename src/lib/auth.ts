@@ -1,6 +1,81 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
+const DISCORD_USER_AGENT = "UPLINK (https://uplink.uplinklfg.workers.dev, 1.0)";
+
+function discordProvider(clientId: string, clientSecret: string) {
+  return DiscordProvider({
+    clientId,
+    clientSecret,
+    token: {
+      async request({ provider, params }) {
+        const res = await fetch("https://discord.com/api/oauth2/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": DISCORD_USER_AGENT,
+          },
+          body: new URLSearchParams({
+            client_id: provider.clientId!,
+            client_secret: provider.clientSecret!,
+            grant_type: "authorization_code",
+            code: params.code as string,
+            redirect_uri: provider.callbackUrl,
+          }),
+        });
+
+        const data = (await res.json()) as {
+          error?: string;
+          error_description?: string;
+          access_token?: string;
+        };
+
+        if (!res.ok) {
+          if (process.env.AUTH_DEBUG === "true") {
+            console.error("[auth] Discord token exchange failed:", data.error, data.error_description);
+          }
+          throw new Error(data.error_description || data.error || "discord_token_exchange_failed");
+        }
+
+        return { tokens: data };
+      },
+    },
+    userinfo: {
+      async request({ tokens }) {
+        const res = await fetch("https://discord.com/api/users/@me", {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            "User-Agent": DISCORD_USER_AGENT,
+          },
+        });
+
+        if (!res.ok) {
+          if (process.env.AUTH_DEBUG === "true") {
+            console.error("[auth] Discord userinfo failed:", res.status);
+          }
+          throw new Error("discord_userinfo_failed");
+        }
+
+        return res.json();
+      },
+    },
+    profile(profile) {
+      let imageUrl = `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.discriminator || "0") % 5}.png`;
+      if (profile.avatar) {
+        const format = profile.avatar.startsWith("a_") ? "gif" : "png";
+        imageUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+      }
+      return {
+        id: profile.id,
+        name: profile.global_name || profile.username,
+        username: profile.username,
+        email: profile.email,
+        image: imageUrl,
+      };
+    },
+  });
+}
+
 export function getAuthOptions(): NextAuthOptions {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
@@ -12,26 +87,7 @@ export function getAuthOptions(): NextAuthOptions {
   }
 
   return {
-    providers: [
-      DiscordProvider({
-        clientId: clientId || "",
-        clientSecret: clientSecret || "",
-        profile(profile) {
-          let imageUrl = `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.discriminator || "0") % 5}.png`;
-          if (profile.avatar) {
-            const format = profile.avatar.startsWith("a_") ? "gif" : "png";
-            imageUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
-          }
-          return {
-            id: profile.id,
-            name: profile.global_name || profile.username,
-            username: profile.username,
-            email: profile.email,
-            image: imageUrl,
-          };
-        },
-      }),
-    ],
+    providers: [discordProvider(clientId || "", clientSecret || "")],
     callbacks: {
       async jwt({ token, user }) {
         if (user) {
@@ -50,6 +106,7 @@ export function getAuthOptions(): NextAuthOptions {
     },
     secret: process.env.NEXTAUTH_SECRET,
     trustHost: true,
+    debug: process.env.AUTH_DEBUG === "true",
   };
 }
 
