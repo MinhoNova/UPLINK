@@ -847,7 +847,7 @@ export default function HomePage() {
    useEffect(() => {
       if (status === 'authenticated' && session?.user && registeredUsers) {
          const isRegistered = registeredUsers.some((u: any) => u.id === currentUserId || u.username === currentUserDiscordHandle);
-         if (!isRegistered && currentUserDiscordHandle !== "minhonovazen") {
+         if (!isRegistered) {
             setIsOnboardingModalOpen(true);
             localStorage.setItem("uplink_is_registered", "false");
          } else {

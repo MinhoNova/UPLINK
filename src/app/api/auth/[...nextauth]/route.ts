@@ -47,6 +47,18 @@ async function handler(req: NextRequest, context: RouteContext) {
     },
   });
 
+  // next-auth/react signIn() sends json:true and expects { url } — not a 302
+  if (body?.json === "true" && internalResponse.redirect) {
+    const response = authResponseToFetch({ ...internalResponse, redirect: undefined, status: 200 });
+    response.headers.delete("Location");
+    response.headers.set("Content-Type", "application/json");
+    response.headers.set("Cache-Control", "private, no-cache, no-store");
+    return new Response(JSON.stringify({ url: internalResponse.redirect }), {
+      status: 200,
+      headers: response.headers,
+    });
+  }
+
   const response = authResponseToFetch(internalResponse);
   response.headers.set("Cache-Control", "private, no-cache, no-store");
   return response;
