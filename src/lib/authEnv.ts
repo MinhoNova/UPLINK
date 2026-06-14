@@ -38,10 +38,47 @@ export function getAuthEnvStatus() {
   };
 }
 
-/** getServerSession with Cloudflare Worker secrets synced first. */
-export async function getAppSession() {
+async function readSessionRequest(req?: Request) {
+  const { parse: parseCookie } = await import("cookie");
+
+  if (req) {
+    return {
+      cookies: parseCookie(req.headers.get("cookie") ?? ""),
+      headers: Object.fromEntries(req.headers.entries()),
+    };
+  }
+
+  try {
+    const { cookies: cookiesFn, headers: headersFn } = await import("next/headers");
+    const h = await headersFn();
+    const headers = Object.fromEntries(h.entries());
+    let cookies = Object.fromEntries((await cookiesFn()).getAll().map((c) => [c.name, c.value]));
+
+    // next/headers cookies() is unreliable on Cloudflare Workers — fall back to raw Cookie header
+    if (Object.keys(cookies).length === 0 && typeof headers.cookie === "string") {
+      cookies = parseCookie(headers.cookie);
+    }
+
+    return { cookies, headers };
+  } catch {
+    return { cookies: {}, headers: {} };
+  }
+}
+
+/** Read NextAuth session; pass the route Request on Cloudflare for reliable cookies. */
+export async function getAppSession(req?: Request) {
   await syncAuthEnvFromCloudflare();
   const { getServerSession } = await import("next-auth");
   const { authOptions } = await import("@/lib/auth");
+  const { cookies, headers } = await readSessionRequest(req);
+
+  if (Object.keys(cookies).length > 0) {
+    return getServerSession(
+      { headers, cookies } as Parameters<typeof getServerSession>[0],
+      { getHeader() {}, setCookie() {}, setHeader() {} } as Parameters<typeof getServerSession>[1],
+      authOptions
+    );
+  }
+
   return getServerSession(authOptions);
 }

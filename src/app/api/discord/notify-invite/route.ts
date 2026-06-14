@@ -4,7 +4,7 @@ import { getKVPairs, initTables } from "@/lib/db";
 import { sendDiscordInviteDM } from "@/lib/discord";
 
 export async function POST(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await req.json().catch(() => ({}));

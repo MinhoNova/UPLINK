@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import LeaderboardView from "@/components/LeaderboardView";
 import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 import { initTables, getKVPairs } from "@/lib/db";
@@ -18,7 +17,7 @@ async function getData(userId: string, handle: string) {
 }
 
 export default async function LeaderboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user) redirect("/");
 
   const userId = (session.user as { id?: string }).id || "";

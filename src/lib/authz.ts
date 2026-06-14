@@ -13,10 +13,10 @@ export type SessionUser = {
   role?: UserRole;
 };
 
-export async function requireSession(): Promise<
+export async function requireSession(req?: Request): Promise<
   { ok: true; user: SessionUser } | { ok: false; status: number; error: string }
 > {
-  const session = await getAppSession();
+  const session = await getAppSession(req);
   if (!session?.user) return { ok: false, status: 401, error: "Unauthorized" };
 
   const id = (session.user as { id?: string }).id || "";
@@ -27,10 +27,10 @@ export async function requireSession(): Promise<
   return { ok: true, user: { id, username, name: session.user.name, role } };
 }
 
-export async function requireAdmin(): Promise<
+export async function requireAdmin(req?: Request): Promise<
   { ok: true; user: SessionUser } | { ok: false; status: number; error: string }
 > {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return auth;
   if (auth.user.role !== "admin") {
     return { ok: false, status: 403, error: "Admin only" };
@@ -38,10 +38,10 @@ export async function requireAdmin(): Promise<
   return auth;
 }
 
-export async function requireModerator(): Promise<
+export async function requireModerator(req?: Request): Promise<
   { ok: true; user: SessionUser } | { ok: false; status: number; error: string }
 > {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return auth;
   if (auth.user.role !== "admin" && auth.user.role !== "moderator") {
     return { ok: false, status: 403, error: "Moderator only" };

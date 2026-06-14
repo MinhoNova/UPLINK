@@ -1476,6 +1476,7 @@ export default function HomePage() {
            const res = await fetch('/api/data', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify(updates)
            });
            if (res.ok) window.dispatchEvent(new CustomEvent('data-refresh'));
@@ -1759,7 +1760,7 @@ export default function HomePage() {
 
    const fetchGlobalData = async () => {
       try {
-         const res = await fetch('/api/data');
+         const res = await fetch('/api/data', { credentials: 'include' });
          if (res.ok) {
             const data = await res.json();
             const now = Date.now();

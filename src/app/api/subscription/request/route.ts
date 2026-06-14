@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { TICKET_TTL_MS } from "@/lib/tickets";
 
@@ -11,7 +10,7 @@ const PRICES: Record<number, string> = {
 };
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = (session.user as { id?: string }).id || "";

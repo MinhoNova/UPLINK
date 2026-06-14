@@ -5,7 +5,7 @@ import { getKV, setKV, initTables } from "@/lib/db";
 const PROTECTED_SELF_FIELDS = ["id", "username", "subscription"] as const;
 
 export async function GET() {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   await initTables();
@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await req.json();

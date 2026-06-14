@@ -5,7 +5,7 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { syncLobbyDetectedRuns, userCanTriggerRunSync } from "@/lib/raiderSync";
 
 export async function POST(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const rl = await rateLimitByUser(auth.user.id, "sync_runs", 20, 60_000);

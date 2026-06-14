@@ -8,7 +8,7 @@ import { validateVoiceAccess } from '@/lib/lobbyLifecycle';
 import { enforceVoiceJoinRateLimit } from '@/lib/voiceJoinRateLimit';
 
 export async function GET(req: NextRequest) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }

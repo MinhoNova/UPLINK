@@ -4,7 +4,7 @@ import { getKVPairs, setKV, initTables } from "@/lib/db";
 import { validateDataWrites } from "@/lib/secureDataWrite";
 
 export async function PATCH(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await req.json();
@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await req.json();

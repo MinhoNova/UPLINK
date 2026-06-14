@@ -13,7 +13,7 @@ import { getClientIp } from '@/lib/requestIp';
 
 export async function GET(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const auth = await requireSession();
+    const auth = await requireSession(req);
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }

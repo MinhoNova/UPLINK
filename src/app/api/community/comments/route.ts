@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { comments, posts } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 export async function GET(req: NextRequest) {
   const db = await getDb();
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
@@ -23,7 +22,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = await getDb();
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { postId, content, parentId } = await req.json();
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const db = await getDb();
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { commentId } = await req.json();

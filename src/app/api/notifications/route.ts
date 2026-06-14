@@ -6,7 +6,7 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { isUserBanned, bannedResponse } from "@/lib/banCheck";
 
 export async function PUT(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   if (await isUserBanned(auth.user.username, auth.user.id)) {

@@ -3,7 +3,7 @@ import { sendLobbyEmbed } from "@/lib/discord";
 import { requireSession } from "@/lib/authz";
 
 export async function POST(req: NextRequest) {
-   const auth = await requireSession();
+   const auth = await requireSession(req);
    if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
    }

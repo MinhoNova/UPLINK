@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { rateLimitByUser } from "@/lib/rateLimit";
 import { requireSession } from "@/lib/authz";
@@ -24,7 +23,7 @@ function findUser(users: any[], userId: string) {
   return users.find((u) => String(u.id) === String(userId));
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   await initTables();
   const reviews: SiteReview[] = (await getKV("siteReviews")) || [];
   const registeredUsers: any[] = (await getKV("registeredUsers")) || [];
@@ -39,7 +38,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = (session.user as { id?: string }).id || "";
@@ -89,7 +88,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const auth = await requireSession();
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { reviewId } = await req.json();

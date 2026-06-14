@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { validateRegisteredUsers } from "@/lib/secureDataWrite";
 import { isSecretClubTier } from "@/lib/userProfile";
@@ -8,19 +7,18 @@ import { checkUploadQuota, incrementUploadQuota, validateMagicBytes } from "@/li
 import { logAudit } from "@/lib/auditLog";
 import { rateLimitByUser } from "@/lib/rateLimit";
 import { getImageMetadata, normalizeProfileImage } from "@/lib/imageProcess";
-import path from "path";
-import fs from "fs";
+import { storeUserMediaFile } from "@/lib/userMediaStorage";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_DIM = 512;
 const SAFE_RE = /^[a-zA-Z0-9_-]+$/;
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as any).id || "";
-  const handle = (session.user as any).username || "";
+  const userId = (session.user as { id?: string }).id || "";
+  const handle = (session.user as { username?: string }).username || "";
   if (!SAFE_RE.test(userId)) return NextResponse.json({ error: "Invalid user" }, { status: 400 });
 
   const rl = await rateLimitByUser(userId, "avatar_upload", 30, 60_000);
@@ -69,16 +67,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 
-  const dir = path.join(process.cwd(), "public", isBanner ? "user-banners" : "user-avatars");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const contentType =
+    ext === "gif" ? "image/gif" :
+    ext === "png" ? "image/png" :
+    ext === "jpeg" ? "image/jpeg" :
+    "image/webp";
 
-  const filename = `${userId}_${Date.now()}.${ext}`;
-  fs.writeFileSync(path.join(dir, filename), normalized);
-  const url = isBanner ? `/user-banners/${filename}` : `/user-avatars/${filename}`;
+  let url: string;
+  try {
+    url = await storeUserMediaFile(userId, normalized, ext, contentType);
+  } catch {
+    return NextResponse.json({ error: "Storage failed" }, { status: 500 });
+  }
 
   await initTables();
   const users = (await getKV("registeredUsers")) || [];
-  const idx = users.findIndex((u: any) => String(u.id) === String(userId));
+  const idx = users.findIndex((u: { id?: string }) => String(u.id) === String(userId));
   if (field === "profileGif" && idx !== -1 && !isSecretClubTier(users[idx])) {
     return NextResponse.json({ error: "Secret Club required for profile GIF" }, { status: 403 });
   }
@@ -86,7 +90,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Secret Club required for profile banner" }, { status: 403 });
   }
   if (idx !== -1) {
-    const updatedUsers = users.map((u: any, i: number) =>
+    const updatedUsers = users.map((u: Record<string, unknown>, i: number) =>
       i === idx ? { ...u, [field]: url } : u
     );
     const validation = validateRegisteredUsers(users, updatedUsers, userId, false);

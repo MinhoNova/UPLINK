@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { getKV, initTables } from "@/lib/db";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
+export async function GET(req: Request) {
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ access: false, reason: "unauthorized" });
 
   const userId = (session.user as any).id;

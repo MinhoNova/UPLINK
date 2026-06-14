@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { isUserBanned, bannedResponse } from "@/lib/banCheck";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
+export async function GET(req: Request) {
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await initTables();
@@ -17,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const handle = (session.user as { username?: string }).username || "";
