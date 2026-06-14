@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Crown, Check, Loader2, Gift, X } from "lucide-react";
+import { Crown, Check, Loader2, Gift, X, Coins, DollarSign } from "lucide-react";
 import { useState } from "react";
-
-const PAID_PLANS = [
-  { months: 1, label: "1 Month", price: "$9.99", days: 30 },
-  { months: 2, label: "2 Months", price: "$17.99", days: 60, badge: "Best Value" },
-  { months: 3, label: "3 Months", price: "$24.99", days: 90 },
-];
+import {
+  SUBSCRIPTION_PLANS,
+  formatGoldPrice,
+  type SubscriptionPaymentMethod,
+} from "@/lib/subscriptionPlans";
 
 const PERKS = [
   "Auto-Apply to offers",
@@ -25,7 +24,7 @@ type Props = {
 };
 
 export default function WelcomePlansModal({ isOpen, onClose, onClaimed, addToast }: Props) {
-  const [loading, setLoading] = useState<"free" | number | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -52,13 +51,13 @@ export default function WelcomePlansModal({ isOpen, onClose, onClaimed, addToast
     }
   };
 
-  const purchasePlan = async (months: number, days: number) => {
-    setLoading(months);
+  const purchasePlan = async (months: number, days: number, paymentMethod: SubscriptionPaymentMethod) => {
+    setLoading(`${months}-${paymentMethod}`);
     try {
       const res = await fetch("/api/subscription/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ months, days }),
+        body: JSON.stringify({ months, days, paymentMethod }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -141,36 +140,65 @@ export default function WelcomePlansModal({ isOpen, onClose, onClaimed, addToast
 
           <div className="space-y-3">
             <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Paid plans</p>
-            {PAID_PLANS.map((plan) => (
-              <button
+            {SUBSCRIPTION_PLANS.map((plan) => (
+              <div
                 key={plan.months}
-                type="button"
-                disabled={loading !== null}
-                onClick={() => purchasePlan(plan.months, plan.days)}
-                className="w-full p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:border-[#00ffff]/40 hover:bg-[#00ffff]/5 text-left transition relative disabled:opacity-50"
+                className="w-full p-4 rounded-2xl border border-white/10 bg-white/[0.03] relative"
               >
                 {plan.badge && (
                   <span className="absolute top-2 right-2 text-[7px] font-black uppercase tracking-widest bg-white/10 text-gray-400 px-2 py-0.5 rounded-full">
                     {plan.badge}
                   </span>
                 )}
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 mb-3">
                   <div>
                     <p className="text-sm font-black text-white">{plan.label}</p>
                     <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Secret Club</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-black text-[#00ffff]">{plan.price}</span>
-                    {loading === plan.months ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                    ) : (
-                      <span className="text-[8px] font-black uppercase tracking-widest text-gray-500 border border-white/10 px-2 py-1 rounded-lg">
-                        Request
-                      </span>
-                    )}
+                  <div className="text-right">
+                    <p className="text-lg font-black text-[#00ffff]">{plan.priceUsd}</p>
+                    <p className="text-[9px] font-black text-yellow-400 uppercase tracking-widest">
+                      or {formatGoldPrice(plan.priceGoldK)}
+                    </p>
                   </div>
                 </div>
-              </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={loading !== null}
+                    onClick={() => purchasePlan(plan.months, plan.days, "usd")}
+                    className="py-2 px-3 rounded-xl border border-white/10 hover:border-[#00ffff]/40 hover:bg-[#00ffff]/5 text-left transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loading === `${plan.months}-usd` ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    ) : (
+                      <>
+                        <DollarSign className="w-3.5 h-3.5 text-[#00ffff]" />
+                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-300">
+                          Pay {plan.priceUsd}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading !== null}
+                    onClick={() => purchasePlan(plan.months, plan.days, "gold")}
+                    className="py-2 px-3 rounded-xl border border-white/10 hover:border-yellow-400/40 hover:bg-yellow-400/5 text-left transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loading === `${plan.months}-gold` ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    ) : (
+                      <>
+                        <Coins className="w-3.5 h-3.5 text-yellow-400" />
+                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-300">
+                          Pay {formatGoldPrice(plan.priceGoldK)}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             ))}
             <p className="text-[8px] text-gray-600 text-center font-bold uppercase tracking-widest pt-2">
               Paid plans open a support ticket for payment

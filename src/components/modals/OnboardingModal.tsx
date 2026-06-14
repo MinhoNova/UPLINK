@@ -80,9 +80,12 @@ export default function OnboardingModal({ isOpen, data, setData, onSubmit }: Onb
                 className="flex flex-col items-center text-center mb-12"
               >
                 <ProtocolMark variant={1} className="w-20 h-20 text-white mb-6 drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" />
-                <h2 className="text-5xl font-black tracking-widest uppercase mb-2 bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">
+                <h2 className="text-5xl font-black tracking-widest uppercase mb-1 bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">
                   UPLINK
                 </h2>
+                <span className="text-[9px] font-black uppercase tracking-[0.55em] text-amber-400/90 mb-2">
+                  Beta
+                </span>
               </motion.div>
 
               <div className="space-y-6">

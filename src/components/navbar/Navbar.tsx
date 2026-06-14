@@ -205,11 +205,18 @@ export default function Navbar() {
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
               <ProtocolMark variant={1} className="h-full w-full" gold={pathname === '/community'} />
             </div>
-            <span className="hidden sm:block text-2xl font-black uppercase tracking-[0.18em] pointer-events-none select-none" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
-              <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
-                {pathname === '/community' ? 'CLUB' : 'Uplink'}
+            <div className="hidden sm:flex flex-col leading-none pointer-events-none select-none">
+              <span className="text-2xl font-black uppercase tracking-[0.18em]" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
+                <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
+                  {pathname === '/community' ? 'CLUB' : 'Uplink'}
+                </span>
               </span>
-            </span>
+              {pathname !== '/community' && (
+                <span className="mt-1 text-[7px] font-black uppercase tracking-[0.55em] text-amber-400/90 pl-0.5">
+                  Beta
+                </span>
+              )}
+            </div>
 
           <div className="flex bg-black/5 dark:bg-black/20 p-1.5 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
             <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>

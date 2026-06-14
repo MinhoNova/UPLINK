@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Crown, Check, Loader2, Circle } from "lucide-react";
+import { X, Crown, Check, Loader2, Circle, Coins, DollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const PLANS = [
-  { months: 1, label: "1 Month", price: "$9.99", days: 30 },
-  { months: 2, label: "2 Months", price: "$17.99", days: 60, badge: "Best Value" },
-  { months: 3, label: "3 Months", price: "$24.99", days: 90 },
-];
+import {
+  SUBSCRIPTION_PLANS,
+  formatGoldPrice,
+  type SubscriptionPaymentMethod,
+} from "@/lib/subscriptionPlans";
 
 const PERKS = [
   "Community Club access",
@@ -25,18 +24,25 @@ type Props = {
 
 export default function ShopModal({ isOpen, onClose }: Props) {
   const [selectedMonths, setSelectedMonths] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<SubscriptionPaymentMethod>("usd");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setSelectedMonths(null);
+      setPaymentMethod("usd");
       setDone(null);
       setLoading(false);
     }
   }, [isOpen]);
 
-  const selectedPlan = PLANS.find((p) => p.months === selectedMonths) ?? null;
+  const selectedPlan = SUBSCRIPTION_PLANS.find((p) => p.months === selectedMonths) ?? null;
+  const selectedPrice = selectedPlan
+    ? paymentMethod === "gold"
+      ? formatGoldPrice(selectedPlan.priceGoldK)
+      : selectedPlan.priceUsd
+    : null;
 
   const handlePurchase = async () => {
     if (!selectedPlan) return;
@@ -46,7 +52,11 @@ export default function ShopModal({ isOpen, onClose }: Props) {
       const res = await fetch("/api/subscription/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ months: selectedPlan.months, days: selectedPlan.days }),
+        body: JSON.stringify({
+          months: selectedPlan.months,
+          days: selectedPlan.days,
+          paymentMethod,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -95,7 +105,7 @@ export default function ShopModal({ isOpen, onClose }: Props) {
           <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Choose membership</p>
 
           <div className="space-y-2">
-            {PLANS.map((plan) => {
+            {SUBSCRIPTION_PLANS.map((plan) => {
               const isSelected = selectedMonths === plan.months;
               return (
                 <button
@@ -129,14 +139,57 @@ export default function ShopModal({ isOpen, onClose }: Props) {
                       <p className="text-sm font-black text-white">{plan.label}</p>
                       <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Secret Club</p>
                     </div>
-                    <span className={`text-lg font-black shrink-0 ${isSelected ? "text-[#00ffff]" : "text-white/80"}`}>
-                      {plan.price}
-                    </span>
+                    <div className="text-right shrink-0">
+                      <span className={`text-lg font-black block ${isSelected ? "text-[#00ffff]" : "text-white/80"}`}>
+                        {plan.priceUsd}
+                      </span>
+                      <span className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest">
+                        or {formatGoldPrice(plan.priceGoldK)}
+                      </span>
+                    </div>
                   </div>
                 </button>
               );
             })}
           </div>
+
+          {selectedPlan && (
+            <div className="space-y-2">
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Payment method</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("usd")}
+                  className={`p-3 rounded-xl border text-left transition flex items-center gap-2 ${
+                    paymentMethod === "usd"
+                      ? "border-[#00ffff]/60 bg-[#00ffff]/10"
+                      : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                  }`}
+                >
+                  <DollarSign className={`w-4 h-4 shrink-0 ${paymentMethod === "usd" ? "text-[#00ffff]" : "text-gray-400"}`} />
+                  <div>
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">USD</p>
+                    <p className="text-xs font-black text-[#00ffff]">{selectedPlan.priceUsd}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("gold")}
+                  className={`p-3 rounded-xl border text-left transition flex items-center gap-2 ${
+                    paymentMethod === "gold"
+                      ? "border-yellow-400/60 bg-yellow-400/10"
+                      : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                  }`}
+                >
+                  <Coins className={`w-4 h-4 shrink-0 ${paymentMethod === "gold" ? "text-yellow-400" : "text-gray-400"}`} />
+                  <div>
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">Gold</p>
+                    <p className="text-xs font-black text-yellow-400">{formatGoldPrice(selectedPlan.priceGoldK)}</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
 
           <button
             type="button"
@@ -149,8 +202,8 @@ export default function ShopModal({ isOpen, onClose }: Props) {
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Processing...
               </>
-            ) : selectedPlan ? (
-              <>Purchase — {selectedPlan.label} ({selectedPlan.price})</>
+            ) : selectedPlan && selectedPrice ? (
+              <>Purchase — {selectedPlan.label} ({selectedPrice})</>
             ) : (
               "Select a plan to purchase"
             )}

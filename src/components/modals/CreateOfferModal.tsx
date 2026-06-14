@@ -527,6 +527,15 @@ const BlockClassSection = memo(function BlockClassSection({
   classRoleOptions: Record<string, string[]>;
   dispatch: React.Dispatch<FormAction>;
 }) {
+  const classThumbSrc = (cls: string) => {
+    const key =
+      cls === "Death Knight" ? "DEATH KNIGHT" : cls === "Demon Hunter" ? "DEMON HUNTER" : cls.toUpperCase();
+    return `/classes-thumb/${key}.png`;
+  };
+
+  const roleThumbSrc = (role: string) =>
+    `/classes-thumb/${role === "tank" ? "TANK" : role === "healer" ? "HEALER" : "DPS"}.png`;
+
   return (
     <div className="bg-white/10 p-3 rounded-xl w-full min-w-0 flex-1 flex flex-col h-full">
       <label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-wide flex items-center gap-2">
@@ -540,14 +549,11 @@ const BlockClassSection = memo(function BlockClassSection({
               allRolesInGroup.push({ class: cls, role });
             });
           });
-          const allGroupBlocked = allRolesInGroup.every(br =>
-            (blockedRoles || []).some((c: any) => c.class === br.class && c.role === br.role)
-          );
 
           return (
-            <div key={group} className="bg-white/5 rounded-lg p-2 min-w-0 overflow-hidden">
-              <div className="flex items-center justify-between mb-1.5 gap-1">
-                <label className="text-[8px] font-black uppercase tracking-[0.3em] text-white/60 truncate">{group}</label>
+            <div key={group} className="bg-white/5 rounded-lg p-1.5 min-w-0 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-1 gap-0.5 shrink-0">
+                <label className="text-[7px] font-black uppercase tracking-[0.25em] text-white/60 truncate">{group}</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -565,12 +571,12 @@ const BlockClassSection = memo(function BlockClassSection({
                       : [...(blockedRoles || []), ...allRolesForGroup];
                     dispatch({ type: "SET", payload: { blockedRoles: updated } });
                   }}
-                  className="text-[8px] font-black uppercase tracking-wider text-red-400/70 hover:text-red-400 transition-colors"
+                  className="text-[6px] font-black uppercase tracking-wider text-red-400/70 hover:text-red-400 transition-colors shrink-0"
                 >
                   BLOCK ALL
                 </button>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1 flex-1 min-h-0">
                 {(classes as string[])
                   .sort((a: string, b: string) => {
                     const stackA = (classRoleOptions[a] || ["dps"]).length;
@@ -583,7 +589,12 @@ const BlockClassSection = memo(function BlockClassSection({
                     const roles = classRoleOptions[cls] || ["dps"];
 
                     return (
-                      <div key={cls} className="min-w-0 overflow-hidden">
+                      <div
+                        key={cls}
+                        className={`relative min-w-0 overflow-hidden rounded-lg border ${
+                          allBlocked ? "border-red-500/30 bg-red-500/10" : "border-white/5 bg-white/[0.04]"
+                        }`}
+                      >
                         <button
                           type="button"
                           onClick={() => {
@@ -592,39 +603,53 @@ const BlockClassSection = memo(function BlockClassSection({
                               : [...(blockedRoles || []), ...(roles as string[]).map(r => ({ class: cls, role: r }))];
                             dispatch({ type: "SET", payload: { blockedRoles: updated } });
                           }}
-                          className={`relative w-full flex items-center gap-1.5 rounded-lg transition-colors px-2 py-1.5 ${
-                            allBlocked ? "bg-red-500/20" : "bg-white/10 hover:bg-white/15"
-                          }`}
+                          className="w-full flex flex-col items-center gap-0.5 px-1 pt-1.5 pb-0.5 transition-colors hover:bg-white/[0.06]"
                         >
-                          <img src={`/classes-thumb/${cls === "Death Knight" ? "DEATH KNIGHT" : cls === "Demon Hunter" ? "DEMON HUNTER" : cls.toUpperCase()}.png`} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" decoding="async" />
-                          <span className="text-[8px] font-black uppercase tracking-wider text-white/80 truncate flex-1 text-left">{cls}</span>
-                          {allBlocked && <X className="w-3 h-3 text-red-400 shrink-0" />}
+                          <div className="w-8 h-8 rounded-md bg-black/30 flex items-center justify-center overflow-hidden shrink-0">
+                            <img
+                              src={classThumbSrc(cls)}
+                              alt=""
+                              className="w-8 h-8 object-contain"
+                              decoding="async"
+                            />
+                          </div>
+                          <span className="text-[6px] font-black uppercase tracking-wide text-white/75 truncate w-full text-center leading-none px-0.5">
+                            {cls}
+                          </span>
                         </button>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                        {(roles as string[]).map((role: string) => {
-                          const isBlocked = blockedForClass.some((b: any) => b.role === role);
-                          return (
-                            <button
-                              key={role}
-                              type="button"
-                              onClick={() => {
-                                const existing = (blockedRoles || []).findIndex(
-                                  (b: any) => b.class === cls && b.role === role
-                                );
-                                const updated = existing >= 0
-                                  ? (blockedRoles || []).filter((_: any, i: number) => i !== existing)
-                                  : [...(blockedRoles || []), { class: cls, role }];
-                                dispatch({ type: "SET", payload: { blockedRoles: updated } });
-                              }}
-                              className={`flex items-center justify-center w-7 h-7 rounded-md transition shrink-0 ${
-                                isBlocked ? "bg-red-500/20" : "bg-white/10 hover:bg-white/15"
-                              }`}
-                            >
-                              <img src={`/classes-thumb/${role === "tank" ? "TANK" : role === "healer" ? "HEALER" : "DPS"}.png`} alt="" className="w-5 h-5 rounded object-cover flex-shrink-0" decoding="async" />
-                            </button>
-                          );
-                        })}
+                        <div className="flex justify-center gap-0.5 px-1 pb-1.5">
+                          {(roles as string[]).map((role: string) => {
+                            const isBlocked = blockedForClass.some((b: any) => b.role === role);
+                            return (
+                              <button
+                                key={role}
+                                type="button"
+                                onClick={() => {
+                                  const existing = (blockedRoles || []).findIndex(
+                                    (b: any) => b.class === cls && b.role === role
+                                  );
+                                  const updated = existing >= 0
+                                    ? (blockedRoles || []).filter((_: any, i: number) => i !== existing)
+                                    : [...(blockedRoles || []), { class: cls, role }];
+                                  dispatch({ type: "SET", payload: { blockedRoles: updated } });
+                                }}
+                                className={`flex items-center justify-center w-8 h-8 rounded-md transition shrink-0 overflow-hidden ${
+                                  isBlocked ? "bg-red-500/25 ring-1 ring-red-400/40" : "bg-white/10 hover:bg-white/15"
+                                }`}
+                              >
+                                <img
+                                  src={roleThumbSrc(role)}
+                                  alt=""
+                                  className="w-7 h-7 object-contain"
+                                  decoding="async"
+                                />
+                              </button>
+                            );
+                          })}
                         </div>
+                        {allBlocked && (
+                          <X className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-red-400 pointer-events-none" />
+                        )}
                       </div>
                     );
                   })}
