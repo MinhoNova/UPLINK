@@ -11,7 +11,8 @@ import {
   Trash2, Swords, AlertTriangle, X, Loader2,
   Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
-import { resolveProfileImage, profileImgClass, isAnimatedImageUrl } from "@/lib/profileImage";
+import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, shouldHidePublicIdentity } from "@/lib/profileImage";
+import SecretClubCard from "@/components/SecretClubCard";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -115,11 +116,31 @@ export default function CommunityPage() {
 
   const getUserDisplay = (userId: string) => {
     const u = registeredUsers.find((uu: any) => String(uu.id) === String(userId));
-    return { name: u?.name || null, avatar: u?.profileGif || null };
+    if (u && shouldHidePublicIdentity(u)) return { name: null, avatar: null, hidden: true };
+    return {
+      name: u ? resolveProfileDisplayName(u) : null,
+      avatar: u ? resolveProfileImage(u) : null,
+      hidden: false,
+    };
+  };
+
+  const renderAuthorName = (userId: string, storedName?: string) => {
+    const d = getUserDisplay(userId);
+    if (d.hidden) return <SecretClubCard variant="inline" />;
+    const name = d.name || storedName;
+    if (!name) return <span className="text-gray-500">Member</span>;
+    return <>{name}</>;
   };
 
   const UserAvatar = ({ src, userId, className = "" }: { src: string; userId?: string; className?: string }) => {
     const profileUser = userId ? registeredUsers.find((u: any) => String(u.id) === String(userId)) : null;
+    if (profileUser && shouldHidePublicIdentity(profileUser)) {
+      return (
+        <div className={`relative ${className} shrink-0 flex items-center justify-center`}>
+          <SecretClubCard variant="compact" />
+        </div>
+      );
+    }
     const imgSrc = profileUser ? resolveProfileImage(profileUser) : (src?.trim() || "");
 
     return (
@@ -602,7 +623,7 @@ export default function CommunityPage() {
                     <div className="flex items-center gap-3 mb-3 relative z-10">
                       <UserAvatar src={post.userImage || ""} userId={post.userId || ""} className="w-9 h-9" />
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-black text-white/90 truncate block">{(() => { const d = getUserDisplay(post.userId); return d.name || post.userName; })()}</span>
+                        <span className="text-sm font-black text-white/90 truncate block">{renderAuthorName(post.userId, post.userName)}</span>
                         <span className="text-[9px] text-gray-500 font-black">{new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                         <span className="text-[8px] font-black uppercase flex items-center gap-1 mt-0.5 text-gray-500">
                           {post.visibility === "friends_of_friends" || post.visibility === "friends" ? (
@@ -718,7 +739,7 @@ export default function CommunityPage() {
                                   <UserAvatar src={c.userImage || ""} userId={c.userId || ""} className="w-6 h-6 mt-0.5" />
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-[11px] font-black text-white/80 truncate">{(() => { const d = getUserDisplay(c.userId); return d.name || c.userName; })()}</span>
+                                      <span className="text-[11px] font-black text-white/80 truncate">{renderAuthorName(c.userId, c.userName)}</span>
                                       <span className="text-[8px] text-gray-500">{new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                                       {String(c.userId) === String(currentUserId) && (
                                         <button onClick={() => deleteComment(post.id, c.id)} className="ml-auto text-gray-600 hover:text-red-400 transition">
@@ -749,7 +770,7 @@ export default function CommunityPage() {
                                           value={replyText}
                                           onChange={(e) => setReplyText(e.target.value)}
                                           onKeyDown={(e) => { if (e.key === "Enter") postComment(post.id, c.id); if (e.key === "Escape") { setReplyTo(null); setReplyText(""); } }}
-                                          placeholder={`Reply to ${c.userName}...`}
+                                          placeholder={`Reply to ${getUserDisplay(c.userId).name || "member"}...`}
                                           autoFocus
                                           className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-1 text-[10px] outline-none focus:border-[#00ffff]/40 transition-colors text-white/80 placeholder-gray-600"
                                         />
@@ -766,7 +787,7 @@ export default function CommunityPage() {
                                             <UserAvatar src={r.userImage || ""} userId={r.userId || ""} className="w-5 h-5 mt-0.5" />
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-center gap-1.5">
-                                                <span className="text-[10px] font-black text-white/70 truncate">{(() => { const d = getUserDisplay(r.userId); return d.name || r.userName; })()}</span>
+                                                <span className="text-[10px] font-black text-white/70 truncate">{renderAuthorName(r.userId, r.userName)}</span>
                                                 <span className="text-[7px] text-gray-500">{new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                                                 {String(r.userId) === String(currentUserId) && (
                                                   <button onClick={() => deleteComment(post.id, r.id)} className="ml-auto text-gray-600 hover:text-red-400 transition">

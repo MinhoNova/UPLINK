@@ -7,6 +7,7 @@ import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
 import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
 import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
+import SecretClubCard from "@/components/SecretClubCard";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
@@ -140,7 +141,8 @@ const ManageModal = ({
       return aClub - bClub;
     });
 
-  const currentUserAvatar = session?.user?.image || "";
+  const meUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+  const currentUserAvatar = resolveProfileImage(meUser || { avatar: session?.user?.image }, session?.user?.name || "U");
   const users = registeredUsers;
   const holdTimerRef = useRef<any>(null);
    const [isCompletedRunsPickerOpen, setIsCompletedRunsPickerOpen] = useState(false);
@@ -696,18 +698,25 @@ const ManageModal = ({
                                                          const ioScore = app.roleScores?.[app.role] ?? app.score ?? 0;
                                                          const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
                                                          const dungeonShort = dungeon?.short || (dungeon?.name ? dungeon.name.slice(0, 2).toUpperCase() : "");
+                                                         const appHidden = isUserHidden(app.applicantId || app.userId);
                                                          return (
                                                          <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 group hover:border-[#00ffff]/30 transition-all">
                                                             <div className="flex items-center gap-1.5 min-h-[40px]">
                                                                <div className="flex flex-col items-center shrink-0 w-[42px]">
-                                                                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
-                                                                     <img
-                                                                        src={profileImg}
-                                                                        alt=""
-                                                                        className={profileImgClass(profileImg)}
-                                                                     />
-                                                                  </div>
-                                                                  <p className="mt-0.5 text-[6px] font-black text-white truncate max-w-[68px] leading-tight text-center">{renderDualColorName(displayName)}</p>
+                                                                  {appHidden ? (
+                                                                     <SecretClubCard variant="compact" />
+                                                                  ) : (
+                                                                     <>
+                                                                        <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
+                                                                           <img
+                                                                              src={profileImg}
+                                                                              alt=""
+                                                                              className={profileImgClass(profileImg)}
+                                                                           />
+                                                                        </div>
+                                                                        <p className="mt-0.5 text-[6px] font-black text-white truncate max-w-[68px] leading-tight text-center">{renderDualColorName(displayName)}</p>
+                                                                     </>
+                                                                  )}
                                                                </div>
 
                                                                <div className="flex items-center shrink-0" style={{ width: 54 }}>
@@ -738,18 +747,14 @@ const ManageModal = ({
                                                                {dungeon ? (
                                                                   <div className="flex items-center gap-1.5 shrink-0 rounded-lg border border-[#00ffff]/30 bg-black/50 px-1.5 py-1">
                                                                      <img src={dungeon.img} alt={dungeonShort} className="w-10 h-10 rounded-md object-cover border border-white/20 shrink-0" />
-                                                                     <div className="min-w-0">
-                                                                        <p className="text-sm font-black text-[#00ffff] uppercase leading-none tracking-wider drop-shadow-[0_0_8px_rgba(0,255,255,0.35)]">{dungeonShort}</p>
-                                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                                           {keyLvl ? <span className="text-base font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
-                                                                           {dropLvl ? (
-                                                                              <span className="inline-flex items-center gap-0.5 text-base font-black text-[#00eaff] tabular-nums leading-none drop-shadow-[0_0_6px_rgba(0,234,255,0.4)]">
-                                                                                 <ArrowDown className="w-4 h-4 stroke-[3]" />
-                                                                                 {dropLvl}
-                                                                              </span>
-                                                                           ) : null}
-                                                                        </div>
-                                                                     </div>
+                                                                     <span className="text-sm font-black text-[#00ffff] uppercase leading-none tracking-wider drop-shadow-[0_0_8px_rgba(0,255,255,0.35)]">{dungeonShort}</span>
+                                                                     {keyLvl ? <span className="text-base font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
+                                                                     {dropLvl ? (
+                                                                        <span className="inline-flex items-center gap-0.5 text-base font-black text-[#00eaff] tabular-nums leading-none drop-shadow-[0_0_6px_rgba(0,234,255,0.4)]">
+                                                                           <ArrowDown className="w-4 h-4 stroke-[3]" />
+                                                                           {dropLvl}
+                                                                        </span>
+                                                                     ) : null}
                                                                   </div>
                                                                ) : (
                                                                   <div className="shrink-0 min-w-[64px] rounded-lg border border-dashed border-white/10 px-2 py-1 flex items-center justify-center">

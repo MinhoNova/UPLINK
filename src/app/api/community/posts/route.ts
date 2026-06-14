@@ -7,6 +7,7 @@ import { normalizeCommunityImage } from "@/lib/imageProcess";
 import { getKV, initTables } from "@/lib/db";
 import { canViewPost } from "@/lib/postVisibility";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
+import { resolvePublicAuthorFields } from "@/lib/profileImage";
 
 const MAX_DAILY_POSTS = 10;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -83,11 +84,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const result = rows.map((p: any) => ({
-    ...p,
-    reactions: reactionMap[p.id] || [],
-    tags: JSON.parse(p.tags || "[]"),
-  }));
+  await initTables();
+  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+
+  const result = rows.map((p: any) => {
+    const author = registeredUsers.find((u: any) => String(u.id) === String(p.userId));
+    const authorFields = resolvePublicAuthorFields(author, { name: p.userName, image: p.userImage });
+    return {
+      ...p,
+      userName: authorFields.userName,
+      userImage: authorFields.userImage,
+      hiddenIdentity: authorFields.hiddenIdentity,
+      reactions: reactionMap[p.id] || [],
+      tags: JSON.parse(p.tags || "[]"),
+    };
+  });
 
   return NextResponse.json(result);
 }
@@ -168,10 +179,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    await initTables();
+    const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+    const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+    const authorFields = resolvePublicAuthorFields(me, {
+      name: session.user.name || "Unknown",
+      image: session.user.image || "",
+    });
+
     const result = await db.insert(posts).values({
       userId: (session.user as any).id,
-      userName: session.user.name || "Unknown",
-      userImage: session.user.image || "",
+      userName: authorFields.userName,
+      userImage: authorFields.userImage,
       content: content.trim(),
       image: imagePath,
       tags: JSON.stringify(tags),

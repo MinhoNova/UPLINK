@@ -8,6 +8,7 @@ import { Trophy, Bell, DoorOpen, DoorClosed, MessageCircle, Zap, ArrowLeft } fro
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
+import { resolveProfileImage } from "@/lib/profileImage";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 
@@ -174,13 +175,8 @@ export default function Navbar() {
     return null;
   };
 
-  const getEffectiveAvatar = () => {
-    if (!currentUser) return session?.user?.image || "";
-    return currentUser.profileGif || session?.user?.image || "";
-  };
-
   const getAvatarForEffect = () => {
-    return currentUser?.profileGif || currentUser?.avatar || session?.user?.image || "";
+    return resolveProfileImage(currentUser, currentUser?.name || session?.user?.name || "U");
   };
 
   const renderDualColorName = (name: string) => {
@@ -219,8 +215,8 @@ export default function Navbar() {
             </div>
 
           <div className="flex bg-black/5 dark:bg-black/20 p-1.5 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
-            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-5 py-2.5 rounded-xl flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
-              {pathname === '/community' ? 'Uplink' : 'CLUB'}
+            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-3 py-2 rounded-xl flex items-center justify-center transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20 shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
+              <ProtocolMark variant={1} className="w-7 h-7" gold={pathname !== '/community'} />
             </motion.button>
             {pathname === '/leaderboard' ? (
               <motion.a title="Back to Home" href="/" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
@@ -319,7 +315,7 @@ export default function Navbar() {
                 }
               }} className="flex items-center gap-3 pr-4 pl-1.5 py-1.5 rounded-full border border-[#00ffff]/30 hover:border-[#00ffff] transition-all bg-white/5 hover:bg-[#00ffff]/5">
                 <ProfileAvatarWithEffect
-                  src={currentUser?.profileGif || session.user.image || "/default-avatar.png"}
+                  src={getAvatarForEffect()}
                   effect={currentUser?.effect || "none"}
                   className="w-9 h-9"
                 />

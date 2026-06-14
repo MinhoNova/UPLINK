@@ -7,6 +7,8 @@ import { MessageCircle, Users, X, Check, CheckCheck, Search, DoorClosed, UserChe
 import { motion, AnimatePresence } from "framer-motion";
 import DmThreadView from "@/components/chat/DmThreadView";
 import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversationPeernames, isDmMessageRead, type DmMessage } from "@/lib/dmHelpers";
+import { resolveProfileImage, resolveProfileDisplayName, profileImgClass, shouldHidePublicIdentity } from "@/lib/profileImage";
+import SecretClubCard from "@/components/SecretClubCard";
 
 export default function DirectCommsPanel() {
   const { data: session, status } = useSession();
@@ -436,7 +438,7 @@ export default function DirectCommsPanel() {
     let list = [...byUsername.values()].filter(
       (u: any) =>
         !isUserBlocked(u.id) &&
-        (!q || u.name?.toLowerCase().includes(q) || u.username?.toLowerCase().includes(q))
+        (!q || (u.displayName || u.name || "").toLowerCase().includes(q))
     );
 
     if (!q) {
@@ -585,13 +587,19 @@ export default function DirectCommsPanel() {
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); openPlayerProfile(user.id); }}
-                            className="w-11 h-11 rounded-2xl overflow-hidden bg-black border border-white/10 shrink-0 shadow-inner hover:border-[#00ffff]/40 hover:shadow-[0_0_12px_rgba(0,255,255,0.15)] transition-all"
+                            className="w-11 h-11 rounded-2xl overflow-hidden bg-black border border-white/10 shrink-0 shadow-inner hover:border-[#00ffff]/40 hover:shadow-[0_0_12px_rgba(0,255,255,0.15)] transition-all flex items-center justify-center"
                           >
-                             <img src={user.profileGif || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "U")}&background=0b1020&color=00ffff&size=64`} className="w-full h-full object-cover" alt="" />
+                            {shouldHidePublicIdentity(user) ? (
+                              <SecretClubCard variant="compact" />
+                            ) : (
+                              <img src={resolveProfileImage(user)} className={profileImgClass(resolveProfileImage(user), "w-full h-full")} alt="" />
+                            )}
                           </button>
                           <div className="text-left flex-1 min-w-0 flex items-center gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-black text-white/90 truncate group-hover:text-white transition-colors">{user.name}</p>
+                              <p className="text-sm font-black text-white/90 truncate group-hover:text-white transition-colors">
+                                {shouldHidePublicIdentity(user) ? "Secret Operative" : resolveProfileDisplayName(user)}
+                              </p>
                             </div>
                             {unreadCounts[user.username] > 0 && (
                               <>
@@ -622,12 +630,18 @@ export default function DirectCommsPanel() {
                       <button
                         type="button"
                         onClick={() => openPlayerProfile(selectedUser.id)}
-                        className="w-10 h-10 rounded-2xl overflow-hidden bg-black border border-white/10 shrink-0 hover:border-[#00ffff]/40 transition-all"
+                        className="w-10 h-10 rounded-2xl overflow-hidden bg-black border border-white/10 shrink-0 hover:border-[#00ffff]/40 transition-all flex items-center justify-center"
                       >
-                        <img src={selectedUser.profileGif || selectedUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.name || "U")}&background=0b1020&color=00ffff&size=64`} className="w-full h-full object-cover" alt="" />
+                        {shouldHidePublicIdentity(selectedUser) ? (
+                          <SecretClubCard variant="compact" />
+                        ) : (
+                          <img src={resolveProfileImage(selectedUser)} className={profileImgClass(resolveProfileImage(selectedUser), "w-full h-full")} alt="" />
+                        )}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black text-white truncate">{selectedUser.name}</p>
+                        <p className="text-sm font-black text-white truncate">
+                          {shouldHidePublicIdentity(selectedUser) ? "Secret Operative" : resolveProfileDisplayName(selectedUser)}
+                        </p>
                         <p className="text-[9px] text-[#00ffff] font-black uppercase tracking-widest">Direct Message</p>
                       </div>
                       <button
@@ -676,11 +690,15 @@ export default function DirectCommsPanel() {
                         return (
                           <div key={req.id} className="group relative bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 hover:border-[#00ffff]/30 rounded-2xl p-3 transition-all duration-300 shadow-lg">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full overflow-hidden bg-black border border-white/10 shrink-0">
-                                <img src={fromUser?.profileGif || fromUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fromUser?.name || "U")}&background=0b1020&color=00ffff&size=64`} className="w-full h-full object-cover" alt="" />
+                              <div className="w-10 h-10 rounded-full overflow-hidden bg-black border border-white/10 shrink-0 flex items-center justify-center">
+                                {fromUser && shouldHidePublicIdentity(fromUser) ? (
+                                  <SecretClubCard variant="compact" />
+                                ) : (
+                                  <img src={resolveProfileImage(fromUser)} className={profileImgClass(resolveProfileImage(fromUser), "w-full h-full")} alt="" />
+                                )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-black text-white/90 truncate">{fromUser?.name || "Unknown"}</p>
+                                <p className="text-xs font-black text-white/90 truncate">{fromUser ? (shouldHidePublicIdentity(fromUser) ? "Secret Operative" : resolveProfileDisplayName(fromUser)) : "Unknown"}</p>
                                 <p className="text-[8px] text-gray-500 font-medium">Wants to be friends</p>
                               </div>
                               <div className="flex gap-2 shrink-0">
@@ -717,11 +735,15 @@ export default function DirectCommsPanel() {
                       return (
                         <div key={username} className="group relative bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 hover:border-yellow-500/30 rounded-2xl p-3 transition-all duration-300">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-black border border-white/10 shrink-0">
-                              <img src={mutedUser?.profileGif || mutedUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(mutedUser?.name || "U")}&background=0b1020&color=fbbf24&size=64`} className="w-full h-full object-cover" alt="" />
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-black border border-white/10 shrink-0 flex items-center justify-center">
+                              {shouldHidePublicIdentity(mutedUser) ? (
+                                <SecretClubCard variant="compact" />
+                              ) : (
+                                <img src={resolveProfileImage(mutedUser)} className={profileImgClass(resolveProfileImage(mutedUser), "w-full h-full")} alt="" />
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-black text-white/90 truncate">{mutedUser?.name || "Unknown"}</p>
+                              <p className="text-xs font-black text-white/90 truncate">{shouldHidePublicIdentity(mutedUser) ? "Secret Operative" : resolveProfileDisplayName(mutedUser)}</p>
                               <p className="text-[8px] text-yellow-400 font-bold">Muted</p>
                             </div>
                             <button
@@ -770,12 +792,18 @@ export default function DirectCommsPanel() {
                 className="group min-w-[320px] max-w-[400px] bg-gradient-to-br from-[#10101c] via-[#0a0a14] to-black border border-[#ff007f]/35 rounded-[1.75rem] shadow-[0_20px_60px_rgba(0,0,0,0.55),0_0_30px_rgba(255,0,127,0.15)] backdrop-blur-xl overflow-hidden cursor-pointer hover:border-[#ff007f]/55 hover:shadow-[0_24px_70px_rgba(0,0,0,0.6),0_0_40px_rgba(255,0,127,0.22)] transition-all"
               >
                 <div className="p-4 flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-black border-2 border-[#ff007f]/40 shrink-0 shadow-[0_0_20px_rgba(255,0,127,0.2)]">
-                    <img src={messageNotification.user?.profileGif || messageNotification.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(messageNotification.user?.name || "U")}&background=0b1020&color=ff007f&size=128`} className="w-full h-full object-cover" alt="" />
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-black border-2 border-[#ff007f]/40 shrink-0 shadow-[0_0_20px_rgba(255,0,127,0.2)] flex items-center justify-center">
+                    {messageNotification.user && shouldHidePublicIdentity(messageNotification.user) ? (
+                      <SecretClubCard variant="compact" />
+                    ) : (
+                      <img src={resolveProfileImage(messageNotification.user)} className={profileImgClass(resolveProfileImage(messageNotification.user), "w-full h-full")} alt="" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 pt-0.5">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-black text-[#ff007f] truncate">{messageNotification.user?.name}</p>
+                      <p className="text-sm font-black text-[#ff007f] truncate">
+                        {messageNotification.user ? (shouldHidePublicIdentity(messageNotification.user) ? "Secret Operative" : resolveProfileDisplayName(messageNotification.user)) : "Member"}
+                      </p>
                       {messageNotification.unreadCount > 0 && (
                         <span className="text-[9px] font-black bg-red-500/20 text-red-300 border border-red-500/30 px-2 py-0.5 rounded-full shrink-0">
                           {messageNotification.unreadCount} new

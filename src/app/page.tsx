@@ -171,7 +171,7 @@ const VoiceRoomContent = ({ roomName, onDisconnect, inline, users, currentUserId
               <div className={`w-8 h-8 rounded-full border-2 transition-all duration-300 overflow-hidden ${t.participant.isSpeaking ? 'border-[#00ffff] shadow-[0_0_8px_#00ffff]' : 'border-white/10'}`}>
                 <img src={pAvatar} alt={pid} className="w-full h-full object-cover" onError={(e: any) => { if (e.target.src.includes('dicebear')) return; e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${pid}`; }} />
               </div>
-              <span className="text-[7px] font-bold text-gray-400 truncate max-w-[60px] text-center leading-none">{pUser?.name || pUser?.displayName || pUser?.username || pid}</span>
+              <span className="text-[7px] font-bold text-gray-400 truncate max-w-[60px] text-center leading-none">{pUser?.displayName || pUser?.name || "Player"}</span>
             </div>
           );
         })}
@@ -2215,7 +2215,7 @@ export default function HomePage() {
       const isUserHidden = (userId?: string) => {
          if (!userId) return false;
          const user = registeredUsers.find((u: any) => String(u.id) === String(userId));
-         return user?.hiddenIdentity === true;
+         return getUserTier(userId) === "secret_club" && user?.hiddenIdentity === true;
       };
 
    const getFriendStatus = (userId2: string) => {
@@ -2940,15 +2940,12 @@ export default function HomePage() {
 
    const resolveChatIdentity = useCallback((userId?: string, stored?: { from?: string; fromAvatar?: string; fromHandle?: string }) => {
       const resolveFromUser = (user: any) => {
-         if (getUserTier(user.id) === "secret_club") {
-            return {
-               name: user.name || stored?.from || "Operative",
-               avatar: user.customAvatar || user.profileGif || user.avatar || stored?.fromAvatar || "",
-            };
+         if (getUserTier(user.id) === "secret_club" && user.hiddenIdentity === true) {
+            return { name: "", avatar: "" };
          }
          return {
-            name: user.discordDisplayName || user.name || stored?.from || "Operative",
-            avatar: user.avatar || stored?.fromAvatar || "",
+            name: resolveProfileDisplayName(user, stored?.from || "Operative"),
+            avatar: resolveProfileImage(user, user.name || "U") || stored?.fromAvatar || "",
          };
       };
 
@@ -2958,7 +2955,7 @@ export default function HomePage() {
       const lookup = (stored?.fromHandle || stored?.from || "").toLowerCase().trim();
       if (lookup) {
          const matched = registeredUsers.find((u: any) =>
-            (u.username || "").toLowerCase() === lookup ||
+            String(u.id || "").toLowerCase() === lookup ||
             (u.name || "").toLowerCase() === lookup ||
             (u.discordDisplayName || "").toLowerCase() === lookup
          );

@@ -3,6 +3,8 @@ import { getAppSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { comments, posts } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
+import { getKV, initTables } from "@/lib/db";
+import { resolvePublicAuthorFields } from "@/lib/profileImage";
 export async function GET(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);
@@ -17,7 +19,21 @@ export async function GET(req: NextRequest) {
     .where(eq(comments.postId, Number(postId)))
     .orderBy(asc(comments.createdAt));
 
-  return NextResponse.json(rows);
+  await initTables();
+  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+
+  const enriched = rows.map((c: any) => {
+    const author = registeredUsers.find((u: any) => String(u.id) === String(c.userId));
+    const authorFields = resolvePublicAuthorFields(author, { name: c.userName, image: c.userImage });
+    return {
+      ...c,
+      userName: authorFields.userName,
+      userImage: authorFields.userImage,
+      hiddenIdentity: authorFields.hiddenIdentity,
+    };
+  });
+
+  return NextResponse.json(enriched);
 }
 
 export async function POST(req: NextRequest) {
@@ -31,12 +47,20 @@ export async function POST(req: NextRequest) {
   const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
   if (post.length === 0) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
+  await initTables();
+  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+  const me = registeredUsers.find((u: any) => String(u.id) === String((session.user as any).id));
+  const authorFields = resolvePublicAuthorFields(me, {
+    name: session.user.name || "Unknown",
+    image: session.user.image || "",
+  });
+
   const result = await db.insert(comments).values({
     postId,
     parentId: parentId || null,
     userId: (session.user as any).id,
-    userName: session.user.name || "Unknown",
-    userImage: session.user.image || "",
+    userName: authorFields.userName,
+    userImage: authorFields.userImage,
     content: content.trim(),
     createdAt: Date.now(),
   }).returning();
