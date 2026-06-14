@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, UserCheck, UserPlus, Ban, MessageCircle, Users, UserMinus,
+  X, UserCheck, UserPlus, Ban, MessageCircle, Users, UserMinus, Crown,
 } from "lucide-react";
 import { effectiveAvatarEffect, isSecretClubTier } from "@/lib/userProfile";
 import {
@@ -215,6 +215,15 @@ export default function PlayerProfileModal() {
     window.dispatchEvent(new CustomEvent("open-dm-chat", { detail: { userId: profileUser.id } }));
   };
 
+  const viewClubProfile = () => {
+    if (!profileUser) return;
+    setOpen(false);
+    window.location.href = `/community?member=${profileUser.id}`;
+  };
+
+  const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+  const canViewClub = isSecretClubTier(me);
+
   const friendStatus = profileUser ? getFriendStatus(profileUser.id) : "none";
   const isSelf = profileUser && String(profileUser.id) === String(currentUserId);
   const avatarSrc = profileUser ? resolveProfileImage(profileUser) : "";
@@ -352,7 +361,18 @@ export default function PlayerProfileModal() {
               )}
 
               {!isSelf && (
-                <div className="flex items-center justify-center gap-8 pt-2 pb-1">
+                <div className="flex flex-col gap-3 pt-2 pb-1">
+                  {canViewClub && (
+                    <button
+                      type="button"
+                      onClick={viewClubProfile}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#8a2be2]/20 to-[#ff007f]/20 border border-[#8a2be2]/35 text-[#c084fc] text-[10px] font-black uppercase tracking-widest hover:from-[#8a2be2]/30 hover:to-[#ff007f]/30 transition flex items-center justify-center gap-2"
+                    >
+                      <Crown className="w-4 h-4" />
+                      View Club
+                    </button>
+                  )}
+                <div className="flex items-center justify-center gap-8">
                   <div
                     className="flex flex-col items-center gap-0.5"
                     title={`${getMutualFriendsCount(profileUser.id)} mutual friends`}
@@ -383,6 +403,7 @@ export default function PlayerProfileModal() {
                   >
                     <Ban className="w-5 h-5" />
                   </button>
+                </div>
                 </div>
               )}
 

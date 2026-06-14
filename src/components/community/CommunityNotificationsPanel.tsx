@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import {
-  X, Users, UserCheck, Search, Check, CheckCheck, Swords, DoorClosed,
+  X, Users, UserCheck, Search, Check, CheckCheck, DoorClosed,
 } from "lucide-react";
 import PostActivityFeed, { usePostActivity } from "@/components/community/PostActivityFeed";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
@@ -87,6 +87,15 @@ export default function CommunityNotificationsPanel() {
     () => getAcceptedFriendIds(currentUserId, friends),
     [friends, currentUserId]
   );
+
+  const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+  const onlineFriendsCount = useMemo(() => {
+    const now = Date.now();
+    return [...friendIdSet].filter((fid) => {
+      const u = registeredUsers.find((r: any) => String(r.id) === String(fid));
+      return typeof u?.lastSeenAt === "number" && now - u.lastSeenAt < ONLINE_WINDOW_MS;
+    }).length;
+  }, [friendIdSet, registeredUsers]);
 
   const pendingRequests = useMemo(
     () => friends.filter((f: any) => f.status === "pending" && f.target === currentUserId),
@@ -300,14 +309,11 @@ export default function CommunityNotificationsPanel() {
           </>
         ) : (
           <>
-            <div className="w-9 h-9 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/25 flex items-center justify-center">
-              <Swords className="w-4 h-4 text-[#00ffff]" />
-            </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-black uppercase tracking-[0.18em] text-sm text-white">Secret Club</h3>
             </div>
             <span className="text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full">
-              {friendIdSet.size} friends
+              {onlineFriendsCount} online
             </span>
           </>
         )}

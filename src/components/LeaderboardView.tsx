@@ -429,7 +429,8 @@ export default function LeaderboardView({
                 )}
               </>
             ) : (
-              entries.map((entry, i) => {
+              <>
+              {entries.map((entry, i) => {
               const rank = i + 1;
               const c = entry.topChar;
               const user = entry.user;
@@ -547,6 +548,7 @@ export default function LeaderboardView({
                 </p>
               </div>
             )}
+              </>
             )}
           </div>
         </div>

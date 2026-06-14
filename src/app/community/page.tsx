@@ -9,9 +9,17 @@ import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
 import {
   MessageSquare, Send, Flag,
   Trash2, Swords, AlertTriangle, X, Loader2,
-  Zap, ImagePlus, Globe, Users, Pin, Smile,
+  Zap, ImagePlus, Globe, Users, Pin, Smile, ChevronDown, Pencil, Users2,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
+
+const VISIBILITY_OPTIONS = [
+  { id: "public" as const, label: "Public", hint: "Everyone in the club", icon: Globe, accent: "text-[#00ffff] border-[#00ffff]/40 bg-[#00ffff]/10" },
+  { id: "friends" as const, label: "Friends", hint: "Friends only", icon: Users, accent: "text-[#ff007f] border-[#ff007f]/40 bg-[#ff007f]/10" },
+  { id: "friends_of_friends" as const, label: "Friends of Friends", hint: "Friends + their friends", icon: Users2, accent: "text-[#8a2be2] border-[#8a2be2]/40 bg-[#8a2be2]/10" },
+];
+
+type PostVisibility = (typeof VISIBILITY_OPTIONS)[number]["id"];
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -78,11 +86,41 @@ export default function CommunityPage() {
   const [replyTo, setReplyTo] = useState<{ postId: number; parentId: number } | null>(null);
   const [replyText, setReplyText] = useState("");
   const [showMyPosts, setShowMyPosts] = useState(false);
-  const [postVisibility, setPostVisibility] = useState<"public" | "friends_of_friends">("public");
+  const [viewMemberId, setViewMemberId] = useState<string | null>(null);
+  const [postVisibility, setPostVisibility] = useState<PostVisibility>("public");
+  const [visibilityMenuOpen, setVisibilityMenuOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<any | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editRemoveImage, setEditRemoveImage] = useState(false);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const visibilityMenuRef = useRef<HTMLDivElement>(null);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
   const [reactionPickerPostId, setReactionPickerPostId] = useState<number | null>(null);
   const [friends, setFriends] = useState<any[]>([]);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const member = new URLSearchParams(window.location.search).get("member");
+    if (member) {
+      setViewMemberId(member);
+      setShowMyPosts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!visibilityMenuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (visibilityMenuRef.current && !visibilityMenuRef.current.contains(e.target as Node)) {
+        setVisibilityMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [visibilityMenuOpen]);
 
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/"); return; }
@@ -143,11 +181,14 @@ export default function CommunityPage() {
 
   const fetchPosts = useCallback(async () => {
     try {
-      console.log("Fetching posts...");
-      const res = await fetch(`/api/community/posts${filterTag ? `?tag=${filterTag}` : ""}`);
+      const params = new URLSearchParams();
+      if (filterTag) params.set("tag", filterTag);
+      if (viewMemberId) params.set("userId", viewMemberId);
+      const qs = params.toString();
+      const res = await fetch(`/api/community/posts${qs ? `?${qs}` : ""}`);
       if (res.ok) {
         let allPosts = await res.json();
-        if (showMyPosts) {
+        if (!viewMemberId && showMyPosts) {
           allPosts = allPosts.filter((p: any) => String(p.userId) === String(currentUserId));
         }
         setPosts(allPosts);
@@ -157,14 +198,13 @@ export default function CommunityPage() {
     } catch (e) {
       console.error("fetchPosts failed:", e);
     } finally {
-      console.log("Setting loading to false");
       setLoading(false);
     }
-  }, [filterTag, showMyPosts, currentUserId]);
+  }, [filterTag, showMyPosts, viewMemberId, currentUserId]);
 
    useEffect(() => {
       if (access === true) fetchPosts();
-   }, [access, fetchPosts]);
+   }, [access, fetchPosts, viewMemberId]);
 
    useEffect(() => {
      const handleToggle = () => setShowMyPosts(prev => !prev);
@@ -230,6 +270,13 @@ export default function CommunityPage() {
   };
 
   const myProfile = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+
+  const selectedVisibility = VISIBILITY_OPTIONS.find((v) => v.id === postVisibility) || VISIBILITY_OPTIONS[0];
+  const viewMemberProfile = viewMemberId
+    ? registeredUsers.find((u: any) => String(u.id) === String(viewMemberId))
+    : null;
+  const profileSubject = viewMemberProfile || (showMyPosts ? myProfile : null);
+  const showProfileHeader = Boolean(viewMemberId || showMyPosts);
 
   const extractImageUrl = (text: string): string | null => {
     const urlRegex = /(https?:\/\/[^\s]+\.(?:gif|png|jpg|jpeg|webp)(?:\?[^\s]*)?)|(https?:\/\/(?:media\.giphy\.com|giphy\.com|tenor\.com|i\.imgur\.com|imgur\.com|cdn\.discordapp\.com)[^\s]+)/i;
@@ -313,6 +360,61 @@ export default function CommunityPage() {
       body: JSON.stringify({ postId }),
     });
     fetchPosts();
+  };
+
+  const openEditPost = (post: any) => {
+    setEditingPost(post);
+    setEditContent(post.content || "");
+    setEditRemoveImage(false);
+    setEditImageFile(null);
+    setEditImagePreview(null);
+  };
+
+  const handleSaveEditPost = async () => {
+    if (!editingPost) return;
+    setSavingEdit(true);
+    try {
+      let res: Response;
+      if (editImageFile) {
+        const formData = new FormData();
+        formData.append("postId", String(editingPost.id));
+        formData.append("content", editContent);
+        if (editRemoveImage) formData.append("removeImage", "true");
+        formData.append("image", editImageFile);
+        res = await fetch("/api/community/posts", { method: "PATCH", body: formData });
+      } else {
+        res = await fetch("/api/community/posts", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId: editingPost.id,
+            content: editContent,
+            removeImage: editRemoveImage,
+          }),
+        });
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Failed to update post");
+        return;
+      }
+      setEditingPost(null);
+      fetchPosts();
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) { alert("Max 8MB"); e.target.value = ""; return; }
+    setEditImageFile(file);
+    setEditRemoveImage(false);
+    const reader = new FileReader();
+    reader.onload = () => setEditImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handlePinPost = async (postId: number, pinned: boolean) => {
@@ -452,12 +554,12 @@ export default function CommunityPage() {
         <div className="max-w-[1600px] mx-auto py-4 sm:py-6">
           <div className="flex-1 min-w-0 w-full max-w-3xl mx-auto relative z-10">
             {/* My Profile — Facebook-style banner */}
-            {showMyPosts && session?.user && (
+            {showProfileHeader && profileSubject && (
               <div className="mb-6 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden border border-white/5 bg-black shadow-xl">
                 <div className="relative h-28 sm:h-32 w-full overflow-hidden group">
-                  {myProfile?.banner ? (
+                  {profileSubject?.banner ? (
                     <img
-                      src={myProfile.banner}
+                      src={profileSubject.banner}
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover object-center scale-105"
                     />
@@ -465,30 +567,42 @@ export default function CommunityPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-[#ff007f]/30 via-[#8a2be2]/25 to-[#00ffff]/30" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
+                  {showMyPosts && (
+                    <button
+                      type="button"
+                      onClick={() => bannerInputRef.current?.click()}
+                      className="absolute top-3 right-3 px-3 py-1.5 bg-black/50 border border-white/20 rounded-xl text-[9px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition z-20"
+                    >
+                      Edit Banner
+                    </button>
+                  )}
                   <button
-                    type="button"
-                    onClick={() => bannerInputRef.current?.click()}
-                    className="absolute top-3 right-3 px-3 py-1.5 bg-black/50 border border-white/20 rounded-xl text-[9px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition z-20"
+                    onClick={() => {
+                      if (viewMemberId) {
+                        setViewMemberId(null);
+                        router.push("/community");
+                      } else {
+                        setShowMyPosts(false);
+                      }
+                    }}
+                    className="absolute top-3 left-3 px-3 py-1.5 bg-black/50 border border-white/10 rounded-xl text-[9px] font-black text-gray-300 hover:text-white hover:bg-black/70 transition uppercase tracking-wider z-20"
                   >
-                    Edit Banner
-                  </button>
-                  <button onClick={() => setShowMyPosts(false)} className="absolute top-3 left-3 px-3 py-1.5 bg-black/50 border border-white/10 rounded-xl text-[9px] font-black text-gray-300 hover:text-white hover:bg-black/70 transition uppercase tracking-wider z-20">
                     Back to Feed
                   </button>
                   <input ref={bannerInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleBannerUpload} />
                   <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 pb-3 sm:pb-4 flex items-end gap-3 z-10">
-                    <button type="button" onClick={() => openProfile(currentUserId)} className="relative shrink-0">
+                    <button type="button" onClick={() => openProfile(profileSubject.id || currentUserId)} className="relative shrink-0">
                       <div className="absolute inset-0 rounded-full bg-[#00ffff]/30 blur-md scale-110" />
                       <div className="relative w-16 h-16 sm:w-[4.5rem] sm:h-[4.5rem] rounded-full overflow-hidden border-[3px] border-[#00ffff]/50 shadow-[0_0_20px_rgba(0,255,255,0.35)] bg-black">
                         <img
-                          src={resolveProfileImage(myProfile || { name: session.user.name, avatar: session.user.image })}
+                          src={resolveProfileImage(profileSubject)}
                           alt=""
-                          className={profileImgClass(resolveProfileImage(myProfile || {}), "w-full h-full rounded-full object-cover")}
+                          className={profileImgClass(resolveProfileImage(profileSubject), "w-full h-full rounded-full object-cover")}
                         />
                       </div>
                     </button>
                     <h2 className="text-base sm:text-lg font-black text-white tracking-wider truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] pb-1">
-                      {myProfile?.displayName || myProfile?.name || session.user.name}
+                      {resolveProfileDisplayName(profileSubject)}
                     </h2>
                   </div>
                 </div>
@@ -507,7 +621,11 @@ export default function CommunityPage() {
               {session?.user && (
                 <button
                   type="button"
-                  onClick={() => setShowMyPosts((v) => !v)}
+                  onClick={() => {
+                    setShowMyPosts((v) => !v);
+                    setViewMemberId(null);
+                    router.push("/community");
+                  }}
                   className={`ml-auto flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition ${showMyPosts ? "border-[#00ffff]/40 bg-[#00ffff]/15 text-[#00ffff]" : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"}`}
                 >
                   <UserAvatar src={session.user.image || ""} userId={(session.user as any)?.id || ""} className="w-5 h-5 rounded-lg" />
@@ -515,6 +633,7 @@ export default function CommunityPage() {
                 </button>
               )}
             </div>
+            {!viewMemberId && (
             <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 mb-6 shadow-xl backdrop-blur-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-[#00ffff]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
               <div className="flex gap-3 relative z-10">
@@ -541,30 +660,47 @@ export default function CommunityPage() {
                     </div>
                   )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Audience</span>
+                    <div className="relative" ref={visibilityMenuRef}>
+                      <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest mr-1">Audience</span>
                       <button
                         type="button"
-                        onClick={() => setPostVisibility("public")}
-                        className={`flex items-center gap-1.5 text-[8px] font-black uppercase px-2.5 py-1.5 rounded-lg border transition ${
-                          postVisibility === "public"
-                            ? "border-[#00ffff]/40 bg-[#00ffff]/10 text-[#00ffff]"
-                            : "border-white/10 text-gray-600 hover:text-gray-400"
-                        }`}
+                        onClick={() => setVisibilityMenuOpen((v) => !v)}
+                        className={`flex items-center gap-1.5 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition shadow-[0_0_20px_rgba(0,255,255,0.06)] ${selectedVisibility.accent}`}
                       >
-                        <Globe className="w-3.5 h-3.5" /> Public
+                        <selectedVisibility.icon className="w-3.5 h-3.5" />
+                        {selectedVisibility.label}
+                        <ChevronDown className={`w-3 h-3 transition ${visibilityMenuOpen ? "rotate-180" : ""}`} />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setPostVisibility("friends_of_friends")}
-                        className={`flex items-center gap-1.5 text-[8px] font-black uppercase px-2.5 py-1.5 rounded-lg border transition ${
-                          postVisibility === "friends_of_friends"
-                            ? "border-[#ff007f]/40 bg-[#ff007f]/10 text-[#ff007f]"
-                            : "border-white/10 text-gray-600 hover:text-gray-400"
-                        }`}
-                      >
-                        <Users className="w-3.5 h-3.5" /> Friends
-                      </button>
+                      <AnimatePresence>
+                        {visibilityMenuOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                            className="absolute left-0 top-full mt-2 z-30 min-w-[220px] rounded-2xl border border-white/10 bg-[#0a0a16]/95 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.55)] overflow-hidden"
+                          >
+                            {VISIBILITY_OPTIONS.map((opt) => (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => {
+                                  setPostVisibility(opt.id);
+                                  setVisibilityMenuOpen(false);
+                                }}
+                                className={`w-full flex items-start gap-3 px-4 py-3 text-left transition hover:bg-white/[0.06] ${
+                                  postVisibility === opt.id ? "bg-white/[0.04]" : ""
+                                }`}
+                              >
+                                <opt.icon className={`w-4 h-4 mt-0.5 shrink-0 ${opt.accent.split(" ")[0]}`} />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-white">{opt.label}</p>
+                                  <p className="text-[8px] text-gray-500 font-bold mt-0.5">{opt.hint}</p>
+                                </div>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                     <div className="flex items-center gap-2 ml-auto">
                       <input ref={imageInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleImageSelect} />
@@ -591,6 +727,7 @@ export default function CommunityPage() {
                 </div>
               </div>
             </div>
+            )}
 
             {loading ? (
               <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 text-[#00ffff] animate-spin" /></div>
@@ -615,10 +752,15 @@ export default function CommunityPage() {
                         <span className="text-sm font-black text-white/90 truncate block">{renderAuthorName(post.userId, post.userName)}</span>
                         <span className="text-[9px] text-gray-500 font-black">{new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                         <span className="text-[8px] font-black uppercase flex items-center gap-1 mt-0.5 text-gray-500">
-                          {post.visibility === "friends_of_friends" || post.visibility === "friends" ? (
+                          {post.visibility === "friends" ? (
                             <>
                               <Users className="w-3 h-3 text-[#ff007f]/80" />
                               <span className="text-[#ff007f]/80">Friends</span>
+                            </>
+                          ) : post.visibility === "friends_of_friends" ? (
+                            <>
+                              <Users2 className="w-3 h-3 text-[#8a2be2]/80" />
+                              <span className="text-[#8a2be2]/80">Friends of Friends</span>
                             </>
                           ) : (
                             <>
@@ -703,9 +845,14 @@ export default function CommunityPage() {
                           <MessageSquare className="w-3 h-3" /> {openComments.has(post.id) ? "Hide" : `Comment${(comments[post.id]?.length || 0) > 0 ? ` (${comments[post.id].length})` : ""}`}
                         </button>
                         {(String(post.userId) === String(currentUserId) || isAdmin) && (
-                          <button onClick={() => handleDeletePost(post.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-red-400 hover:bg-red-500/5 transition">
-                            <Trash2 className="w-3 h-3" /> Delete
-                          </button>
+                          <>
+                            <button onClick={() => openEditPost(post)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-[#00ffff] hover:bg-[#00ffff]/5 transition">
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                            <button onClick={() => handleDeletePost(post.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-red-400 hover:bg-red-500/5 transition">
+                              <Trash2 className="w-3 h-3" /> Delete
+                            </button>
+                          </>
                         )}
                         <button onClick={() => setReportModal({ postId: post.id })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-red-400 hover:bg-red-500/5 transition">
                           <Flag className="w-3 h-3" /> Report
@@ -828,6 +975,60 @@ export default function CommunityPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Post Modal */}
+      {editingPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0a0a16] border border-white/10 rounded-[2rem] p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <Pencil className="w-5 h-5 text-[#00ffff]" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-[#00ffff]">Edit Post</h3>
+            </div>
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#00ffff]/30 resize-none min-h-[100px]"
+              rows={4}
+            />
+            {(editImagePreview || (editingPost.image && !editRemoveImage)) && (
+              <div className="relative mt-3 inline-block">
+                <img
+                  src={editImagePreview || editingPost.image}
+                  alt=""
+                  className="max-h-40 rounded-xl border border-white/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditRemoveImage(true);
+                    setEditImageFile(null);
+                    setEditImagePreview(null);
+                  }}
+                  className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center justify-between mt-4 gap-2">
+              <button
+                type="button"
+                onClick={() => editImageInputRef.current?.click()}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl text-[9px] font-black uppercase text-gray-500 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition"
+              >
+                <ImagePlus className="w-3.5 h-3.5" /> Replace Image
+              </button>
+              <input ref={editImageInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleEditImageSelect} />
+              <div className="flex gap-2">
+                <button onClick={() => setEditingPost(null)} className="px-5 py-2 text-[10px] font-black text-gray-500 hover:text-white transition">Cancel</button>
+                <button onClick={handleSaveEditPost} disabled={savingEdit} className="px-5 py-2 bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 rounded-xl text-[10px] font-black hover:bg-[#00ffff]/25 transition disabled:opacity-30">
+                  {savingEdit ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Report Modal */}
       {reportModal && (

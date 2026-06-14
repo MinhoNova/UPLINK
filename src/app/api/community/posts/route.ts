@@ -224,3 +224,66 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
+
+export async function PATCH(req: NextRequest) {
+  const db = await getDb();
+  const session = await getAppSession(req);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const contentType = req.headers.get("content-type") || "";
+  const currentUserId = (session.user as { id?: string }).id || "";
+  const isAdmin = currentUserId === "1497295886223544471";
+
+  let postId: number;
+  let content: string | undefined;
+  let removeImage = false;
+  let file: File | null = null;
+
+  if (contentType.includes("application/json")) {
+    const json = await req.json();
+    postId = Number(json.postId);
+    if (json.content !== undefined) content = String(json.content);
+    if (json.removeImage) removeImage = true;
+  } else {
+    const formData = await req.formData();
+    postId = Number(formData.get("postId"));
+    const rawContent = formData.get("content");
+    if (rawContent !== null) content = String(rawContent);
+    if (formData.get("removeImage") === "true") removeImage = true;
+    file = formData.get("image") as File | null;
+  }
+
+  if (!postId) return NextResponse.json({ error: "Missing postId" }, { status: 400 });
+
+  const existing = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+  if (existing.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const post = existing[0] as any;
+  if (post.userId !== currentUserId && !isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const updates: Record<string, unknown> = {};
+  if (content !== undefined) updates.content = content.trim();
+
+  if (removeImage) updates.image = null;
+
+  if (file && file.size > 0) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: "File too large" }, { status: 413 });
+    }
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      updates.image = await saveCommunityImage(currentUserId, buffer, /\.gif$/i.test(file.name));
+    } catch (e) {
+      console.error("Community image update failed:", e);
+      return NextResponse.json({ error: "Invalid or unsupported image" }, { status: 400 });
+    }
+  }
+
+  if (!Object.keys(updates).length) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
+
+  const result = await db.update(posts).set(updates).where(eq(posts.id, postId)).returning();
+  return NextResponse.json(result[0] ?? { success: true });
+}
