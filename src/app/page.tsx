@@ -940,46 +940,6 @@ export default function HomePage() {
       return () => window.removeEventListener('show-toast', handler);
    }, []);
 
-   // Security Hardening: Disable Developer Tools and Right-Click
-   useEffect(() => {
-      if (typeof window === "undefined") return;
-
-      const handleContextMenu = (e: MouseEvent) => e.preventDefault();
-      const handleKeyDown = (e: KeyboardEvent) => {
-         // Disable F12
-         if (e.keyCode === 123) {
-            e.preventDefault();
-            return false;
-         }
-         // Disable Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-         if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
-            e.preventDefault();
-            return false;
-         }
-         if (e.ctrlKey && e.keyCode === 85) {
-            e.preventDefault();
-            return false;
-         }
-      };
-
-      window.addEventListener("contextmenu", handleContextMenu);
-      window.addEventListener("keydown", handleKeyDown);
-
-      // Console Security Loop
-      const secInterval = setInterval(() => {
-         console.clear();
-         console.log("%c[DATABASE SECURITY ACTIVE]", "color: #00ffff; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px #00ffff;");
-         console.log("%cUnauthorized terminal inspection is a violation of Security Protocol.", "color: white; font-size: 12px;");
-         console.log("%cAll activity is being monitored via encrypted network.", "color: #ff007f; font-size: 10px; font-weight: bold;");
-      }, 2000);
-
-      return () => {
-         window.removeEventListener("contextmenu", handleContextMenu);
-         window.removeEventListener("keydown", handleKeyDown);
-         clearInterval(secInterval);
-      };
-   }, []);
-
    const sanitizeInput = (input: string) => {
       return input
          .replace(/[<>"'`]/g, '')

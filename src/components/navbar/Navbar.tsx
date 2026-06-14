@@ -199,11 +199,14 @@ export default function Navbar() {
     <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
       <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2.5 shrink-0">
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
+            <a
+              href={pathname === "/community" ? "/community" : "/"}
+              className="flex items-center gap-2.5 shrink-0 rounded-xl transition-opacity hover:opacity-90"
+            >
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
               <ProtocolMark variant={1} className="h-full w-full" gold={pathname === '/community'} />
             </div>
-            <div className="hidden sm:flex flex-col items-center leading-none pointer-events-none select-none pt-[6px]">
+            <div className="hidden sm:flex flex-col items-center leading-none select-none pt-[6px]">
               <span className="text-2xl font-black uppercase tracking-[0.18em] leading-none" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
                 <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
                   {pathname === '/community' ? 'CLUB' : 'Uplink'}
@@ -215,13 +218,24 @@ export default function Navbar() {
                 </span>
               )}
             </div>
-            </div>
+            </a>
 
           <div className="flex items-center bg-black/5 dark:bg-black/20 px-1.5 py-1 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
-            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`h-8 px-5 rounded-lg flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
+            <motion.a
+              href={pathname === '/community' ? '/' : '/community'}
+              title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'}
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                if (pathname !== '/community' && getUserTier(currentUserId) === "free") {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } }));
+                }
+              }}
+              className={`h-8 px-5 rounded-lg flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}
+            >
               <ProtocolMark variant={1} className="w-5 h-5 shrink-0" gold={pathname !== '/community'} />
               {pathname === '/community' ? 'Uplink' : 'CLUB'}
-            </motion.button>
+            </motion.a>
             {pathname === '/leaderboard' ? (
               <motion.a title="Back to Home" href="/" className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
                 <ArrowLeft className="w-4 h-4" /> Back
@@ -257,16 +271,18 @@ export default function Navbar() {
             }} className={`h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
               <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
             </motion.button>
-            <motion.button title="Auto-Apply Settings" onClick={() => {
-              if (getUserTier(currentUserId) === "free") return;
-              if (window.location.pathname === '/') {
+            {pathname === '/' ? (
+              <motion.button title="Auto-Apply Settings" onClick={() => {
+                if (getUserTier(currentUserId) === "free") return;
                 window.dispatchEvent(new CustomEvent('toggle-auto-apply-settings'));
-              } else {
-                window.location.href = '/';
-              }
-            }} className={`h-8 px-3 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
-              ⚙️
-            </motion.button>
+              }} className={`h-8 px-3 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
+                ⚙️
+              </motion.button>
+            ) : (
+              <motion.a title="Auto-Apply Settings" href="/" className={`h-8 px-3 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
+                ⚙️
+              </motion.a>
+            )}
             <motion.button title="Toggle Theme" onClick={toggleTheme} className={`h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
               {theme === 'dark' ? 'Dark' : 'Light'}
