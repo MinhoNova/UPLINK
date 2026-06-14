@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
 import { banIp, getBannedIps, unbanIp } from "@/lib/ipBan";
 import { getAuditLogs } from "@/lib/auditLog";
+import { getKV, initTables } from "@/lib/db";
 
-export async function GET() {
-  const auth = await requireAdmin();
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const ips = await getBannedIps();
@@ -25,14 +26,31 @@ export async function GET() {
     if (recentIps.size >= 30) break;
   }
 
+  await initTables();
+  const users: any[] = (await getKV("registeredUsers")) || [];
+  const fromUsers = users
+    .filter((u) => typeof u.lastKnownIp === "string" && u.lastKnownIp && u.lastKnownIp !== "unknown")
+    .map((u) => ({
+      ip: u.lastKnownIp as string,
+      handle: u.username || u.name,
+      action: "last_seen",
+      at: typeof u.lastSeenAt === "number" ? u.lastSeenAt : 0,
+    }))
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 40);
+
+  for (const row of fromUsers) {
+    if (!recentIps.has(row.ip)) recentIps.set(row.ip, row);
+  }
+
   return NextResponse.json({
     ips,
-    recent: Array.from(recentIps.values()),
+    recent: Array.from(recentIps.values()).sort((a, b) => b.at - a.at).slice(0, 40),
   });
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = (await req.json().catch(() => ({}))) as { ip?: string; reason?: string };
@@ -46,7 +64,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = (await req.json().catch(() => ({}))) as { ip?: string; reason?: string };

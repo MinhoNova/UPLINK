@@ -21,12 +21,14 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.bannedUsers": "Ban list updated",
   "admin.ipBan": "IP banned",
   "admin.ipUnban": "IP unbanned",
+  "onboarding.ipBan": "Onboarding abuse — IP banned",
+  "admin.roleChange": "Role changed",
 };
 
 export default function AdminAuditPanel() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "chat">("chat");
+  const [filter, setFilter] = useState<"all" | "chat">("all");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -47,15 +49,15 @@ export default function AdminAuditPanel() {
       : logs;
 
   return (
-    <div className="mt-12 pt-8 border-t border-white/10">
+    <div id="admin-audit" className="mt-12 pt-8 border-t border-white/10 scroll-mt-24">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h2 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
             <ScrollText className="text-violet-400 w-10 h-10" /> Security Audit Log
           </h2>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-            Auto-suspensions, chat spam, and security events
-          </p>
+        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
+          Suspensions, IP bans, uploads, and security events — scroll down in Admin if you only see users above
+        </p>
         </div>
         <div className="flex gap-2">
           <button

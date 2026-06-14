@@ -4,6 +4,8 @@ import { getKVPairs, setKV, initTables } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { withdrawApplicantFromOfferFamily } from "@/lib/lobbyLifecycle";
 import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
+import { touchUserLastIp } from "@/lib/userLastIp";
+import { getClientIp } from "@/lib/requestIp";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
   return String(member.applicantId || member.userId || member.id || "");
@@ -74,6 +76,7 @@ export async function POST(req: Request) {
 
   lobbies[idx] = updatedLobby;
   await setKV("lobbies", lobbies);
+  touchUserLastIp(uid, getClientIp(req)).catch(() => {});
 
   return NextResponse.json({ success: true, lobby: updatedLobby });
 }

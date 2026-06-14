@@ -95,7 +95,7 @@ export default function AdminIpBanPanel() {
           <Globe className="text-orange-400 w-10 h-10" /> Banned IP Addresses
         </h2>
         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-          Block a network address — use after repeated abuse or alt accounts. Username ban stays primary.
+          Block by IP from each user card above, or enter manually. IPs appear after the user visits the site.
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export default function AdminIpBanPanel() {
       {recent.length > 0 && (
         <>
           <h3 className="text-lg font-black text-white/80 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-gray-500" /> Recent IPs (from audit)
+            <ShieldCheck className="w-5 h-5 text-gray-500" /> Known IPs (users + audit)
           </h3>
           <div className="grid gap-2 max-h-[240px] overflow-y-auto custom-scrollbar">
             {recent.map((row) => (

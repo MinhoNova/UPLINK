@@ -2,7 +2,7 @@ import { isAdminUser } from "@/lib/secureDataWrite";
 import { computeDeliveredReceiptsFrom, computeReadReceiptsFrom } from "@/lib/dmHelpers";
 import { notificationMatchesUser } from "@/lib/userProfile";
 
-const OTHER_USER_STRIP = ["blocked", "friendRequests", "email"] as const;
+const OTHER_USER_STRIP = ["blocked", "friendRequests", "email", "lastKnownIp", "lastSeenAt"] as const;
 
 export function filterDataForUser(
   data: Record<string, unknown>,

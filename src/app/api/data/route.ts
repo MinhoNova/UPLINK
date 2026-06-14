@@ -10,6 +10,7 @@ import { logAudit } from '@/lib/auditLog';
 import { isUserBanned, bannedResponse } from '@/lib/banCheck';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
+import { touchUserLastIp } from '@/lib/userLastIp';
 
 export async function GET(req: Request) {
   try {
@@ -62,6 +63,7 @@ export async function GET(req: Request) {
     }
 
     const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
+    touchUserLastIp(auth.user.id, getClientIp(req)).catch(() => {});
     return NextResponse.json(scoped);
   } catch (error) {
     console.error("Error reading from D1:", error);

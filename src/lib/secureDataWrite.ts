@@ -14,7 +14,15 @@ export function stripAdminFromBanList(handles: string[]): string[] {
   return handles.filter((h) => h !== ADMIN_HANDLE && h !== "minhonovazen");
 }
 
-const PROTECTED_SELF_FIELDS = ["id", "username", "subscription", "welcomeFreeClaimed", "welcomePlansSeen"] as const;
+const PROTECTED_SELF_FIELDS = [
+  "id",
+  "username",
+  "subscription",
+  "welcomeFreeClaimed",
+  "welcomePlansSeen",
+  "lastKnownIp",
+  "lastSeenAt",
+] as const;
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 
 export function isAdminUser(userId: string, handle: string) {

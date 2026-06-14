@@ -4217,6 +4217,29 @@ export default function HomePage() {
        addToast(`${username} has been suspended. Data preserved.`, "success");
    };
 
+   const handleBanUserIp = async (user: { username?: string; lastKnownIp?: string }) => {
+      const ip = String(user?.lastKnownIp || "").trim();
+      if (!ip) {
+         addToast("No IP recorded yet — user must visit the site first.", "error");
+         return;
+      }
+      try {
+         const res = await fetch("/api/admin/banned-ips", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ip, reason: `Banned with user ${user.username || "unknown"}` }),
+         });
+         const data = await res.json();
+         if (!res.ok) {
+            addToast(data.error || "Failed to ban IP", "error");
+            return;
+         }
+         addToast(`IP ${ip} banned.`, "success");
+      } catch {
+         addToast("Failed to ban IP.", "error");
+      }
+   };
+
    const handleClearUserDatabase = async (userId: string, username: string) => {
       const targetUser = registeredUsers.find(u => u.id === userId);
       if (targetUser && (targetUser.username === "minhonovazen" || targetUser.id === "1497295886223544471")) {
@@ -5247,7 +5270,22 @@ export default function HomePage() {
 
                           {activeMainTab === "admin" && isAdmin && (
                              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
-                                <div className="p-8 bg-red-900/10 border border-red-900/30 rounded-[3rem] backdrop-blur-xl relative overflow-hidden">
+                                <div className="flex flex-wrap gap-2 p-2 bg-black/30 rounded-2xl border border-white/5">
+                                   {[
+                                      { id: "admin-users", label: "Users" },
+                                      { id: "admin-audit", label: "Audit Log" },
+                                      { id: "admin-ip", label: "IP Bans" },
+                                   ].map((tab) => (
+                                      <a
+                                         key={tab.id}
+                                         href={`#${tab.id}`}
+                                         className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-white/10 text-gray-400 hover:text-white hover:border-violet-500/40 transition-all"
+                                      >
+                                         {tab.label}
+                                      </a>
+                                   ))}
+                                </div>
+                                <div id="admin-users" className="p-8 bg-red-900/10 border border-red-900/30 rounded-[3rem] backdrop-blur-xl relative overflow-hidden scroll-mt-24">
                                     <motion.button onClick={async () => {
                                        if (confirm("CRITICAL ACTION: Wipe all members and token data? Characters linked via Raider.io will be preserved.")) {
                                           const preservedChars = globalCharacters.filter(c => c.userId === currentUserId);
@@ -5284,6 +5322,14 @@ export default function HomePage() {
                                                <AvatarWithEffect src={user.avatar} effect={user.effect} className="w-16 h-16" />
                                                <div>
                                                    <h4 className="text-xl font-black text-white uppercase">{user.name}</h4>
+                                                   <p className="text-[9px] font-mono text-gray-500 mt-1">
+                                                      {user.username ? `@${user.username}` : "—"}
+                                                      {user.lastKnownIp ? (
+                                                         <span className="ml-2 text-orange-400/80">· IP {user.lastKnownIp}</span>
+                                                      ) : (
+                                                         <span className="ml-2 text-gray-600">· IP pending first visit</span>
+                                                      )}
+                                                   </p>
                                                    {getUserTier(user.id) === "secret_club" && (
                                                       <p className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest mt-1">
                                                          {getSubscriptionDaysLeft(user) ?? 0} days remaining
@@ -5305,6 +5351,9 @@ export default function HomePage() {
                                                       <>
                                                          <button onClick={() => handleClearUserDatabase(user.id, user.username)} className="px-4 py-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all">Clear DB</button>
                                                          <button onClick={() => handleBanUser(user.username)} className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all">Suspend</button>
+                                                         {user.lastKnownIp && (
+                                                            <button onClick={() => handleBanUserIp(user)} className="px-4 py-2 bg-orange-500/10 text-orange-400 border border-orange-500/30 hover:bg-orange-500 hover:text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all">Ban IP</button>
+                                                         )}
                                                           {getUserTier(user.id) === "free" ? (
                                                              <div className="flex items-center gap-1">
                                                                 {[1, 2, 3].map((m) => (
@@ -5351,9 +5400,11 @@ export default function HomePage() {
                                       )}
                                    </div>
 
-                                   <AdminIpBanPanel />
-                                   <AdminModerationPanel />
                                    <AdminAuditPanel />
+                                   <div id="admin-ip" className="scroll-mt-24">
+                                      <AdminIpBanPanel />
+                                   </div>
+                                   <AdminModerationPanel />
                                 </div>
                              </motion.div>
                           )}
