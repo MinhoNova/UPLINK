@@ -529,6 +529,7 @@ export default function HomePage() {
     const [globalDataReady, setGlobalDataReady] = useState(false);
     const [isWelcomePlansOpen, setIsWelcomePlansOpen] = useState(false);
     const [onboardingData, setOnboardingData] = useState({ interests: [] as string[], raiderLink: "", battleTag: "" });
+    const [onboardingError, setOnboardingError] = useState("");
     const [voiceToken, setVoiceToken] = useState<string | null>(null);
     const [voiceServerUrl, setVoiceServerUrl] = useState<string | null>(null);
     const [isJoiningVoice, setIsJoiningVoice] = useState(false);
@@ -1478,6 +1479,11 @@ export default function HomePage() {
                  if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
                     console.error("Profile save failed:", err.error || res.status);
+                    if (err.error) {
+                       window.dispatchEvent(
+                          new CustomEvent("show-toast", { detail: { msg: err.error, type: "error" } })
+                       );
+                    }
                     return false;
                  }
                  profileSaved = true;
@@ -4086,6 +4092,14 @@ export default function HomePage() {
       const sanitizedTag = sanitizeInput(onboardingData.battleTag);
       const sanitizedRaider = sanitizeInput(onboardingData.raiderLink);
 
+      if (!sanitizedTag || !sanitizedRaider) {
+         const msg = "Enter your Battle.net ID and Raider.io link.";
+         setOnboardingError(msg);
+         addToast(msg, "error");
+         return;
+      }
+
+      setOnboardingError("");
       setIsSyncing(true);
       try {
          const verifyRes = await fetch("/api/onboarding/verify", {
@@ -4096,7 +4110,9 @@ export default function HomePage() {
          });
          const verifyData = await verifyRes.json().catch(() => ({}));
          if (!verifyRes.ok) {
-            addToast(verifyData.error || "Verification failed", "error");
+            const msg = verifyData.error || "Verification failed";
+            setOnboardingError(msg);
+            addToast(msg, "error");
             return;
          }
 
@@ -4105,7 +4121,9 @@ export default function HomePage() {
             (c) => c.name === data.name && c.realm === data.realm && String(c.userId) !== String(currentUserId)
          );
          if (crossUserDup) {
-            addToast("CRITICAL: Character identity already registered by another operative.", "error");
+            const msg = "This Raider.io character is already linked to another account.";
+            setOnboardingError(msg);
+            addToast(msg, "error");
             return;
          }
 
@@ -4119,9 +4137,16 @@ export default function HomePage() {
          );
 
          if (alreadyRegistered) {
-            await saveGlobalData({ characters: updatedGlobal });
+            const ok = await saveGlobalData({ characters: updatedGlobal });
+            if (!ok) {
+               const msg = "Could not save character. Try again.";
+               setOnboardingError(msg);
+               addToast(msg, "error");
+               return;
+            }
             localStorage.setItem("uplink_is_registered", "true");
             setIsOnboardingModalOpen(false);
+            setOnboardingError("");
             addToast("Character added to My Characters.", "success");
             return;
          }
@@ -4137,17 +4162,26 @@ export default function HomePage() {
          const updatedUsers = [...registeredUsers, newUser];
          setRegisteredUsers(updatedUsers);
 
-         await saveGlobalData({
+         const ok = await saveGlobalData({
             registeredUsers: updatedUsers,
             characters: updatedGlobal,
          });
+         if (!ok) {
+            const msg = "Registration could not be saved. Try again.";
+            setOnboardingError(msg);
+            addToast(msg, "error");
+            return;
+         }
 
          localStorage.setItem("uplink_is_registered", "true");
          setIsOnboardingModalOpen(false);
+         setOnboardingError("");
          setIsWelcomePlansOpen(true);
          addToast("Terminal Access Granted. Character added to My Characters.", "success");
       } catch {
-         addToast("Uplink to Raider.io failed.", "error");
+         const msg = "Uplink to Raider.io failed. Try again.";
+         setOnboardingError(msg);
+         addToast(msg, "error");
       } finally {
          setIsSyncing(false);
       }
@@ -4698,14 +4732,34 @@ export default function HomePage() {
        );
      }
 
-     const likelyRegistered =
-        typeof window !== "undefined" && localStorage.getItem("uplink_is_registered") === "true";
-     const showOnboarding =
-        isOnboardingModalOpen && (!likelyRegistered || globalDataReady);
+     const showOnboarding = isOnboardingModalOpen;
+
+     const toastLayer = (
+        <div className="fixed bottom-10 right-10 z-[250] flex flex-col gap-4 pointer-events-none">
+           <AnimatePresence>
+              {toasts.map((t) => (
+                 <motion.div
+                    key={t.id}
+                    initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                    className={`pointer-events-auto px-8 py-5 rounded-2xl border-2 backdrop-blur-xl shadow-2xl flex items-center gap-4 min-w-[300px] max-w-md ${t.type === "error" ? "bg-red-500/10 border-red-500 text-red-500" : t.type === "success" ? "bg-green-500/10 border-green-500 text-green-500" : "bg-black/80 border-[#00ffff] text-[#00ffff]"}`}
+                 >
+                    {t.type === "error" ? <ShieldAlert className="w-6 h-6 shrink-0" /> : t.type === "success" ? <CheckCircle2 className="w-6 h-6 shrink-0" /> : <Bell className="w-6 h-6 shrink-0" />}
+                    <div>
+                       <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Frequency Alert</p>
+                       <p className="font-black text-sm">{t.msg}</p>
+                    </div>
+                 </motion.div>
+              ))}
+           </AnimatePresence>
+        </div>
+     );
 
      return (
         <PageContext.Provider value={pageContextValue}>
          <div className={`min-h-screen ${theme === 'light' ? 'bg-[#f8f9fc] text-[#1a1a2e]' : 'bg-[#06060c] text-gray-200'} selection:bg-[#ff007f]/30 font-[family-name:var(--font-outfit)] overflow-x-hidden transition-colors duration-700`}>
+           {toastLayer}
            {status !== 'unauthenticated' ? (
              showOnboarding ? (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#030308]">
@@ -4763,7 +4817,10 @@ export default function HomePage() {
                                         type="text"
                                         placeholder="Username#1234"
                                         value={onboardingData.battleTag}
-                                        onChange={(e) => setOnboardingData({ ...onboardingData, battleTag: e.target.value })}
+                                        onChange={(e) => {
+                                           setOnboardingData({ ...onboardingData, battleTag: e.target.value });
+                                           if (onboardingError) setOnboardingError("");
+                                        }}
                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
                                      />
                                   </div>
@@ -4780,7 +4837,10 @@ export default function HomePage() {
                                         type="text"
                                         placeholder="https://raider.io/characters/..."
                                         value={onboardingData.raiderLink}
-                                        onChange={(e) => setOnboardingData({ ...onboardingData, raiderLink: e.target.value })}
+                                        onChange={(e) => {
+                                           setOnboardingData({ ...onboardingData, raiderLink: e.target.value });
+                                           if (onboardingError) setOnboardingError("");
+                                        }}
                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
                                      />
                                   </div>
@@ -4788,13 +4848,18 @@ export default function HomePage() {
                             </motion.div>
                          </div>
 
+                         {onboardingError ? (
+                            <p className="mt-6 text-center text-sm font-bold text-red-400 px-4">{onboardingError}</p>
+                         ) : null}
+
                          <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12">
                             <button
                                onClick={handleApplyOperative}
-                               className="w-full group relative py-6 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-[0_20px_40px_rgba(0,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all overflow-hidden"
+                               disabled={isSyncing}
+                               className="w-full group relative py-6 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-[0_20px_40px_rgba(0,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
-                               <span className="relative z-10">AUTHORIZE UPLINK</span>
+                               <span className="relative z-10">{isSyncing ? "VERIFYING..." : "AUTHORIZE UPLINK"}</span>
                             </button>
                          </motion.div>
                       </div>
@@ -6004,18 +6069,6 @@ export default function HomePage() {
             to { background-position: 40px 0; }
           }
         `}} />
-
-               {/* TOAST SYSTEM */}
-               <div className="fixed bottom-10 right-10 z-[100] flex flex-col gap-4 pointer-events-none">
-                  <AnimatePresence>
-                     {toasts.map(t => (
-                        <motion.div key={t.id} initial={{ opacity: 0, x: 50, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} className={`pointer-events-auto px-8 py-5 rounded-2xl border-2 backdrop-blur-xl shadow-2xl flex items-center gap-4 min-w-[300px] ${t.type === 'error' ? 'bg-red-500/10 border-red-500 text-red-500' : t.type === 'success' ? 'bg-green-500/10 border-green-500 text-green-500' : 'bg-black/80 border-[#00ffff] text-[#00ffff]'}`}>
-                           {t.type === 'error' ? <ShieldAlert className="w-6 h-6" /> : t.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
-                           <div><p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Frequency Alert</p><p className="font-black text-sm">{t.msg}</p></div>
-                        </motion.div>
-                     ))}
-                  </AnimatePresence>
-               </div>
 
                </>
                   );

@@ -9,7 +9,7 @@ const VERIFY_LIMIT_PER_USER = 40;
 const VERIFY_LIMIT_PER_IP = 60;
 const VERIFY_WINDOW_MS = 60 * 60_000;
 /** Minimum character level on Raider.io to complete registration (no IO/rating requirement). */
-const ONBOARDING_MIN_LEVEL = 80;
+export const ONBOARDING_MIN_LEVEL = 80;
 
 function rejectVerification(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });

@@ -29,7 +29,31 @@ export async function PATCH(req: Request) {
   await initTables();
   const registeredUsers: Record<string, unknown>[] = (await getKV("registeredUsers")) || [];
   const idx = registeredUsers.findIndex((u) => String(u.id) === String(auth.user.id));
-  if (idx === -1) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  if (idx === -1) {
+    const admin = isAdminUser(auth.user.id, auth.user.username);
+    const newRecord: Record<string, unknown> = {
+      id: auth.user.id,
+      username: auth.user.username,
+      name: incoming.name || auth.user.name || "",
+      avatar: incoming.avatar || auth.user.image || "",
+      battleTag: incoming.battleTag || "",
+    };
+    const validation = validateRegisteredUsers(
+      registeredUsers,
+      [...registeredUsers, newRecord],
+      auth.user.id,
+      admin
+    );
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 403 });
+    }
+    await setKV("registeredUsers", validation.value);
+    const saved = (validation.value as Record<string, unknown>[]).find(
+      (u) => String(u.id) === String(auth.user.id)
+    );
+    return NextResponse.json({ success: true, profile: saved });
+  }
 
   const existing = registeredUsers[idx];
   const merged = { ...existing, ...incoming };
