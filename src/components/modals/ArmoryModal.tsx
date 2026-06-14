@@ -1,7 +1,7 @@
 ﻿"use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Trash2, Coins, LogOut, Clock, AlertTriangle, MessageSquare, Trophy, History, Zap, Lock, CheckCircle2, ShieldCheck, Eye } from "lucide-react";
+import { X, Check, Trash2, Coins, LogOut, Clock, MessageSquare, Trophy, History, Zap, Lock, CheckCircle2, ShieldCheck, Eye } from "lucide-react";
 import { usePage } from "@/contexts/PageContext";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
@@ -30,14 +30,6 @@ interface ArmoryModalProps {
   setRaiderLink: (v: string) => void;
   handleSyncRaiderIo: (e: any) => void;
   isSyncing: boolean;
-  inviteUsername: string;
-  setInviteUsername: (v: string) => void;
-  handleInviteToTeam: () => void;
-  inviteError: string;
-  sentInvites: string[];
-  setSentInvites: (v: string[] | ((prev: string[]) => string[])) => void;
-  myTeam: any[];
-  setMyTeam: (v: any[] | ((prev: any[]) => any[])) => void;
   lobbies: any[];
   setLobbies: (v: any[] | ((prev: any[]) => any[])) => void;
   completedHistoryItems: any[];
@@ -59,8 +51,6 @@ interface ArmoryModalProps {
   setAutoAcceptEndTime: (v: number) => void;
   hiddenIdentity: boolean;
   setHiddenIdentity: (v: boolean) => void;
-  setIsTicketModalOpen: (v: boolean) => void;
-  isTicketModalOpen: boolean;
   signOut: () => void;
 }
 
@@ -83,14 +73,6 @@ const ArmoryModal = ({
   setRaiderLink,
   handleSyncRaiderIo,
   isSyncing,
-  inviteUsername,
-  setInviteUsername,
-  handleInviteToTeam,
-  inviteError,
-  sentInvites,
-  setSentInvites,
-  myTeam,
-  setMyTeam,
   lobbies,
   setLobbies,
   completedHistoryItems,
@@ -112,8 +94,6 @@ const ArmoryModal = ({
   setAutoAcceptEndTime,
   hiddenIdentity,
   setHiddenIdentity,
-  setIsTicketModalOpen,
-  isTicketModalOpen,
   signOut,
 }: ArmoryModalProps) => {
   const {
@@ -171,16 +151,11 @@ const ArmoryModal = ({
                            <div className="w-full md:w-80 bg-black border-r border-white/5 p-8 flex flex-col">
                                <div className="flex flex-col gap-4">
                                  <motion.button onClick={() => setActiveArmoryTab("armory")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'armory' ? 'bg-[#00ffff]/10 border-[#00ffff] text-[#00ffff]' : 'border-transparent text-gray-500'}`}>My Characters</motion.button>
-                                 <motion.button onClick={() => setActiveArmoryTab("team")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'team' ? 'bg-[#ff007f]/10 border-[#ff007f] text-[#ff007f]' : 'border-transparent text-gray-500'}`}>My Team</motion.button>
                                  <motion.button onClick={() => setActiveArmoryTab("customization")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'customization' ? 'bg-[#ffd700]/10 border-[#ffd700] text-[#ffd700]' : 'border-transparent text-gray-500'}`}>Effects Store</motion.button>
                                    <motion.button onClick={() => { if (getUserTier(currentUserId) !== "secret_club") return addToast("Lobby Store is a Secret Club feature. Subscribe to unlock.", "error"); setActiveArmoryTab("lobby"); }} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'lobby' ? 'bg-[#ff007f]/10 border-[#ff007f] text-[#ff007f]' : 'border-transparent text-gray-500'} ${getUserTier(currentUserId) !== "secret_club" ? 'opacity-40 grayscale' : ''}`}>Lobby Store</motion.button>
 
                                     <motion.button onClick={() => setActiveArmoryTab("history")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === "history" ? "bg-[#ff007f]/10 border-[#ff007f] text-[#ff007f]" : "border-transparent text-gray-500 hover:text-gray-300"}`}>History                            </motion.button>
                                <motion.button onClick={() => setActiveArmoryTab("bank")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'bank' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500'}`}>Gold Bank Vault</motion.button>
-                               <motion.button onClick={() => setIsTicketModalOpen(true)} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${isTicketModalOpen ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
-                                  <MessageSquare className="w-5 h-5 inline-block mr-2" /> Support Tickets
-                               </motion.button>
-
                               </div>
                               <div className="mt-auto flex flex-col gap-4">
                                   {(() => {
@@ -386,52 +361,6 @@ const ArmoryModal = ({
                                                     <Trash2 className="w-5 h-5" />
                                                 </motion.button>
                                              </div>
-                                          </div>
-                                       ))}
-                                    </div>
-                                    {/* Settings removed from this tab */}
-                                 </motion.div>
-                              )}
-                              {activeArmoryTab === "team" && (
-                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                    <div className="flex justify-between items-center mb-10 pb-6 border-b border-[#ff007f]/20">
-                                       <h3 className="text-3xl font-black text-[#ff007f] uppercase">Operative Team</h3>
-                                       <div className="flex gap-2">
-                                          <input value={inviteUsername} onChange={e => setInviteUsername(e.target.value)} placeholder="Discord Username..." className="bg-black border-2 border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#ff007f] font-black w-64" />
-                                          <motion.button onClick={handleInviteToTeam} disabled={!inviteUsername} className="px-5 py-3 bg-[#ff007f] text-white rounded-xl font-black uppercase text-xs">Dispatch Invite</motion.button>
-                                       </div>
-                                    </div>
-                                    {inviteError && <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-500 font-bold mb-6 uppercase text-xs"><AlertTriangle className="w-4 h-4" /> {inviteError}</div>}
-                                    <div className="space-y-4">
-                                       <div className="bg-white/5 rounded-xl p-5 flex items-center gap-6">
-                                          <AvatarWithEffect src={session?.user?.image || ""} effect={myEffect} className="w-14 h-14" />
-                                           <div>
-                                              <div className="flex items-center gap-2">
-                                                 <p className="font-black text-xl">{renderDualColorName(currentUserDisplay)}</p>
-                                                 {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</span> : null; })()}
-                                              </div>
-                                              <p className="text-[10px] text-[#8a2be2] uppercase font-black">@ {currentUserDiscordHandle}</p>
-                                          </div>
-                                       </div>
-                                       {sentInvites.map(uName => (
-                                          <div key={uName} className="bg-white/5 border border-dashed border-white/20 p-4 rounded-2xl flex justify-between items-center opacity-60">
-                                             <div className="flex items-center gap-4">
-                                                <Clock className="text-yellow-500" />
-                                                <p className="font-black text-gray-400">@{uName}</p>
-                                             </div>
-                                             <motion.button onClick={() => setSentInvites(prev => prev.filter(s => s !== uName))} className="text-gray-500"><X /></motion.button>
-                                          </div>
-                                       ))}
-                                       {myTeam.map((m, i) => (
-                                          <div key={m.id} className="bg-black border border-[#00ffff]/20 p-4 rounded-2xl flex justify-between items-center">
-                                             <div className="flex items-center gap-5">
-                                                <AvatarWithEffect src={m.avatar} effect={m.effect} className="w-12 h-12" />
-                                                <div>
-                                                   <p className="font-black text-white">{renderDualColorName(m.name)}</p>
-                                                   <p className="text-[10px] text-[#00ffff]">@{m.discordUsername}</p>
-                                                </div>
-                                             </div>
-                                             <motion.button onClick={() => setMyTeam(prev => prev.filter(t => t.id !== m.id))} className="text-red-500"><X /></motion.button>
                                           </div>
                                        ))}
                                     </div>

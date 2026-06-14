@@ -554,16 +554,12 @@ export default function HomePage() {
        return "boosts";
     });
     const [myCharacters, setMyCharacters] = useState<any[]>([]);
-   const [myTeam, setMyTeam] = useState<any[]>([]);
     const [myEffect, setMyEffect] = useState("none");
     const myVfxBg = useMemo(() => registeredUsers.find((u: any) => u.id === currentUserId)?.activeVfx, [registeredUsers, currentUserId]);
     const myOfferDrafts = useMemo(
       () => registeredUsers.find((u: any) => String(u.id) === String(currentUserId))?.offerDrafts || [],
       [registeredUsers, currentUserId]
     );
-   const [inviteUsername, setInviteUsername] = useState("");
-   const [inviteError, setInviteError] = useState("");
-   const [sentInvites, setSentInvites] = useState<string[]>([]);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [activeMemberAction, setActiveMemberAction] = useState<{ lobbyId: string, member: any, isKick: boolean } | null>(null);
     const [directMessages, setDirectMessages] = useState<any[]>([]);
@@ -736,7 +732,7 @@ export default function HomePage() {
    const [activeArmoryTab, setActiveArmoryTab] = useState(() => {
       if (typeof window !== "undefined") {
          const saved = localStorage.getItem("uplink_active_armory_tab");
-       return saved === "leaderboard" ? "armory" : saved || "armory";
+       return saved === "leaderboard" || saved === "team" ? "armory" : saved || "armory";
       }
       return "armory";
    });
@@ -2085,8 +2081,7 @@ export default function HomePage() {
                   notificationMatchesUser(n, currentUserId, handleRef.current, data.registeredUsers || []) &&
                   !shownNotifIds.current.includes(n.id) &&
                   (
-                     n.type === 'team_invite' ||
-                     (!aaActive && (n.type === 'lobby_accept' || n.type === 'lobby_confirm'))
+                     !aaActive && (n.type === 'lobby_accept' || n.type === 'lobby_confirm')
                   )
                );
 
@@ -2108,7 +2103,6 @@ export default function HomePage() {
       // Load local-only user data
       if (currentUserId !== "guest") {
          const savedChars = localStorage.getItem(`UL_CHARS_${currentUserId}`);
-         const savedTeam = localStorage.getItem(`UL_TEAM_${currentUserId}`);
          const savedBank = localStorage.getItem(`UL_BANK_${currentUserId}`);
           if (savedChars) {
              const parsed = JSON.parse(savedChars);
@@ -2118,7 +2112,6 @@ export default function HomePage() {
                     : { dps: c.role === 'dps' ? (c.score || "0") : "0", healer: c.role === 'healer' ? (c.score || "0") : "0", tank: c.role === 'tank' ? (c.score || "0") : "0" }
               })));
           }
-         if (savedTeam) setMyTeam(JSON.parse(savedTeam));
          if (savedBank) setBankCharacters(JSON.parse(savedBank));
       }
 
@@ -2153,7 +2146,6 @@ export default function HomePage() {
    }, [globalCharacters, currentUserId]);
 
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(myCharacters)); }, [myCharacters, currentUserId]);
-   useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_TEAM_${currentUserId}`, JSON.stringify(myTeam)); }, [myTeam, currentUserId]);
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_BANK_${currentUserId}`, JSON.stringify(bankCharacters)); }, [bankCharacters, currentUserId]);
 
    useEffect(() => {
@@ -3571,21 +3563,6 @@ export default function HomePage() {
       addToast("Transmission terminated.", "info");
    };
 
-   const handleInviteToTeam = () => {
-      setInviteError("");
-      const targetHandle = inviteUsername.trim().toLowerCase();
-      const targetUser = registeredUsers.find(u => u.username.toLowerCase() === targetHandle);
-      if (!targetUser) return setInviteError(`${targetHandle} isn't registered on Uplink.`);
-      if (targetHandle === currentUserDiscordHandle.toLowerCase()) return setInviteError("Can't invite yourself.");
-      const newNotif = { id: Date.now(), toUser: targetUser.username, fromUser: currentUserDisplay, fromHandle: currentUserDiscordHandle, fromAvatar: session?.user?.image, message: `${currentUserDisplay} invited you to their team.`, type: "team_invite", timestamp: Date.now() };
-      const newNotifications = [...notifications, newNotif];
-      setNotifications(newNotifications);
-      saveGlobalData({ notifications: newNotifications });
-      setSentInvites(prev => [...prev, targetHandle]);
-      setInviteUsername("");
-      addToast(`Invite sent to ${targetUser.name}!`, "success");
-   };
-
     const dismissNotification = (notifId: number) => {
        const updated = notifications.filter(n => n.id !== notifId);
        setNotifications(updated);
@@ -3597,17 +3574,6 @@ export default function HomePage() {
        saveGlobalData({ notifications: [] });
        setIsNotifOpen(false);
        addToast("All transmissions cleared.", "info");
-    };
-
-    const handleAcceptInvite = (notif: any) => {
-       const inviter = registeredUsers.find(u => u.username === notif.fromHandle);
-       if (inviter) setMyTeam(prev => [{ id: Date.now(), discordUsername: inviter.username, name: inviter.name, avatar: inviter.avatar, role: "Operative", ilvl: "---", score: "---", effect: inviter.effect }, ...prev]);
-       const updatedNotifs = notifications.filter(n => n.id !== notif.id);
-       setNotifications(updatedNotifs);
-       saveGlobalData({ notifications: updatedNotifs });
-       setIsNotifOpen(false);
-       playSound('reward');
-       addToast("Team synchronization complete.", "success");
     };
 
     const handleConfirmLobby = async (notif: any) => {
@@ -4313,10 +4279,8 @@ export default function HomePage() {
       setNotifications(updatedNotifs);
       if (String(currentUserId) === uid) {
          setMyCharacters([]);
-         setMyTeam([]);
          setBankCharacters([]);
          localStorage.removeItem(`UL_CHARS_${uid}`);
-         localStorage.removeItem(`UL_TEAM_${uid}`);
          localStorage.removeItem(`UL_BANK_${uid}`);
          localStorage.setItem("uplink_is_registered", "false");
          setIsOnboardingModalOpen(true);
@@ -5730,14 +5694,6 @@ export default function HomePage() {
                   setRaiderLink={setRaiderLink}
                   handleSyncRaiderIo={handleSyncRaiderIo}
                   isSyncing={isSyncing}
-                  inviteUsername={inviteUsername}
-                  setInviteUsername={setInviteUsername}
-                  handleInviteToTeam={handleInviteToTeam}
-                  inviteError={inviteError}
-                  sentInvites={sentInvites}
-                  setSentInvites={setSentInvites}
-                  myTeam={myTeam}
-                  setMyTeam={setMyTeam}
                   lobbies={lobbies}
                   setLobbies={setLobbies}
                   completedHistoryItems={completedHistoryItems}
@@ -5759,8 +5715,6 @@ export default function HomePage() {
                   setAutoAcceptEndTime={setAutoAcceptEndTime}
                   hiddenIdentity={hiddenIdentity}
                   setHiddenIdentity={setHiddenIdentity}
-                  setIsTicketModalOpen={setIsTicketModalOpen}
-                  isTicketModalOpen={isTicketModalOpen}
                      signOut={handleLogout}
                  />}
                 </AnimatePresence>
@@ -5834,11 +5788,8 @@ export default function HomePage() {
 
                             <div className="flex flex-col sm:flex-row gap-3 relative z-10">
                                 <motion.button onClick={() => {
-                                   if (inviteToReview.type === "team_invite") handleAcceptInvite(inviteToReview);
-                                   else {
-                                      syncAutoApplyEnabled(false);
-                                      handleConfirmLobby(inviteToReview);
-                                   }
+                                   syncAutoApplyEnabled(false);
+                                   handleConfirmLobby(inviteToReview);
                                    setInviteToReview(null);
                                }} className="flex-[2] py-4 bg-gradient-to-r from-[#00ffff] to-[#00d4ff] text-black font-black uppercase tracking-[0.12em] text-sm rounded-2xl transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.4)] text-center">
                                   Accept Mission
