@@ -10,7 +10,7 @@ import PostActivityFeed, { usePostActivity } from "@/components/community/PostAc
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
 import DmThreadView from "@/components/chat/DmThreadView";
 import { getDmMsgKey, computeDmUnreadCounts, buildDmContactList, getAcceptedFriendIds, type DmMessage } from "@/lib/dmHelpers";
-import { isAdminUser } from "@/lib/secureDataWrite";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
 
 type Tab = "chat" | "alerts" | "requests";
 
@@ -27,7 +27,7 @@ export default function CommunityNotificationsPanel() {
 
   const currentUserId = (session?.user as { id?: string })?.id || "";
   const currentHandle = (session?.user as { username?: string })?.username || "";
-  const isAdmin = isAdminUser(currentUserId, currentHandle);
+  const isAdmin = isPrimaryAdmin(currentUserId, currentHandle);
   const { unreadCount, markSeen } = usePostActivity(currentUserId);
 
   const isCommunity = pathname === "/community";

@@ -7,7 +7,7 @@ import { MessageCircle, Users, X, Check, CheckCheck, Search, DoorClosed, UserChe
 import { motion, AnimatePresence } from "framer-motion";
 import DmThreadView from "@/components/chat/DmThreadView";
 import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversationPeernames, isDmMessageRead, buildDmContactList, getAcceptedFriendIds, type DmMessage } from "@/lib/dmHelpers";
-import { isAdminUser } from "@/lib/secureDataWrite";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
 import { resolveProfileImage, resolveProfileDisplayName, profileImgClass } from "@/lib/profileImage";
 
 export default function DirectCommsPanel() {
@@ -175,7 +175,7 @@ export default function DirectCommsPanel() {
 
   const currentUserId = (session?.user as any)?.id || "";
   const currentHandle = (session?.user as any)?.username || "";
-  const isAdmin = isAdminUser(currentUserId, currentHandle);
+  const isAdmin = isPrimaryAdmin(currentUserId, currentHandle);
   const registeredUsers = data?.registeredUsers || [];
   const directMessages = data?.directMessages || [];
   const friends = data?.friends || [];
