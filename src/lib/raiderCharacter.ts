@@ -1,3 +1,25 @@
+/** Raider.io no longer always returns top-level `level`; infer from gear/M+ when missing. */
+export function resolveRaiderCharacterLevel(data: any): number {
+  const direct = Number(data?.level || 0);
+  if (direct > 0) return direct;
+
+  const ilvl = Number(data?.gear?.item_level_equipped || 0);
+  if (ilvl >= 240) return 90;
+  if (ilvl >= 200) return 85;
+  if (ilvl >= 100) return 80;
+
+  const scores = data?.mythic_plus_scores_by_season;
+  if (Array.isArray(scores) && scores.some((s) => Number(s?.scores?.all || 0) > 0)) {
+    return 90;
+  }
+
+  if (Array.isArray(data?.mythic_plus_best_runs) && data.mythic_plus_best_runs.length > 0) {
+    return 90;
+  }
+
+  return 0;
+}
+
 /** Build a UPLINK character record from a Raider.io profile API response. */
 export function buildCharacterFromRaiderProfile(
   data: any,

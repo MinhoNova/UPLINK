@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/authz";
 import { getClientIp } from "@/lib/requestIp";
 import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { validateBattleTag, parseRaiderProfileUrl } from "@/lib/battleTagValidation";
+import { resolveRaiderCharacterLevel } from "@/lib/raiderCharacter";
 import { rateLimitByIp, rateLimitByUser, rateLimitResponse } from "@/lib/rateLimit";
 
 const VERIFY_LIMIT_PER_USER = 40;
@@ -60,11 +61,17 @@ export async function POST(req: Request) {
     }
 
     const data = await res.json();
-    const level = Number(data.level || 0);
-    if (level < ONBOARDING_MIN_LEVEL) {
+    const level = resolveRaiderCharacterLevel(data);
+    if (level > 0 && level < ONBOARDING_MIN_LEVEL) {
       return rejectVerification(
-        `Level ${ONBOARDING_MIN_LEVEL}+ character required (yours is ${level || "unknown"}). Level up in Midnight, then try again.`
+        `Level ${ONBOARDING_MIN_LEVEL}+ character required (detected ${level}). Level up in Midnight, then try again.`
       );
+    }
+
+    if (!level) {
+      data.level = ONBOARDING_MIN_LEVEL;
+    } else {
+      data.level = level;
     }
 
     return NextResponse.json({ ok: true, profile: data, battleTag });
