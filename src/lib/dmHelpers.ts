@@ -108,3 +108,138 @@ export function filterThreadMessages(messages: DmMessage[], handle: string, peer
     (m) => (m.from === handle && m.to === peer) || (m.to === handle && m.from === peer)
   );
 }
+
+export type DmFriendEntry = { requester?: string; target?: string; status?: string };
+
+export function getAcceptedFriendIds(userId: string, friends: DmFriendEntry[]): Set<string> {
+  return new Set(
+    friends
+      .filter((f) => f.status === "accepted" && (f.requester === userId || f.target === userId))
+      .map((f) => String(f.requester === userId ? f.target : f.requester))
+  );
+}
+
+type DmContactUser = {
+  id?: string;
+  username?: string;
+  name?: string;
+  displayName?: string;
+};
+
+function dmLastMessageAt(
+  directMessages: DmMessage[],
+  currentHandle: string,
+  username: string
+): number {
+  const msgs = directMessages.filter(
+    (m) =>
+      (m.from === currentHandle && m.to === username) ||
+      (m.to === currentHandle && m.from === username)
+  );
+  return msgs.length ? Math.max(...msgs.map((m) => m.timestamp || 0)) : 0;
+}
+
+function sortDmContacts(
+  list: DmContactUser[],
+  directMessages: DmMessage[],
+  currentHandle: string,
+  unreadCounts: Record<string, number>
+) {
+  return [...list].sort((a, b) => {
+    const aUser = a.username || "";
+    const bUser = b.username || "";
+    const aUnread = unreadCounts[aUser] || 0;
+    const bUnread = unreadCounts[bUser] || 0;
+    if (aUnread !== bUnread) return bUnread - aUnread;
+    const aT = dmLastMessageAt(directMessages, currentHandle, aUser);
+    const bT = dmLastMessageAt(directMessages, currentHandle, bUser);
+    if (aT && bT) return bT - aT;
+    if (aT) return -1;
+    if (bT) return 1;
+    return (a.displayName || a.name || "").localeCompare(b.displayName || b.name || "");
+  });
+}
+
+/** DM sidebar: friends only for members; all members for admin. */
+export function buildDmContactList(args: {
+  registeredUsers: DmContactUser[];
+  friends: DmFriendEntry[];
+  directMessages: DmMessage[];
+  currentUserId: string;
+  currentHandle: string;
+  isAdmin: boolean;
+  search: string;
+  unreadCounts: Record<string, number>;
+  isUserBlocked?: (userId: string) => boolean;
+}): DmContactUser[] {
+  const {
+    registeredUsers,
+    friends,
+    directMessages,
+    currentUserId,
+    currentHandle,
+    isAdmin,
+    search,
+    unreadCounts,
+    isUserBlocked = () => false,
+  } = args;
+
+  const q = search.trim().toLowerCase();
+  const friendIds = getAcceptedFriendIds(currentUserId, friends);
+
+  if (isAdmin) {
+    const conversationPeers = getDmConversationPeernames(directMessages, currentHandle);
+    const byUsername = new Map(
+      registeredUsers
+        .filter((u) => u.username && u.username !== currentHandle)
+        .map((u) => [u.username!, u] as const)
+    );
+    for (const peer of conversationPeers) {
+      if (!byUsername.has(peer)) {
+        byUsername.set(peer, { id: peer, username: peer, name: peer });
+      }
+    }
+    let list = [...byUsername.values()].filter((u) => !isUserBlocked(String(u.id)));
+    if (!q) {
+      list = list.filter(
+        (u) => conversationPeers.has(u.username!) || (unreadCounts[u.username!] || 0) > 0
+      );
+    } else {
+      list = list.filter(
+        (u) =>
+          (u.displayName || u.name || "").toLowerCase().includes(q) ||
+          u.username!.toLowerCase().includes(q)
+      );
+    }
+    return sortDmContacts(list, directMessages, currentHandle, unreadCounts);
+  }
+
+  let list = registeredUsers.filter(
+    (u) =>
+      u.username &&
+      u.username !== currentHandle &&
+      friendIds.has(String(u.id)) &&
+      !isUserBlocked(String(u.id))
+  );
+
+  if (q) {
+    list = list.filter(
+      (u) =>
+        (u.displayName || u.name || "").toLowerCase().includes(q) ||
+        u.username!.toLowerCase().includes(q)
+    );
+  }
+
+  return sortDmContacts(list, directMessages, currentHandle, unreadCounts);
+}
+
+export function recipientBlockedSender(
+  users: { id?: string; username?: string; blocked?: unknown[] }[],
+  senderId: string,
+  recipientHandle: string
+): boolean {
+  const recipient = users.find((u) => u.username === recipientHandle);
+  if (!recipient) return false;
+  const blocked = Array.isArray(recipient.blocked) ? recipient.blocked.map(String) : [];
+  return blocked.includes(String(senderId));
+}

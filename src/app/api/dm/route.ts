@@ -8,7 +8,7 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
-import { DM_REACTION_EMOJIS, type DmMessage } from "@/lib/dmHelpers";
+import { DM_REACTION_EMOJIS, type DmMessage, recipientBlockedSender } from "@/lib/dmHelpers";
 
 const MAX_TEXT_LENGTH = 2000;
 const MAX_MESSAGES_PER_HOUR = 120;
@@ -63,6 +63,11 @@ export async function POST(req: Request) {
     }
     if (!registeredUsers.some((u) => u.username === to)) {
       return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+    }
+
+    const users = registeredUsers as { id?: string; username?: string; blocked?: unknown[] }[];
+    if (recipientBlockedSender(users, userId, to)) {
+      return NextResponse.json({ error: "This player has blocked you." }, { status: 403 });
     }
 
     const spam = await enforceDmAntiSpam(userId, currentHandle, clientIp);

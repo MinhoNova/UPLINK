@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { MessageCircle, Users, X, Check, CheckCheck, Search, DoorClosed, UserCheck, VolumeX, UserPlus, Ban } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DmThreadView from "@/components/chat/DmThreadView";
-import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversationPeernames, isDmMessageRead, type DmMessage } from "@/lib/dmHelpers";
+import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversationPeernames, isDmMessageRead, buildDmContactList, getAcceptedFriendIds, type DmMessage } from "@/lib/dmHelpers";
+import { isAdminUser } from "@/lib/secureDataWrite";
 import { resolveProfileImage, resolveProfileDisplayName, profileImgClass } from "@/lib/profileImage";
 
 export default function DirectCommsPanel() {
@@ -174,6 +175,7 @@ export default function DirectCommsPanel() {
 
   const currentUserId = (session?.user as any)?.id || "";
   const currentHandle = (session?.user as any)?.username || "";
+  const isAdmin = isAdminUser(currentUserId, currentHandle);
   const registeredUsers = data?.registeredUsers || [];
   const directMessages = data?.directMessages || [];
   const friends = data?.friends || [];
@@ -410,63 +412,25 @@ export default function DirectCommsPanel() {
   };
 
   const friendIdSet = useMemo(
-    () =>
-      new Set(
-        friends
-          .filter((f: any) => f.status === "accepted" && (f.requester === currentUserId || f.target === currentUserId))
-          .map((f: any) => String(f.requester === currentUserId ? f.target : f.requester))
-      ),
+    () => getAcceptedFriendIds(currentUserId, friends),
     [friends, currentUserId]
   );
 
-  const dmFriendUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const conversationPeers = getDmConversationPeernames(directMessages, currentHandle);
-    const byUsername = new Map(
-      registeredUsers
-        .filter((u: any) => u.username && u.username !== currentHandle)
-        .map((u: any) => [u.username, u] as const)
-    );
-
-    for (const peer of conversationPeers) {
-      if (!byUsername.has(peer)) {
-        byUsername.set(peer, { id: peer, username: peer, name: peer });
-      }
-    }
-
-    let list = [...byUsername.values()].filter(
-      (u: any) =>
-        !isUserBlocked(u.id) &&
-        (!q || (u.displayName || u.name || "").toLowerCase().includes(q))
-    );
-
-    if (!q) {
-      list = list.filter(
-        (u: any) => conversationPeers.has(u.username) || (unreadCounts[u.username] || 0) > 0
-      );
-    }
-
-    const lastAt = (username: string) => {
-      const msgs = directMessages.filter(
-        (m: any) =>
-          (m.from === currentHandle && m.to === username) ||
-          (m.to === currentHandle && m.from === username)
-      );
-      return msgs.length ? Math.max(...msgs.map((m: any) => m.timestamp || 0)) : 0;
-    };
-
-    return [...list].sort((a, b) => {
-      const aUnread = unreadCounts[a.username] || 0;
-      const bUnread = unreadCounts[b.username] || 0;
-      if (aUnread !== bUnread) return bUnread - aUnread;
-      const aT = lastAt(a.username);
-      const bT = lastAt(b.username);
-      if (aT && bT) return bT - aT;
-      if (aT) return -1;
-      if (bT) return 1;
-      return (a.name || "").localeCompare(b.name || "");
-    });
-  }, [registeredUsers, currentHandle, search, directMessages, unreadCounts]);
+  const dmFriendUsers = useMemo(
+    () =>
+      buildDmContactList({
+        registeredUsers,
+        friends,
+        directMessages,
+        currentUserId,
+        currentHandle,
+        isAdmin,
+        search,
+        unreadCounts,
+        isUserBlocked,
+      }),
+    [registeredUsers, friends, directMessages, currentUserId, currentHandle, isAdmin, search, unreadCounts]
+  );
 
   const openPlayerProfile = (userId: string) => {
     window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId } }));
@@ -563,7 +527,7 @@ export default function DirectCommsPanel() {
                         <input
                           value={search}
                           onChange={(e) => setSearch(e.target.value)}
-                          placeholder="Search any member..."
+                          placeholder={isAdmin ? "Search any member..." : "Search friends..."}
                           className="w-full bg-black/50 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-[#00ffff]/40 transition-colors text-white/90 placeholder-gray-600"
                         />
                       </div>
@@ -571,7 +535,13 @@ export default function DirectCommsPanel() {
                     <div className="p-3 space-y-1">
                       {dmFriendUsers.length === 0 && (
                         <p className="text-[10px] text-gray-600 text-center italic py-10 px-4 leading-relaxed">
-                          {search ? "No matching members" : "No conversations yet — search to message a member"}
+                          {search
+                            ? isAdmin
+                              ? "No matching members"
+                              : "No matching friends"
+                            : isAdmin
+                              ? "No conversations yet — search to message a member"
+                              : "No friends yet — accept a friend request to start chatting"}
                         </p>
                       )}
                       {dmFriendUsers.map((user: any) => (
