@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { MessageCircle, Users, X, Check, CheckCheck, Search, DoorClosed, UserCheck, VolumeX, UserPlus, Ban } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DmThreadView from "@/components/chat/DmThreadView";
-import { getDmMsgKey, type DmMessage } from "@/lib/dmHelpers";
+import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversationPeernames, isDmMessageRead, type DmMessage } from "@/lib/dmHelpers";
 
 export default function DirectCommsPanel() {
   const { data: session, status } = useSession();
@@ -119,23 +119,10 @@ export default function DirectCommsPanel() {
 
   useEffect(() => {
     if (!data) return;
-    const currentUserId = (session?.user as any)?.id || "";
     const currentHandle = (session?.user as any)?.username || "";
     const directMessages = data?.directMessages || [];
     const readMessages = data?.readMessages || {};
-    
-    const counts: { [key: string]: number } = {};
-    const registeredUsers = data?.registeredUsers || [];
-    
-    registeredUsers.forEach((user: any) => {
-      if (user.username === currentHandle) return;
-      const userMessages = directMessages.filter((m: any) => m.from === user.username && m.to === currentHandle);
-      const readIds = readMessages[currentHandle]?.[user.username] || [];
-      const unreadCount = userMessages.filter((m: any) => !readIds.includes(getDmMsgKey(m))).length;
-      if (unreadCount > 0) counts[user.username] = unreadCount;
-    });
-    
-    setUnreadCounts(counts);
+    setUnreadCounts(computeDmUnreadCounts(directMessages, readMessages, currentHandle));
   }, [data, session]);
 
   // Monitor for new messages and show notifications
@@ -156,7 +143,9 @@ export default function DirectCommsPanel() {
     
     if (incomingMessages.length > 0) {
       const lastMessage = incomingMessages[incomingMessages.length - 1];
-      const senderUser = registeredUsers.find((u: any) => u.username === lastMessage.from);
+      const senderUser =
+        registeredUsers.find((u: any) => u.username === lastMessage.from) ||
+        { id: lastMessage.from, username: lastMessage.from, name: lastMessage.from };
 
       const inActiveChat =
         isOpenRef.current &&
@@ -164,9 +153,8 @@ export default function DirectCommsPanel() {
 
       if (senderUser && !mutedUsers.includes(senderUser.username) && !inActiveChat) {
         const readMessages = data?.readMessages || {};
-        const readIds = readMessages[currentHandle]?.[senderUser.username] || [];
-        const userMessages = directMessages.filter((m: any) => m.from === senderUser.username && m.to === currentHandle);
-        const unreadCount = userMessages.filter((m: any) => !readIds.includes(getDmMsgKey(m))).length;
+        const allCounts = computeDmUnreadCounts(directMessages, readMessages, currentHandle);
+        const unreadCount = allCounts[senderUser.username] || 0;
 
         setMessageNotification({
           user: senderUser,
@@ -336,6 +324,7 @@ export default function DirectCommsPanel() {
       if (result.readMessages) {
         setData((prev: any) => ({ ...prev, readMessages: result.readMessages }));
       }
+      window.dispatchEvent(new CustomEvent("data-refresh"));
     } catch {}
     setUnreadCounts((prev) => {
       const updated = { ...prev };
@@ -410,12 +399,31 @@ export default function DirectCommsPanel() {
 
   const dmFriendUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const list = registeredUsers.filter(
+    const conversationPeers = getDmConversationPeernames(directMessages, currentHandle);
+    const byUsername = new Map(
+      registeredUsers
+        .filter((u: any) => u.username && u.username !== currentHandle)
+        .map((u: any) => [u.username, u] as const)
+    );
+
+    for (const peer of conversationPeers) {
+      if (!byUsername.has(peer)) {
+        byUsername.set(peer, { id: peer, username: peer, name: peer });
+      }
+    }
+
+    let list = [...byUsername.values()].filter(
       (u: any) =>
-        u.username !== currentHandle &&
         !isUserBlocked(u.id) &&
         (!q || u.name?.toLowerCase().includes(q) || u.username?.toLowerCase().includes(q))
     );
+
+    if (!q) {
+      list = list.filter(
+        (u: any) => conversationPeers.has(u.username) || (unreadCounts[u.username] || 0) > 0
+      );
+    }
+
     const lastAt = (username: string) => {
       const msgs = directMessages.filter(
         (m: any) =>
@@ -424,7 +432,11 @@ export default function DirectCommsPanel() {
       );
       return msgs.length ? Math.max(...msgs.map((m: any) => m.timestamp || 0)) : 0;
     };
+
     return [...list].sort((a, b) => {
+      const aUnread = unreadCounts[a.username] || 0;
+      const bUnread = unreadCounts[b.username] || 0;
+      if (aUnread !== bUnread) return bUnread - aUnread;
       const aT = lastAt(a.username);
       const bT = lastAt(b.username);
       if (aT && bT) return bT - aT;
@@ -432,7 +444,7 @@ export default function DirectCommsPanel() {
       if (bT) return 1;
       return (a.name || "").localeCompare(b.name || "");
     });
-  }, [registeredUsers, currentHandle, search, directMessages]);
+  }, [registeredUsers, currentHandle, search, directMessages, unreadCounts]);
 
   const openPlayerProfile = (userId: string) => {
     window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId } }));
@@ -537,7 +549,7 @@ export default function DirectCommsPanel() {
                     <div className="p-3 space-y-1">
                       {dmFriendUsers.length === 0 && (
                         <p className="text-[10px] text-gray-600 text-center italic py-10 px-4 leading-relaxed">
-                          {search ? "No matching members" : "No members found"}
+                          {search ? "No matching members" : "No conversations yet — search to message a member"}
                         </p>
                       )}
                       {dmFriendUsers.map((user: any) => (

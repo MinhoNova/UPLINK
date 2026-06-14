@@ -9,7 +9,7 @@ import {
 import PostActivityFeed, { usePostActivity } from "@/components/community/PostActivityFeed";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
 import DmThreadView from "@/components/chat/DmThreadView";
-import { getDmMsgKey, type DmMessage } from "@/lib/dmHelpers";
+import { getDmMsgKey, computeDmUnreadCounts, getDmConversationPeernames, type DmMessage } from "@/lib/dmHelpers";
 
 type Tab = "chat" | "alerts" | "requests";
 
@@ -113,28 +113,33 @@ export default function CommunityNotificationsPanel() {
 
   useEffect(() => {
     if (!data || !currentHandle) return;
-    const counts: Record<string, number> = {};
-    registeredUsers.forEach((user: any) => {
-      if (user.username === currentHandle) return;
-      const userMessages = directMessages.filter((m: any) => m.from === user.username && m.to === currentHandle);
-      const readIds = readMessages[currentHandle]?.[user.username] || [];
-      const unread = userMessages.filter((m: any) => !readIds.includes(getMsgKey(m))).length;
-      if (unread > 0) counts[user.username] = unread;
-    });
-    setUnreadCounts(counts);
-  }, [data, currentHandle, directMessages, readMessages, registeredUsers]);
+    setUnreadCounts(computeDmUnreadCounts(directMessages, readMessages, currentHandle));
+  }, [data, currentHandle, directMessages, readMessages]);
 
   const chatUserList = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const list = registeredUsers.filter((u: any) => {
-      if (u.username === currentHandle) return false;
-      if (!q) return true;
+    const conversationPeers = getDmConversationPeernames(directMessages, currentHandle);
+    const byUsername = new Map(
+      registeredUsers
+        .filter((u: any) => u.username && u.username !== currentHandle)
+        .map((u: any) => [u.username, u] as const)
+    );
+    for (const peer of conversationPeers) {
+      if (!byUsername.has(peer)) {
+        byUsername.set(peer, { id: peer, username: peer, name: peer });
+      }
+    }
+    let list = [...byUsername.values()].filter((u: any) => {
+      if (!q) return conversationPeers.has(u.username) || (unreadCounts[u.username] || 0) > 0;
       return (
         u.name?.toLowerCase().includes(q) ||
         u.username?.toLowerCase().includes(q)
       );
     });
     return [...list].sort((a, b) => {
+      const aUnread = unreadCounts[a.username] || 0;
+      const bUnread = unreadCounts[b.username] || 0;
+      if (aUnread !== bUnread) return bUnread - aUnread;
       const aHas = lastMessageAt(a.username) > 0;
       const bHas = lastMessageAt(b.username) > 0;
       if (aHas && bHas) return lastMessageAt(b.username) - lastMessageAt(a.username);
@@ -142,7 +147,7 @@ export default function CommunityNotificationsPanel() {
       if (bHas) return 1;
       return (a.name || "").localeCompare(b.name || "");
     });
-  }, [registeredUsers, currentHandle, search, lastMessageAt]);
+  }, [registeredUsers, currentHandle, search, directMessages, unreadCounts, lastMessageAt]);
 
   const dmRequest = async (payload: Record<string, unknown>) => {
     const res = await fetch("/api/dm", {

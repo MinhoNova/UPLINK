@@ -9,6 +9,7 @@ import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { useThemePreference } from "@/hooks/useThemePreference";
+import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -71,7 +72,7 @@ export default function Navbar() {
 
   const fetchData = useCallback(() => {
     if (!currentUserId) return;
-    fetch("/api/data")
+    fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => {
         if (data.registeredUsers) setRegisteredUsers(data.registeredUsers);
@@ -79,31 +80,19 @@ export default function Navbar() {
           const mine = data.notifications.filter((n: any) => String(n.targetId) === String(currentUserId));
           setNotifications(mine);
         }
-        
-        // Calculate unread DM count (friends only, excluding muted)
-        if (data.directMessages && data.registeredUsers) {
+
+        if (data.directMessages && currentHandle) {
           const directMessages = data.directMessages || [];
           const readMessages = data.readMessages || {};
           let muted: string[] = [];
           try {
             muted = JSON.parse(localStorage.getItem(`muted_users_${currentHandle}`) || "[]");
           } catch { /* ignore */ }
-          const friendIds = new Set(
-            (data.friends || [])
-              .filter((f: any) => f.status === "accepted" && (f.requester === currentUserId || f.target === currentUserId))
-              .map((f: any) => String(f.requester === currentUserId ? f.target : f.requester))
-          );
 
-          let totalUnread = 0;
-          data.registeredUsers.forEach((user: any) => {
-            if (!friendIds.has(String(user.id))) return;
-            if (muted.includes(user.username)) return;
-            const userMessages = directMessages.filter((m: any) => m.from === user.username && m.to === currentHandle);
-            const readIds = readMessages[currentHandle]?.[user.username] || [];
-            const unreadCount = userMessages.filter((m: any) => !readIds.includes(m.timestamp || `${m.from}-${m.to}-${m.text}`)).length;
-            totalUnread += unreadCount;
-          });
-          setDmUnreadCount(totalUnread);
+          const counts = computeDmUnreadCounts(directMessages, readMessages, currentHandle);
+          setDmUnreadCount(totalDmUnreadCount(counts, { muted }));
+        } else {
+          setDmUnreadCount(0);
         }
       })
       .catch(() => {});
@@ -114,12 +103,14 @@ export default function Navbar() {
   useEffect(() => {
     const onFocus = () => fetchData();
     window.addEventListener("focus", onFocus);
-    
+    window.addEventListener("data-refresh", fetchData);
+
     // Poll for DM updates every 8 seconds
     const pollInterval = setInterval(() => fetchData(), 8000);
-    
+
     return () => {
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("data-refresh", fetchData);
       clearInterval(pollInterval);
     };
   }, [fetchData]);
