@@ -152,9 +152,6 @@ export function userIsActiveInOffer(lobbies: any[], userId: string): boolean {
   return userIsActiveInDungeonOffer(lobbies, userId);
 }
 
-export const MAX_LEVELING_AUTO_APPLY = 10;
-export const MAX_LEVELING_AUTO_ACCEPT = 2;
-
 function userHasActiveLevelingSlot(lobby: any, userId: string): boolean {
   const uid = String(userId);
   if (!isLevelingOffer(lobby)) return false;
@@ -177,19 +174,19 @@ export function countUserLevelingApplications(lobbies: any[], userId: string): n
   ).length;
 }
 
-/** Confirmed or invited leveling squad slots — caps Auto-Accept at 2. */
+/** Confirmed or invited leveling squad slots. */
 export function countUserActiveLevelingSquads(lobbies: any[], userId: string): number {
   return (lobbies || []).filter((l) => userHasActiveLevelingSlot(l, userId)).length;
 }
 
-export function canAutoApplyToLeveling(lobbies: any[], userId: string): boolean {
-  if (userIsActiveInDungeonOffer(lobbies, userId)) return false;
-  return countUserLevelingApplications(lobbies, userId) < MAX_LEVELING_AUTO_APPLY;
+/** Leveling: apply to any open offer (no cap). */
+export function canAutoApplyToLeveling(_lobbies: any[], _userId: string): boolean {
+  return true;
 }
 
-export function canAutoAcceptLevelingInvite(lobbies: any[], userId: string): boolean {
-  if (userIsActiveInDungeonOffer(lobbies, userId)) return false;
-  return countUserActiveLevelingSquads(lobbies, userId) < MAX_LEVELING_AUTO_ACCEPT;
+/** Leveling: auto-accept invites without squad cap. */
+export function canAutoAcceptLevelingInvite(_lobbies: any[], _userId: string): boolean {
+  return true;
 }
 
 /** Joined player Ongoing sidebar — active squad or unpaid foot only (not leave 0 runs). */
@@ -483,7 +480,7 @@ export function userExitBlockedFromLobby(lobby: any, allLobbies: any[], userId: 
   return false;
 }
 
-/** Confirm join on one lobby and withdraw the same user from other open applications (dungeon-only mutual exclusion). */
+/** Confirm join on one lobby; dungeon joins withdraw pending apps elsewhere, leveling joins keep other leveling apps. */
 export function acceptApplicantAcrossLobbies(lobbies: any[], lobbyId: string, applicant: any): any[] {
   const key = memberIdentityKey(applicant);
   if (!key) return lobbies;

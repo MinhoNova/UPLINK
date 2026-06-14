@@ -48,7 +48,7 @@ import AutoApplySettingsModal from "@/components/modals/AutoApplySettingsModal";
 import InviteTimer from "@/components/InviteTimer";
 import RankBadge, { getRank, getCategoryLevel, getAverageRating } from "@/components/RankBadge";
 import HoverStarRating from "@/components/HoverStarRating";
-import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canAutoAcceptLevelingInvite, canAutoApplyToLeveling, canOwnerCancelLobby, confirmApplicantJoin, countUserActiveLevelingSquads, countUserLevelingApplications, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, MAX_LEVELING_AUTO_ACCEPT, MAX_LEVELING_AUTO_APPLY, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { acceptedExcludingMember, acceptApplicantAcrossLobbies, appendOfferFamilyMessage, buildOfferEditChatText, buildSquadTemplateFromRoles, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, findResurrectedChildForParent, getJoinedOngoingMissions, getOfferFamilyRootId, getOfferThreadFamily, getOccupantsBySlot, getOwnerOngoingMissions, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isLobbyListedInPublicFeed, isOwnerLobbyGridRepost, isVoiceLobbyOpen, memberIdentityKey, memberMatchesUser, mergeLobbiesFromServer, applicantsLiveSnapshot, purgeExpiredLobbyInvites, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userExitBlockedFromLobby, userHasJoinedOngoingMission, userIsActiveInDungeonOffer, userIsActiveInOffer, userIsOfferOwner, userParticipatedInThread, withdrawApplicantFromOfferFamily, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
 import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotificationRecipient, revokeSecretClubPerks, isSecretClubTier, effectiveAvatarEffect, effectiveProfileGif, getSubscriptionDaysLeft } from "@/lib/userProfile";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
@@ -1021,14 +1021,6 @@ export default function HomePage() {
         return () => clearInterval(scanInterval);
      }, [lobbies, syncDetectedRunsFromServer]);
 
-    // Turn off Auto-Apply when accepted into a dungeon run (leveling allows multiple buyers).
-      useEffect(() => {
-         const inDungeonRun = userIsActiveInDungeonOffer(lobbies, currentUserId);
-         if (inDungeonRun && autoApplyEnabled) {
-             syncAutoApplyEnabled(false);
-         }
-     }, [lobbies, currentUserId, autoApplyEnabled, syncAutoApplyEnabled]);
-
     // Auto-archive completed+paid lobbies after 30 min, auto-cleanup stale offers
      useEffect(() => {
         const cleanupInterval = setInterval(() => {
@@ -1211,27 +1203,14 @@ export default function HomePage() {
       }
    };
 
-   const playerLockedInDungeon = useMemo(
-      () => currentUserId !== "guest" && userIsActiveInDungeonOffer(lobbies, currentUserId),
-      [lobbies, currentUserId]
-   );
-   const playerLockedInOffer = playerLockedInDungeon;
    const tryEnableAutoApply = useCallback(
       (enabled: boolean) => {
-         if (enabled && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
-            addToast("Leave your dungeon run before enabling Auto-Apply.", "error");
-            return;
-         }
          syncAutoApplyEnabled(enabled);
       },
-      [lobbies, currentUserId, syncAutoApplyEnabled]
+      [syncAutoApplyEnabled]
    );
    const tryEnableAutoAccept = useCallback(
       (enabled: boolean) => {
-         if (enabled && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
-            addToast("Leave your dungeon run before enabling Auto-Accept.", "error");
-            return;
-         }
          if (enabled) {
             const end = Date.now() + AUTO_ACCEPT_DURATION_MS;
             setAutoAcceptEndTime(end);
@@ -1242,27 +1221,8 @@ export default function HomePage() {
          }
          setAutoAcceptEnabled(enabled);
       },
-      [lobbies, currentUserId]
+      []
    );
-   useEffect(() => {
-      window.dispatchEvent(
-         new CustomEvent("set-auto-features-locked", {
-            detail: { locked: playerLockedInDungeon },
-         })
-      );
-   }, [playerLockedInDungeon]);
-   useEffect(() => {
-      if (!playerLockedInDungeon) return;
-      if (autoApplyEnabled) syncAutoApplyEnabled(false);
-      if (autoAcceptEnabled) {
-         setAutoAcceptEnabled(false);
-         setAutoAcceptEndTime(0);
-         if (typeof window !== "undefined") {
-            localStorage.setItem("uplink_auto_accept", "false");
-            localStorage.setItem("uplink_auto_accept_end", "0");
-         }
-      }
-   }, [playerLockedInDungeon, autoApplyEnabled, autoAcceptEnabled, syncAutoApplyEnabled]);
    useEffect(() => {
       const onNavbarToggle = (event: Event) => {
          const enabled = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled;
@@ -1352,14 +1312,10 @@ export default function HomePage() {
     const [ratePickerData, setRatePickerData] = useState<{ lobbyId: string; missionTitle?: string; targets: { id: string; name: string; avatar: string; role: string }[] } | null>(null);
     const [ratingModalData, setRatingModalData] = useState<{ lobbyId: string; rateeId: string; rateeName: string } | null>(null);
 
-    const isUserEligibleForLobby = (lobby: any) => {
-      const isAcceptedInAnyLobby = lobbies.some(l => 
-          (l.status === 'standby' || l.status === 'in_progress') && 
-          (l.accepted || []).some((a: any) => String(a.applicantId) === String(currentUserId))
-      );
-      // إذا كان المستخدم مقبولاً في ردهة ما، فلا يحق له التقديم على ردهة أخرى
-      // ولكن يجب التأكد أنه ليس مقبولاً في نفس الردهة التي يريد التقديم عليها (بسبب الـ filter)
-      if (isAcceptedInAnyLobby && !lobby.accepted?.some((a: any) => String(a.applicantId) === String(currentUserId))) return false;
+   const isUserEligibleForLobby = (lobby: any) => {
+      const uid = String(currentUserId);
+      if ((lobby.accepted || []).some((a: any) => memberIdentityKey(a) === uid)) return false;
+      if ((lobby.applicants || []).some((a: any) => memberIdentityKey(a) === uid)) return false;
 
       if (!myCharacters || myCharacters.length === 0) return false;
       // Region check
@@ -1375,11 +1331,13 @@ export default function HomePage() {
      });
     };
     const getEligibilityReason = (lobby: any) => {
-        const isAcceptedInAnyLobby = lobbies.some(l => 
-            (l.status === 'standby' || l.status === 'in_progress') && 
-            (l.accepted || []).some((a: any) => String(a.applicantId) === String(currentUserId))
-        );
-        if (isAcceptedInAnyLobby) return "ALREADY DEPLOYED IN ANOTHER LOBBY";
+        const uid = String(currentUserId);
+        if ((lobby.accepted || []).some((a: any) => memberIdentityKey(a) === uid)) {
+          return "ALREADY IN THIS SQUAD";
+        }
+        if ((lobby.applicants || []).some((a: any) => memberIdentityKey(a) === uid)) {
+          return "ALREADY APPLIED";
+        }
 
         if (!myCharacters || myCharacters.length === 0) return "NO CHARACTERS SYNCED";
 
@@ -1758,8 +1716,6 @@ export default function HomePage() {
            currentUserId === "1497295886223544471" ||
            (sub?.tier === "secret_club" && (!sub.endDate || Date.now() <= sub.endDate));
         if (!autoApplyEnabled || !isSecretClub) return;
-        if (playerLockedInDungeon) return;
-        if (autoApplyCategory === "leveling" && !canAutoApplyToLeveling(lobbies, currentUserId)) return;
         if (myCharacters.length === 0 || !autoApplyCharId) return;
         const selectedChar = myCharacters.find((c) => String(c.id) === String(autoApplyCharId));
         if (!selectedChar) return;
@@ -1768,13 +1724,6 @@ export default function HomePage() {
         const run = async () => {
            const snapshot = lobbiesRef.current;
            const appliedSnapshot = autoAppliedRef.current;
-           if (userIsActiveInDungeonOffer(snapshot, currentUserId)) return;
-           if (
-              autoApplyCategory === "leveling" &&
-              countUserLevelingApplications(snapshot, currentUserId) >= MAX_LEVELING_AUTO_APPLY
-           ) {
-              return;
-           }
            const openLobbies = snapshot.filter((l) => {
               if (!isLobbyListedInPublicFeed(l)) return false;
               if (String(l.ownerId) === String(currentUserId)) return false;
@@ -1799,8 +1748,6 @@ export default function HomePage() {
               if (applyingLobbyIds.current.has(lobbyKey)) continue;
               if (isAutoApplyCancelled(lobbyKey)) continue;
               if (isAutoApplyBlocked(lobby)) continue;
-              if (lobby.category === "leveling" && !canAutoApplyToLeveling(snapshot, currentUserId)) continue;
-              if (lobby.category !== "leveling" && userIsActiveInDungeonOffer(snapshot, currentUserId)) continue;
 
               const char = selectedChar;
               const matchRole = (lobby.roles?.[char.role] || 0) > 0;
@@ -1861,7 +1808,6 @@ export default function HomePage() {
         };
      }, [
         autoApplyEnabled,
-        playerLockedInDungeon,
         registeredUsers,
         myCharacters,
         currentUserId,
@@ -1953,8 +1899,7 @@ export default function HomePage() {
                      if (!aaActive) return false;
                      const lobby = finalLobbies.find((l: any) => String(l.id) === String(n.lobbyId));
                      if (!lobby) return false;
-                     if (userIsActiveInDungeonOffer(finalLobbies, currentUserId)) return false;
-                     if (isLevelingOffer(lobby) && !canAutoAcceptLevelingInvite(finalLobbies, currentUserId)) return false;
+                     if (!isLevelingOffer(lobby) && userIsActiveInDungeonOffer(finalLobbies, currentUserId)) return false;
                      return true;
                   });
                   if (autoNotif) {
@@ -3267,9 +3212,6 @@ export default function HomePage() {
       if ((targetLobby.applicants || []).some((a: any) => String(a.applicantId) === String(currentUserId) || String(a.id) === String(char.id))) {
          return addToast("Already applied!", "error");
       }
-      if (targetLobby.category !== "leveling" && userIsActiveInDungeonOffer(lobbies, currentUserId)) {
-         return addToast("You are already in a dungeon run. Leave it before applying to another dungeon.", "error");
-      }
 
       const applicant = buildApplicantPayload(char, {
          keystone: resolveDungeonSelection(autoApplyKey)?.name || autoApplyKey || userKeystone || "",
@@ -3621,7 +3563,6 @@ export default function HomePage() {
    const autoConfirmInFlightRef = useRef(false);
    useEffect(() => {
       if (!playerAutoAcceptActive || autoConfirmInFlightRef.current) return;
-      if (userIsActiveInDungeonOffer(lobbies, currentUserId)) return;
       const pending = notifications.filter(
          (n: any) => {
             if (!notificationMatchesUser(n, currentUserId, currentUserDiscordHandle, registeredUsers)) return false;
@@ -3629,9 +3570,7 @@ export default function HomePage() {
             if (n.type !== "lobby_accept" && n.type !== "lobby_confirm") return false;
             const lobby = lobbies.find((l: any) => String(l.id) === String(n.lobbyId));
             if (!lobby) return false;
-            if (isLevelingOffer(lobby)) {
-               return canAutoAcceptLevelingInvite(lobbies, currentUserId);
-            }
+            if (!isLevelingOffer(lobby) && userIsActiveInDungeonOffer(lobbies, currentUserId)) return false;
             return true;
          }
       );
@@ -3641,10 +3580,6 @@ export default function HomePage() {
       (async () => {
          try {
             const notif = pending[0];
-            const lobby = lobbiesRef.current.find((l: any) => String(l.id) === String(notif.lobbyId));
-            if (lobby && isLevelingOffer(lobby) && !canAutoAcceptLevelingInvite(lobbiesRef.current, currentUserId)) {
-               return;
-            }
             shownNotifIds.current.push(notif.id);
             await handleConfirmLobby(notif);
          } finally {
@@ -5106,7 +5041,8 @@ export default function HomePage() {
                                                                 <div className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-white/90">
                                                                   {(() => {
                                                                      const reason = getEligibilityReason(lobby);
-                                                                     if (reason === "ALREADY DEPLOYED IN ANOTHER LOBBY") return <p className="text-white/80">You are already assigned to another active operation. Complete or withdraw before deploying here.</p>;
+                                                                     if (reason === "ALREADY IN THIS SQUAD") return <p className="text-white/80">You are already in this squad.</p>;
+                                                                     if (reason === "ALREADY APPLIED") return <p className="text-white/80">You already applied to this offer.</p>;
                                                                      if (reason === "NO CHARACTERS SYNCED") return <p className="text-white/80">No characters detected. Sync your character via Raider.io first in the Armory.</p>;
                                                                      if (reason === "NO QUALIFIED CHARACTER") return <p className="text-white/80">None of your characters meet the requirements for this operation.</p>;
                                                                        return reason.split(" | ").map((r, i) => {
@@ -5586,14 +5522,14 @@ export default function HomePage() {
                                        <button type="button" onClick={() => {
                                           if (!canUseSecret) return addToast("Auto-Accept is a Secret Club feature.", "error");
                                           tryEnableAutoAccept(!autoAcceptEnabled);
-                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseSecret && !playerLockedInDungeon ? autoAcceptEnabled ? 'border-[#00ffff]/50 bg-[#00ffff]/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInDungeon}>
+                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseSecret ? autoAcceptEnabled ? 'border-[#00ffff]/50 bg-[#00ffff]/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`}>
                                           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{canUseSecret ? <Zap className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Auto Accept</div>
                                           <p className="mt-1 text-[7px] font-black uppercase tracking-widest text-gray-500">{canUseSecret ? (autoAcceptEnabled ? '10 minute session on' : '10 minute session off') : 'Secret Club only'}</p>
                                        </button>
                                        <button type="button" onClick={() => {
                                            if (!canUseAutoApply) return addToast("Auto-Apply is a Secret Club feature. Subscribe to unlock.", "error");
                                           tryEnableAutoApply(!autoApplyEnabled);
-                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseAutoApply && !playerLockedInDungeon ? autoApplyEnabled ? 'border-green-500/50 bg-green-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`} disabled={playerLockedInDungeon}>
+                                       }} className={`rounded-xl border px-4 py-3 text-left transition-all ${canUseAutoApply ? autoApplyEnabled ? 'border-green-500/50 bg-green-500/10 text-white' : 'border-white/10 bg-white/[0.03] text-gray-400 hover:text-white' : 'border-white/5 bg-white/[0.02] text-gray-600 grayscale cursor-not-allowed'}`}>
                                           <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{canUseAutoApply ? <Radio className="w-4 h-4" /> : <Lock className="w-4 h-4" />} Auto Apply</div>
                                            <p className="mt-1 text-[7px] font-black uppercase tracking-widest text-gray-500">{canUseAutoApply ? (autoApplyEnabled ? 'Scanning on' : 'Scanning off') : 'Secret Club only'}</p>
                                        </button>
@@ -5975,7 +5911,7 @@ export default function HomePage() {
                     setHiddenIdentity={setHiddenIdentity}
                     registeredUsers={registeredUsers}
                     setRegisteredUsers={setRegisteredUsers}
-                    autoFeaturesLocked={playerLockedInDungeon}
+                    autoFeaturesLocked={false}
                     onToggleAutoAccept={tryEnableAutoAccept}
                   />
 

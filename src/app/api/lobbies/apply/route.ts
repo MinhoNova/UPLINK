@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKVPairs, setKV, initTables } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { withdrawApplicantFromOfferFamily, isLevelingOffer, userIsActiveInDungeonOffer } from "@/lib/lobbyLifecycle";
+import { withdrawApplicantFromOfferFamily } from "@/lib/lobbyLifecycle";
 import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { getClientIp } from "@/lib/requestIp";
@@ -48,13 +48,6 @@ export async function POST(req: Request) {
   }
   if (accepted.some((a: any) => memberId(a) === uid)) {
     return NextResponse.json({ error: "Already in squad" }, { status: 409 });
-  }
-
-  if (!isLevelingOffer(lobby) && userIsActiveInDungeonOffer(lobbies, uid)) {
-    return NextResponse.json(
-      { error: "You are already in a dungeon run. Leave it before applying to another dungeon." },
-      { status: 409 }
-    );
   }
 
   const charId = String(applicant.id || "");

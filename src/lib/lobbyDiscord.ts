@@ -4,10 +4,8 @@ import {
   cancelLobbyInvite,
   confirmApplicantJoin,
   inviteApplicantToLobby,
-  isLevelingOffer,
   memberIdentityKey,
   repairLobbyRoles,
-  userIsActiveInDungeonOffer,
 } from "@/lib/lobbyLifecycle";
 import { notificationMatchesUser } from "@/lib/userProfile";
 import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
@@ -48,13 +46,6 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
   if (accepted.some((a: any) => memberId(a) === uid)) {
     return { ok: false as const, error: "You are already in this squad." };
   }
-  if (!isLevelingOffer(lobby) && userIsActiveInDungeonOffer(lobbies, uid)) {
-    return {
-      ok: false as const,
-      error: "You are already in a dungeon run. Leave it before applying to another dungeon.",
-    };
-  }
-
   const char =
     characters.find((c) => String(c.userId) === uid) ||
     characters.find((c) => String(c.userName || "").toLowerCase() === String(user.username || "").toLowerCase());
