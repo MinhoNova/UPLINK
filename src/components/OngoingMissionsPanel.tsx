@@ -38,6 +38,7 @@ export default function OngoingMissionsPanel({
   const ownerMissions = getOwnerOngoingMissions(lobbies, currentUserId);
   const joinedMissions = getJoinedOngoingMissions(lobbies, currentUserId);
   const hasActiveMissions = ownerMissions.length > 0 || joinedMissions.length > 0;
+  const totalMissions = ownerMissions.length + joinedMissions.length;
 
   const renderMissionCard = (l: any) => (
     <motion.div
@@ -55,7 +56,7 @@ export default function OngoingMissionsPanel({
         const vfxUrl = ownerUser?.activeVfx;
         return vfxUrl && getVfxSettings(ownerUser).showOnOngoing ? (
           <div className="absolute inset-0 z-0">
-            <img src={vfxUrl} className="w-full h-full object-cover opacity-100" alt="" />
+            <img src={vfxUrl} className="w-full h-full object-cover opacity-100" alt="" loading="lazy" />
           </div>
         ) : null;
       })()}
@@ -160,12 +161,14 @@ export default function OngoingMissionsPanel({
 
   return (
     <div
-      className={`w-full xl:w-[300px] shrink-0 flex flex-col self-stretch ${
-        alignWithOfferBanners ? "lg:mt-[4.75rem] xl:-mt-5" : ""
-      }`}
+      className={`w-full xl:w-[300px] shrink-0 flex flex-col ${
+        hasActiveMissions ? "self-stretch" : "self-start"
+      } ${alignWithOfferBanners ? "lg:mt-[4.75rem] xl:-mt-5" : ""}`}
     >
       <div
-        className={`p-6 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden flex flex-col flex-1 min-h-[132px] transition-colors duration-500 ${
+        className={`p-6 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden flex flex-col transition-colors duration-500 ${
+          hasActiveMissions ? "flex-1 min-h-[132px]" : ""
+        } ${
           theme === "light"
             ? "bg-white border-black/10 shadow-[0_30px_80px_rgba(15,23,42,0.14)]"
             : "bg-[linear-gradient(180deg,rgba(4,4,8,0.98),rgba(0,0,0,1))] border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
@@ -186,22 +189,19 @@ export default function OngoingMissionsPanel({
         </h3>
 
         <div
-          className={`space-y-4 relative z-10 w-full flex flex-col flex-1 min-h-[180px] ${
-            alignWithOfferBanners ? "xl:pt-9" : ""
+          className={`space-y-4 relative z-10 w-full ${
+            hasActiveMissions
+              ? `flex flex-col flex-1 min-h-0 ${totalMissions > 2 ? "max-h-[min(70vh,640px)] overflow-y-auto custom-scrollbar pr-1" : ""} ${alignWithOfferBanners ? "xl:pt-9" : ""}`
+              : ""
           }`}
         >
           {ownerMissions.map(renderMissionCard)}
           {joinedMissions.map(renderMissionCard)}
           {!hasActiveMissions && (
-            <div className="text-center opacity-70 w-full flex flex-col items-center justify-center py-10 flex-1 min-h-[140px]">
-              <div className="relative inline-block mb-4">
-                <Radio className="w-14 h-14 mx-auto text-[#00ffff]/50" />
-              </div>
-              <p className="text-[13px] font-black uppercase tracking-[0.3em] text-gray-500 mb-1">
+            <div className="text-center opacity-70 w-full flex flex-col items-center justify-center py-6">
+              <Radio className="w-10 h-10 mx-auto text-[#00ffff]/50 mb-3" />
+              <p className="text-[12px] font-black uppercase tracking-[0.25em] text-gray-500">
                 No Active Missions
-              </p>
-              <p className="text-[9px] text-gray-700 font-bold uppercase tracking-widest">
-                Awaiting tactical deployment
               </p>
             </div>
           )}

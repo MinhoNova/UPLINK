@@ -56,6 +56,7 @@ import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets";
 import { validateBattleTag } from "@/lib/battleTagValidation";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
+import { OfferListAvatar } from "@/components/OfferListAvatar";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
@@ -379,7 +380,7 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
                                </div>
                               {AvatarComponent && (
                                   <div onClick={(e) => { e.stopPropagation(); if (onAvatarClick && userData) onAvatarClick(userData); }}>
-                                     <AvatarComponent src={visual?.avatar || accepted.avatar} effect={visual?.effect} fallbackName={accepted.applicantName || accepted.raiderName || "Operative"} className="w-10 h-10 rounded-full border-2 border-[#ff007f] object-cover mb-0.5" />
+                                     <AvatarComponent src={visual?.avatar || accepted.avatar} effect={visual?.effect} fallbackName={accepted.applicantName || accepted.raiderName || "Operative"} className="w-10 h-10 rounded-full border-2 border-[#ff007f] object-cover mb-0.5" userId={accepted.applicantId || accepted.userId} />
                                   </div>
                                )}
                               <span className="text-[8px] font-black text-white truncate w-full text-center uppercase">{accepted.applicantName || accepted.raiderName}</span>
@@ -2693,6 +2694,13 @@ export default function HomePage() {
       }, [deleteConfirmation, setDeleteConfirmation, EFFECTS, EFFECT_IMG, electricColor]);
      const { AvatarWithEffect } = stableComps;
 
+   const OfferFeedAvatar = useCallback(
+      (props: { src: string; effect?: string; className?: string; fallbackName?: string; userId?: string }) => (
+         <OfferListAvatar {...props} registeredUsers={registeredUsers} />
+      ),
+      [registeredUsers]
+   );
+
    const resolveUserVisual = (identifier?: string, userId?: string) => {
       const lookup = (identifier || "").toLowerCase().trim();
       const matched = registeredUsers.find((u: any) => {
@@ -4820,7 +4828,7 @@ export default function HomePage() {
                                            return 0;
                                         });
                                         return sorted.map(lobby => (
-                                           <div key={lobby.id} className="relative overflow-visible">
+                                           <div key={lobby.id} className="relative overflow-visible offer-card">
                                    <div className={`relative w-full rounded-[2.5rem] shadow-2xl group border overflow-visible ${expandedLobbyId === lobby.id ? (lobby.category === 'leveling' ? 'border-[#8a2be2]/50 shadow-[0_0_30px_rgba(138,43,226,0.15)]' : 'border-[#00ffff]/50 shadow-[0_0_30px_rgba(0,255,255,0.15)]') : 'border-white/10 hover:border-white/30'} bg-black/80`}>
                                            {/* FULL-WIDTH SEAMLESS DYNAMIC BACKGROUND */}
                                             {(() => {
@@ -4829,7 +4837,7 @@ export default function HomePage() {
                                                    const bgUrl = lobby.customBg || (ownerUser && getUserTier(lobby.ownerId) === "secret_club" && vfxOn ? ownerUser.activeVfx : null);
                                                    return bgUrl ? (
                                                      <div className="absolute inset-0 z-0 overflow-hidden rounded-[2.5rem]">
-                                                        <img src={bgUrl} className="w-full h-full object-cover" alt="" />
+                                                        <img src={bgUrl} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
                                                         <div className="absolute inset-0 bg-black/20"></div>
                                                      </div>
                                                    ) : (
@@ -4870,7 +4878,7 @@ export default function HomePage() {
                                                         const ownerUser = registeredUsers.find((u: any) => String(u.id) === String(lobby.ownerId));
                                                         if (ownerUser) openPlayerProfile(ownerUser.id);
                                                      }}>
-                                                        <AvatarWithEffect src={lobby.ownerImage} effect={lobby.ownerEffect} className="w-20 h-20" userId={lobby.ownerId} />
+                                                        <OfferFeedAvatar src={lobby.ownerImage} effect={lobby.ownerEffect} className="w-20 h-20" userId={lobby.ownerId} />
                                                      </div>
                                                      {(() => {
                                                         const ownerUser = registeredUsers.find((u: any) => String(u.id) === String(lobby.ownerId));
@@ -4879,26 +4887,13 @@ export default function HomePage() {
                                               </div>
                                                <div className="p-1.5 flex items-center justify-start">
                                                  <div className="flex flex-col items-center gap-1">
-                                                    <motion.div
-                                                       animate={{
-                                                          textShadow: [
-                                                             "0 0 0px #fff",
-                                                             "2px 0 10px #ff007f",
-                                                             lobby.category === 'leveling' ? "-2px 0 10px #8a2be2" : "-2px 0 10px #00ffff",
-                                                             "0 0 0px #fff"
-                                                          ],
-                                                          x: [0, -1, 1, -1, 0]
-                                                       }}
-                                                       transition={{
-                                                          repeat: Infinity,
-                                                          duration: 2,
-                                                          times: [0, 0.1, 0.2, 0.3, 1]
-                                                       }}
-                                                        className="flex items-center gap-1.5 text-yellow-500 font-black text-3xl leading-none cursor-default"
-                                                     >
+                                                    <span
+                                                       className="flex items-center gap-1.5 text-yellow-500 font-black text-3xl leading-none cursor-default offer-gold-pulse"
+                                                       style={{ ["--offer-glow-secondary" as string]: lobby.category === "leveling" ? "#8a2be2" : "#00ffff" }}
+                                                    >
                                                         {lobby.totalGold}K
                                                         <Coins className="w-7 h-7" />
-                                                    </motion.div>
+                                                    </span>
                                                      {lobby.category !== 'leveling' && (
                                                       <span className="text-base font-black uppercase text-white tracking-wider leading-none mt-0.5 px-2 py-0.5 rounded-lg bg-white/10 border border-white/20">
                                                          {(lobby.totalGold / (lobby.runsCount || 1)).toFixed(0)}K <span className="text-[#00ffff]">PER RUN</span>
@@ -4919,7 +4914,7 @@ export default function HomePage() {
                                                            const visual = occupant ? resolveMemberVisual(occupant) : null;
                                                             const occupantUser = occupant ? registeredUsers.find((u: any) => String(u.id) === String(occupant.applicantId || occupant.userId)) : null;
                                                             const userForPreview = occupantUser ? { ...occupantUser, tierLabel: getUserTierLabel(occupantUser.id) } : null;
-                                                            return <InteractivePartyCard key={idx} role={roleType} accepted={occupant} visual={visual} rankStats={occupantUser?.stats} rankRatings={occupantUser?.ratings} AvatarComponent={AvatarWithEffect} hideIdentity={occupant ? isUserHidden(occupant.applicantId || occupant.userId) : false} onAvatarClick={(u) => openPlayerProfile(u)} userData={userForPreview} />;
+                                                            return <InteractivePartyCard key={idx} role={roleType} accepted={occupant} visual={visual} rankStats={occupantUser?.stats} rankRatings={occupantUser?.ratings} AvatarComponent={OfferFeedAvatar} hideIdentity={occupant ? isUserHidden(occupant.applicantId || occupant.userId) : false} onAvatarClick={(u) => openPlayerProfile(u)} userData={userForPreview} />;
                                                        });
                                                     })()}
                                                 </div>
@@ -5115,7 +5110,7 @@ export default function HomePage() {
                                                                     const userForPreview2 = occupantUser ? { ...occupantUser, tierLabel: getUserTierLabel(occupantUser.id) } : null;
                                                                     return (
                                                                        <div key={idx} className="flex flex-col items-center gap-4">
-                                                                          <InteractivePartyCard role={roleType} accepted={occupant} visual={visual} rankStats={occupantUser?.stats} rankRatings={occupantUser?.ratings} AvatarComponent={AvatarWithEffect} hideIdentity={occupant ? isUserHidden(occupant.applicantId || occupant.userId) : false} onAvatarClick={(u) => openPlayerProfile(u)} userData={userForPreview2} />
+                                                                          <InteractivePartyCard role={roleType} accepted={occupant} visual={visual} rankStats={occupantUser?.stats} rankRatings={occupantUser?.ratings} AvatarComponent={OfferFeedAvatar} hideIdentity={occupant ? isUserHidden(occupant.applicantId || occupant.userId) : false} onAvatarClick={(u) => openPlayerProfile(u)} userData={userForPreview2} />
                                                                          {occupant && (
                                                                            <div className="flex flex-col items-center">
                                                                               <span className="text-[10px] font-black text-white uppercase">{occupant.applicantName || occupant.name}</span>

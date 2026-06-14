@@ -7,17 +7,10 @@ import { enforceDmAntiSpam } from "@/lib/chatModeration";
 import { rateLimitByUser } from "@/lib/rateLimit";
 import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { getClientIp } from "@/lib/requestIp";
+import { DM_REACTION_EMOJIS, type DmMessage } from "@/lib/dmHelpers";
 
 const MAX_TEXT_LENGTH = 2000;
 const MAX_MESSAGES_PER_HOUR = 120;
-
-type DmMessage = {
-  from: string;
-  to: string;
-  text: string;
-  timestamp: number;
-  edited?: boolean;
-};
 
 function getHandle(session: { user?: unknown }) {
   return (session.user as { username?: string })?.username || "";
@@ -25,6 +18,12 @@ function getHandle(session: { user?: unknown }) {
 
 function findOwnMessage(messages: DmMessage[], timestamp: number, from: string) {
   return messages.find((m) => m.timestamp === timestamp && m.from === from);
+}
+
+function findMessageByTimestamp(messages: DmMessage[], timestamp: number, handle: string) {
+  return messages.find(
+    (m) => m.timestamp === timestamp && (m.from === handle || m.to === handle)
+  );
 }
 
 export async function POST(req: Request) {
@@ -54,7 +53,9 @@ export async function POST(req: Request) {
   if (action === "send") {
     const to = String(body?.to || "").trim();
     const text = String(body?.text || "").trim();
-    if (!to || !text) return NextResponse.json({ error: "Missing to or text" }, { status: 400 });
+    const image = body?.image ? String(body.image).trim() : "";
+    if (!to) return NextResponse.json({ error: "Missing recipient" }, { status: 400 });
+    if (!text && !image) return NextResponse.json({ error: "Missing message content" }, { status: 400 });
     if (text.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
@@ -90,7 +91,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    const message: DmMessage = { from: currentHandle, to, text, timestamp: Date.now() };
+    const message: DmMessage = {
+      from: currentHandle,
+      to,
+      text,
+      timestamp: Date.now(),
+      ...(image ? { image } : {}),
+    };
     directMessages.push(message);
     await setKV("directMessages", directMessages);
     return NextResponse.json({ success: true, message });
@@ -130,6 +137,48 @@ export async function POST(req: Request) {
       meta: { timestamp },
     });
     return NextResponse.json({ success: true });
+  }
+
+  if (action === "markRead") {
+    const fromUsername = String(body?.fromUsername || "").trim();
+    if (!fromUsername) return NextResponse.json({ error: "Missing fromUsername" }, { status: 400 });
+
+    const readMessages: Record<string, Record<string, string[]>> = (await getKV("readMessages")) || {};
+    if (!readMessages[currentHandle]) readMessages[currentHandle] = {};
+
+    const incoming = directMessages.filter(
+      (m) => m.from === fromUsername && m.to === currentHandle
+    );
+    const ids = incoming.map((m) => String(m.timestamp));
+    readMessages[currentHandle][fromUsername] = ids;
+
+    await setKV("readMessages", readMessages);
+    return NextResponse.json({ success: true, readMessages });
+  }
+
+  if (action === "react") {
+    const timestamp = Number(body?.timestamp);
+    const emoji = String(body?.emoji || "");
+    if (!timestamp || !emoji) return NextResponse.json({ error: "Missing timestamp or emoji" }, { status: 400 });
+    if (!DM_REACTION_EMOJIS.includes(emoji as (typeof DM_REACTION_EMOJIS)[number])) {
+      return NextResponse.json({ error: "Invalid emoji" }, { status: 400 });
+    }
+
+    const idx = directMessages.findIndex(
+      (m) => m.timestamp === timestamp && (m.from === currentHandle || m.to === currentHandle)
+    );
+    if (idx === -1) return NextResponse.json({ error: "Message not found" }, { status: 404 });
+
+    const msg = directMessages[idx];
+    const reactions = { ...(msg.reactions || {}) };
+    if (reactions[currentHandle] === emoji) {
+      delete reactions[currentHandle];
+    } else {
+      reactions[currentHandle] = emoji;
+    }
+    directMessages[idx] = { ...msg, reactions };
+    await setKV("directMessages", directMessages);
+    return NextResponse.json({ success: true, message: directMessages[idx] });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

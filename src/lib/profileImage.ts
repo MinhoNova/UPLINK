@@ -38,3 +38,11 @@ export function isAnimatedImageUrl(url: string): boolean {
 export function profileImgClass(url: string, base = "w-full h-full"): string {
   return `${base} ${isAnimatedImageUrl(url) ? "object-contain bg-black" : "object-cover"}`;
 }
+
+/** Static avatar for dense lists (skip GIF decode until hover). */
+export function resolveStaticProfileImage(user: any, fallbackName = "U"): string {
+  for (const src of [user?.customAvatar, user?.avatar]) {
+    if (src?.trim() && !isAnimatedImageUrl(src)) return src;
+  }
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || fallbackName)}&background=0b1020&color=00ffff&size=128&bold=true`;
+}

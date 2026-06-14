@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, Users, X, Check, Search, DoorClosed, UserCheck, MessageSquare, VolumeX, UserPlus, Pencil, Trash2, Ban } from "lucide-react";
+import { MessageCircle, Users, X, Check, Search, DoorClosed, UserCheck, VolumeX, UserPlus, Ban } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import DmThreadView from "@/components/chat/DmThreadView";
+import { getDmMsgKey, type DmMessage } from "@/lib/dmHelpers";
 
 export default function DirectCommsPanel() {
   const { data: session, status } = useSession();
@@ -15,13 +17,11 @@ export default function DirectCommsPanel() {
   const [tab, setTab] = useState<"dm" | "requests" | "muted">("dm");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [search, setSearch] = useState("");
-  const [msgInput, setMsgInput] = useState("");
   const [unreadCounts, setUnreadCounts] = useState<{ [key: string]: number }>({});
   const [messageNotification, setMessageNotification] = useState<any>(null);
-  const [editingMsgKey, setEditingMsgKey] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState("");
-  const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const selectedUserRef = useRef<any>(null);
+  const isOpenRef = useRef(false);
   const [mutedUsers, setMutedUsers] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -105,6 +105,9 @@ export default function DirectCommsPanel() {
     };
   }, [status]);
 
+  useEffect(() => { selectedUserRef.current = selectedUser; }, [selectedUser]);
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
     if (status !== "authenticated") return;
@@ -128,7 +131,7 @@ export default function DirectCommsPanel() {
       if (user.username === currentHandle) return;
       const userMessages = directMessages.filter((m: any) => m.from === user.username && m.to === currentHandle);
       const readIds = readMessages[currentHandle]?.[user.username] || [];
-      const unreadCount = userMessages.filter((m: any) => !readIds.includes(m.timestamp || `${m.from}-${m.to}-${m.text}`)).length;
+      const unreadCount = userMessages.filter((m: any) => !readIds.includes(getDmMsgKey(m))).length;
       if (unreadCount > 0) counts[user.username] = unreadCount;
     });
     
@@ -154,22 +157,27 @@ export default function DirectCommsPanel() {
     if (incomingMessages.length > 0) {
       const lastMessage = incomingMessages[incomingMessages.length - 1];
       const senderUser = registeredUsers.find((u: any) => u.username === lastMessage.from);
-      
-      if (senderUser && !mutedUsers.includes(senderUser.username)) {
-        // Count unread messages from this user
+
+      const inActiveChat =
+        isOpenRef.current &&
+        selectedUserRef.current?.username === lastMessage.from;
+
+      if (senderUser && !mutedUsers.includes(senderUser.username) && !inActiveChat) {
         const readMessages = data?.readMessages || {};
         const readIds = readMessages[currentHandle]?.[senderUser.username] || [];
         const userMessages = directMessages.filter((m: any) => m.from === senderUser.username && m.to === currentHandle);
-        const unreadCount = userMessages.filter((m: any) => !readIds.includes(m.timestamp || `${m.from}-${m.to}-${m.text}`)).length;
-        
+        const unreadCount = userMessages.filter((m: any) => !readIds.includes(getDmMsgKey(m))).length;
+
         setMessageNotification({
           user: senderUser,
-          message: lastMessage.text,
+          message: lastMessage.text || (lastMessage.image ? "📷 Image" : ""),
           timestamp: lastMessage.timestamp || Date.now(),
           unreadCount: unreadCount
         });
-        
+
         playMessageSound();
+        localStorage.setItem(lastMessageKey, String(lastMessage.timestamp || Date.now()));
+      } else if (inActiveChat) {
         localStorage.setItem(lastMessageKey, String(lastMessage.timestamp || Date.now()));
       }
     }
@@ -234,14 +242,6 @@ export default function DirectCommsPanel() {
     }
   };
 
-  const getMsgKey = (msg: any) => String(msg.timestamp || `${msg.from}-${msg.to}-${msg.text}`);
-
-  useEffect(() => {
-    setEditingMsgKey(null);
-    setEditDraft("");
-    setDeleteConfirmKey(null);
-  }, [selectedUser]);
-
   const dmRequest = async (payload: Record<string, unknown>) => {
     const res = await fetch("/api/dm", {
       method: "POST",
@@ -258,30 +258,27 @@ export default function DirectCommsPanel() {
     return data;
   };
 
-  const handleSaveEdit = async (msg: any) => {
-    if (!editDraft.trim() || !msg.timestamp) return;
-    const key = getMsgKey(msg);
+  const handleSaveEdit = async (msg: DmMessage, text: string) => {
+    if (!msg.timestamp) return;
+    const key = getDmMsgKey(msg);
     const prevMessages = directMessages;
     const optimistic = directMessages.map((m: any) =>
-      getMsgKey(m) === key ? { ...m, text: editDraft.trim(), edited: true } : m
+      getDmMsgKey(m) === key ? { ...m, text, edited: true } : m
     );
     setData((prev: any) => ({ ...prev, directMessages: optimistic }));
-    setEditingMsgKey(null);
-    setEditDraft("");
     try {
-      await dmRequest({ action: "edit", timestamp: msg.timestamp, text: editDraft.trim() });
+      await dmRequest({ action: "edit", timestamp: msg.timestamp, text });
     } catch {
       setData((prev: any) => ({ ...prev, directMessages: prevMessages }));
     }
   };
 
-  const handleDeleteMsg = async (msg: any) => {
+  const handleDeleteMsg = async (msg: DmMessage) => {
     if (!msg.timestamp) return;
-    const key = getMsgKey(msg);
+    const key = getDmMsgKey(msg);
     const prevMessages = directMessages;
-    const optimistic = directMessages.filter((m: any) => getMsgKey(m) !== key);
+    const optimistic = directMessages.filter((m: any) => getDmMsgKey(m) !== key);
     setData((prev: any) => ({ ...prev, directMessages: optimistic }));
-    setDeleteConfirmKey(null);
     try {
       await dmRequest({ action: "delete", timestamp: msg.timestamp });
     } catch {
@@ -289,16 +286,31 @@ export default function DirectCommsPanel() {
     }
   };
 
-  const sendMessage = async (to: string, text: string) => {
+  const handleReact = async (msg: DmMessage, emoji: string) => {
+    if (!msg.timestamp) return;
+    try {
+      const result = await dmRequest({ action: "react", timestamp: msg.timestamp, emoji });
+      if (result.message) {
+        setData((prev: any) => ({
+          ...prev,
+          directMessages: (prev.directMessages || []).map((m: any) =>
+            m.timestamp === msg.timestamp && (m.from === msg.from) ? result.message : m
+          ),
+        }));
+      }
+    } catch {}
+  };
+
+  const sendMessage = async (to: string, text: string, image?: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !image) return;
     setChatError(null);
     const timestamp = Date.now();
-    const optimistic = { from: currentHandle, to, text: trimmed, timestamp };
+    const optimistic: DmMessage = { from: currentHandle, to, text: trimmed, timestamp, ...(image ? { image } : {}) };
     const prevMessages = directMessages;
     setData((prev: any) => ({ ...prev, directMessages: [...directMessages, optimistic] }));
     try {
-      const result = await dmRequest({ action: "send", to, text: trimmed });
+      const result = await dmRequest({ action: "send", to, text: trimmed, ...(image ? { image } : {}) });
       if (result.message) {
         setData((prev: any) => ({
           ...prev,
@@ -314,6 +326,7 @@ export default function DirectCommsPanel() {
       if (err.suspended) {
         setTimeout(() => { window.location.reload(); }, 2500);
       }
+      throw e;
     }
   };
 
@@ -330,6 +343,11 @@ export default function DirectCommsPanel() {
       return updated;
     });
   };
+
+  useEffect(() => {
+    if (!selectedUser || !isOpen) return;
+    void markAsRead(selectedUser.username);
+  }, [selectedUser?.username, isOpen, directMessages.length]);
 
   const getFriendStatus = (userId2: string) => {
     const entry = friends.find((f: any) =>
@@ -527,8 +545,8 @@ export default function DirectCommsPanel() {
                           key={user.username}
                           role="button"
                           tabIndex={0}
-                          onClick={() => { setSelectedUser(user); markAsRead(user.username); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { setSelectedUser(user); markAsRead(user.username); } }}
+                          onClick={() => { setSelectedUser(user); markAsRead(user.username); setMessageNotification(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { setSelectedUser(user); markAsRead(user.username); setMessageNotification(null); } }}
                           className="w-full p-3 rounded-2xl hover:bg-white/[0.05] border border-transparent hover:border-white/5 transition-all flex items-center gap-3 group relative cursor-pointer"
                         >
                           <button
@@ -578,123 +596,16 @@ export default function DirectCommsPanel() {
                         <UserCheck className="w-4 h-4 text-gray-400" />
                       </button>
                     </div>
-                    <div className="overflow-y-auto space-y-3 pr-1 mb-4 max-h-[min(480px,calc(100vh-22rem))] custom-scrollbar">
-                      {directMessages.filter((m: any) => (m.from === currentHandle && m.to === selectedUser.username) || (m.to === currentHandle && m.from === selectedUser.username)).map((msg: any, i: number) => {
-                        const msgKey = getMsgKey(msg);
-                        const isEditing = editingMsgKey === msgKey;
-                        const isConfirmingDelete = deleteConfirmKey === msgKey;
-                        return (
-                        <div key={msgKey || i} className={`flex flex-col group ${msg.from === currentHandle ? "items-end" : "items-start"}`}>
-                          {isEditing ? (
-                            <div className="max-w-[88%] w-full px-3 py-2.5 rounded-2xl bg-black/60 border border-[#00ffff]/30 shadow-lg rounded-tr-sm">
-                              <textarea
-                                value={editDraft}
-                                onChange={(e) => setEditDraft(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEdit(msg); }
-                                  if (e.key === "Escape") { setEditingMsgKey(null); setEditDraft(""); }
-                                }}
-                                autoFocus
-                                rows={2}
-                                className="w-full bg-transparent text-[13px] text-white outline-none resize-none leading-relaxed placeholder-gray-500"
-                              />
-                              <div className="flex justify-end gap-1.5 mt-2 pt-2 border-t border-white/10">
-                                <button
-                                  onClick={() => { setEditingMsgKey(null); setEditDraft(""); }}
-                                  className="text-[9px] px-2.5 py-1 bg-white/5 text-gray-400 hover:text-white rounded-lg transition font-black uppercase tracking-wider"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() => handleSaveEdit(msg)}
-                                  disabled={!editDraft.trim()}
-                                  className="text-[9px] px-2.5 py-1 bg-[#00ffff]/20 text-[#00ffff] hover:bg-[#00ffff] hover:text-black rounded-lg transition font-black uppercase tracking-wider disabled:opacity-30"
-                                >
-                                  Save
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className={`max-w-[88%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed shadow-lg ${msg.from === currentHandle ? "bg-gradient-to-br from-[#ff007f] to-[#c4006a] text-white rounded-tr-sm" : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"}`}>
-                              {msg.text}
-                              {msg.edited && <span className="block text-[9px] opacity-50 mt-0.5 font-bold uppercase tracking-wider">edited</span>}
-                            </div>
-                          )}
-                          {msg.from === currentHandle && !isEditing && (
-                            <div className={`flex gap-1 mt-1 transition-opacity ${isConfirmingDelete ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                              {isConfirmingDelete ? (
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-black/50 border border-red-500/20">
-                                  <span className="text-[9px] text-gray-400 font-bold">Delete message?</span>
-                                  <button
-                                    onClick={() => handleDeleteMsg(msg)}
-                                    className="text-[9px] px-2 py-0.5 bg-red-500/30 text-red-300 hover:bg-red-500 hover:text-white rounded-lg transition font-black uppercase"
-                                  >
-                                    Yes
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteConfirmKey(null)}
-                                    className="text-[9px] px-2 py-0.5 bg-white/5 text-gray-400 hover:text-white rounded-lg transition font-black uppercase"
-                                  >
-                                    No
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => { setEditingMsgKey(msgKey); setEditDraft(msg.text); setDeleteConfirmKey(null); }}
-                                    title="Edit message"
-                                    className="p-1.5 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff] hover:text-black rounded-lg transition"
-                                  >
-                                    <Pencil className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => { setDeleteConfirmKey(msgKey); setEditingMsgKey(null); }}
-                                    title="Delete message"
-                                    className="p-1.5 bg-red-500/15 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        );
-                      })}
-                      {directMessages.filter((m: any) => (m.from === currentHandle && m.to === selectedUser.username) || (m.to === currentHandle && m.from === selectedUser.username)).length === 0 && (
-                        <div className="text-center py-10 opacity-20"><p className="text-[9px] font-black uppercase">Start chatting</p></div>
-                      )}
-                    </div>
-                    <div className="pt-4 border-t border-white/5 space-y-2">
-                      {chatError && (
-                        <p className="text-[10px] text-red-400 font-bold">{chatError}</p>
-                      )}
-                      <div className="flex gap-2">
-                      <input
-                        value={msgInput}
-                        onChange={(e) => setMsgInput(e.target.value)}
-                        onKeyDown={(e: any) => {
-                          if (e.key === "Enter" && e.target.value.trim()) {
-                            sendMessage(selectedUser.username, e.target.value);
-                            setMsgInput("");
-                          }
-                        }}
-                        placeholder="Type a message..."
-                        className="flex-1 bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#00ffff]/40 transition-colors text-white/90 placeholder-gray-600"
-                      />
-                      <button
-                        onClick={() => {
-                          if (msgInput.trim()) {
-                            sendMessage(selectedUser.username, msgInput);
-                            setMsgInput("");
-                          }
-                        }}
-                        className="px-4 py-3 bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 rounded-2xl hover:bg-[#00ffff] hover:text-black transition"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </button>
-                      </div>
-                    </div>
+                    <DmThreadView
+                      peerUsername={selectedUser.username}
+                      currentHandle={currentHandle}
+                      messages={directMessages}
+                      chatError={chatError}
+                      onSend={(text, image) => sendMessage(selectedUser.username, text, image)}
+                      onEdit={handleSaveEdit}
+                      onDelete={handleDeleteMsg}
+                      onReact={handleReact}
+                    />
                   </div>
                 )}
               </>

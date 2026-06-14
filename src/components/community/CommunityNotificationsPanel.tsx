@@ -4,10 +4,12 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import {
-  X, Users, UserCheck, Search, Check, Swords, MessageSquare, DoorClosed, Pencil, Trash2,
+  X, Users, UserCheck, Search, Check, Swords, DoorClosed,
 } from "lucide-react";
 import PostActivityFeed, { usePostActivity } from "@/components/community/PostActivityFeed";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
+import DmThreadView from "@/components/chat/DmThreadView";
+import { getDmMsgKey, type DmMessage } from "@/lib/dmHelpers";
 
 type Tab = "chat" | "alerts" | "requests";
 
@@ -19,10 +21,6 @@ export default function CommunityNotificationsPanel() {
   const [data, setData] = useState<any>(null);
   const [mobileOpen, setMobileOpen] = useState(true);
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
-  const [msgInput, setMsgInput] = useState("");
-  const [editingMsgKey, setEditingMsgKey] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState("");
-  const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [chatError, setChatError] = useState<string | null>(null);
 
@@ -98,7 +96,7 @@ export default function CommunityNotificationsPanel() {
     [friends, currentUserId]
   );
 
-  const getMsgKey = (msg: any) => String(msg.timestamp || `${msg.from}-${msg.to}-${msg.text}`);
+  const getMsgKey = getDmMsgKey;
 
   const lastMessageAt = useCallback(
     (username: string) => {
@@ -174,19 +172,19 @@ export default function CommunityNotificationsPanel() {
     });
   };
 
-  const sendMessage = async (to: string, text: string) => {
+  const sendMessage = async (to: string, text: string, image?: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !image) return;
     setChatError(null);
     const timestamp = Date.now();
-    const optimistic = { from: currentHandle, to, text: trimmed, timestamp };
+    const optimistic: DmMessage = { from: currentHandle, to, text: trimmed, timestamp, ...(image ? { image } : {}) };
     const prevMessages = data?.directMessages || [];
     setData((prev: any) => ({
       ...prev,
       directMessages: [...(prev?.directMessages || []), optimistic],
     }));
     try {
-      const result = await dmRequest({ action: "send", to, text: trimmed });
+      const result = await dmRequest({ action: "send", to, text: trimmed, ...(image ? { image } : {}) });
       if (result.message) {
         setData((prev: any) => ({
           ...prev,
@@ -200,28 +198,27 @@ export default function CommunityNotificationsPanel() {
       const err = e as Error & { suspended?: boolean };
       setChatError(err.message || "Failed to send");
       if (err.suspended) setTimeout(() => { window.location.reload(); }, 2500);
+      throw e;
     }
   };
 
-  const handleSaveEdit = async (msg: any) => {
-    if (!editDraft.trim() || !msg.timestamp) return;
+  const handleSaveEdit = async (msg: DmMessage, text: string) => {
+    if (!msg.timestamp) return;
     const key = getMsgKey(msg);
     try {
-      await dmRequest({ action: "edit", timestamp: msg.timestamp, text: editDraft.trim() });
+      await dmRequest({ action: "edit", timestamp: msg.timestamp, text });
       setData((prev: any) => ({
         ...prev,
         directMessages: (prev.directMessages || []).map((m: any) =>
-          getMsgKey(m) === key ? { ...m, text: editDraft.trim(), edited: true } : m
+          getMsgKey(m) === key ? { ...m, text, edited: true } : m
         ),
       }));
     } catch {
       loadData();
     }
-    setEditingMsgKey(null);
-    setEditDraft("");
   };
 
-  const handleDeleteMsg = async (msg: any) => {
+  const handleDeleteMsg = async (msg: DmMessage) => {
     if (!msg.timestamp) return;
     const key = getMsgKey(msg);
     try {
@@ -233,7 +230,21 @@ export default function CommunityNotificationsPanel() {
     } catch {
       loadData();
     }
-    setDeleteConfirmKey(null);
+  };
+
+  const handleReact = async (msg: DmMessage, emoji: string) => {
+    if (!msg.timestamp) return;
+    try {
+      const result = await dmRequest({ action: "react", timestamp: msg.timestamp, emoji });
+      if (result.message) {
+        setData((prev: any) => ({
+          ...prev,
+          directMessages: (prev.directMessages || []).map((m: any) =>
+            m.timestamp === msg.timestamp && m.from === msg.from ? result.message : m
+          ),
+        }));
+      }
+    } catch {}
   };
 
   const openProfile = (userId: string) => {
@@ -262,6 +273,11 @@ export default function CommunityNotificationsPanel() {
     setSearch("");
   };
 
+  useEffect(() => {
+    if (!selectedChatUser) return;
+    void markAsRead(selectedChatUser.username);
+  }, [selectedChatUser?.username, directMessages.length]);
+
   const totalChatUnread = Object.values(unreadCounts).reduce((s, n) => s + n, 0);
 
   if (status !== "authenticated" || !isCommunity) return null;
@@ -276,7 +292,7 @@ export default function CommunityNotificationsPanel() {
           <>
             <button
               type="button"
-              onClick={() => { setSelectedChatUser(null); setMsgInput(""); }}
+              onClick={() => { setSelectedChatUser(null); }}
               className="p-2 hover:bg-white/5 rounded-xl transition"
             >
               <DoorClosed className="w-4 h-4 text-gray-400" />
@@ -362,101 +378,19 @@ export default function CommunityNotificationsPanel() {
 
       <div className="flex-1 overflow-hidden relative z-10 min-h-0 flex flex-col">
         {tab === "chat" && selectedChatUser && (
-          <>
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 min-h-0">
-              {directMessages
-                .filter(
-                  (m: any) =>
-                    (m.from === currentHandle && m.to === selectedChatUser.username) ||
-                    (m.to === currentHandle && m.from === selectedChatUser.username)
-                )
-                .map((msg: any, i: number) => {
-                  const msgKey = getMsgKey(msg);
-                  const isMine = msg.from === currentHandle;
-                  const isEditing = editingMsgKey === msgKey;
-                  const isConfirmingDelete = deleteConfirmKey === msgKey;
-                  return (
-                    <div key={msgKey || i} className={`flex flex-col group ${isMine ? "items-end" : "items-start"}`}>
-                      {isEditing ? (
-                        <div className="max-w-[88%] w-full px-3 py-2.5 rounded-2xl bg-black/60 border border-[#00ffff]/30">
-                          <textarea
-                            value={editDraft}
-                            onChange={(e) => setEditDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEdit(msg); }
-                              if (e.key === "Escape") { setEditingMsgKey(null); setEditDraft(""); }
-                            }}
-                            autoFocus
-                            rows={2}
-                            className="w-full bg-transparent text-[13px] text-white outline-none resize-none"
-                          />
-                          <div className="flex justify-end gap-1.5 mt-2">
-                            <button type="button" onClick={() => { setEditingMsgKey(null); setEditDraft(""); }} className="text-[9px] px-2 py-1 text-gray-400 font-black uppercase">Cancel</button>
-                            <button type="button" onClick={() => handleSaveEdit(msg)} disabled={!editDraft.trim()} className="text-[9px] px-2 py-1 text-[#00ffff] font-black uppercase">Save</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`max-w-[88%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed ${isMine ? "bg-gradient-to-br from-[#ff007f] to-[#c4006a] text-white rounded-tr-sm" : "bg-white/10 text-gray-200 rounded-tl-sm border border-white/5"}`}>
-                          {msg.text}
-                          {msg.edited && <span className="block text-[9px] opacity-50 mt-0.5 uppercase">edited</span>}
-                        </div>
-                      )}
-                      {isMine && !isEditing && (
-                        <div className={`flex gap-1 mt-1 ${isConfirmingDelete ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`}>
-                          {isConfirmingDelete ? (
-                            <>
-                              <button type="button" onClick={() => handleDeleteMsg(msg)} className="text-[9px] px-2 py-0.5 bg-red-500/30 text-red-300 rounded-lg font-black uppercase">Yes</button>
-                              <button type="button" onClick={() => setDeleteConfirmKey(null)} className="text-[9px] px-2 py-0.5 text-gray-400 font-black uppercase">No</button>
-                            </>
-                          ) : (
-                            <>
-                              <button type="button" onClick={() => { setEditingMsgKey(msgKey); setEditDraft(msg.text); }} className="p-1 text-[#00ffff]"><Pencil className="w-3 h-3" /></button>
-                              <button type="button" onClick={() => setDeleteConfirmKey(msgKey)} className="p-1 text-red-400"><Trash2 className="w-3 h-3" /></button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              {directMessages.filter(
-                (m: any) =>
-                  (m.from === currentHandle && m.to === selectedChatUser.username) ||
-                  (m.to === currentHandle && m.from === selectedChatUser.username)
-              ).length === 0 && (
-                <p className="text-center text-[10px] text-gray-600 font-black uppercase py-8">Start the conversation</p>
-              )}
-            </div>
-            <div className="shrink-0 p-4 border-t border-white/5 bg-black/30 space-y-2">
-              {chatError && <p className="text-[10px] text-red-400 font-bold">{chatError}</p>}
-              <div className="flex gap-2">
-              <input
-                value={msgInput}
-                onChange={(e) => setMsgInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && msgInput.trim()) {
-                    sendMessage(selectedChatUser.username, msgInput);
-                    setMsgInput("");
-                  }
-                }}
-                placeholder="Type a message..."
-                className="flex-1 bg-black/50 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#00ffff]/40 text-white placeholder-gray-600"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (msgInput.trim()) {
-                    sendMessage(selectedChatUser.username, msgInput);
-                    setMsgInput("");
-                  }
-                }}
-                className="px-4 py-3 bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30 rounded-2xl hover:bg-[#00ffff] hover:text-black transition"
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
-              </div>
-            </div>
-          </>
+          <div className="flex flex-col flex-1 min-h-0 p-4">
+            <DmThreadView
+              peerUsername={selectedChatUser.username}
+              currentHandle={currentHandle}
+              messages={directMessages}
+              chatError={chatError}
+              scrollClassName="max-h-[min(520px,calc(100vh-18rem))]"
+              onSend={(text, image) => sendMessage(selectedChatUser.username, text, image)}
+              onEdit={handleSaveEdit}
+              onDelete={handleDeleteMsg}
+              onReact={handleReact}
+            />
+          </div>
         )}
 
         {tab === "chat" && !selectedChatUser && (
@@ -479,7 +413,6 @@ export default function CommunityNotificationsPanel() {
                 chatUserList.map((user: any) => {
                   const img = resolveProfileImage(user);
                   const displayName = resolveProfileDisplayName(user);
-                  const hasHistory = lastMessageAt(user.username) > 0;
                   return (
                     <div
                       key={user.id}
@@ -499,9 +432,11 @@ export default function CommunityNotificationsPanel() {
                       </button>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="text-sm font-black text-white/90 truncate">{displayName}</p>
-                        <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest">
-                          {hasHistory ? "Continue chat" : friendIdSet.has(String(user.id)) ? "Friend" : "Tap to message"}
-                        </p>
+                        {unreadCounts[user.username] > 0 ? (
+                          <p className="text-[8px] text-[#00ffff] font-bold uppercase tracking-widest">Unread</p>
+                        ) : friendIdSet.has(String(user.id)) ? (
+                          <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest">Friend</p>
+                        ) : null}
                       </div>
                       {unreadCounts[user.username] > 0 && (
                         <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0">

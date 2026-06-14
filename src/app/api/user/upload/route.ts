@@ -33,11 +33,13 @@ export async function POST(req: Request) {
   const field =
     rawField === "profileGif" ? "profileGif" :
     rawField === "banner" ? "banner" :
+    rawField === "chatImage" ? "chatImage" :
     "customAvatar";
   if (!file || file.size === 0) return NextResponse.json({ error: "No file" }, { status: 400 });
   if (file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: "File too large" }, { status: 413 });
 
   const isBanner = field === "banner";
+  const isChatImage = field === "chatImage";
   const maxDim = isBanner ? 1920 : MAX_DIM;
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
   try {
     const result = await normalizeProfileImage(buffer, {
       maxDim,
-      isGifUpload: !!(isGifUpload && (field === "profileGif" || isBanner)),
+      isGifUpload: !!(isGifUpload && (field === "profileGif" || isBanner || isChatImage)),
       isBanner,
     });
     normalized = result.buffer;
