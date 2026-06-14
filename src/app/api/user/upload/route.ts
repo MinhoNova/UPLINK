@@ -6,7 +6,7 @@ import { isSecretClubTier } from "@/lib/userProfile";
 import { checkUploadQuota, incrementUploadQuota, validateMagicBytes } from "@/lib/imageSecurity";
 import { logAudit } from "@/lib/auditLog";
 import { rateLimitByUser } from "@/lib/rateLimit";
-import { getImageMetadata, normalizeProfileImage } from "@/lib/imageProcess";
+import { getImageMetadata, normalizeProfileImage, extractGifPoster } from "@/lib/imageProcess";
 import { storeUserMediaFile } from "@/lib/userMediaStorage";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
@@ -76,8 +76,17 @@ export async function POST(req: Request) {
     "image/webp";
 
   let url: string;
+  let thumbUrl: string | undefined;
   try {
     url = await storeUserMediaFile(userId, normalized, ext, contentType);
+    if (field === "profileGif" && ext === "gif") {
+      try {
+        const poster = await extractGifPoster(buffer, MAX_DIM);
+        thumbUrl = await storeUserMediaFile(userId, poster, "webp", "image/webp");
+      } catch {
+        /* poster optional */
+      }
+    }
   } catch {
     return NextResponse.json({ error: "Storage failed" }, { status: 500 });
   }
@@ -92,8 +101,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Secret Club required for profile banner" }, { status: 403 });
   }
   if (idx !== -1) {
+    const patch: Record<string, string> = { [field]: url };
+    if (field === "profileGif" && thumbUrl) patch.profileGifThumb = thumbUrl;
     const updatedUsers = users.map((u: Record<string, unknown>, i: number) =>
-      i === idx ? { ...u, [field]: url } : u
+      i === idx ? { ...u, ...patch } : u
     );
     const validation = validateRegisteredUsers(users, updatedUsers, userId, false);
     if (!validation.ok) {
@@ -110,5 +121,5 @@ export async function POST(req: Request) {
     meta: { field },
   });
 
-  return NextResponse.json({ success: true, url });
+  return NextResponse.json({ success: true, url, thumbUrl });
 }

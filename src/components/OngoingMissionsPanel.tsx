@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Clock, Coins, Radio } from "lucide-react";
 import {
@@ -7,6 +8,7 @@ import {
   getOwnerOngoingMissions,
   isEmbeddedFootArchive,
 } from "@/lib/lobbyLifecycle";
+import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
 
 type Props = {
   lobbies: any[];
@@ -22,7 +24,23 @@ type Props = {
   };
   onOpenMission: (lobbyId: string) => void;
   alignWithOfferBanners?: boolean;
+  /** Sorted offer banner ids from the feed — lines up mission cards row-by-row. */
+  alignOfferIds?: string[];
 };
+
+function orderByFeedIds(missions: any[], alignOfferIds?: string[]): any[] {
+  if (!alignOfferIds?.length || !missions.length) return missions;
+  const byId = new Map(missions.map((m) => [String(m.id), m]));
+  const ordered: any[] = [];
+  for (const id of alignOfferIds) {
+    const m = byId.get(String(id));
+    if (m) ordered.push(m);
+  }
+  for (const m of missions) {
+    if (!alignOfferIds.includes(String(m.id))) ordered.push(m);
+  }
+  return ordered;
+}
 
 export default function OngoingMissionsPanel({
   lobbies,
@@ -34,8 +52,12 @@ export default function OngoingMissionsPanel({
   getVfxSettings,
   onOpenMission,
   alignWithOfferBanners = false,
+  alignOfferIds,
 }: Props) {
-  const ownerMissions = getOwnerOngoingMissions(lobbies, currentUserId);
+  const ownerMissions = orderByFeedIds(
+    getOwnerOngoingMissions(lobbies, currentUserId),
+    alignOfferIds
+  );
   const joinedMissions = getJoinedOngoingMissions(lobbies, currentUserId);
   const hasActiveMissions = ownerMissions.length > 0 || joinedMissions.length > 0;
 
@@ -52,10 +74,13 @@ export default function OngoingMissionsPanel({
     >
       {(() => {
         const ownerUser = registeredUsers.find((u: any) => u.id === l.ownerId);
-        const vfxUrl = ownerUser?.activeVfx;
-        return vfxUrl && getVfxSettings(ownerUser).showOnOngoing ? (
+        const vfxOn = ownerUser && getVfxSettings(ownerUser).showOnOngoing;
+        const bgPoster = vfxOn
+          ? resolveLobbyBannerBg(l, ownerUser, ownerUser?.activeVfx)
+          : null;
+        return bgPoster ? (
           <div className="absolute inset-0 z-0">
-            <img src={vfxUrl} className="w-full h-full object-cover opacity-100" alt="" loading="lazy" />
+            <img src={bgPoster} className="w-full h-full object-cover opacity-100" alt="" loading="lazy" decoding="async" />
           </div>
         ) : null;
       })()}
@@ -161,11 +186,13 @@ export default function OngoingMissionsPanel({
   return (
     <div
       className={`w-full xl:w-[300px] shrink-0 flex flex-col self-start ${
-        alignWithOfferBanners ? "lg:mt-[4.75rem] xl:-mt-5" : ""
+        alignWithOfferBanners ? "mt-[5.75rem]" : ""
       }`}
     >
       <div
-        className={`p-6 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden flex flex-col transition-colors duration-500 ${
+        className={`rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden flex flex-col transition-colors duration-500 ${
+          alignWithOfferBanners ? "p-4 pt-3" : "p-6"
+        } ${
           theme === "light"
             ? "bg-white border-black/10 shadow-[0_30px_80px_rgba(15,23,42,0.14)]"
             : "bg-[linear-gradient(180deg,rgba(4,4,8,0.98),rgba(0,0,0,1))] border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
@@ -178,16 +205,14 @@ export default function OngoingMissionsPanel({
         />
         <h3
           className={`text-[13px] font-black uppercase tracking-[0.3em] flex items-center gap-2 relative z-10 ${
-            alignWithOfferBanners ? "mb-3 xl:absolute xl:top-4 xl:left-6 xl:right-6 xl:mb-0" : "mb-4"
+            alignWithOfferBanners ? "mb-2" : "mb-4"
           } ${theme === "light" ? "text-[#00ffff]" : "text-white/90"}`}
         >
           <Clock className="w-5 h-5 text-[#ff007f]" />
           Ongoing Missions
         </h3>
 
-        <div
-          className={`space-y-4 relative z-10 w-full ${alignWithOfferBanners && hasActiveMissions ? "xl:pt-9" : ""}`}
-        >
+        <div className="space-y-4 relative z-10 w-full">
           {ownerMissions.map(renderMissionCard)}
           {joinedMissions.map(renderMissionCard)}
           {!hasActiveMissions && (

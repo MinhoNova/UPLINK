@@ -61,6 +61,7 @@ import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
 import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
 import { OfferFeedAvatar as OfferFeedAvatarBase } from "@/components/OfferFeedAvatar";
+import { resolveLobbyBannerBg, resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 
 const VoiceParticipant = ({ participant }: { participant: Participant }) => {
   const isSpeaking = useIsSpeaking(participant);
@@ -2020,6 +2021,25 @@ export default function HomePage() {
         if (sub.endDate && Date.now() > sub.endDate) return "free";
         return "secret_club";
      }, [registeredUsers]);
+
+     const activeBoostLobbyIds = useMemo(() => {
+        const activeLobbies = lobbies.filter((l) => {
+           const cat = l.category;
+           if (cat && cat !== "dungeon" && cat !== "leveling") return false;
+           const status = l.status || "standby";
+           if (status === "standby") return true;
+           if (status === "in_progress" && String(l.ownerId) === String(currentUserId)) return true;
+           return false;
+        });
+        const sorted = [...activeLobbies].sort((a, b) => {
+           const tierA = getUserTier(a.ownerId);
+           const tierB = getUserTier(b.ownerId);
+           if (tierA === "secret_club" && tierB !== "secret_club") return -1;
+           if (tierA !== "secret_club" && tierB === "secret_club") return 1;
+           return 0;
+        });
+        return sorted.map((l) => String(l.id));
+     }, [lobbies, currentUserId, getUserTier]);
 
      const getUserTierLabel = (userId?: string) => {
         const tier = getUserTier(userId);
@@ -4836,7 +4856,10 @@ export default function HomePage() {
                                             {(() => {
                                                    const ownerUser = registeredUsers.find(u => u.id === lobby.ownerId);
                                                    const vfxOn = getVfxSettings(ownerUser).showOnBanner;
-                                                   const bgUrl = lobby.customBg || (ownerUser && getUserTier(lobby.ownerId) === "secret_club" && vfxOn ? ownerUser.activeVfx : null);
+                                                   const activeVfx = ownerUser && getUserTier(lobby.ownerId) === "secret_club" && vfxOn ? ownerUser.activeVfx : null;
+                                                   const bgUrl = (lobby.customBg || activeVfx)
+                                                     ? resolveLobbyBannerBg(lobby, ownerUser, activeVfx)
+                                                     : null;
                                                    return bgUrl ? (
                                                      <div className="absolute inset-0 z-0 overflow-hidden rounded-[2.5rem]">
                                                         <img src={bgUrl} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
@@ -4864,11 +4887,15 @@ export default function HomePage() {
                                             <div className="absolute top-1/2 -translate-y-1/2 w-56 bg-[#0a0a16]/95 border border-yellow-500/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(255,215,0,0.15)] z-40 max-h-80 overflow-y-auto backdrop-blur-xl" style={{ left: '-15.5rem' }} onClick={(e) => e.stopPropagation()}>
                                                <p className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-3 flex items-center gap-2"><span>🎨</span> Lobby Backgrounds</p>
                                                {userImages.length === 0 && <p className="text-[10px] text-gray-600 p-4 text-center">No backgrounds yet.<br/>Add them in Lobby Store.</p>}
-                                               {userImages.map((url: string, i: number) => (
-                                                  <div key={i} onClick={() => { const updated = lobbies.map(l => l.id === lobby.id ? { ...l, customBg: url } : l); setLobbies(updated); saveGlobalData({ lobbies: updated }); setShowingBgPicker(null); addToast("Background updated!", "success"); }} className={`cursor-pointer rounded-xl overflow-hidden mb-2 border-2 transition-all duration-200 ${lobby.customBg === url ? 'border-yellow-500 shadow-[0_0_10px_rgba(255,215,0,0.3)]' : 'border-transparent hover:border-white/20'}`}>
-                                                     <img src={url} className="w-full h-20 object-cover" alt="" />
+                                               {userImages.map((entry: any, i: number) => {
+                                                  const src = resolveVfxSrc(entry);
+                                                  const poster = resolveVfxBannerUrl(entry);
+                                                  return (
+                                                  <div key={i} onClick={() => { const updated = lobbies.map(l => l.id === lobby.id ? { ...l, customBg: src, customBgPoster: poster !== src ? poster : undefined } : l); setLobbies(updated); saveGlobalData({ lobbies: updated }); setShowingBgPicker(null); addToast("Background updated!", "success"); }} className={`cursor-pointer rounded-xl overflow-hidden mb-2 border-2 transition-all duration-200 ${lobby.customBg === src ? 'border-yellow-500 shadow-[0_0_10px_rgba(255,215,0,0.3)]' : 'border-transparent hover:border-white/20'}`}>
+                                                     <img src={poster} className="w-full h-20 object-cover" alt="" />
                                                   </div>
-                                               ))}
+                                                  );
+                                               })}
                                                <button onClick={() => setShowingBgPicker(null)} className="w-full mt-2 py-2 bg-red-900/30 text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">✕ Cancel</button>
                                             </div>
                                             );
@@ -5263,6 +5290,8 @@ export default function HomePage() {
                                    roleIconUrl={roleIconUrl}
                                    getVfxSettings={getVfxSettings}
                                    onOpenMission={openMissionThread}
+                                   alignWithOfferBanners={activeMainTab === "boosts"}
+                                   alignOfferIds={activeBoostLobbyIds}
                                 />
                              )}
                     </div>

@@ -7,6 +7,8 @@ import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
 import RankBadge from "@/components/RankBadge";
 import { getSubscriptionDaysLeft } from "@/lib/userProfile";
+import { isAnimatedImageUrl } from "@/lib/profileImage";
+import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -218,6 +220,7 @@ const ArmoryModal = ({
                                               if (!input) { setIsGifModalOpen(false); return; }
 
                                               let finalUrl = input;
+                                              let thumbUrl: string | undefined;
                                               if (input.startsWith('data:')) {
                                                  // Uploaded file: store as a real file on the server instead of base64 in the DB
                                                  try {
@@ -229,16 +232,33 @@ const ArmoryModal = ({
                                                     const data = await res.json();
                                                     if (!res.ok || !data.url) { addToast(data.error || "Upload failed.", "error"); return; }
                                                     finalUrl = data.url;
+                                                    thumbUrl = data.thumbUrl;
                                                  } catch {
                                                     addToast("Upload failed.", "error");
                                                     return;
+                                                 }
+                                              } else if (isAnimatedImageUrl(input)) {
+                                                 try {
+                                                    const thumbRes = await fetch('/api/user/profile-gif-thumb', {
+                                                       method: 'POST',
+                                                       headers: { 'Content-Type': 'application/json' },
+                                                       body: JSON.stringify({ gifUrl: input }),
+                                                    });
+                                                    const thumbData = await thumbRes.json();
+                                                    if (thumbRes.ok && thumbData.thumbUrl) thumbUrl = thumbData.thumbUrl;
+                                                 } catch {
+                                                    /* poster optional for external URLs */
                                                  }
                                               }
 
                                               const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
                                               if (userIdx !== -1) {
                                                  const updatedUsers = [...registeredUsers];
-                                                 updatedUsers[userIdx] = { ...updatedUsers[userIdx], profileGif: finalUrl };
+                                                 updatedUsers[userIdx] = {
+                                                    ...updatedUsers[userIdx],
+                                                    profileGif: finalUrl,
+                                                    ...(thumbUrl ? { profileGifThumb: thumbUrl } : {}),
+                                                 };
                                                  setRegisteredUsers(updatedUsers);
                                                  const ok = await saveGlobalData({ registeredUsers: updatedUsers });
                                                  if (!ok) {
@@ -468,7 +488,7 @@ const ArmoryModal = ({
                                                            const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
                                                            if (userIdx !== -1) {
                                                               const updatedUsers = [...registeredUsers];
-                                                              const { profileGif: _, ...rest } = updatedUsers[userIdx];
+                                                              const { profileGif: _, profileGifThumb: __, ...rest } = updatedUsers[userIdx];
                                                               updatedUsers[userIdx] = rest;
                                                               setRegisteredUsers(updatedUsers);
                                                               const ok = await saveGlobalData({ registeredUsers: updatedUsers });
@@ -646,47 +666,69 @@ const ArmoryModal = ({
                                        />
                                        <button
                                           type="button"
-                                          onClick={() => {
+                                          onClick={async () => {
                                              const input = document.getElementById('new-gif-url') as HTMLInputElement;
-                                             const url = input.value;
-                                              if (!url) return;
-                                              const tier = getUserTier(currentUserId);
-                                              const currentCount = (registeredUsers.find((u: any) => String(u.id) === String(currentUserId))?.userVfx?.length || 0);
-                                               if (tier === "free" && currentCount >= 1) return addToast("Free users can only have 1 lobby image. Join Secret Club for unlimited.", "error");
+                                             const url = input.value?.trim();
+                                             if (!url) return;
+                                             const tier = getUserTier(currentUserId);
+                                             const currentCount = (registeredUsers.find((u: any) => String(u.id) === String(currentUserId))?.userVfx?.length || 0);
+                                             if (tier === "free" && currentCount >= 1) return addToast("Free users can only have 1 lobby image. Join Secret Club for unlimited.", "error");
 
-                                              let userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
+                                             addToast("Processing lobby background…", "info");
+                                             let entry: { src: string; poster?: string };
+                                             try {
+                                                const res = await fetch("/api/user/lobby-vfx", {
+                                                   method: "POST",
+                                                   headers: { "Content-Type": "application/json" },
+                                                   body: JSON.stringify({ url }),
+                                                });
+                                                const data = await res.json();
+                                                if (!res.ok || !data.entry) {
+                                                   addToast(data.error || "Upload failed.", "error");
+                                                   return;
+                                                }
+                                                entry = data.entry;
+                                             } catch {
+                                                addToast("Upload failed.", "error");
+                                                return;
+                                             }
 
-                                              let updatedUsers = [...registeredUsers];
-                                              if (userIdx === -1) {
-                                                 updatedUsers = [...registeredUsers, {
-                                                    id: currentUserId,
-                                                    name: currentUserDisplay || session?.user?.name || "Operative",
-                                                    username: currentUserDiscordHandle || session?.user?.name || "",
-                                                    avatar: session?.user?.image || "",
-                                                    userVfx: [url]
-                                                 }];
-                                              } else {
-                                                 updatedUsers[userIdx] = {
-                                                    ...updatedUsers[userIdx],
-                                                    userVfx: [...(updatedUsers[userIdx].userVfx || []), url]
-                                                 };
-                                              }
-                                              setRegisteredUsers(updatedUsers);
-                                              saveGlobalData({ registeredUsers: updatedUsers });
-                                              input.value = '';
+                                             const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
+                                             let updatedUsers = [...registeredUsers];
+                                             if (userIdx === -1) {
+                                                updatedUsers = [...registeredUsers, {
+                                                   id: currentUserId,
+                                                   name: currentUserDisplay || session?.user?.name || "Operative",
+                                                   username: currentUserDiscordHandle || session?.user?.name || "",
+                                                   avatar: session?.user?.image || "",
+                                                   userVfx: [entry],
+                                                }];
+                                             } else {
+                                                updatedUsers[userIdx] = {
+                                                   ...updatedUsers[userIdx],
+                                                   userVfx: [...(updatedUsers[userIdx].userVfx || []), entry],
+                                                };
+                                             }
+                                             setRegisteredUsers(updatedUsers);
+                                             await saveGlobalData({ registeredUsers: updatedUsers });
+                                             input.value = "";
+                                             addToast("Lobby background added (optimized).", "success");
                                           }}
                                           className="bg-[#ff007f] hover:bg-[#ff007f]/80 text-white font-black px-10 py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(255,0,127,0.5)] z-[100] relative uppercase tracking-widest border border-white/20 cursor-pointer text-sm"
                                         >ADD EFFECT</button>
                                      </div>
 
                                       <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-4xl">
-                                        {registeredUsers.find((u: any) => u.id === currentUserId)?.userVfx?.map((url: string, i: number) => (
-                                           <div className="relative group border-2 border-white/10 rounded-2xl aspect-video overflow-hidden transition-all hover:border-[#ff007f]">
-                                             <img src={url} className="w-full h-full object-cover" />
+                                        {registeredUsers.find((u: any) => u.id === currentUserId)?.userVfx?.map((entry: any, i: number) => {
+                                           const src = resolveVfxSrc(entry);
+                                           const preview = resolveVfxBannerUrl(entry);
+                                           return (
+                                           <div key={i} className="relative group border-2 border-white/10 rounded-2xl aspect-video overflow-hidden transition-all hover:border-[#ff007f]">
+                                             <img src={preview} className="w-full h-full object-cover" alt="" loading="lazy" />
                                              {/* ACTIVE INDICATOR */}
                                               {(() => {
-                                                 const isProfileActive = registeredUsers.find((u: any) => u.id === currentUserId)?.activeVfx === url;
-                                                 const isLobbyActive = lobbies.some(l => String(l.ownerId) === String(currentUserId) && l.customBg === url);
+                                                 const isProfileActive = registeredUsers.find((u: any) => u.id === currentUserId)?.activeVfx === src;
+                                                 const isLobbyActive = lobbies.some(l => String(l.ownerId) === String(currentUserId) && l.customBg === src);
                                                  return (isProfileActive || isLobbyActive) ? (
                                                  <div className="absolute top-3 left-3 bg-[#00ffff] text-black font-black text-[9px] px-2 py-1 rounded-lg uppercase">Active</div>
                                                  ) : null;
@@ -698,10 +740,10 @@ const ArmoryModal = ({
                                                       const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
                                                       if (userIdx !== -1) {
                                                          const updatedUsers = [...registeredUsers];
-                                                         updatedUsers[userIdx].activeVfx = url;
+                                                         updatedUsers[userIdx].activeVfx = src;
                                                          const updatedLobbies = lobbies.map((l) =>
                                                             String(l.ownerId) === String(currentUserId)
-                                                               ? { ...l, ownerActiveVfx: url }
+                                                               ? { ...l, ownerActiveVfx: src }
                                                                : l
                                                          );
                                                          setRegisteredUsers(updatedUsers);
@@ -720,7 +762,9 @@ const ArmoryModal = ({
                                                    DELETE
                                                 </button>
                                              </div>
-                                          </div>))}                        </div>
+                                          </div>
+                                          );
+                                        })}                        </div>
                                    </motion.div>
                                 )
                               )}

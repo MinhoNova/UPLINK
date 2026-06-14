@@ -4,7 +4,7 @@ import { memo, useMemo } from "react";
 import {
   isAnimatedImageUrl,
   profileImgClass,
-  resolveStaticProfileImage,
+  resolveOfferFeedProfileImage,
 } from "@/lib/profileImage";
 
 type Props = {
@@ -35,9 +35,9 @@ export const OfferFeedAvatar = memo(function OfferFeedAvatar({
   );
 
   const displaySrc = useMemo(() => {
-    if (profileUser) return resolveStaticProfileImage(profileUser, fallbackName);
+    if (profileUser) return resolveOfferFeedProfileImage(profileUser, fallbackName);
     if (src?.trim() && !isAnimatedImageUrl(src)) return src;
-    return resolveStaticProfileImage({ name: fallbackName }, fallbackName);
+    return resolveOfferFeedProfileImage({ name: fallbackName }, fallbackName);
   }, [profileUser, src, fallbackName]);
 
   return (

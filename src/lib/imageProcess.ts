@@ -43,3 +43,40 @@ export async function normalizeProfileImage(
   if (format === "png") return { buffer, ext: "png" as const };
   return { buffer, ext: "webp" as const };
 }
+
+/** First frame of a GIF as a static WebP poster (offer feed, no animation). */
+export async function extractGifPoster(buffer: Buffer, maxDim = 512): Promise<Buffer> {
+  const sharp = (await import("sharp")).default;
+  return sharp(buffer, { animated: false, page: 0 })
+    .resize(maxDim, maxDim, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+}
+
+const LOBBY_VFX_MAX_W = 960;
+const LOBBY_VFX_MAX_H = 540;
+
+/** Resize/compress lobby-store backgrounds; GIF keeps animation at lower resolution + static poster. */
+export async function normalizeLobbyVfx(buffer: Buffer, isGif: boolean): Promise<{
+  buffer: Buffer;
+  ext: "gif" | "webp";
+  poster: Buffer;
+}> {
+  const sharp = (await import("sharp")).default;
+  if (isGif) {
+    const poster = await sharp(buffer, { animated: false, page: 0 })
+      .resize(LOBBY_VFX_MAX_W, LOBBY_VFX_MAX_H, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+    const optimized = await sharp(buffer, { animated: true })
+      .resize(LOBBY_VFX_MAX_W, LOBBY_VFX_MAX_H, { fit: "inside", withoutEnlargement: true })
+      .gif()
+      .toBuffer();
+    return { buffer: optimized, ext: "gif", poster };
+  }
+  const webp = await sharp(buffer)
+    .resize(LOBBY_VFX_MAX_W, LOBBY_VFX_MAX_H, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
+  return { buffer: webp, ext: "webp", poster: webp };
+}

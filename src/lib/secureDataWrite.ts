@@ -13,7 +13,7 @@ export function stripAdminFromBanList(handles: string[]): string[] {
 }
 
 const PROTECTED_SELF_FIELDS = ["id", "username", "subscription"] as const;
-const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "banner"] as const;
+const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 
 export function isAdminUser(userId: string, handle: string) {
   return String(userId) === ADMIN_ID || handle === ADMIN_HANDLE;

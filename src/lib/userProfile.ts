@@ -14,6 +14,7 @@ export function revokeSecretClubPerks(user: any): any {
   if (!user) return user;
   const next = { ...user };
   delete next.profileGif;
+  delete next.profileGifThumb;
   delete next.customAvatar;
   delete next.activeVfx;
   next.effect = "none";
@@ -139,6 +140,10 @@ export function mergeRegisteredUsersFromServer(
         u.profileGif && String(u.profileGif).trim()
           ? u.profileGif
           : localSelf.profileGif,
+      profileGifThumb:
+        u.profileGifThumb && String(u.profileGifThumb).trim()
+          ? u.profileGifThumb
+          : localSelf.profileGifThumb,
       customAvatar: u.customAvatar || localSelf.customAvatar,
       effect: u.effect && u.effect !== "none" ? u.effect : localSelf.effect,
       activeVfx: u.activeVfx || localSelf.activeVfx,
