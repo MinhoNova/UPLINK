@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
+import { validateRegisteredUsers, isAdminUser } from "@/lib/secureDataWrite";
 
 const PROTECTED_SELF_FIELDS = ["id", "username", "subscription"] as const;
 
-export async function GET() {
+export async function GET(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -31,12 +32,26 @@ export async function PATCH(req: Request) {
   if (idx === -1) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const existing = registeredUsers[idx];
-  const merged = { ...incoming };
+  const merged = { ...existing, ...incoming };
   for (const field of PROTECTED_SELF_FIELDS) {
     if (existing[field] !== undefined) merged[field] = existing[field];
   }
-  registeredUsers[idx] = merged;
-  await setKV("registeredUsers", registeredUsers);
 
-  return NextResponse.json({ success: true, profile: merged });
+  const admin = isAdminUser(auth.user.id, auth.user.username);
+  const validation = validateRegisteredUsers(
+    registeredUsers,
+    registeredUsers.map((u, i) => (i === idx ? merged : u)),
+    auth.user.id,
+    admin
+  );
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 403 });
+  }
+
+  await setKV("registeredUsers", validation.value);
+  const saved = (validation.value as Record<string, unknown>[]).find(
+    (u) => String(u.id) === String(auth.user.id)
+  );
+
+  return NextResponse.json({ success: true, profile: saved });
 }

@@ -240,7 +240,11 @@ const ArmoryModal = ({
                                                  const updatedUsers = [...registeredUsers];
                                                  updatedUsers[userIdx] = { ...updatedUsers[userIdx], profileGif: finalUrl };
                                                  setRegisteredUsers(updatedUsers);
-                                                 await saveGlobalData({ registeredUsers: updatedUsers });
+                                                 const ok = await saveGlobalData({ registeredUsers: updatedUsers });
+                                                 if (!ok) {
+                                                    addToast("Failed to save GIF — try again.", "error");
+                                                    return;
+                                                 }
                                                  window.dispatchEvent(new CustomEvent("data-refresh"));
                                               }
                                               setIsGifModalOpen(false);
@@ -459,7 +463,7 @@ const ArmoryModal = ({
                                                      )}
                                                      <button onClick={() => { if (!canUseGif) { addToast(myTier === "free" ? "Upgrade to Secret Club to customize profile picture." : "Secret Club only feature.", "error"); return; } setGifInputUrl(""); setIsGifModalOpen(true); }} className={`px-4 py-2 font-black text-[9px] uppercase rounded-xl transition-all ${canUseGif ? 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)]' : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed'}`}>{hasGif ? 'EDIT GIF' : 'ADD GIF'}</button>
                                                      {hasGif && (
-                                                        <button onClick={() => {
+                                                        <button onClick={async () => {
                                                            if (!canUseGif) return;
                                                            const userIdx = registeredUsers.findIndex((u: any) => String(u.id) === String(currentUserId));
                                                            if (userIdx !== -1) {
@@ -467,7 +471,11 @@ const ArmoryModal = ({
                                                               const { profileGif: _, ...rest } = updatedUsers[userIdx];
                                                               updatedUsers[userIdx] = rest;
                                                               setRegisteredUsers(updatedUsers);
-                                                              saveGlobalData({ registeredUsers: updatedUsers });
+                                                              const ok = await saveGlobalData({ registeredUsers: updatedUsers });
+                                                              if (!ok) {
+                                                                 addToast("Failed to remove GIF — try again.", "error");
+                                                                 return;
+                                                              }
                                                               addToast("Profile GIF removed.", "info");
                                                            }
                                                         }} className="px-4 py-2 bg-red-600/90 hover:bg-red-500 text-white font-black text-[9px] uppercase rounded-xl transition-all">REMOVE</button>

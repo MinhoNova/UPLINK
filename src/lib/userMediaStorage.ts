@@ -3,6 +3,7 @@ import path from "path";
 import { getKVBinding } from "@/lib/cloudflareBindings";
 
 const MEDIA_KV_PREFIX = "user-media:";
+const COMMUNITY_KV_PREFIX = "community-media:";
 
 export async function storeUserMediaFile(
   userId: string,
@@ -29,8 +30,31 @@ export async function storeUserMediaFile(
   return `/${subdir}/${filename}`;
 }
 
+export async function storeCommunityMediaFile(
+  userId: string,
+  buffer: Buffer,
+  ext: string,
+  contentType: string
+): Promise<string> {
+  const kv = await getKVBinding();
+  const id = `${userId}_${Date.now()}.${ext}`;
+
+  if (kv) {
+    const key = `${COMMUNITY_KV_PREFIX}${id}`;
+    await kv.put(key, buffer.toString("base64"), {
+      metadata: { contentType, ext },
+    });
+    return `/api/user/media?key=${encodeURIComponent(key)}`;
+  }
+
+  const dir = path.join(process.cwd(), "public", "uploads", "community");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, id), buffer);
+  return `/uploads/community/${id}`;
+}
+
 export async function readUserMediaFile(key: string): Promise<{ buffer: Buffer; contentType: string } | null> {
-  if (!key.startsWith(MEDIA_KV_PREFIX)) return null;
+  if (!key.startsWith(MEDIA_KV_PREFIX) && !key.startsWith(COMMUNITY_KV_PREFIX)) return null;
 
   const kv = await getKVBinding();
   if (!kv) return null;

@@ -6,20 +6,27 @@ import { desc, eq, and, inArray, gte } from "drizzle-orm";
 import { normalizeCommunityImage } from "@/lib/imageProcess";
 import { getKV, initTables } from "@/lib/db";
 import { canViewPost } from "@/lib/postVisibility";
-import path from "path";
-import fs from "fs";
+import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
 
 const MAX_DAILY_POSTS = 10;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
-function ensureUploadDir() {
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "community");
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-  return uploadDir;
-}
-
 async function validateAndNormalizeImage(buffer: Buffer, preferGif = false) {
   return normalizeCommunityImage(buffer, preferGif);
+}
+
+function mediaContentType(ext: string) {
+  if (ext === "gif") return "image/gif";
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "webp") return "image/webp";
+  if (ext === "avif") return "image/avif";
+  return "image/jpeg";
+}
+
+async function saveCommunityImage(userId: string, buffer: Buffer, preferGif: boolean) {
+  const normalized = await validateAndNormalizeImage(buffer, preferGif);
+  return storeCommunityMediaFile(userId, normalized.buffer, normalized.ext, mediaContentType(normalized.ext));
 }
 
 export async function GET(req: NextRequest) {
@@ -88,7 +95,7 @@ export async function POST(req: NextRequest) {
   if (contentType.includes("application/json")) {
     const json = await req.json();
     content = json.content || "";
-    tagsRaw = json.tags || "[]";
+    tagsRaw = typeof json.tags === "string" ? json.tags : JSON.stringify(json.tags ?? []);
     imageUrl = json.imageUrl || null;
     visibilityRaw = json.visibility || "public";
   } else {
@@ -124,16 +131,14 @@ export async function POST(req: NextRequest) {
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json({ error: "File too large" }, { status: 413 });
     }
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const normalized = await validateAndNormalizeImage(buffer, file.name.match(/\.(gif)$/i) ? true : false);
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${normalized.ext}`;
-    const savePath = path.join(ensureUploadDir(), fileName);
-    fs.writeFileSync(savePath, normalized.buffer);
-    imagePath = `/uploads/community/${fileName}`;
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif$/i.test(file.name));
+    } catch (e) {
+      console.error("Community image upload failed:", e);
+      return NextResponse.json({ error: "Invalid or unsupported image" }, { status: 400 });
+    }
   }
-
-  // Ensure upload directory exists
-  const uploadDir = ensureUploadDir();
 
   // Handle URL image (download + compress)
   if (!imagePath && imageUrl) {
@@ -143,32 +148,33 @@ export async function POST(req: NextRequest) {
       });
       if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
       const buffer = Buffer.from(await resp.arrayBuffer());
-      const contentType = resp.headers.get("content-type") || "";
-      if (!contentType.startsWith("image/")) throw new Error("URL is not an image");
+      const remoteType = resp.headers.get("content-type") || "";
+      if (!remoteType.startsWith("image/")) throw new Error("URL is not an image");
       if (buffer.byteLength > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
-      const normalized = await validateAndNormalizeImage(buffer, imageUrl.match(/\.(gif)(?:$|\?)/i) ? true : false);
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${normalized.ext}`;
-      const savePath = path.join(uploadDir, fileName);
-      fs.writeFileSync(savePath, normalized.buffer);
-      imagePath = `/uploads/community/${fileName}`;
+      imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif(?:$|\?)/i.test(imageUrl));
     } catch (e) {
       console.error("Failed to download image from URL:", e);
       return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
     }
   }
 
-  const result = await db.insert(posts).values({
-    userId: (session.user as any).id,
-    userName: session.user.name || "Unknown",
-    userImage: session.user.image || "",
-    content: content.trim(),
-    image: imagePath,
-    tags: JSON.stringify(tags),
-    visibility,
-    createdAt: Date.now(),
-  }).returning();
+  try {
+    const result = await db.insert(posts).values({
+      userId: (session.user as any).id,
+      userName: session.user.name || "Unknown",
+      userImage: session.user.image || "",
+      content: content.trim(),
+      image: imagePath,
+      tags: JSON.stringify(tags),
+      visibility,
+      createdAt: Date.now(),
+    }).returning();
 
-  return NextResponse.json(result[0]);
+    return NextResponse.json(result[0] ?? { success: true });
+  } catch (e) {
+    console.error("Failed to create community post:", e);
+    return NextResponse.json({ error: "Failed to save post" }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {

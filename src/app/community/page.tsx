@@ -9,7 +9,7 @@ import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
 import {
   MessageSquare, Send, Flag,
   Trash2, Swords, AlertTriangle, X, Loader2,
-  Zap, Lock,
+  Zap, Lock, ImagePlus,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl } from "@/lib/profileImage";
 
@@ -66,6 +66,7 @@ export default function CommunityPage() {
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
   const [reportModal, setReportModal] = useState<{ postId: number } | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
@@ -80,6 +81,7 @@ export default function CommunityPage() {
   const [postVisibility, setPostVisibility] = useState<"public" | "friends" | "friends_of_friends">("public");
   const [friends, setFriends] = useState<any[]>([]);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/"); return; }
@@ -177,6 +179,18 @@ export default function CommunityPage() {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) { alert("Max 8MB"); e.target.value = ""; return; }
+    setImageFile(file);
+    setDetectedImageUrl(null);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -229,6 +243,7 @@ export default function CommunityPage() {
   const handleSubmit = async () => {
     if (!content.trim() && !imageFile && !detectedImageUrl) return;
     setPosting(true);
+    setPostError(null);
     // Strip the detected URL from content so it doesn't appear as text
     let cleanContent = content.trim();
     let urlToSend = detectedImageUrl;
@@ -241,23 +256,34 @@ export default function CommunityPage() {
       cleanContent = `${cleanContent} ${tagsText}`.trim();
     }
 
-    if (urlToSend) {
-      await fetch("/api/community/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: cleanContent, tags: JSON.stringify(selectedTags), imageUrl: urlToSend, visibility: postVisibility }),
-      });
-    } else {
-      const formData = new FormData();
-      formData.append("content", cleanContent);
-      formData.append("tags", JSON.stringify(selectedTags));
-      formData.append("visibility", postVisibility);
-      if (imageFile) formData.append("image", imageFile);
-      await fetch("/api/community/posts", { method: "POST", body: formData });
+    try {
+      let res: Response;
+      if (urlToSend) {
+        res = await fetch("/api/community/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: urlToSend, visibility: postVisibility }),
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("content", cleanContent);
+        formData.append("tags", JSON.stringify(selectedTags));
+        formData.append("visibility", postVisibility);
+        if (imageFile) formData.append("image", imageFile);
+        res = await fetch("/api/community/posts", { method: "POST", body: formData });
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setPostError(err.error || `Failed to post (${res.status})`);
+        return;
+      }
+      setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]); setPostVisibility("public");
+      fetchPosts();
+    } catch {
+      setPostError("Network error — try again");
+    } finally {
+      setPosting(false);
     }
-    setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]); setPostVisibility("public");
-    fetchPosts();
-    setPosting(false);
   };
 
   const handleReaction = async (postId: number, type: string) => {
@@ -482,7 +508,6 @@ export default function CommunityPage() {
                 </button>
               )}
             </div>
-            {!showMyPosts && (
             <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 mb-6 shadow-xl backdrop-blur-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-[#00ffff]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
               <div className="flex gap-3 relative z-10">
@@ -490,12 +515,15 @@ export default function CommunityPage() {
                 <div className="flex-1">
                   <textarea
                     value={content}
-                    onChange={(e) => handleContentChange(e.target.value)}
+                    onChange={(e) => { setPostError(null); handleContentChange(e.target.value); }}
                     onPaste={handlePaste}
                     placeholder="Share something with the club... (paste image/GIF here or paste a link)"
                     className="w-full bg-transparent text-sm text-white/80 placeholder-gray-600 outline-none resize-none min-h-[60px]"
                     rows={2}
                   />
+                  {postError && (
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-red-400">{postError}</p>
+                  )}
                   {/* Image preview (from file upload or detected URL in text) */}
                   {(imagePreview || detectedImageUrl) && (
                     <div className="relative mt-2 inline-block">
@@ -524,6 +552,15 @@ export default function CommunityPage() {
                       ))}
                     </div>
                     <div className="flex items-center gap-2 ml-auto">
+                      <input ref={imageInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleImageSelect} />
+                      <button
+                        type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase text-gray-500 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition"
+                        title="Upload image"
+                      >
+                        <ImagePlus className="w-3.5 h-3.5" />
+                      </button>
                       <div className="flex items-center gap-1">
                         {["Mythic+", "Raid", "PvP", "Meme", "Leveling", "Delves"].map((tag) => (
                           <button key={tag} onClick={() => toggleTag(tag)} className={`text-[8px] font-black uppercase px-1.5 py-1 rounded transition ${selectedTags.includes(tag) ? "bg-[#00ffff]/20 text-[#00ffff]" : "text-gray-600 hover:text-gray-400"}`}>
@@ -539,7 +576,6 @@ export default function CommunityPage() {
                 </div>
               </div>
             </div>
-            )}
 
             {loading ? (
               <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 text-[#00ffff] animate-spin" /></div>

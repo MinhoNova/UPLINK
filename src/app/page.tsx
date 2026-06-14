@@ -804,8 +804,11 @@ export default function HomePage() {
 
      useEffect(() => {
         const user = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
-        if (user?.effect && user.effect !== "none") {
+        if (user?.effect) {
            setMyEffect(user.effect);
+           if (currentUserId !== "guest" && user.effect !== "none") {
+              localStorage.setItem(`UL_EFFECT_${currentUserId}`, user.effect);
+           }
         }
      }, [registeredUsers, currentUserId]);
 
@@ -1471,26 +1474,62 @@ export default function HomePage() {
    });
 
      const saveGlobalData = useCallback(async (updates: any) => {
-        if (updates?.registeredUsers) profileSaveInFlightRef.current = true;
+        const hasProfileUpdate = Boolean(
+          updates?.registeredUsers &&
+          currentUserId &&
+          updates.registeredUsers.some((u: any) => String(u.id) === String(currentUserId))
+        );
+        if (hasProfileUpdate) profileSaveInFlightRef.current = true;
+
         try {
-           const res = await fetch('/api/data', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify(updates)
+           let profileSaved = false;
+
+           if (hasProfileUpdate) {
+              const self = updates.registeredUsers.find(
+                 (u: any) => String(u.id) === String(currentUserId)
+              );
+              if (self) {
+                 const res = await fetch("/api/users/me", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ profile: self }),
+                 });
+                 if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    console.error("Profile save failed:", err.error || res.status);
+                    return false;
+                 }
+                 profileSaved = true;
+              }
+           }
+
+           const { registeredUsers: _ru, ...rest } = updates || {};
+           const restKeys = Object.keys(rest);
+           if (restKeys.length === 0) {
+              if (profileSaved) window.dispatchEvent(new CustomEvent("data-refresh"));
+              return profileSaved;
+           }
+
+           const res = await fetch("/api/data", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(rest),
            });
-           if (res.ok) window.dispatchEvent(new CustomEvent('data-refresh'));
+           if (res.ok) window.dispatchEvent(new CustomEvent("data-refresh"));
            return res.ok;
         } catch (e) {
+           console.error("saveGlobalData failed:", e);
            return false;
         } finally {
-           if (updates?.registeredUsers) {
+           if (hasProfileUpdate) {
               setTimeout(() => {
                  profileSaveInFlightRef.current = false;
               }, 1500);
            }
         }
-     }, []);
+     }, [currentUserId]);
 
    const buildApplicantPayload = useCallback(
       (char: any, extras: Record<string, unknown> = {}) => {
@@ -4080,7 +4119,11 @@ export default function HomePage() {
         setGlobalCharacters(updatedGlobalChars);
         setRegisteredUsers(updatedUsers);
 
-        await saveGlobalData({ characters: updatedGlobalChars, registeredUsers: updatedUsers });
+        const ok = await saveGlobalData({ characters: updatedGlobalChars, registeredUsers: updatedUsers });
+        if (!ok) {
+           addToast("Failed to save effect — try again.", "error");
+           return;
+        }
         addToast("Avatar decoration synchronized.", "success");
      };
 
