@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { rateLimitByIp } from "@/lib/rateLimitIp";
+import { rateLimitByIp } from "@/lib/rateLimitDistributed";
 
 const UPLOAD_PATHS = ["/api/user/upload", "/api/community/posts"];
 const STRICT_PATHS = ["/api/dm", "/api/friends", "/api/discord/broadcast"];
@@ -15,7 +15,7 @@ function getClientIp(req: NextRequest): string {
   );
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   if (path.startsWith("/api/auth")) {
@@ -32,7 +32,7 @@ export function middleware(req: NextRequest) {
   if (UPLOAD_PATHS.some((p) => path.startsWith(p))) limit = 30;
   if (STRICT_PATHS.some((p) => path.startsWith(p))) limit = 80;
 
-  const result = rateLimitByIp(ip, path, limit, 60_000);
+  const result = await rateLimitByIp(ip, path, limit, 60_000);
   if (!result.ok) {
     return new NextResponse(
       JSON.stringify({ error: "Too many requests", retryAfterMs: result.retryAfterMs }),

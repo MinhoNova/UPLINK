@@ -1,4 +1,5 @@
 import { validateMagicBytes } from "@/lib/imageSecurity";
+import { safeGifFetch, validateSafeGifUrl } from "@/lib/safeRemoteUrl";
 
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
@@ -42,29 +43,26 @@ function refererFor(url: string): string | undefined {
 }
 
 async function fetchOnce(url: string, referer?: string): Promise<Response | null> {
-  try {
-    const headers: Record<string, string> = {
-      Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-      "User-Agent": BROWSER_UA,
-      "Accept-Language": "en-US,en;q=0.9",
-    };
-    if (referer) headers.Referer = referer;
-    return await fetch(url, {
-      signal: AbortSignal.timeout(12_000),
-      headers,
-      redirect: "follow",
-    });
-  } catch {
-    return null;
-  }
+  const headers: Record<string, string> = {
+    Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+    "User-Agent": BROWSER_UA,
+    "Accept-Language": "en-US,en;q=0.9",
+  };
+  if (referer) headers.Referer = referer;
+
+  return safeGifFetch(url, { headers, timeoutMs: 12_000 });
 }
 
-/** Server-side download of a remote image (Cloudflare / Node). */
+/** Server-side download of a remote image (Cloudflare / Node) with SSRF protection. */
 export async function fetchExternalImageBuffer(
   sourceUrl: string,
   maxBytes = 8 * 1024 * 1024
 ): Promise<Buffer | null> {
-  const url = normalizeGifSourceUrl(sourceUrl);
+  const normalized = normalizeGifSourceUrl(sourceUrl);
+  const check = validateSafeGifUrl(normalized);
+  if (!check.ok) return null;
+
+  const url = check.url.toString();
   const referer = refererFor(url);
 
   const res = await fetchOnce(url, referer);

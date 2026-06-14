@@ -9,7 +9,7 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { getImageMetadata, normalizeProfileImage, extractGifPoster } from "@/lib/imageProcess";
 import { storeUserMediaFile } from "@/lib/userMediaStorage";
 import { fetchExternalImageBuffer } from "@/lib/fetchExternalImage";
-import { isAnimatedImageUrl } from "@/lib/profileImage";
+import { validateSafeGifUrl } from "@/lib/safeRemoteUrl";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_DIM = 512;
@@ -59,6 +59,10 @@ export async function POST(req: Request) {
     if (!sourceUrl) return NextResponse.json({ error: "URL required" }, { status: 400 });
     if (!isAnimatedImageUrl(sourceUrl)) {
       return NextResponse.json({ error: "URL must point to a GIF (e.g. media.giphy.com/.../giphy.gif)" }, { status: 400 });
+    }
+    const safeUrl = validateSafeGifUrl(sourceUrl);
+    if (!safeUrl.ok) {
+      return NextResponse.json({ error: safeUrl.error }, { status: 400 });
     }
     isGifHint = true;
     const remote = await fetchExternalImageBuffer(sourceUrl, MAX_UPLOAD_BYTES);

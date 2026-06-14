@@ -1,24 +1,9 @@
 import { getKV, setKV, initTables } from "@/lib/db";
+import { rateLimitByIp as rateLimitByIpDistributed } from "@/lib/rateLimitDistributed";
 
 type Bucket = { count: number; windowStart: number };
 
-const memoryBuckets = new Map<string, Bucket>();
-
 export type RateLimitResult = { ok: true } | { ok: false; retryAfterMs: number };
-
-function checkMemoryBucket(key: string, limit: number, windowMs: number): RateLimitResult {
-  const now = Date.now();
-  const bucket = memoryBuckets.get(key);
-  if (!bucket || now - bucket.windowStart >= windowMs) {
-    memoryBuckets.set(key, { count: 1, windowStart: now });
-    return { ok: true };
-  }
-  if (bucket.count >= limit) {
-    return { ok: false, retryAfterMs: windowMs - (now - bucket.windowStart) };
-  }
-  bucket.count += 1;
-  return { ok: true };
-}
 
 async function checkKvBucket(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   await initTables();
@@ -39,9 +24,14 @@ async function checkKvBucket(key: string, limit: number, windowMs: number): Prom
   return { ok: true };
 }
 
-export function rateLimitByIp(ip: string, path: string, limit = 120, windowMs = 60_000): RateLimitResult {
-  const key = `ip:${ip}:${path}`;
-  return checkMemoryBucket(key, limit, windowMs);
+/** D1/KV-backed IP rate limit for API routes. */
+export async function rateLimitByIp(
+  ip: string,
+  path: string,
+  limit = 120,
+  windowMs = 60_000
+): Promise<RateLimitResult> {
+  return rateLimitByIpDistributed(ip, path, limit, windowMs);
 }
 
 export async function rateLimitByUser(

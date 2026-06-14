@@ -3,10 +3,11 @@ import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { validateRegisteredUsers } from "@/lib/secureDataWrite";
 import { isSecretClubTier } from "@/lib/userProfile";
-import { validateMagicBytes } from "@/lib/imageSecurity";
 import { extractGifPoster } from "@/lib/imageProcess";
 import { readUserMediaFile, storeUserMediaFile } from "@/lib/userMediaStorage";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
+import { fetchExternalImageBuffer } from "@/lib/fetchExternalImage";
+import { validateSafeGifUrl } from "@/lib/safeRemoteUrl";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 
@@ -35,15 +36,11 @@ async function loadGifBuffer(gifUrl: string): Promise<Buffer | null> {
   }
 
   if (!gifUrl.startsWith("https://")) return null;
-  const res = await fetch(gifUrl, {
-    signal: AbortSignal.timeout(15_000),
-    headers: { Accept: "image/gif,image/*" },
-  });
-  if (!res.ok) return null;
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length > MAX_BYTES || buf.length < 8) return null;
-  if (!validateMagicBytes(buf)) return null;
-  return buf;
+
+  const check = validateSafeGifUrl(gifUrl);
+  if (!check.ok) return null;
+
+  return fetchExternalImageBuffer(gifUrl, MAX_BYTES);
 }
 
 export async function POST(req: Request) {
