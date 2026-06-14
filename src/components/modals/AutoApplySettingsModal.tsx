@@ -4,7 +4,6 @@ import { X, Settings, ChevronDown, Key, Coins, Lock, Zap, TrendingUp, Shield, Ey
 import { usePage } from "@/contexts/PageContext";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
 import AutoAcceptTimer from "@/components/AutoAcceptTimer";
 import SecretClubCard from "@/components/SecretClubCard";
 
@@ -225,9 +224,6 @@ const AutoApplySettingsModal = ({
                               {/* CHARACTER + NOTE side by side */}
                               {(() => {
                                  const selectedAutoChar = myCharacters.find(c => String(c.id) === String(autoApplyCharId)) || myCharacters[0];
-                                 const currentUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
-                                 const profileImg = resolveProfileImage(currentUser, selectedAutoChar?.name);
-                                 const displayName = resolveProfileDisplayName(currentUser, selectedAutoChar?.name);
                                  const ioScore = selectedAutoChar?.roleScores?.[selectedAutoChar.role] ?? selectedAutoChar?.score ?? 0;
                                  const switchCharRole = (char: any) => {
                                     const roles = CLASS_ROLE_OPTIONS[char.class] || ['dps'];
@@ -266,15 +262,13 @@ const AutoApplySettingsModal = ({
                                           ) : (
                                              <div className="relative flex flex-col">
                                                 <div className="flex gap-2 items-center">
-                                                   <button type="button" onClick={() => { setShowKeyDropdown(false); setShowCharacterDropdown(!showCharacterDropdown); }} className="flex-1 bg-black/50 border border-white/10 rounded-2xl px-3 py-2 text-white font-black text-sm outline-none focus:border-[#00ffff]/50 transition-all flex items-center gap-2.5 hover:border-[#00ffff]/30 min-h-[52px]">
-                                                      <div className="flex flex-col items-center shrink-0 w-10">
-                                                         <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-[#00ffff]/30 bg-black/40">
-                                                            <img src={profileImg} alt="" className={profileImgClass(profileImg)} />
-                                                         </div>
-                                                         <p className="mt-0.5 text-[8px] font-black text-white truncate max-w-[72px] leading-tight">{displayName}</p>
+                                                   <button type="button" onClick={() => { setShowKeyDropdown(false); setShowCharacterDropdown(!showCharacterDropdown); }} className="flex-1 bg-black/50 border border-white/10 rounded-2xl px-3 py-2 text-white font-black text-sm outline-none focus:border-[#00ffff]/50 transition-all flex items-center gap-3 hover:border-[#00ffff]/30 min-h-[52px]">
+                                                      <ClassRoleIcons className={selectedAutoChar.class} role={selectedAutoChar.role} size={38} overlap={12} />
+                                                      <div className="min-w-0 flex-1 text-left">
+                                                         <p className="text-sm font-black truncate leading-tight">{selectedAutoChar.name}</p>
+                                                         <p className="text-[8px] text-[#00ffff] font-black uppercase tracking-widest truncate mt-0.5">{selectedAutoChar.region}-{selectedAutoChar.realm}</p>
                                                       </div>
-                                                      <ClassRoleIcons className={selectedAutoChar.class} role={selectedAutoChar.role} size={28} overlap={9} />
-                                                      <div className="flex items-center gap-2.5 ml-auto shrink-0">
+                                                      <div className="flex items-center gap-2.5 shrink-0">
                                                          <div className="text-center">
                                                             <p className="text-[7px] text-gray-500 uppercase font-black">IO</p>
                                                             <p className="text-xs font-black text-orange-400 tabular-nums">{ioScore}</p>
@@ -308,8 +302,8 @@ const AutoApplySettingsModal = ({
                                                                   <ClassRoleIcons
                                                                      className={char.class}
                                                                      role={char.role}
-                                                                     size={40}
-                                                                     overlap={12}
+                                                                     size={46}
+                                                                     overlap={14}
                                                                      onRoleClick={(e) => { e.stopPropagation(); switchCharRole(char); }}
                                                                   />
                                                                   <div className="min-w-0">

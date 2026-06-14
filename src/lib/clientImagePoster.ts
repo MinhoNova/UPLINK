@@ -74,6 +74,48 @@ export async function uploadLobbyVfxBlob(blob: Blob, filename: string): Promise<
 }
 
 /**
+ * Paste a GIF link: server downloads first (avoids browser CORS), then browser fallback.
+ */
+export async function importProfileGifFromUrl(url: string): Promise<{ url: string; thumbUrl?: string }> {
+  const trimmed = url.trim();
+  if (!trimmed) throw new Error("URL required");
+
+  const serverRes = await fetch("/api/user/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: trimmed, field: "profileGif" }),
+  });
+  const serverData = await serverRes.json().catch(() => ({}));
+  if (serverRes.ok && serverData.url) {
+    return { url: serverData.url, thumbUrl: serverData.thumbUrl };
+  }
+
+  const serverMsg = typeof serverData.error === "string" ? serverData.error : "";
+  if (serverRes.status === 401 || serverRes.status === 403 || serverRes.status === 429) {
+    throw new Error(serverMsg || "Upload failed");
+  }
+
+  if (serverRes.status === 400 && serverMsg.includes("Could not load")) {
+    try {
+      const blob = await fetchImageBlob(trimmed);
+      const fd = new FormData();
+      fd.append("file", blob, "profile.gif");
+      fd.append("field", "profileGif");
+      const poster = await extractGifPosterBlob(blob);
+      if (poster) fd.append("poster", poster, "poster.webp");
+      const res = await fetch("/api/user/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || serverMsg || "Upload failed");
+      return { url: data.url, thumbUrl: data.thumbUrl };
+    } catch {
+      throw new Error(serverMsg || "Could not load GIF from URL.");
+    }
+  }
+
+  throw new Error(serverMsg || "Upload failed");
+}
+
+/**
  * Paste a GIF link: server downloads & stores first (~1s for small GIFs),
  * then browser fallback if the host blocks our server.
  */

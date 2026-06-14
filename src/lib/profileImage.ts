@@ -32,7 +32,16 @@ export function enrichReviewWithProfile<T extends ReviewProfileFields>(
 }
 
 export function isAnimatedImageUrl(url: string): boolean {
-  return /\.gif(\?|$)/i.test(url);
+  const trimmed = url.trim();
+  if (/\.gif(\?|$)/i.test(trimmed)) return true;
+  try {
+    const u = new URL(trimmed);
+    if (u.hostname.includes("giphy.com") && u.pathname.includes("/media/")) return true;
+    if (u.hostname.includes("tenor.com")) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
 }
 
 export function profileImgClass(url: string, base = "w-full h-full"): string {

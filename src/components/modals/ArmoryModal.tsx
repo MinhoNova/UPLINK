@@ -9,7 +9,7 @@ import RankBadge from "@/components/RankBadge";
 import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
-import { extractGifPosterBlob, importLobbyVfxFromUrl, uploadLobbyVfxBlob } from "@/lib/clientImagePoster";
+import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob } from "@/lib/clientImagePoster";
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -264,22 +264,14 @@ const ArmoryModal = ({
                                                  }
                                               } else if (isAnimatedImageUrl(input)) {
                                                  try {
-                                                    const blob = await fetchImageBlob(input);
-                                                    const fd = new FormData();
-                                                    fd.append("file", blob, "profile.gif");
-                                                    fd.append("field", "profileGif");
-                                                    const poster = await extractGifPosterBlob(blob);
-                                                    if (poster) fd.append("poster", poster, "poster.webp");
-                                                    const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-                                                    const data = await res.json();
-                                                    if (!res.ok || !data.url) {
-                                                       addToast(data.error || "Upload failed.", "error");
-                                                       return;
-                                                    }
-                                                    finalUrl = data.url;
-                                                    thumbUrl = data.thumbUrl;
-                                                 } catch {
-                                                    addToast("Could not load GIF URL — upload the file instead.", "error");
+                                                    const imported = await importProfileGifFromUrl(input);
+                                                    finalUrl = imported.url;
+                                                    thumbUrl = imported.thumbUrl;
+                                                 } catch (err) {
+                                                    addToast(
+                                                       err instanceof Error ? err.message : "Could not load GIF URL.",
+                                                       "error"
+                                                    );
                                                     return;
                                                  }
                                               }
