@@ -188,12 +188,6 @@ nextjs-portal,
   animation: alarm-flash 0.8s infinite;
 }
 
-@keyframes offer-electric-spin {
-  0% { transform: rotate(0deg); opacity: 0.75; }
-  50% { opacity: 1; }
-  100% { transform: rotate(360deg); opacity: 0.75; }
-}
-
 @keyframes offer-gold-glow {
   0%, 100% { text-shadow: 0 0 0 transparent; transform: translateX(0); }
   15% { text-shadow: 2px 0 10px #ff007f; transform: translateX(-1px); }
@@ -201,30 +195,12 @@ nextjs-portal,
   35% { text-shadow: 0 0 0 transparent; transform: translateX(0); }
 }
 
-.offer-electric-ring {
-  background: conic-gradient(
-    from 0deg,
-    rgba(0, 255, 255, 0.85),
-    rgba(255, 0, 127, 0.7),
-    rgba(138, 43, 226, 0.65),
-    rgba(0, 255, 255, 0.85)
-  );
-  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
-  animation: offer-electric-spin 3s linear infinite;
-}
-
-.offer-electric-ring-inner {
-  box-shadow: 0 0 12px rgba(0, 255, 255, 0.35);
-}
-
 .offer-gold-pulse {
   animation: offer-gold-glow 2s ease-in-out infinite;
 }
 
 .offer-card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 132px;
+  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -232,7 +208,6 @@ nextjs-portal,
   .uplink-arc-node-pink {
     animation: none !important;
   }
-  .offer-electric-ring,
   .offer-gold-pulse {
     animation: none !important;
   }

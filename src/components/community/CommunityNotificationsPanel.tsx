@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import {
-  X, Users, UserCheck, Search, Check, Swords, DoorClosed,
+  X, Users, UserCheck, Search, Check, CheckCheck, Swords, DoorClosed,
 } from "lucide-react";
 import PostActivityFeed, { usePostActivity } from "@/components/community/PostActivityFeed";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
@@ -269,7 +269,6 @@ export default function CommunityNotificationsPanel() {
 
   const selectChatUser = (user: any) => {
     setSelectedChatUser(user);
-    markAsRead(user.username);
     setSearch("");
   };
 
@@ -439,9 +438,19 @@ export default function CommunityNotificationsPanel() {
                         ) : null}
                       </div>
                       {unreadCounts[user.username] > 0 && (
-                        <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0">
-                          {unreadCounts[user.username]}
-                        </span>
+                        <>
+                          <button
+                            type="button"
+                            title="Mark as read"
+                            onClick={(e) => { e.stopPropagation(); void markAsRead(user.username); }}
+                            className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-400 hover:bg-green-500/20 hover:text-green-300 transition-all shrink-0"
+                          >
+                            <CheckCheck className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0">
+                            {unreadCounts[user.username]}
+                          </span>
+                        </>
                       )}
                     </div>
                   );

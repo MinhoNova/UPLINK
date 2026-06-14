@@ -56,7 +56,6 @@ import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets";
 import { validateBattleTag } from "@/lib/battleTagValidation";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
-import { OfferListAvatar } from "@/components/OfferListAvatar";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
@@ -2694,12 +2693,7 @@ export default function HomePage() {
       }, [deleteConfirmation, setDeleteConfirmation, EFFECTS, EFFECT_IMG, electricColor]);
      const { AvatarWithEffect } = stableComps;
 
-   const OfferFeedAvatar = useCallback(
-      (props: { src: string; effect?: string; className?: string; fallbackName?: string; userId?: string }) => (
-         <OfferListAvatar {...props} registeredUsers={registeredUsers} />
-      ),
-      [registeredUsers]
-   );
+   const OfferFeedAvatar = AvatarWithEffect;
 
    const resolveUserVisual = (identifier?: string, userId?: string) => {
       const lookup = (identifier || "").toLowerCase().trim();

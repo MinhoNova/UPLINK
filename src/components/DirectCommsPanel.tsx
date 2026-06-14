@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, Users, X, Check, Search, DoorClosed, UserCheck, VolumeX, UserPlus, Ban } from "lucide-react";
+import { MessageCircle, Users, X, Check, CheckCheck, Search, DoorClosed, UserCheck, VolumeX, UserPlus, Ban } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DmThreadView from "@/components/chat/DmThreadView";
 import { getDmMsgKey, type DmMessage } from "@/lib/dmHelpers";
@@ -545,8 +545,8 @@ export default function DirectCommsPanel() {
                           key={user.username}
                           role="button"
                           tabIndex={0}
-                          onClick={() => { setSelectedUser(user); markAsRead(user.username); setMessageNotification(null); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { setSelectedUser(user); markAsRead(user.username); setMessageNotification(null); } }}
+                          onClick={() => { setSelectedUser(user); setMessageNotification(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { setSelectedUser(user); setMessageNotification(null); } }}
                           className="w-full p-3 rounded-2xl hover:bg-white/[0.05] border border-transparent hover:border-white/5 transition-all flex items-center gap-3 group relative cursor-pointer"
                         >
                           <button
@@ -560,10 +560,20 @@ export default function DirectCommsPanel() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-black text-white/90 truncate group-hover:text-white transition-colors">{user.name}</p>
                             </div>
-                            {unreadCounts[user.username] && (
-                              <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0 shadow-[0_0_8px_rgba(255,0,0,0.5)]">
-                                {unreadCounts[user.username]}
-                              </span>
+                            {unreadCounts[user.username] > 0 && (
+                              <>
+                                <button
+                                  type="button"
+                                  title="Mark as read"
+                                  onClick={(e) => { e.stopPropagation(); void markAsRead(user.username); }}
+                                  className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-400 hover:bg-green-500/20 hover:text-green-300 transition-all shrink-0"
+                                >
+                                  <CheckCheck className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0 shadow-[0_0_8px_rgba(255,0,0,0.5)]">
+                                  {unreadCounts[user.username]}
+                                </span>
+                              </>
                             )}
                           </div>
                         </div>

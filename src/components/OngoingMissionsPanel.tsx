@@ -38,7 +38,6 @@ export default function OngoingMissionsPanel({
   const ownerMissions = getOwnerOngoingMissions(lobbies, currentUserId);
   const joinedMissions = getJoinedOngoingMissions(lobbies, currentUserId);
   const hasActiveMissions = ownerMissions.length > 0 || joinedMissions.length > 0;
-  const totalMissions = ownerMissions.length + joinedMissions.length;
 
   const renderMissionCard = (l: any) => (
     <motion.div
@@ -161,14 +160,12 @@ export default function OngoingMissionsPanel({
 
   return (
     <div
-      className={`w-full xl:w-[300px] shrink-0 flex flex-col ${
-        hasActiveMissions ? "self-stretch" : "self-start"
-      } ${alignWithOfferBanners ? "lg:mt-[4.75rem] xl:-mt-5" : ""}`}
+      className={`w-full xl:w-[300px] shrink-0 flex flex-col self-start ${
+        alignWithOfferBanners ? "lg:mt-[4.75rem] xl:-mt-5" : ""
+      }`}
     >
       <div
         className={`p-6 rounded-[2.5rem] border shadow-2xl backdrop-blur-xl relative overflow-hidden flex flex-col transition-colors duration-500 ${
-          hasActiveMissions ? "flex-1 min-h-[132px]" : ""
-        } ${
           theme === "light"
             ? "bg-white border-black/10 shadow-[0_30px_80px_rgba(15,23,42,0.14)]"
             : "bg-[linear-gradient(180deg,rgba(4,4,8,0.98),rgba(0,0,0,1))] border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
@@ -189,11 +186,7 @@ export default function OngoingMissionsPanel({
         </h3>
 
         <div
-          className={`space-y-4 relative z-10 w-full ${
-            hasActiveMissions
-              ? `flex flex-col flex-1 min-h-0 ${totalMissions > 2 ? "max-h-[min(70vh,640px)] overflow-y-auto custom-scrollbar pr-1" : ""} ${alignWithOfferBanners ? "xl:pt-9" : ""}`
-              : ""
-          }`}
+          className={`space-y-4 relative z-10 w-full ${alignWithOfferBanners && hasActiveMissions ? "xl:pt-9" : ""}`}
         >
           {ownerMissions.map(renderMissionCard)}
           {joinedMissions.map(renderMissionCard)}
