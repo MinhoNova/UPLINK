@@ -4878,7 +4878,7 @@ export default function HomePage() {
                         </div>
                      )}
                       {/* HERO */}
-                       <section className={`relative w-full pt-24 pb-20 md:pt-32 md:pb-28 flex flex-col items-center justify-center transition-colors duration-700 ${theme === 'light' ? 'bg-white' : ''} overflow-hidden z-[1] pointer-events-none`}>
+                       <section className={`relative w-full pt-20 pb-20 md:pt-28 md:pb-28 flex flex-col items-center justify-center transition-colors duration-700 ${theme === 'light' ? 'bg-white' : ''} overflow-hidden z-[1] pointer-events-none`}>
 
                        {/* Light mode fallback background if needed */}
                       {theme === 'light' && (

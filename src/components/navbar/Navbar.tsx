@@ -196,27 +196,29 @@ export default function Navbar() {
   };
 
   return (
-    <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
+    <motion.nav animate={{ y: navVisible ? 0 : -64 }} className={`fixed top-0 w-full z-50 h-16 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
       <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
+            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none select-none" style={{ boxShadow: pathname === '/community' ? '0 0 18px rgba(255,215,0,0.35)' : '0 0 18px rgba(0,255,255,0.25)', borderWidth: '1px', borderStyle: 'solid', borderColor: pathname === '/community' ? 'rgba(234,179,8,0.6)' : 'rgba(0,255,255,0.4)' }}>
               <ProtocolMark variant={1} className="h-full w-full" gold={pathname === '/community'} />
             </div>
-            <div className="hidden sm:flex flex-col items-center leading-none pointer-events-none select-none">
-              <span className="text-2xl font-black uppercase tracking-[0.18em]" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
+            <div className="hidden sm:flex flex-col items-center leading-none pointer-events-none select-none pt-[6px]">
+              <span className="text-xl font-black uppercase tracking-[0.18em] leading-none" style={{ textShadow: pathname === '/community' ? '0 0 15px rgba(255,215,0,0.3)' : undefined }}>
                 <span className={pathname === '/community' ? 'text-yellow-500' : `bg-clip-text text-transparent ${theme === 'light' ? 'bg-gradient-to-r from-[#0891b2] via-[#7c3aed] to-[#db2777]' : 'bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f]'}`}>
                   {pathname === '/community' ? 'CLUB' : 'Uplink'}
                 </span>
               </span>
               {pathname !== '/community' && (
-                <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.28em] text-amber-400/95">
+                <span className="mt-0.5 text-[9px] font-black uppercase tracking-[0.28em] text-amber-400/95 leading-none">
                   Beta
                 </span>
               )}
             </div>
+            </div>
 
-          <div className="flex bg-black/5 dark:bg-black/20 p-1.5 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
-            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-5 py-2.5 rounded-xl flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
+          <div className="flex bg-black/5 dark:bg-black/20 p-1 rounded-2xl gap-1.5 ml-4 sm:ml-6 border border-black/5 dark:border-white/5 transition-all shadow-inner">
+            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
               <ProtocolMark variant={1} className="w-5 h-5 shrink-0" gold={pathname !== '/community'} />
               {pathname === '/community' ? 'Uplink' : 'CLUB'}
             </motion.button>
@@ -274,7 +276,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-6 relative">
           {status === "loading" ? (
-            <div className="w-32 h-14 bg-white/5 animate-pulse rounded-full" />
+            <div className="w-28 h-10 bg-white/5 animate-pulse rounded-full" />
           ) : session ? (
             <div className="flex items-center gap-4">
               <div className="relative" ref={notifRef}>
@@ -328,7 +330,7 @@ export default function Navbar() {
               )}
 
               {pathname !== '/community' && (
-              <div className={`flex items-center gap-5 overflow-visible ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} border-2 pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}>
+              <div className={`flex items-center gap-4 overflow-visible ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} border-2 pr-5 pl-1 py-0.5 rounded-full shadow-xl h-11`}>
                 <button
                   type="button"
                   title="View profile"
@@ -338,7 +340,7 @@ export default function Navbar() {
                   <ProfileAvatarWithEffect
                     src={getAvatarForEffect()}
                     effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
-                    className="w-14 h-14"
+                    className="w-9 h-9"
                     fallbackName={currentUser?.name || session?.user?.name || "U"}
                   />
                 </button>
@@ -353,7 +355,7 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || "Operative")}</span>
+                  <span className="text-base font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || "Operative")}</span>
                   {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</span> : null; })()}
                 </button>
               </div>
