@@ -40,7 +40,7 @@ export async function rejectIfIpBannedUnlessAdmin(
   return rejectIfIpBanned(req);
 }
 
-/** Automatic IP ban for onboarding abuse (fake battletag / invalid Raider.io). */
+/** Automatic IP ban (reserved for extreme abuse; onboarding validation no longer calls this). */
 export async function banIpAutomatic(
   ip: string,
   reason: string,

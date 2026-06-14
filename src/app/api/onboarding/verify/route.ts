@@ -1,22 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getClientIp } from "@/lib/requestIp";
-import { banIpAutomatic, rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
+import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { validateBattleTag, parseRaiderProfileUrl } from "@/lib/battleTagValidation";
-import { isBanExempt } from "@/lib/banCheck";
+import { rateLimitByIp, rateLimitByUser, rateLimitResponse } from "@/lib/rateLimit";
 
-async function rejectAndBan(
-  req: Request,
-  userId: string,
-  handle: string,
-  reason: string,
-  message: string
-) {
-  if (!isBanExempt(handle, userId)) {
-    const ip = getClientIp(req);
-    await banIpAutomatic(ip, reason, userId);
-  }
-  return NextResponse.json({ error: message, banned: true }, { status: 403 });
+const VERIFY_LIMIT_PER_USER = 40;
+const VERIFY_LIMIT_PER_IP = 60;
+const VERIFY_WINDOW_MS = 60 * 60_000;
+
+function rejectVerification(message: string, status = 400) {
+  return NextResponse.json({ error: message }, { status });
 }
 
 export async function POST(req: Request) {
@@ -26,29 +20,26 @@ export async function POST(req: Request) {
   const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
   if (ipBlock) return ipBlock;
 
+  const ip = getClientIp(req);
+  const userRl = await rateLimitByUser(auth.user.id, "onboarding_verify", VERIFY_LIMIT_PER_USER, VERIFY_WINDOW_MS);
+  if (!userRl.ok) return rateLimitResponse(userRl);
+
+  const ipRl = await rateLimitByIp(ip, "onboarding_verify", VERIFY_LIMIT_PER_IP, VERIFY_WINDOW_MS);
+  if (!ipRl.ok) return rateLimitResponse(ipRl);
+
   const body = await req.json().catch(() => ({}));
   const battleTag = String(body?.battleTag || "").trim();
   const raiderLink = String(body?.raiderLink || "").trim();
 
   const tagCheck = validateBattleTag(battleTag);
   if (!tagCheck.valid) {
-    return rejectAndBan(
-      req,
-      auth.user.id,
-      auth.user.username,
-      `invalid_battletag:${battleTag.slice(0, 24)}`,
-      tagCheck.error || "Invalid Battle.net ID"
-    );
+    return rejectVerification(tagCheck.error || "Invalid Battle.net ID");
   }
 
   const profile = parseRaiderProfileUrl(raiderLink);
   if (!profile) {
-    return rejectAndBan(
-      req,
-      auth.user.id,
-      auth.user.username,
-      "invalid_raider_link",
-      "Invalid Raider.io link format"
+    return rejectVerification(
+      "Invalid Raider.io link. Paste the full profile URL (e.g. https://raider.io/characters/us/area-52/character-name)."
     );
   }
 
@@ -61,28 +52,21 @@ export async function POST(req: Request) {
 
     const res = await fetch(url.toString(), { next: { revalidate: 0 } });
     if (!res.ok) {
-      return rejectAndBan(
-        req,
-        auth.user.id,
-        auth.user.username,
-        `raider_not_found:${profile.name}`,
-        "Character not found on Raider.io"
+      return rejectVerification(
+        "Character not found on Raider.io. Check the link matches your character name and realm."
       );
     }
 
     const data = await res.json();
-    if (Number(data.level || 0) < 90) {
-      return rejectAndBan(
-        req,
-        auth.user.id,
-        auth.user.username,
-        "raider_under_level",
-        "Level 90+ character required"
+    const level = Number(data.level || 0);
+    if (level < 90) {
+      return rejectVerification(
+        `Level 90 character required (yours is ${level || "unknown"}). Level up in Midnight, then try again.`
       );
     }
 
     return NextResponse.json({ ok: true, profile: data, battleTag });
   } catch {
-    return NextResponse.json({ error: "Raider.io connection failed" }, { status: 502 });
+    return NextResponse.json({ error: "Raider.io connection failed. Try again in a moment." }, { status: 502 });
   }
 }

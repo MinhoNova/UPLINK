@@ -4096,11 +4096,7 @@ export default function HomePage() {
          });
          const verifyData = await verifyRes.json().catch(() => ({}));
          if (!verifyRes.ok) {
-            if (verifyData.banned) {
-               addToast("Invalid credentials — network access suspended.", "error");
-            } else {
-               addToast(verifyData.error || "Verification failed", "error");
-            }
+            addToast(verifyData.error || "Verification failed", "error");
             return;
          }
 
