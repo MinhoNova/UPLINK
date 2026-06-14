@@ -9,7 +9,7 @@ import RankBadge from "@/components/RankBadge";
 import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
-import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob } from "@/lib/clientImagePoster";
+import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob, uploadProfileGifBlob } from "@/lib/clientImagePoster";
 import { markCharacterRemoved } from "@/lib/raiderCharacter";
 
 interface ArmoryModalProps {
@@ -218,40 +218,23 @@ const ArmoryModal = ({
                                               const input = gifInputUrl?.trim();
                                               if (!input) { setIsGifModalOpen(false); return; }
 
-                                              let finalUrl = input;
+                                              let finalUrl: string;
                                               let thumbUrl: string | undefined;
-                                              if (input.startsWith('data:')) {
-                                                 // Uploaded file: store as a real file on the server instead of base64 in the DB
-                                                 try {
+                                              try {
+                                                 if (input.startsWith("data:")) {
                                                     const blob = await (await fetch(input)).blob();
-                                                    const fd = new FormData();
-                                                    fd.append('file', blob, 'profile.gif');
-                                                    fd.append('field', 'profileGif');
-                                                    const poster = await extractGifPosterBlob(blob);
-                                                    if (poster) fd.append('poster', poster, 'poster.webp');
-                                                    const res = await fetch('/api/user/upload', { method: 'POST', body: fd });
-                                                    const data = await res.json();
-                                                    if (!res.ok || !data.url) { addToast(data.error || "Upload failed.", "error"); return; }
-                                                    finalUrl = data.url;
-                                                    thumbUrl = data.thumbUrl;
-                                                 } catch {
-                                                    addToast("Upload failed.", "error");
+                                                    ({ url: finalUrl, thumbUrl } = await uploadProfileGifBlob(blob));
+                                                 } else if (isAnimatedImageUrl(input)) {
+                                                    ({ url: finalUrl, thumbUrl } = await importProfileGifFromUrl(input));
+                                                 } else {
+                                                    addToast("URL must be a GIF — use a direct .gif link or upload a file.", "error");
                                                     return;
                                                  }
-                                              } else if (isAnimatedImageUrl(input)) {
-                                                 try {
-                                                    const imported = await importProfileGifFromUrl(input);
-                                                    finalUrl = imported.url;
-                                                    thumbUrl = imported.thumbUrl;
-                                                 } catch (err) {
-                                                    addToast(
-                                                       err instanceof Error ? err.message : "Could not load GIF URL.",
-                                                       "error"
-                                                    );
-                                                    return;
-                                                 }
-                                              } else {
-                                                 addToast("URL must be a GIF — use a direct .gif link or upload a file.", "error");
+                                              } catch (err) {
+                                                 addToast(
+                                                    err instanceof Error ? err.message : "Upload failed.",
+                                                    "error"
+                                                 );
                                                  return;
                                               }
 

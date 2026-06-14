@@ -71,8 +71,9 @@ export function isAnimatedImageUrl(url: string): boolean {
   if (/\.gif(\?|$)/i.test(trimmed)) return true;
   try {
     const u = new URL(trimmed);
-    if (u.hostname.includes("giphy.com") && u.pathname.includes("/media/")) return true;
-    if (u.hostname.includes("tenor.com")) return true;
+    if (u.hostname.endsWith(".giphy.com") || u.hostname === "giphy.com") return true;
+    if (u.hostname.endsWith(".tenor.com") || u.hostname === "tenor.com") return true;
+    if (u.hostname.includes("pinimg.com")) return true;
   } catch {
     /* ignore */
   }
