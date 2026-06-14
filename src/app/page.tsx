@@ -63,6 +63,7 @@ import { lobbyRunCount } from "@/lib/lobbyDisplay";
 import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
 import { OfferFeedAvatar as OfferFeedAvatarBase } from "@/components/OfferFeedAvatar";
 import { resolveLobbyBannerBg, resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
+import { formatIpForAdmin } from "@/lib/formatIp";
 
 const VoiceParticipant = ({ participant }: { participant: Participant }) => {
   const isSpeaking = useIsSpeaking(participant);
@@ -573,6 +574,7 @@ export default function HomePage() {
     };
 
     const [adminSearchQuery, setAdminSearchQuery] = useState("");
+    const [adminIpLookup, setAdminIpLookup] = useState<Record<string, string>>({});
     const [tickets, setTickets] = useState<any[]>([]);
     const [adminTicketsLastSeen, setAdminTicketsLastSeen] = useState(() => {
        if (typeof window !== "undefined") return parseInt(localStorage.getItem("uplink_admin_tickets_seen") || "0", 10) || 0;
@@ -598,6 +600,25 @@ export default function HomePage() {
           new CustomEvent("set-auto-apply-enabled", { detail: { enabled } })
        );
     }, []);
+    useEffect(() => {
+       if (activeMainTab !== "admin" || !isAdmin) return;
+       fetch("/api/admin/banned-ips")
+          .then((r) => r.json())
+          .then((d) => {
+             const map: Record<string, string> = {};
+             for (const u of d.userIps || []) {
+                if (u.lastKnownIp) {
+                   if (u.userId) map[String(u.userId)] = u.lastKnownIp;
+                   if (u.username) map[String(u.username)] = u.lastKnownIp;
+                }
+             }
+             for (const row of d.recent || []) {
+                if (row.handle && row.ip && !map[row.handle]) map[row.handle] = row.ip;
+             }
+             setAdminIpLookup(map);
+          })
+          .catch(() => setAdminIpLookup({}));
+    }, [activeMainTab, isAdmin]);
     useEffect(() => {
         if (!autoApplyEnabled || currentUserId === "guest") return;
         if (!registeredUsers.length) return;
@@ -5316,19 +5337,24 @@ export default function HomePage() {
                                          if (!adminSearchQuery) return true;
                                          const q = adminSearchQuery.toLowerCase();
                                          return (user.name || '').toLowerCase().includes(q) || (user.username || '').toLowerCase().includes(q);
-                                      }).map((user: any) => (
+                                      }).map((user: any) => {
+                                         const rawIp =
+                                            user.lastKnownIp ||
+                                            adminIpLookup[String(user.id)] ||
+                                            adminIpLookup[user.username];
+                                         const ipInfo = formatIpForAdmin(rawIp);
+                                         return (
                                          <div key={user.id} className="flex items-center justify-between p-6 bg-black/40 rounded-2xl border border-white/5 hover:border-red-500/30 transition-all group">
                                             <div className="flex items-center gap-6">
                                                <AvatarWithEffect src={user.avatar} effect={user.effect} className="w-16 h-16" />
                                                <div>
                                                    <h4 className="text-xl font-black text-white uppercase">{user.name}</h4>
-                                                   <p className="text-[9px] font-mono text-gray-500 mt-1">
-                                                      {user.username ? `@${user.username}` : "—"}
-                                                      {user.lastKnownIp ? (
-                                                         <span className="ml-2 text-orange-400/80">· IP {user.lastKnownIp}</span>
-                                                      ) : (
-                                                         <span className="ml-2 text-gray-600">· IP pending first visit</span>
-                                                      )}
+                                                   <p className="text-[9px] font-mono mt-1">
+                                                      <span className="text-gray-500">@{user.username || "—"}</span>
+                                                   </p>
+                                                   <p className={`text-[10px] font-mono mt-1 ${ipInfo.isLocal ? "text-gray-500" : "text-orange-300"}`}>
+                                                      <span className="text-gray-600 uppercase text-[8px] font-black tracking-widest mr-1">IP</span>
+                                                      <span className="font-black">{ipInfo.text}</span>
                                                    </p>
                                                    {getUserTier(user.id) === "secret_club" && (
                                                       <p className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest mt-1">
@@ -5351,8 +5377,8 @@ export default function HomePage() {
                                                       <>
                                                          <button onClick={() => handleClearUserDatabase(user.id, user.username)} className="px-4 py-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all">Clear DB</button>
                                                          <button onClick={() => handleBanUser(user.username)} className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500 hover:text-white rounded-lg text-xs font-black uppercase tracking-widest transition-all">Suspend</button>
-                                                         {user.lastKnownIp && (
-                                                            <button onClick={() => handleBanUserIp(user)} className="px-4 py-2 bg-orange-500/10 text-orange-400 border border-orange-500/30 hover:bg-orange-500 hover:text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all">Ban IP</button>
+                                                         {rawIp && (
+                                                            <button onClick={() => handleBanUserIp({ ...user, lastKnownIp: rawIp })} className="px-4 py-2 bg-orange-500/10 text-orange-400 border border-orange-500/30 hover:bg-orange-500 hover:text-black rounded-lg text-xs font-black uppercase tracking-widest transition-all">Ban IP</button>
                                                          )}
                                                           {getUserTier(user.id) === "free" ? (
                                                              <div className="flex items-center gap-1">
@@ -5373,7 +5399,7 @@ export default function HomePage() {
                                                 </div>
                                              </div>
                                          </div>
-                                      ))}
+                                      );})}
                                    </div>
 
                                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-8 mt-12 flex items-center gap-4">

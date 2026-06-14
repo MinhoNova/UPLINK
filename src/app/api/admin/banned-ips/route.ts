@@ -46,6 +46,15 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ips,
     recent: Array.from(recentIps.values()).sort((a, b) => b.at - a.at).slice(0, 40),
+    userIps: users
+      .filter((u) => u.lastKnownIp || u.username)
+      .map((u) => ({
+        userId: String(u.id),
+        username: u.username || "",
+        name: u.name || "",
+        lastKnownIp: u.lastKnownIp || null,
+        lastSeenAt: typeof u.lastSeenAt === "number" ? u.lastSeenAt : null,
+      })),
   });
 }
 

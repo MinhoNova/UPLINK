@@ -1,6 +1,7 @@
 import { getKV, setKV, initTables } from "@/lib/db";
 import { logAudit } from "@/lib/auditLog";
 import { isAdminUser } from "@/lib/secureDataWrite";
+import { touchUserLastIp } from "@/lib/userLastIp";
 
 /** Max DMs in a short burst before cooldown. */
 export const DM_BURST_LIMIT = 5;
@@ -72,6 +73,9 @@ async function suspendForChatSpam(
       ...(clientIp && clientIp !== "unknown" ? { ip: clientIp } : {}),
     },
   });
+  if (clientIp && clientIp !== "unknown") {
+    touchUserLastIp(userId, clientIp).catch(() => {});
+  }
 }
 
 /**
@@ -124,6 +128,9 @@ export async function enforceDmAntiSpam(
         ...(clientIp && clientIp !== "unknown" ? { ip: clientIp } : {}),
       },
     });
+    if (clientIp && clientIp !== "unknown") {
+      touchUserLastIp(userId, clientIp).catch(() => {});
+    }
 
     if (record.strikes >= DM_STRIKES_BEFORE_SUSPEND) {
       await suspendForChatSpam(userId, handle, record.strikes, clientIp);

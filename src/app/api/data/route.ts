@@ -89,6 +89,7 @@ export async function POST(req: Request) {
     }
 
     const clientIp = getClientIp(req);
+    touchUserLastIp(auth.user.id, clientIp).catch(() => {});
 
     await initTables();
     const newData = await req.json();

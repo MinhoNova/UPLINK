@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ScrollText, Loader2, ShieldAlert } from "lucide-react";
+import { formatIpForAdmin } from "@/lib/formatIp";
 
 type AuditEntry = {
   id: string;
@@ -122,10 +123,18 @@ export default function AdminAuditPanel() {
                   {entry.meta?.auto === true && (
                     <span className="ml-2 text-red-400/80">· auto-ban</span>
                   )}
-                  {typeof entry.meta?.ip === "string" && (
-                    <span className="ml-2 text-orange-400/80">· IP: {entry.meta.ip}</span>
-                  )}
                 </p>
+                {typeof entry.meta?.ip === "string" && (() => {
+                  const ip = formatIpForAdmin(entry.meta.ip as string);
+                  return (
+                    <p className={`text-[10px] mt-1 font-mono ${ip.isLocal ? "text-gray-500" : "text-orange-300"}`}>
+                      IP: <span className="font-black">{ip.text}</span>
+                      {ip.raw && ip.isLocal && (
+                        <span className="text-gray-600 ml-1">({ip.raw})</span>
+                      )}
+                    </p>
+                  );
+                })()}
                 <p className="text-[9px] text-gray-600 mt-1">
                   {new Date(entry.timestamp).toLocaleString()}
                 </p>

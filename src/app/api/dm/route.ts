@@ -7,6 +7,7 @@ import { enforceDmAntiSpam } from "@/lib/chatModeration";
 import { rateLimitByUser } from "@/lib/rateLimit";
 import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { getClientIp } from "@/lib/requestIp";
+import { touchUserLastIp } from "@/lib/userLastIp";
 import { DM_REACTION_EMOJIS, type DmMessage } from "@/lib/dmHelpers";
 
 const MAX_TEXT_LENGTH = 2000;
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
   if (ipBlock) return ipBlock;
 
   const clientIp = getClientIp(req);
+  touchUserLastIp(userId, clientIp).catch(() => {});
 
   if (await isUserBanned(currentHandle, userId)) {
     return bannedResponse();
