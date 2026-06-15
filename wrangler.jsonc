@@ -34,6 +34,7 @@
   "vars": {
     "AUTH_TRUST_HOST": "true",
     "NEXTAUTH_URL": "https://uplink.uplinklfg.workers.dev",
+    "NEXT_PUBLIC_SITE_URL": "https://uplinklfg.com",
     "NEXT_PUBLIC_LIVEKIT_URL": "wss://uplink-sist6urm.livekit.cloud",
     "DISCORD_CLIENT_ID": "1497303962687115294"
   }

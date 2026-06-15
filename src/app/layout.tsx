@@ -44,12 +44,21 @@ export const metadata: Metadata = {
     title: "UPLINK | WoW Mythic+ LFG",
     description:
       "Tactical WoW group finder — Mythic+ offers, leveling squads, Raider.io sync, and Discord coordination.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "UPLINK — WoW Mythic+ LFG",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "UPLINK | WoW Mythic+ LFG",
     description:
       "Find Mythic+ groups and leveling squads. Raider.io sync and Discord bot included.",
+    images: ["/twitter-image"],
   },
   robots: {
     index: true,
