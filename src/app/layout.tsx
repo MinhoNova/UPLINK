@@ -74,6 +74,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="antialiased dark">
+      <head>
+        <meta property="og:image" content={`${siteUrl}/og.png`} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta name="twitter:image" content={`${siteUrl}/og.png`} />
+      </head>
       <body className="min-h-screen flex flex-col font-sans">
         <AuthProvider>
           <Navbar />
