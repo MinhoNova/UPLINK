@@ -46,7 +46,7 @@ export const metadata: Metadata = {
       "Tactical WoW group finder — Mythic+ offers, leveling squads, Raider.io sync, and Discord coordination.",
     images: [
       {
-        url: "/og.png",
+        url: `${siteUrl}/og.png`,
         width: 1200,
         height: 630,
         alt: "UPLINK — WoW Mythic+ LFG",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     title: "UPLINK | WoW Mythic+ LFG",
     description:
       "Find Mythic+ groups and leveling squads. Raider.io sync and Discord bot included.",
-    images: ["/og.png"],
+    images: [`${siteUrl}/og.png`],
   },
   robots: {
     index: true,
