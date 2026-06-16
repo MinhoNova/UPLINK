@@ -124,8 +124,6 @@ export default function CommunityPage() {
   }, [visibilityMenuOpen]);
 
   useEffect(() => {
-    if (status === "unauthenticated") { router.push("/"); return; }
-    if (status !== "authenticated") return;
     (async () => {
       const [accessRes, dataRes] = await Promise.all([
         fetch("/api/community/check-access"),
@@ -136,15 +134,14 @@ export default function CommunityPage() {
       const db = await dataRes.json();
       setRegisteredUsers(db.registeredUsers || []);
       setFriends(db.friends || []);
-      if (!d.access) setLoading(false);
     })();
   }, [status, router]);
 
    useEffect(() => {
-      if (access === true) fetchPosts();
+      if (access) fetchPosts();
    }, [status, router]);
 
-   const currentUserId = (session?.user as any)?.id || "";
+   const currentUserId = (session?.user as any)?.id || "guest";
   const currentUserHandle = (session?.user as any)?.username || "";
   const isAdmin = currentUserId === "1497295886223544471" || currentUserHandle === "minhonovazen";
 
@@ -504,27 +501,10 @@ export default function CommunityPage() {
     setReportModal(null); setReportReason("");
   };
 
-  if (status === "loading" || (status === "authenticated" && access === null)) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-[#06060c] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#00ffff] animate-spin" />
-      </div>
-    );
-  }
-
-  if (access === false) {
-    return (
-      <div className="min-h-screen bg-[#06060c] flex items-center justify-center relative">
-        <div className="fixed inset-0 z-0 pointer-events-none"><HeroBackground /></div>
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,255,255,0.08)_0%,_transparent_60%)] pointer-events-none z-[1]" />
-        <div className="relative z-10 bg-white/[0.03] border border-yellow-500/30 rounded-[2rem] p-8 max-w-md text-center backdrop-blur-xl">
-          <Swords className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
-          <h1 className="text-xl font-black text-yellow-500 mb-2 uppercase tracking-widest">Access Denied</h1>
-          <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-6">Secret Club clearance required</p>
-          <a href="/" className="inline-block px-8 py-3 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black font-black uppercase text-xs tracking-widest rounded-xl hover:opacity-90 transition">
-            Return to UPLINK
-          </a>
-        </div>
       </div>
     );
   }
@@ -1052,12 +1032,10 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {status === "authenticated" && session?.user && (
-        <ClubLoungeChatWidget
-          currentUserId={currentUserId}
-          canChat
-        />
-      )}
+      <ClubLoungeChatWidget
+        currentUserId={currentUserId}
+        canChat={status === "authenticated"}
+      />
     </div>
   );
 }

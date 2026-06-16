@@ -36,6 +36,9 @@ export const metadata: Metadata = {
     "Leveling",
     "Retail WoW",
   ],
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -80,6 +83,24 @@ export default function RootLayout({
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/png" />
         <meta name="twitter:image" content={`${siteUrl}/og.png`} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "UPLINK",
+              url: siteUrl,
+              description:
+                "Find Mythic+ groups, leveling squads, and dungeon runs for World of Warcraft.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${siteUrl}/?q={search_term_string}`,
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen flex flex-col font-sans">
         <AuthProvider>
