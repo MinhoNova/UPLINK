@@ -38,6 +38,7 @@ import OnboardingModal from "@/components/modals/OnboardingModal";
 import PaymentModal from "@/components/modals/PaymentModal";
 import TicketModal from "@/components/modals/TicketModal";
 import SupportChatWidget from "@/components/SupportChatWidget";
+import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
 import HomeFloatingActions from "@/components/HomeFloatingActions";
 import OngoingMissionsPanel from "@/components/OngoingMissionsPanel";
 import EditingGoldModal from "@/components/modals/EditingGoldModal";
@@ -60,7 +61,7 @@ import { sanitizeApplicantNote, sanitizeApplicantNoteDraft } from "@/lib/applica
 import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer, getRemovedCharacterKeys, clearRemovedCharacterKey } from "@/lib/raiderCharacter";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
-import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
+import { classThumbUrl, roleIconUrl, roleIconClass } from "@/lib/classThumb";
 import { OfferFeedAvatar as OfferFeedAvatarBase } from "@/components/OfferFeedAvatar";
 import { resolveLobbyBannerBg, resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 import { formatIpForAdmin } from "@/lib/formatIp";
@@ -307,7 +308,7 @@ const RoleCard = ({ role, accepted, lobby, charClass, hideIdentity }: { role: st
                   {charClass ? (
                      <ClassRoleIcons className={charClass} role={role} size={64} overlap={18} />
                   ) : (
-                     <img src={`/classes/${role.toUpperCase()}.svg`} className="w-16 h-16 object-contain drop-shadow-lg" />
+                     <img src={roleIconUrl(role)} width={128} height={128} className={`w-16 h-16 object-contain drop-shadow-lg ${roleIconClass(role, "lg")}`} alt={role} />
                   )}
                </div>
             </div>
@@ -362,7 +363,7 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
          <motion.div className="relative w-full h-full" animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }} style={{ transformStyle: "preserve-3d" }}>
             {/* FRONT */}
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-white/10 rounded-2xl shadow-lg" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-               <img src={`/classes/${role.toUpperCase()}.svg`} className="w-12 h-12 object-contain mb-1" />
+               <img src={roleIconUrl(role)} width={128} height={128} className={`w-12 h-12 object-contain mb-1 drop-shadow-lg ${roleIconClass(role, "lg")}`} alt={role} />
                {accepted && <span className="text-[9px] uppercase font-black text-green-400 mt-1 tracking-widest animate-pulse">INVITED</span>}
             </div>
             {/* BACK */}
@@ -579,6 +580,7 @@ export default function HomePage() {
     });
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
     const [supportWidgetOpen, setSupportWidgetOpen] = useState(false);
+    const [loungeWidgetOpen, setLoungeWidgetOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [ticketMessage, setTicketMessage] = useState("");
     const [showingBgPicker, setShowingBgPicker] = useState<string | null>(null);
@@ -3889,7 +3891,7 @@ export default function HomePage() {
    const deleteLobby = (id: string) => {
       const lobby = lobbies.find((l) => String(l.id) === String(id));
       if (lobby && !canOwnerCancelLobby(lobby)) {
-         addToast("Cannot delete — squad has members or mission already started.", "error");
+         addToast("Cannot cancel — squad is full or mission already started.", "error");
          return;
       }
       const updated = lobbies.filter(l => l.id !== id);
@@ -4893,9 +4895,9 @@ export default function HomePage() {
                        </div>
                     </section>
 
-                    {/* ZOOMED WRAPPER - 75% scale with space both sides */}
-                    <div className="px-[5%] xl:px-12 py-4 -mt-16 relative z-20">
-                    <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
+                    {/* Main feed — full width on mobile; desktop uses slight scale for density */}
+                    <div className="px-2 sm:px-[5%] xl:px-12 py-4 -mt-8 sm:-mt-16 relative z-20">
+                    <div className="w-full mx-auto origin-top scale-100 md:scale-[0.85] lg:scale-[0.7]">
                           <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
                         {/* LEFT COLUMN: tabs + content */}
                            <div className="flex flex-col gap-2 min-w-0 flex-1">
@@ -5060,7 +5062,7 @@ export default function HomePage() {
                                                  <div className="flex flex-col gap-2 w-full">
 <motion.button onClick={() => { setTargetLobby(lobby); setIsManageModalOpen(true); }} className={`w-full py-2 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all text-center flex justify-center gap-2 items-center ${lobby.category === 'leveling' ? 'bg-[#8a2be2]/10 border border-[#8a2be2]/30 text-[#8a2be2] hover:bg-[#8a2be2] hover:text-white shadow-[0_0_15px_rgba(138,43,226,0.1)]' : 'bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff] hover:text-black shadow-[0_0_15px_rgba(0,255,255,0.1)]'}`}><Crosshair className="w-3.5 h-3.5" /> Manage</motion.button>
                                                       {canOwnerCancelLobby(lobby) && (
-                                                         <motion.button onClick={() => deleteLobby(lobby.id)} className="w-full py-2 bg-red-900/20 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white transition-all text-center flex justify-center gap-2 items-center"><Trash2 className="w-3.5 h-3.5" /> Delete</motion.button>
+                                                         <motion.button onClick={() => deleteLobby(lobby.id)} className="w-full py-2 bg-red-900/20 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white transition-all text-center flex justify-center gap-2 items-center"><X className="w-3.5 h-3.5" /> Cancel</motion.button>
                                                       )}
                                                    </div>
                                                  ) : lobby.accepted?.some((a: any) => a.applicantId === currentUserId) ? (
@@ -5221,7 +5223,7 @@ export default function HomePage() {
                                                                           const someBlocked = blockedRolesForClass.length > 0 && !allBlocked;
                                                                           return (
                                                                              <div key={cls} className={`flex flex-col items-center p-2.5 rounded-xl border transition-colors ${allBlocked ? 'bg-red-500/10 border-red-500/20 opacity-20 grayscale' : someBlocked ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-green-500/10 border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.1)]'}`}>
-                                                                                <img src={classThumbUrl(cls)} width={48} height={48} className="w-11 h-11 object-contain drop-shadow-md" alt={cls} decoding="async" />
+                                                                                <img src={classThumbUrl(cls)} width={96} height={96} className="w-11 h-11 object-contain drop-shadow-md" alt={cls} decoding="async" />
                                                                                {someBlocked && <span className="text-[7px] text-yellow-500 font-black mt-1">{blockedRolesForClass.map((b: any) => b.role.substring(0, 1).toUpperCase()).join('')}</span>}
                                                                             </div>
                                                                          );
@@ -6121,6 +6123,7 @@ export default function HomePage() {
               <>
               <HomeFloatingActions
                  onOpenSupport={() => setSupportWidgetOpen(true)}
+                 onOpenClubLounge={() => setLoungeWidgetOpen(true)}
                  supportUnread={isAdmin ? adminTicketUnread : 0}
                  currentUserId={currentUserId}
                  isAdmin={isAdmin}
@@ -6140,6 +6143,13 @@ export default function HomePage() {
                  onOpenChange={setSupportWidgetOpen}
                  isAdmin={isAdmin}
                  adminUnreadCount={adminTicketUnread}
+              />
+              <ClubLoungeChatWidget
+                 currentUserId={currentUserId}
+                 canChat
+                 hideFab
+                 open={loungeWidgetOpen}
+                 onOpenChange={setLoungeWidgetOpen}
               />
               </>
            )}

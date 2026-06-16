@@ -196,9 +196,9 @@ export default function Navbar() {
   };
 
   return (
-    <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
-      <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-16 sm:h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 w-full flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <a
               href={pathname === "/community" ? "/community" : "/"}
               className="flex items-center gap-2.5 shrink-0 rounded-xl transition-opacity hover:opacity-90"
@@ -220,7 +220,7 @@ export default function Navbar() {
             </div>
             </a>
 
-          <div className="flex items-center bg-black/5 dark:bg-black/20 px-1.5 py-1 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
+          <div className="flex items-center bg-black/5 dark:bg-black/20 px-1 sm:px-1.5 py-1 rounded-2xl gap-1 sm:gap-2 ml-1 sm:ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner overflow-x-auto max-w-[min(58vw,420px)] sm:max-w-none scrollbar-none">
             <motion.a
               href={pathname === '/community' ? '/' : '/community'}
               title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'}
@@ -231,10 +231,10 @@ export default function Navbar() {
                   window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } }));
                 }
               }}
-              className={`h-8 px-5 rounded-lg flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}
+              className={`h-8 px-3 sm:px-5 rounded-lg flex items-center gap-1.5 sm:gap-2 font-black uppercase text-[10px] sm:text-[11px] tracking-widest transition-all border shrink-0 ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}
             >
               <ProtocolMark variant={1} className="w-5 h-5 shrink-0" gold={pathname !== '/community'} />
-              {pathname === '/community' ? 'Uplink' : 'CLUB'}
+              <span className="hidden sm:inline">{pathname === '/community' ? 'Uplink' : 'CLUB'}</span>
             </motion.a>
             {pathname === '/leaderboard' ? (
               <motion.a title="Back to Home" href="/" className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
@@ -247,8 +247,8 @@ export default function Navbar() {
             )}
             <motion.button title="Direct Messages" onClick={() => {
               window.dispatchEvent(new CustomEvent('toggle-dm'));
-            }} className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative">
-              <MessageCircle className="w-4 h-4" /> DM
+            }} className="h-8 px-2.5 sm:px-4 rounded-lg flex items-center gap-1.5 sm:gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative shrink-0">
+              <MessageCircle className="w-4 h-4" /> <span className="hidden sm:inline">DM</span>
               {dmUnreadCount > 0 && (
                 <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)]">
                   {dmUnreadCount > 99 ? '99+' : dmUnreadCount}
@@ -268,8 +268,8 @@ export default function Navbar() {
               setAutoApplyEnabled(newVal);
               localStorage.setItem("uplink_auto_apply", newVal ? "true" : "false");
               window.dispatchEvent(new CustomEvent('set-auto-apply-enabled', { detail: { enabled: newVal } }));
-            }} className={`h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
-              <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
+            }} className={`h-8 px-2 sm:px-4 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-center flex items-center gap-1.5 sm:gap-2 shrink-0 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+              <Zap className="w-4 h-4 shrink-0" /> <span className="hidden md:inline">{getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}</span>
             </motion.button>
             {pathname === '/' ? (
               <motion.button title="Auto-Apply Settings" onClick={() => {
@@ -283,14 +283,14 @@ export default function Navbar() {
                 ⚙️
               </motion.a>
             )}
-            <motion.button title="Toggle Theme" onClick={toggleTheme} className={`h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
+            <motion.button title="Toggle Theme" onClick={toggleTheme} className={`h-8 px-2.5 sm:px-4 rounded-lg flex items-center gap-1.5 sm:gap-2 font-black uppercase text-[10px] tracking-widest transition-all shrink-0 ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
-              {theme === 'dark' ? 'Dark' : 'Light'}
+              <span className="hidden sm:inline">{theme === 'dark' ? 'Dark' : 'Light'}</span>
             </motion.button>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 relative">
+        <div className="flex items-center gap-2 sm:gap-6 relative shrink-0">
           {status === "loading" ? (
             <div className="w-32 h-14 bg-white/5 animate-pulse rounded-full" />
           ) : session ? (

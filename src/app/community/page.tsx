@@ -12,6 +12,7 @@ import {
   Zap, ImagePlus, Globe, Users, Pin, Smile, ChevronDown, Pencil, Users2,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
+import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
 
 const VISIBILITY_OPTIONS = [
   { id: "public" as const, label: "Public", hint: "Everyone in the club", icon: Globe, accent: "text-[#00ffff] border-[#00ffff]/60 bg-[#00ffff]/15" },
@@ -549,7 +550,7 @@ export default function CommunityPage() {
         </>
       )}
 
-      <div className="pt-24 sm:pt-28 px-3 sm:px-6 lg:pr-[400px]">
+      <div className="pt-20 sm:pt-28 px-3 sm:px-6 lg:pr-[min(400px,calc(100vw-3rem))]">
 
         <div className="max-w-[1600px] mx-auto py-4 sm:py-6">
           <div className="flex-1 min-w-0 w-full max-w-3xl mx-auto relative z-10">
@@ -1036,7 +1037,7 @@ export default function CommunityPage() {
 
       {/* Report Modal */}
       {reportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0a0a16] border border-white/10 rounded-[2rem] p-6 w-full max-w-sm mx-4 shadow-2xl">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -1049,6 +1050,13 @@ export default function CommunityPage() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {status === "authenticated" && session?.user && (
+        <ClubLoungeChatWidget
+          currentUserId={currentUserId}
+          canChat
+        />
       )}
     </div>
   );

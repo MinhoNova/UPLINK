@@ -429,7 +429,7 @@ const ManageModal = ({
                                              {canOwnerCancelLobby(targetLobby) && (
                                                 <motion.button onClick={() => {
                                                    if (!canOwnerCancelLobby(targetLobby)) {
-                                                      addToast("Cannot cancel — mission already started or completed.", "error");
+                                                      addToast("Cannot cancel — squad is full or mission already started.", "error");
                                                       return;
                                                    }
                                                    onTerminateLobby(targetLobby.id);
@@ -714,11 +714,15 @@ const ManageModal = ({
                                                                   <img
                                                                      src={classThumbUrl(app.class)}
                                                                      alt={app.class || "Class"}
+                                                                     width={96}
+                                                                     height={96}
                                                                      className={`w-9 h-9 object-contain drop-shadow-md ${classIconClass()}`}
                                                                   />
                                                                   <img
                                                                      src={roleIconUrl(app.role)}
                                                                      alt={app.role || "Role"}
+                                                                     width={96}
+                                                                     height={96}
                                                                      className={`w-9 h-9 object-contain drop-shadow-md -ml-3 ${roleIconClass(app.role, "lg")}`}
                                                                   />
                                                                </div>

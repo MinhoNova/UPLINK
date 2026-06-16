@@ -1,6 +1,8 @@
 "use client";
 
-const roleIconScale = (role?: string) => (String(role || '').toLowerCase() === 'healer' ? 1.22 : 1.08);
+import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
+
+const roleIconScale = (role?: string) => (String(role || "").toLowerCase() === "healer" ? 1.22 : 1.08);
 
 const ClassRoleIcons = ({
    className,
@@ -21,23 +23,28 @@ const ClassRoleIcons = ({
    classImgClassName?: string;
    roleImgClassName?: string;
 }) => {
-   const normalizedClass = (className || 'WARRIOR').toUpperCase();
-   const normalizedRole = (role || 'dps').toUpperCase();
+   const normalizedClass = className || "Warrior";
+   const normalizedRole = role || "dps";
+   const roleLg = size >= 40;
 
    return (
-      <div className="flex items-center shrink-0" style={{ width: (size * 2) - overlap }}>
+      <div className="flex items-center shrink-0" style={{ width: size * 2 - overlap }}>
          <img
-            src={`/classes/${normalizedClass}.svg`}
+            src={classThumbUrl(normalizedClass)}
             alt={className || "Class"}
-            className={`object-contain relative z-10 drop-shadow-lg ${classImgClassName}`}
+            width={size}
+            height={size}
+            className={`object-contain relative z-10 drop-shadow-lg ${classIconClass()} ${classImgClassName}`}
             style={{ width: size, height: size }}
          />
          <div className="relative group shrink-0" style={{ width: size, height: size, marginLeft: -overlap }}>
             <img
-               src={`/classes/${normalizedRole}.svg`}
+               src={roleIconUrl(normalizedRole)}
                alt={role || "Role"}
-               className={`w-full h-full object-contain drop-shadow-lg ${roleImgClassName}`}
-               style={{ transform: `scale(${roleIconScale(role)})`, transformOrigin: 'center' }}
+               width={size}
+               height={size}
+               className={`w-full h-full object-contain drop-shadow-lg ${roleIconClass(normalizedRole, roleLg ? "lg" : "sm")} ${roleImgClassName}`}
+               style={{ transform: `scale(${roleIconScale(role)})`, transformOrigin: "center" }}
             />
             {onRoleClick && (
                <div

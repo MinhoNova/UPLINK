@@ -10,9 +10,9 @@ const ROOT = path.join(__dirname, "..");
 const SVG_DIR = path.join(ROOT, "public", "classes");
 const OUT_DIR = path.join(ROOT, "public", "classes-thumb");
 
-const CLASS_PX = 48;
-const ROLE_PX = 32;
-const SMALL_PX = 32;
+const CLASS_PX = 96;
+const ROLE_PX = 128;
+const SMALL_PX = 64;
 const ROLE_NAMES = new Set(["TANK", "HEALER", "DPS"]);
 const SMALL_NAMES = new Set(["Battle.net", "RAIDER IO"]);
 

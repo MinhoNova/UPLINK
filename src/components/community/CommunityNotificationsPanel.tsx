@@ -20,7 +20,7 @@ export default function CommunityNotificationsPanel() {
   const [tab, setTab] = useState<Tab>("chat");
   const [search, setSearch] = useState("");
   const [data, setData] = useState<any>(null);
-  const [mobileOpen, setMobileOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [chatError, setChatError] = useState<string | null>(null);

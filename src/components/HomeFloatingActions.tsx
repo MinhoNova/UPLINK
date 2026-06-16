@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { MessageSquare, ShoppingBag, Star } from "lucide-react";
+import { MessageSquare, ShoppingBag, Star, MessageCircle } from "lucide-react";
 import ShopModal from "@/components/modals/ShopModal";
 import ReviewsModal from "@/components/modals/ReviewsModal";
 
 type Props = {
   onOpenSupport: () => void;
+  onOpenClubLounge?: () => void;
   supportUnread?: number;
   currentUserId?: string;
   isAdmin?: boolean;
@@ -16,6 +17,7 @@ type Props = {
 
 export default function HomeFloatingActions({
   onOpenSupport,
+  onOpenClubLounge,
   supportUnread = 0,
   currentUserId = "",
   isAdmin = false,
@@ -27,6 +29,15 @@ export default function HomeFloatingActions({
   if (status !== "authenticated" || !session?.user) return null;
 
 const buttons = [
+    {
+      id: "lounge",
+      label: "Live Chat",
+      icon: MessageCircle,
+      color: "from-[#00ffff] via-[#8a2be2] to-[#ff007f]",
+      shadow: "rgba(0,255,255,0.3)",
+      onClick: () => onOpenClubLounge?.(),
+      badge: 0,
+    },
     {
       id: "reviews",
       label: "Reviews",
@@ -58,7 +69,7 @@ const buttons = [
 
   return (
     <>
-      <div className="fixed bottom-6 left-6 z-[9999] flex flex-col-reverse items-start gap-3">
+      <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[9999] flex flex-col-reverse items-start gap-2 sm:gap-3">
         {buttons.map((btn, i) => (
           <motion.button
             key={btn.id}
@@ -69,9 +80,9 @@ const buttons = [
             whileTap={{ scale: 0.95 }}
             onClick={btn.onClick}
             title={btn.label}
-            className={`w-14 h-14 rounded-full bg-gradient-to-br ${btn.color} text-black flex items-center justify-center relative group shadow-[0_0_30px_rgba(0,0,0,0.2)]`}
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br ${btn.color} text-black flex items-center justify-center relative group shadow-[0_0_30px_rgba(0,0,0,0.2)]`}
           >
-            <btn.icon className="w-6 h-6" />
+            <btn.icon className="w-5 h-5 sm:w-6 sm:h-6" />
             {btn.badge > 0 && (
               <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 border-2 border-[#0a0a16] flex items-center justify-center text-[8px] font-black text-white">
                 {btn.badge}

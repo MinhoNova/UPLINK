@@ -67,7 +67,7 @@ export default function SupportChatWidget({
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-[9999] flex flex-col items-start">
+    <div className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[9999] flex flex-col items-start max-w-[calc(100vw-2rem)]">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -75,7 +75,7 @@ export default function SupportChatWidget({
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="mb-4 w-[360px] bg-[#0a0a16]/95 backdrop-blur-2xl border border-yellow-500/30 rounded-[1.5rem] shadow-[0_0_40px_rgba(255,215,0,0.1)] overflow-hidden"
+            className="mb-4 w-[min(360px,calc(100vw-2rem))] bg-[#0a0a16]/95 backdrop-blur-2xl border border-yellow-500/30 rounded-[1.5rem] shadow-[0_0_40px_rgba(255,215,0,0.1)] overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-gradient-to-r from-yellow-500/[0.04] to-transparent">
