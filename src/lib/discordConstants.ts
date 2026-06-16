@@ -18,6 +18,6 @@ export const DISCORD_OWNER_USER_ID = "1497295886223544471";
 export function getDiscordInviteUrl(): string {
   return (
     process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() ||
-    "https://discord.gg/uplinklfg"
+    "https://discord.gg/r4m3Stk7XZ"
   );
 }
