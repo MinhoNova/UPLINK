@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
@@ -61,7 +61,21 @@ export default function HomeFloatingActions({
   const [shopOpen, setShopOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShopOpen(false);
+        setReviewsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (status !== "authenticated" || !session?.user) return null;
+
+  const openShop = () => { setReviewsOpen(false); setShopOpen(true); };
+  const openReviews = () => { setShopOpen(false); setReviewsOpen(true); };
 
   const openDiscord = () => {
     window.open(getDiscordInviteUrl(), "_blank", "noopener,noreferrer");
@@ -110,7 +124,7 @@ export default function HomeFloatingActions({
       accentBg: "bg-amber-500/10",
       accentBorder: "border-amber-500/30",
       accentGlow: "shadow-[0_0_18px_rgba(245,158,11,0.14)]",
-      onClick: () => setReviewsOpen(true),
+      onClick: openReviews,
     },
     {
       id: "shop",
@@ -120,7 +134,7 @@ export default function HomeFloatingActions({
       accentBg: "bg-violet-500/10",
       accentBorder: "border-violet-500/30",
       accentGlow: "shadow-[0_0_18px_rgba(139,92,246,0.14)]",
-      onClick: () => setShopOpen(true),
+      onClick: openShop,
     },
     {
       id: "support",
@@ -166,12 +180,12 @@ export default function HomeFloatingActions({
                 className={`group relative w-full flex items-center gap-3 rounded-xl border px-2.5 py-2.5 text-left transition-all ${
                   item.active
                     ? `${item.accentBg} ${item.accentBorder} ${item.accentGlow}`
-                    : "border-transparent bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
+                    : `${item.accentBg.replace("/10", "/5")} border-transparent hover:${item.accentBorder}`
                 }`}
               >
                 <span
-                  className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-opacity ${
-                    item.active ? "opacity-100" : "opacity-0 group-hover:opacity-60"
+                  className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all ${
+                    item.active ? "opacity-100" : "opacity-40 group-hover:opacity-80"
                   } ${item.accentBg.replace("/10", "")}`}
                   style={{
                     background:
@@ -193,19 +207,19 @@ export default function HomeFloatingActions({
                   className={`w-9 h-9 shrink-0 rounded-lg border flex items-center justify-center transition-colors ${
                     item.active
                       ? `${item.accentBg} ${item.accentBorder}`
-                      : "bg-black/30 border-white/10 group-hover:border-white/20"
+                      : `${item.accentBg.replace("/10", "/5")} ${item.accentBorder}`
                   }`}
                 >
                   {item.icon === "discord" ? (
                     <DiscordGlyph
                       className={`w-4 h-4 ${
-                        item.active ? item.accentText : "text-[#5865F2] group-hover:text-white"
+                        item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
                       }`}
                     />
                   ) : (
                     <item.icon
                       className={`w-4 h-4 ${
-                        item.active ? item.accentText : "text-gray-300 group-hover:text-white"
+                        item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
                       }`}
                     />
                   )}
@@ -213,7 +227,7 @@ export default function HomeFloatingActions({
 
                 <span
                   className={`flex-1 min-w-0 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.14em] truncate ${
-                    item.active ? "text-white" : "text-gray-300 group-hover:text-white"
+                    item.active ? "text-white" : "text-white/50 group-hover:text-white/90"
                   }`}
                 >
                   {item.label}

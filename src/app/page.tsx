@@ -637,6 +637,26 @@ export default function HomePage() {
             syncAutoApplyEnabled(false);
         }
     }, [currentUserId, registeredUsers, autoApplyEnabled, syncAutoApplyEnabled]);
+    useEffect(() => {
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key !== "Escape") return;
+        setIsArmoryModalOpen(false);
+        setIsCreateModalOpen(false);
+        setIsApplyModalOpen(false);
+        setIsManageModalOpen(false);
+        setIsPaymentModalOpen(false);
+        setIsAutoApplySettingsOpen(false);
+        setIsOnboardingModalOpen(false);
+        setIsWelcomePlansOpen(false);
+        setIsNotifOpen(false);
+        setIsGifModalOpen(false);
+        setIsTicketModalOpen(false);
+        setKickModal(null);
+        setLeaveModal(null);
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, []);
     const [autoAppliedLobbies, setAutoAppliedLobbies] = useState<string[]>(() => {
        if (typeof window !== "undefined") {
           const saved = localStorage.getItem("uplink_auto_applied");
@@ -6129,8 +6149,8 @@ export default function HomePage() {
            {status === "authenticated" && session?.user && !showOnboarding && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
               <>
               <HomeFloatingActions
-                 onOpenSupport={() => setSupportWidgetOpen(true)}
-                 onOpenClubLounge={() => setLoungeWidgetOpen(true)}
+                  onOpenSupport={() => { setLoungeWidgetOpen(false); setSupportWidgetOpen(true); }}
+                  onOpenClubLounge={() => { setSupportWidgetOpen(false); setLoungeWidgetOpen(true); }}
                  onOpenPostRequest={() => {
                    if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
                    if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
