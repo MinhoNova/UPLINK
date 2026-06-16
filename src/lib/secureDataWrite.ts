@@ -201,14 +201,15 @@ export function validateLobbies(
     }
     if (JSON.stringify(lobby) !== JSON.stringify(ex) && !lobbyUserCanModify(ex, userId, isAdmin)) {
       if (isSelfApplicantOnlyChange(ex, lobby, userId)) continue;
-      return { ok: false, error: "Cannot modify lobby you are not part of" };
     }
   }
 
   const sanitized = (incoming as any[]).map((lobby) => {
     const ex = existingById.get(String(lobby.id));
     let next = lobby;
-    if (ex && JSON.stringify(lobby.detectedRuns || []) !== JSON.stringify(ex.detectedRuns || [])) {
+    if (!ex) return next;
+    if (!lobbyUserCanModify(ex, userId, isAdmin)) return ex;
+    if (JSON.stringify(lobby.detectedRuns || []) !== JSON.stringify(ex.detectedRuns || [])) {
       next = { ...next, detectedRuns: ex.detectedRuns || [] };
     }
     if (Array.isArray(next.applicants) && next.applicants.length) {
