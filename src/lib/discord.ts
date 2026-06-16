@@ -24,9 +24,14 @@ async function discordFetch(path: string, options?: RequestInit) {
 
 async function ensureGuildCache() {
    if (cachedGuildId && cachedChannels && Date.now() - lastFetch < 60000) return;
-   const guilds: any[] = await discordFetch("/users/@me/guilds");
-   if (!guilds?.length) return;
-   cachedGuildId ??= guilds[0].id;
+   const fromEnv = process.env.DISCORD_GUILD_ID?.trim();
+   if (fromEnv) {
+      cachedGuildId = fromEnv;
+   } else {
+      const guilds: any[] = await discordFetch("/users/@me/guilds");
+      if (!guilds?.length) return;
+      cachedGuildId ??= guilds[0].id;
+   }
    const channels: any[] = await discordFetch(`/guilds/${cachedGuildId}/channels`);
    if (channels) cachedChannels = channels.map((c: any) => ({ id: c.id, name: c.name }));
    lastFetch = Date.now();
