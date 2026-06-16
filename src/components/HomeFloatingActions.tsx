@@ -20,9 +20,9 @@ type DockItem = {
   label: string;
   icon: LucideIcon | "discord";
   accentText: string;
-  accentBg: string;
-  accentBorder: string;
-  accentGlow: string;
+  accentBar: string;
+  iconBg: string;
+  iconBorder: string;
   onClick: () => void;
   badge?: number;
   active?: boolean;
@@ -45,6 +45,15 @@ type Props = {
   loungeOpen?: boolean;
   currentUserId?: string;
   isAdmin?: boolean;
+};
+
+const ACCENT_COLORS: Record<string, { text: string; bar: string; bg: string; border: string }> = {
+  lounge: { text: "text-[#00ffff]", bar: "bg-[#00ffff]", bg: "bg-[#00ffff]/8", border: "border-[#00ffff]/25" },
+  discord: { text: "text-[#5865F2]", bar: "bg-[#5865F2]", bg: "bg-[#5865F2]/8", border: "border-[#5865F2]/25" },
+  "post-request": { text: "text-[#ff007f]", bar: "bg-[#ff007f]", bg: "bg-[#ff007f]/8", border: "border-[#ff007f]/25" },
+  reviews: { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
+  shop: { text: "text-violet-400", bar: "bg-violet-400", bg: "bg-violet-400/8", border: "border-violet-400/25" },
+  support: { text: "text-yellow-400", bar: "bg-yellow-400", bg: "bg-yellow-400/8", border: "border-yellow-400/25" },
 };
 
 export default function HomeFloatingActions({
@@ -89,10 +98,10 @@ export default function HomeFloatingActions({
       id: "lounge",
       label: "Community Chat",
       icon: MessageCircle,
-      accentText: "text-[#00ffff]",
-      accentBg: "bg-[#00ffff]/10",
-      accentBorder: "border-[#00ffff]/35",
-      accentGlow: "shadow-[0_0_18px_rgba(0,255,255,0.18)]",
+      accentText: ACCENT_COLORS.lounge.text,
+      accentBar: ACCENT_COLORS.lounge.bar,
+      iconBg: ACCENT_COLORS.lounge.bg,
+      iconBorder: ACCENT_COLORS.lounge.border,
       onClick: () => onOpenClubLounge?.(),
       active: loungeOpen,
     },
@@ -100,50 +109,50 @@ export default function HomeFloatingActions({
       id: "discord",
       label: "Join Discord",
       icon: "discord",
-      accentText: "text-[#5865F2]",
-      accentBg: "bg-[#5865F2]/10",
-      accentBorder: "border-[#5865F2]/35",
-      accentGlow: "shadow-[0_0_18px_rgba(88,101,242,0.2)]",
+      accentText: ACCENT_COLORS.discord.text,
+      accentBar: ACCENT_COLORS.discord.bar,
+      iconBg: ACCENT_COLORS.discord.bg,
+      iconBorder: ACCENT_COLORS.discord.border,
       onClick: openDiscord,
     },
     {
       id: "post-request",
       label: "Post Request",
       icon: Megaphone,
-      accentText: "text-[#ff007f]",
-      accentBg: "bg-[#ff007f]/10",
-      accentBorder: "border-[#ff007f]/35",
-      accentGlow: "shadow-[0_0_18px_rgba(255,0,127,0.18)]",
+      accentText: ACCENT_COLORS["post-request"].text,
+      accentBar: ACCENT_COLORS["post-request"].bar,
+      iconBg: ACCENT_COLORS["post-request"].bg,
+      iconBorder: ACCENT_COLORS["post-request"].border,
       onClick: () => onOpenPostRequest?.(),
     },
     {
       id: "reviews",
       label: "Reviews",
       icon: Star,
-      accentText: "text-amber-400",
-      accentBg: "bg-amber-500/10",
-      accentBorder: "border-amber-500/30",
-      accentGlow: "shadow-[0_0_18px_rgba(245,158,11,0.14)]",
+      accentText: ACCENT_COLORS.reviews.text,
+      accentBar: ACCENT_COLORS.reviews.bar,
+      iconBg: ACCENT_COLORS.reviews.bg,
+      iconBorder: ACCENT_COLORS.reviews.border,
       onClick: openReviews,
     },
     {
       id: "shop",
       label: "Shop",
       icon: ShoppingBag,
-      accentText: "text-violet-400",
-      accentBg: "bg-violet-500/10",
-      accentBorder: "border-violet-500/30",
-      accentGlow: "shadow-[0_0_18px_rgba(139,92,246,0.14)]",
+      accentText: ACCENT_COLORS.shop.text,
+      accentBar: ACCENT_COLORS.shop.bar,
+      iconBg: ACCENT_COLORS.shop.bg,
+      iconBorder: ACCENT_COLORS.shop.border,
       onClick: openShop,
     },
     {
       id: "support",
       label: "Support",
       icon: MessageSquare,
-      accentText: "text-yellow-400",
-      accentBg: "bg-yellow-500/10",
-      accentBorder: "border-yellow-500/35",
-      accentGlow: "shadow-[0_0_18px_rgba(255,215,0,0.16)]",
+      accentText: ACCENT_COLORS.support.text,
+      accentBar: ACCENT_COLORS.support.bar,
+      iconBg: ACCENT_COLORS.support.bg,
+      iconBorder: ACCENT_COLORS.support.border,
       onClick: onOpenSupport,
       badge: supportUnread,
       active: supportOpen,
@@ -153,95 +162,65 @@ export default function HomeFloatingActions({
   return (
     <>
       <motion.nav
-        initial={{ opacity: 0, x: -16 }}
+        initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         aria-label="Quick actions"
-        className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[9999] w-[min(15.5rem,calc(100vw-2rem))]"
+        className="fixed bottom-4 left-0 z-[9999] flex flex-col gap-0.5 pl-0"
       >
-        <div className="rounded-2xl border border-white/10 bg-[#0a0a16]/94 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.55)] overflow-hidden">
-          <div className="px-3 py-2 border-b border-white/5 bg-gradient-to-r from-white/[0.03] to-transparent">
-            <p className="text-[8px] font-black uppercase tracking-[0.28em] text-gray-500">
-              Quick Access
-            </p>
-          </div>
-
-          <div className="p-1.5 flex flex-col gap-1">
-            {items.map((item, i) => (
-              <motion.button
-                key={item.id}
-                type="button"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04 }}
-                whileHover={{ x: 2 }}
-                whileTap={{ scale: 0.985 }}
-                onClick={item.onClick}
-                aria-current={item.active ? "true" : undefined}
-                className={`group relative w-full flex items-center gap-3 rounded-xl border px-2.5 py-2.5 text-left transition-all ${
-                  item.active
-                    ? `${item.accentBg} ${item.accentBorder} ${item.accentGlow}`
-                    : `${item.accentBg.replace("/10", "/5")} border-transparent hover:${item.accentBorder}`
-                }`}
-              >
-                <span
-                  className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all ${
-                    item.active ? "opacity-100" : "opacity-40 group-hover:opacity-80"
-                  } ${item.accentBg.replace("/10", "")}`}
-                  style={{
-                    background:
-                      item.id === "lounge"
-                        ? "#00ffff"
-                        : item.id === "discord"
-                          ? "#5865F2"
-                        : item.id === "post-request"
-                          ? "#ff007f"
-                          : item.id === "reviews"
-                            ? "#f59e0b"
-                            : item.id === "shop"
-                              ? "#8b5cf6"
-                              : "#eab308",
-                  }}
+        {items.map((item, i) => (
+          <motion.button
+            key={item.id}
+            type="button"
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04 }}
+            whileHover={{ x: 3 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={item.onClick}
+            aria-current={item.active ? "true" : undefined}
+            className={`group relative flex items-center gap-2.5 pl-1 pr-3 py-2 text-left transition-all rounded-r-xl border-l-2 ${
+              item.active
+                ? `${item.accentText} ${item.accentBar}/40 border-l-current bg-white/[0.04]`
+                : "text-white/40 border-l-transparent hover:text-white/80 hover:bg-white/[0.02] hover:border-l-current"
+            }`}
+          >
+            <span
+              className={`w-8 h-8 shrink-0 rounded-lg border flex items-center justify-center transition-colors ${
+                item.active
+                  ? `${item.iconBg} ${item.iconBorder}`
+                  : `${item.iconBg.replace("/8", "/5")} ${item.iconBorder}`
+              }`}
+            >
+              {item.icon === "discord" ? (
+                <DiscordGlyph
+                  className={`w-3.5 h-3.5 ${
+                    item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
+                  }`}
                 />
-
-                <span
-                  className={`w-9 h-9 shrink-0 rounded-lg border flex items-center justify-center transition-colors ${
-                    item.active
-                      ? `${item.accentBg} ${item.accentBorder}`
-                      : `${item.accentBg.replace("/10", "/5")} ${item.accentBorder}`
+              ) : (
+                <item.icon
+                  className={`w-3.5 h-3.5 ${
+                    item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
                   }`}
-                >
-                  {item.icon === "discord" ? (
-                    <DiscordGlyph
-                      className={`w-4 h-4 ${
-                        item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
-                      }`}
-                    />
-                  ) : (
-                    <item.icon
-                      className={`w-4 h-4 ${
-                        item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
-                      }`}
-                    />
-                  )}
-                </span>
+                />
+              )}
+            </span>
 
-                <span
-                  className={`flex-1 min-w-0 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.14em] truncate ${
-                    item.active ? "text-white" : "text-white/50 group-hover:text-white/90"
-                  }`}
-                >
-                  {item.label}
-                </span>
+            <span
+              className={`flex-1 min-w-0 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] truncate ${
+                item.active ? "text-white" : "text-white/50 group-hover:text-white/80"
+              }`}
+            >
+              {item.label}
+            </span>
 
-                {!!item.badge && item.badge > 0 && (
-                  <span className="shrink-0 min-w-[1.25rem] h-5 px-1.5 rounded-md bg-red-500 text-[9px] font-black text-white flex items-center justify-center">
-                    {item.badge > 9 ? "9+" : item.badge}
-                  </span>
-                )}
-              </motion.button>
-            ))}
-          </div>
-        </div>
+            {!!item.badge && item.badge > 0 && (
+              <span className="shrink-0 min-w-[1rem] h-4 px-1 rounded-md bg-red-500 text-[8px] font-black text-white flex items-center justify-center">
+                {item.badge > 9 ? "9+" : item.badge}
+              </span>
+            )}
+          </motion.button>
+        ))}
       </motion.nav>
 
       <ShopModal isOpen={shopOpen} onClose={() => setShopOpen(false)} />
