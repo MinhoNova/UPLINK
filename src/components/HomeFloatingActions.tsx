@@ -85,8 +85,7 @@ export default function HomeFloatingActions({
       accentBar: ACCENT_COLORS.lounge.bar,
       iconBg: ACCENT_COLORS.lounge.bg,
       iconBorder: ACCENT_COLORS.lounge.border,
-      onClick: () => onOpenClubLounge?.(),
-      active: loungeOpen,
+      onClick: () => {},
     },
     {
       id: "discord",
@@ -206,6 +205,7 @@ export default function HomeFloatingActions({
             </motion.button>
           );
 
+          if (item.id === "lounge") return <Link key={item.id} href="/community">{btn}</Link>;
           if (item.id === "reviews") return <Link key={item.id} href="/reviews">{btn}</Link>;
           if (item.id === "shop") return <Link key={item.id} href="/shop">{btn}</Link>;
           return btn;
