@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendLobbyEmbed } from "@/lib/discord";
 import { requireSession } from "@/lib/authz";
+import { getKV, initTables } from "@/lib/db";
+import { resolveDiscordEmbedIdentity } from "@/lib/profileImage";
 
 export async function POST(req: NextRequest) {
    const auth = await requireSession(req);
@@ -22,7 +24,19 @@ export async function POST(req: NextRequest) {
          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      await sendLobbyEmbed(lobby);
+      await initTables();
+      const users: any[] = (await getKV("registeredUsers")) || [];
+      const owner = users.find((u) => String(u.id) === String(auth.user.id));
+      const { name, avatar } = resolveDiscordEmbedIdentity(owner, lobby);
+
+      await sendLobbyEmbed(
+         {
+            ...lobby,
+            ownerName: name,
+            ownerImage: avatar,
+         },
+         owner
+      );
       return NextResponse.json({ ok: true });
    } catch (err) {
       console.error("discord broadcast error:", err);

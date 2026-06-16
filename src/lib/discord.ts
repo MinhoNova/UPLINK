@@ -1,4 +1,6 @@
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
+import { resolveDiscordEmbedIdentity } from "@/lib/profileImage";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 const API = "https://discord.com/api/v10";
 
@@ -39,7 +41,7 @@ function findChannelId(namePatterns: string[]): string | null {
    return null;
 }
 
-const SITE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
+const SITE_URL = getSiteUrl();
 
 function formatRolesProgress(lobby: any): string {
    const roles = lobby.roles || {};
@@ -102,7 +104,7 @@ function buildInviteEmbedFields(lobby: any, ownerName: string) {
    ];
 }
 
-export async function sendLobbyEmbed(lobby: any) {
+export async function sendLobbyEmbed(lobby: any, ownerUser?: any) {
    await ensureGuildCache();
    const channelNames = lobby.category === "leveling"
       ? ["🚀・leveling-squads", "leveling-squads", "leveling"]
@@ -116,14 +118,14 @@ export async function sendLobbyEmbed(lobby: any) {
    const price = lobby.totalGold || 0;
    const rolesNeeded = Object.entries(lobby.roles || {}).filter(([, c]) => (c as number) > 0);
    const rolesStr = rolesNeeded.map(([r, c]) => `**${String(r).toUpperCase()}** ×${c}`).join(" · ") || "Any role";
-   const ownerName = lobby.ownerDiscordName || lobby.ownerHandle || "Unknown";
+   const { name: ownerName, avatar: ownerAvatar } = resolveDiscordEmbedIdentity(ownerUser, lobby);
    const title = missionTitle(lobby);
    const squadProgress = formatRolesProgress(lobby);
 
    const embed = {
       author: {
          name: `${ownerName} · UPLINK Mission Lead`,
-         icon_url: lobby.ownerImage || undefined,
+         icon_url: ownerAvatar || undefined,
       },
       title: lobby.category === "leveling" ? `🚀 ${title}` : `⚔️ ${title}`,
       description:
@@ -193,8 +195,7 @@ export async function sendDiscordInviteDM(
    const channelId = await createDMChannel(discordUserId);
    if (!channelId) return false;
 
-   const ownerName = ownerUser?.displayName || ownerUser?.name || lobby.ownerDiscordName || "Mission Lead";
-   const ownerAvatar = ownerUser?.customAvatar || ownerUser?.profileGif || ownerUser?.avatar || lobby.ownerImage;
+   const { name: ownerName, avatar: ownerAvatar } = resolveDiscordEmbedIdentity(ownerUser, lobby);
 
    const payload = {
       content: `<@${discordUserId}> **Mission Invitation** — you have **60 seconds** to respond.`,
@@ -258,8 +259,7 @@ export async function sendDiscordConfirmedDM(
    const channelId = await createDMChannel(discordUserId);
    if (!channelId) return false;
 
-   const ownerName = ownerUser?.displayName || ownerUser?.name || lobby.ownerDiscordName || "Mission Lead";
-   const ownerAvatar = ownerUser?.customAvatar || ownerUser?.profileGif || ownerUser?.avatar || lobby.ownerImage;
+   const { name: ownerName, avatar: ownerAvatar } = resolveDiscordEmbedIdentity(ownerUser, lobby);
 
    const payload = {
       content: `<@${discordUserId}> You're **confirmed** on a UPLINK mission!`,

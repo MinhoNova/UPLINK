@@ -32,7 +32,6 @@ import '@livekit/components-styles';
 /* --- COMPONENTS --- */
 import SecretClubCard from "@/components/SecretClubCard";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
-import MemberKeyBadge from "@/components/MemberKeyBadge";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
 import LongPressButton from "@/components/LongPressButton";
 import OnboardingModal from "@/components/modals/OnboardingModal";
@@ -57,7 +56,7 @@ import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
 import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets";
 import { validateBattleTag } from "@/lib/battleTagValidation";
-import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
+import { resolveProfileDisplayName, resolveProfileImage, resolveOfferFeedProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote, sanitizeApplicantNoteDraft } from "@/lib/applicantNote";
 import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer, getRemovedCharacterKeys, clearRemovedCharacterKey } from "@/lib/raiderCharacter";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
@@ -361,8 +360,7 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
    const isInvited = accepted?.status === "invited";
 
    return (
-      <div className="relative w-24 shrink-0 pb-6" style={{ perspective: 1000 }}>
-      <div className="w-24 h-32 p-1.5 cursor-pointer relative" onClick={() => setIsFlipped(!isFlipped)}>
+      <div className="w-24 h-32 p-1.5 cursor-pointer relative shrink-0" style={{ perspective: 1000 }} onClick={() => setIsFlipped(!isFlipped)}>
          <motion.div className="relative w-full h-full" animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }} style={{ transformStyle: "preserve-3d" }}>
             {/* FRONT */}
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-white/10 rounded-2xl shadow-lg" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
@@ -397,10 +395,6 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
                 )}
             </div>
          </motion.div>
-      </div>
-      {accepted ? (
-         <MemberKeyBadge member={accepted} className="absolute left-1/2 -translate-x-1/2 bottom-0 z-10 max-w-[5.5rem]" />
-      ) : null}
       </div>
    );
 };
@@ -552,6 +546,10 @@ export default function HomePage() {
       const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
       return resolveProfileDisplayName(me, session?.user?.name || "Guest");
    }, [registeredUsers, currentUserId, session?.user?.name]);
+   const siteOwnerAvatar = useMemo(() => {
+      const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+      return resolveOfferFeedProfileImage(me, currentUserDisplay);
+   }, [registeredUsers, currentUserId, currentUserDisplay]);
    const currentUserDiscordHandle = (session?.user as any)?.username || "";
    const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471";
 
@@ -3046,9 +3044,10 @@ export default function HomePage() {
            const newLobby = {
               id: Date.now().toString(),
               ownerId: currentUserId,
+              ownerName: currentUserDisplay,
               ownerDiscordName: currentUserDisplay,
               ownerHandle: currentUserDiscordHandle,
-              ownerImage: session?.user?.image || "",
+              ownerImage: siteOwnerAvatar,
               ownerEffect: myEffect,
               ownerPrestige: 100,
               category: fd.category || (activeMainTab === 'boosts' ? 'dungeon' : 'leveling'),
@@ -3106,9 +3105,10 @@ export default function HomePage() {
              const newLobby = {
                id: Date.now().toString(),
                ownerId: currentUserId,
+               ownerName: currentUserDisplay,
                ownerDiscordName: currentUserDisplay,
                ownerHandle: currentUserDiscordHandle,
-               ownerImage: session?.user?.image || "",
+               ownerImage: siteOwnerAvatar,
                ownerEffect: myEffect,
                ownerPrestige: 100,
                category: 'leveling',
