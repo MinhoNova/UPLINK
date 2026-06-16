@@ -3103,11 +3103,10 @@ export default function HomePage() {
               setLobbies(newLobbies);
               const saved = await saveGlobalData({ lobbies: newLobbies });
               if (!saved) {
-                 setLobbies(lobbies);
-                 addToast("Could not deploy mission. You may have reached the daily offer limit (3/day for free accounts).", "error");
-                 setIsCreateModalOpen(false);
-                 return;
-              }
+                  setLobbies(lobbies);
+                  setIsCreateModalOpen(false);
+                  return;
+               }
               const updatedUsers = registeredUsers.map((u: any) => {
                  if (String(u.id) === String(currentUserId)) {
                     const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
@@ -3160,12 +3159,11 @@ export default function HomePage() {
              const newLobbies = [newLobby, ...lobbies];
              setLobbies(newLobbies);
              const saved = await saveGlobalData({ lobbies: newLobbies });
-             if (!saved) {
-                setLobbies(lobbies);
-                addToast("Could not deploy squad. You may have reached the daily offer limit (3/day for free accounts).", "error");
-                setIsCreateModalOpen(false);
-                return;
-             }
+              if (!saved) {
+                 setLobbies(lobbies);
+                 setIsCreateModalOpen(false);
+                 return;
+              }
              const updatedUsers = registeredUsers.map((u: any) => {
                 if (String(u.id) === String(currentUserId)) {
                    const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
