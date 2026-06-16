@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import { grantDiscordGuildRole } from "@/lib/discordGuild";
 
 const DISCORD_USER_AGENT = "UPLINK (https://uplink.uplinklfg.workers.dev, 1.0)";
 
@@ -89,6 +90,11 @@ export function getAuthOptions(): NextAuthOptions {
   return {
     providers: [discordProvider(clientId || "", clientSecret || "")],
     callbacks: {
+      async signIn({ user }) {
+        const id = user?.id;
+        if (id) void grantDiscordGuildRole(id).catch(() => {});
+        return true;
+      },
       async jwt({ token, user }) {
         if (user) {
           token.username = (user as { username?: string }).username;

@@ -67,7 +67,7 @@ export default function SupportChatWidget({
   };
 
   return (
-    <div className={`fixed left-4 sm:left-6 z-[9999] flex flex-col items-start max-w-[calc(100vw-2rem)] ${hideFab ? "bottom-[19.5rem] sm:bottom-[20.5rem]" : "bottom-4 sm:bottom-6"}`}>
+    <div className={`fixed left-4 sm:left-6 z-[9999] flex flex-col items-start max-w-[calc(100vw-2rem)] ${hideFab ? "bottom-[22.5rem] sm:bottom-[23.5rem]" : "bottom-4 sm:bottom-6"}`}>
       <AnimatePresence>
         {isOpen && (
           <motion.div

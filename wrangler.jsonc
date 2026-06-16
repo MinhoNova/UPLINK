@@ -36,6 +36,7 @@
     "NEXTAUTH_URL": "https://uplink.uplinklfg.workers.dev",
     "NEXT_PUBLIC_SITE_URL": "https://uplinklfg.com",
     "NEXT_PUBLIC_LIVEKIT_URL": "wss://uplink-sist6urm.livekit.cloud",
-    "DISCORD_CLIENT_ID": "1497303962687115294"
+    "DISCORD_CLIENT_ID": "1497303962687115294",
+    "NEXT_PUBLIC_DISCORD_INVITE_URL": "https://discord.gg/uplinklfg"
   }
 }
