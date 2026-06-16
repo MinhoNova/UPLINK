@@ -9,6 +9,8 @@ import {
   ImagePlus,
   Smile,
   Reply,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { profileImgClass } from "@/lib/profileImage";
 import {
@@ -43,6 +45,17 @@ export default function ClubLoungeChatWidget({
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [reactionPickerId, setReactionPickerId] = useState<number | null>(null);
   const [replyTo, setReplyTo] = useState<CommunityChatReplyRef | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -222,7 +235,7 @@ export default function ClubLoungeChatWidget({
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="mb-3 w-[min(360px,calc(100vw-2rem))] bg-[#0a0a16]/95 backdrop-blur-2xl border border-[#00ffff]/25 rounded-[1.5rem] shadow-[0_0_50px_rgba(0,255,255,0.12)] overflow-hidden flex flex-col"
+            className={`mb-3 ${isFullscreen ? "fixed inset-4 w-auto h-auto" : "w-[min(360px,calc(100vw-2rem))]"} bg-[#0a0a16]/95 backdrop-blur-2xl border border-[#00ffff]/25 ${isFullscreen ? "rounded-2xl" : "rounded-[1.5rem]"} shadow-[0_0_50px_rgba(0,255,255,0.12)] overflow-hidden flex flex-col`}
           >
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#00ffff]/10 via-[#8a2be2]/10 to-[#ff007f]/10 shrink-0">
               <div className="flex items-center gap-2">
@@ -234,16 +247,26 @@ export default function ClubLoungeChatWidget({
                   <p className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Everyone on Uplink</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen((v) => !v)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-[#00ffff] transition"
+                  title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div ref={scrollRef} className="h-64 sm:h-72 overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar">
+            <div ref={scrollRef} className={`${isFullscreen ? "flex-1" : "h-64 sm:h-72"} overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar`}>
               {loading && messages.length === 0 ? (
                 <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest py-8">
                   Connecting…
@@ -435,7 +458,7 @@ export default function ClubLoungeChatWidget({
         )}
       </AnimatePresence>
 
-      {!hideFab && (
+      {!hideFab && !isFullscreen && (
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

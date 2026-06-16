@@ -4,7 +4,7 @@ export { DM_REACTION_EMOJIS as COMMUNITY_CHAT_REACTION_EMOJIS };
 
 /** Quick-insert emojis for the composer picker. */
 export const COMMUNITY_CHAT_INPUT_EMOJIS = [
-  "😂", "❤️", "👍", "🔥", "💀", "🏆", "😭", "🎉", "⚔️", "✨", "🙏", "😎", "💯", "👀", "🫡", "❤️‍🔥",
+  "🔥", "💀", "😂", "🥶", "🦅", "😭", "❤️", "🎉", "🙏", "👀", "🫡", "💯", "⚔️", "🗿", "✨", "🏆",
 ] as const;
 
 export type CommunityChatReplyRef = {

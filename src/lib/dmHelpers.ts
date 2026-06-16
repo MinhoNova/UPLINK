@@ -1,4 +1,4 @@
-export const DM_REACTION_EMOJIS = ["😂", "❤️", "👍", "🔥", "💀", "🏆"] as const;
+export const DM_REACTION_EMOJIS = ["🔥", "💀", "😂", "🥶", "🦅", "😭", "🗿", "❤️"] as const;
 
 export type DmMessage = {
   from: string;
