@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "uplink",
-  "main": ".open-next/worker.js",
+  "main": "./custom-worker.ts",
   "compatibility_date": "2025-03-01",
   "compatibility_flags": [
     "nodejs_compat",
@@ -31,6 +31,9 @@
       "id": "d14e5f2da43a43d18c1d5ad068c92d02"
     }
   ],
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
   "vars": {
     "AUTH_TRUST_HOST": "true",
     "NEXTAUTH_URL": "https://uplink.uplinklfg.workers.dev",
