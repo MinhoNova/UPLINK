@@ -8,6 +8,7 @@ import OfferThreadSelect from "@/components/OfferThreadSelect";
 import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
 import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { resolveKeystoneDungeon } from "@/lib/dungeonAssets";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
 interface ManageModalProps {
@@ -126,11 +127,7 @@ const ManageModal = ({
     DUNGEONS,
   } = usePage();
 
-  const resolveApplicantDungeon = (app: any) => {
-    const key = app.keystone || app.dungeon || "";
-    if (!key) return null;
-    return DUNGEONS.find((d) => d.name === key || d.short === key) || null;
-  };
+  const resolveApplicantDungeon = (app: any) => resolveKeystoneDungeon(app.keystone || app.dungeon || "");
 
   const sortApplicants = (apps: any[]) =>
     [...apps].sort((a, b) => {
@@ -736,17 +733,16 @@ const ManageModal = ({
                                                                      <p className="text-[7px] text-gray-400 uppercase font-black leading-none">iLvl</p>
                                                                      <p className="text-sm font-black text-[#c084fc] tabular-nums leading-tight">{app.ilvl || "—"}</p>
                                                                   </div>
-                                                                  <div className="w-3 h-3 rounded-full bg-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.55)] shrink-0" />
                                                                </div>
 
                                                                {dungeon ? (
-                                                                  <div className="flex items-center gap-1.5 shrink-0 rounded-lg border border-[#00ffff]/30 bg-black/50 px-1.5 py-1">
-                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-10 h-10 rounded-md object-cover border border-white/20 shrink-0" />
-                                                                     <span className="text-sm font-black text-[#00ffff] uppercase leading-none tracking-wider drop-shadow-[0_0_8px_rgba(0,255,255,0.35)]">{dungeonShort}</span>
-                                                                     {keyLvl ? <span className="text-base font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
+                                                                  <div className="flex items-center gap-1 shrink-0 rounded-lg border border-[#00ffff]/30 bg-black/50 px-1 py-0.5">
+                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-6 h-6 rounded object-cover border border-white/20 shrink-0" />
+                                                                     <span className="text-xs font-black text-[#00ffff] uppercase leading-none tracking-wider">{dungeonShort}</span>
+                                                                     {keyLvl ? <span className="text-sm font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
                                                                      {dropLvl ? (
-                                                                        <span className="inline-flex items-center gap-0.5 text-base font-black text-[#00eaff] tabular-nums leading-none drop-shadow-[0_0_6px_rgba(0,234,255,0.4)]">
-                                                                           <ArrowDown className="w-4 h-4 stroke-[3]" />
+                                                                        <span className="inline-flex items-center gap-0.5 text-sm font-black text-[#00eaff] tabular-nums leading-none">
+                                                                           <ArrowDown className="w-3 h-3 stroke-[3]" />
                                                                            {dropLvl}
                                                                         </span>
                                                                      ) : null}

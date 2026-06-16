@@ -32,6 +32,7 @@ import '@livekit/components-styles';
 /* --- COMPONENTS --- */
 import SecretClubCard from "@/components/SecretClubCard";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
+import MemberKeyBadge from "@/components/MemberKeyBadge";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
 import LongPressButton from "@/components/LongPressButton";
 import OnboardingModal from "@/components/modals/OnboardingModal";
@@ -357,14 +358,16 @@ const RoleCard = ({ role, accepted, lobby, charClass, hideIdentity }: { role: st
 
 const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIdentity, rankStats, rankRatings, onAvatarClick, userData }: { role: string; accepted: any; visual: any; AvatarComponent: any; hideIdentity?: boolean; rankStats?: any; rankRatings?: number[]; onAvatarClick?: (user: any) => void; userData?: any }) => {
    const [isFlipped, setIsFlipped] = useState(false);
+   const isInvited = accepted?.status === "invited";
 
    return (
-      <div className="w-24 h-32 p-1.5 cursor-pointer relative" style={{ perspective: 1000 }} onClick={() => setIsFlipped(!isFlipped)}>
+      <div className="relative w-24 shrink-0 pb-6" style={{ perspective: 1000 }}>
+      <div className="w-24 h-32 p-1.5 cursor-pointer relative" onClick={() => setIsFlipped(!isFlipped)}>
          <motion.div className="relative w-full h-full" animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }} style={{ transformStyle: "preserve-3d" }}>
             {/* FRONT */}
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-white/10 rounded-2xl shadow-lg" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
                <img src={roleIconUrl(role)} width={128} height={128} className={`w-12 h-12 object-contain mb-1 drop-shadow-lg ${roleIconClass(role, "lg")}`} alt={role} />
-               {accepted && <span className="text-[9px] uppercase font-black text-green-400 mt-1 tracking-widest animate-pulse">INVITED</span>}
+               {accepted && isInvited && <span className="text-[9px] uppercase font-black text-green-400 mt-1 tracking-widest animate-pulse">INVITED</span>}
             </div>
             {/* BACK */}
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-[#ff007f]/50 rounded-2xl p-1.5 shadow-[0_0_20px_rgba(255,0,127,0.3)]" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
@@ -394,6 +397,10 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
                 )}
             </div>
          </motion.div>
+      </div>
+      {accepted ? (
+         <MemberKeyBadge member={accepted} className="absolute left-1/2 -translate-x-1/2 bottom-0 z-10 max-w-[5.5rem]" />
+      ) : null}
       </div>
    );
 };
