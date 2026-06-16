@@ -31,7 +31,7 @@ export default function HomeFloatingActions({
 const buttons = [
     {
       id: "lounge",
-      label: "Live Chat",
+      label: "Community Chat",
       icon: MessageCircle,
       color: "from-[#00ffff] via-[#8a2be2] to-[#ff007f]",
       shadow: "rgba(0,255,255,0.3)",
