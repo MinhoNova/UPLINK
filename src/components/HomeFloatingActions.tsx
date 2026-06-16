@@ -84,7 +84,7 @@ export default function HomeFloatingActions({
     },
     {
       id: "discord",
-      label: "Discord Server",
+      label: "Join Discord",
       icon: "discord",
       accentText: "text-[#5865F2]",
       accentBg: "bg-[#5865F2]/10",
