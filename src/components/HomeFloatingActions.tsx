@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -12,8 +13,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
-import ShopModal from "@/components/modals/ShopModal";
-import ReviewsModal from "@/components/modals/ReviewsModal";
 
 type DockItem = {
   id: string;
@@ -67,24 +66,8 @@ export default function HomeFloatingActions({
   isAdmin = false,
 }: Props) {
   const { data: session, status } = useSession();
-  const [shopOpen, setShopOpen] = useState(false);
-  const [reviewsOpen, setReviewsOpen] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShopOpen(false);
-        setReviewsOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   if (status !== "authenticated" || !session?.user) return null;
-
-  const openShop = () => { setReviewsOpen(false); setShopOpen(true); };
-  const openReviews = () => { setShopOpen(false); setReviewsOpen(true); };
 
   const openDiscord = () => {
     window.open(getDiscordInviteUrl(), "_blank", "noopener,noreferrer");
@@ -133,7 +116,7 @@ export default function HomeFloatingActions({
       accentBar: ACCENT_COLORS.reviews.bar,
       iconBg: ACCENT_COLORS.reviews.bg,
       iconBorder: ACCENT_COLORS.reviews.border,
-      onClick: openReviews,
+      onClick: () => {},
     },
     {
       id: "shop",
@@ -143,7 +126,7 @@ export default function HomeFloatingActions({
       accentBar: ACCENT_COLORS.shop.bar,
       iconBg: ACCENT_COLORS.shop.bg,
       iconBorder: ACCENT_COLORS.shop.border,
-      onClick: openShop,
+      onClick: () => {},
     },
     {
       id: "support",
@@ -167,69 +150,67 @@ export default function HomeFloatingActions({
         aria-label="Quick actions"
         className="fixed bottom-4 left-0 z-[9999] flex flex-col gap-0.5 pl-0"
       >
-        {items.map((item, i) => (
-          <motion.button
-            key={item.id}
-            type="button"
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-            whileHover={{ x: 3 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={item.onClick}
-            aria-current={item.active ? "true" : undefined}
-            className={`group relative flex items-center gap-2.5 pl-1 pr-3 py-2 text-left transition-all rounded-r-xl border-l-2 ${
-              item.active
-                ? `${item.accentText} ${item.accentBar}/40 border-l-current bg-white/[0.04]`
-                : "text-white/40 border-l-transparent hover:text-white/80 hover:bg-white/[0.02] hover:border-l-current"
-            }`}
-          >
-            <span
-              className={`w-8 h-8 shrink-0 rounded-lg border flex items-center justify-center transition-colors ${
+        {items.map((item, i) => {
+          const btn = (
+            <motion.button
+              key={item.id}
+              type="button"
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              whileHover={{ x: 3 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={item.onClick}
+              aria-current={item.active ? "true" : undefined}
+              className={`group relative flex items-center gap-2.5 pl-1 pr-3 py-2 text-left transition-all rounded-r-xl border-l-2 ${
                 item.active
-                  ? `${item.iconBg} ${item.iconBorder}`
-                  : `${item.iconBg.replace("/8", "/5")} ${item.iconBorder}`
+                  ? `${item.accentText} ${item.accentBar}/40 border-l-current bg-white/[0.04]`
+                  : "text-white/40 border-l-transparent hover:text-white/80 hover:bg-white/[0.02] hover:border-l-current"
               }`}
             >
-              {item.icon === "discord" ? (
-                <DiscordGlyph
-                  className={`w-3.5 h-3.5 ${
-                    item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
-                  }`}
-                />
-              ) : (
-                <item.icon
-                  className={`w-3.5 h-3.5 ${
-                    item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
-                  }`}
-                />
-              )}
-            </span>
-
-            <span
-              className={`flex-1 min-w-0 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] truncate ${
-                item.active ? "text-white" : "text-white/50 group-hover:text-white/80"
-              }`}
-            >
-              {item.label}
-            </span>
-
-            {!!item.badge && item.badge > 0 && (
-              <span className="shrink-0 min-w-[1rem] h-4 px-1 rounded-md bg-red-500 text-[8px] font-black text-white flex items-center justify-center">
-                {item.badge > 9 ? "9+" : item.badge}
+              <span
+                className={`w-8 h-8 shrink-0 rounded-lg border flex items-center justify-center transition-colors ${
+                  item.active
+                    ? `${item.iconBg} ${item.iconBorder}`
+                    : `${item.iconBg.replace("/8", "/5")} ${item.iconBorder}`
+                }`}
+              >
+                {item.icon === "discord" ? (
+                  <DiscordGlyph
+                    className={`w-3.5 h-3.5 ${
+                      item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
+                    }`}
+                  />
+                ) : (
+                  <item.icon
+                    className={`w-3.5 h-3.5 ${
+                      item.active ? item.accentText : `${item.accentText} opacity-60 group-hover:opacity-100`
+                    }`}
+                  />
+                )}
               </span>
-            )}
-          </motion.button>
-        ))}
-      </motion.nav>
 
-      <ShopModal isOpen={shopOpen} onClose={() => setShopOpen(false)} />
-      <ReviewsModal
-        isOpen={reviewsOpen}
-        onClose={() => setReviewsOpen(false)}
-        currentUserId={currentUserId}
-        isAdmin={isAdmin}
-      />
+              <span
+                className={`flex-1 min-w-0 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] truncate ${
+                  item.active ? "text-white" : "text-white/50 group-hover:text-white/80"
+                }`}
+              >
+                {item.label}
+              </span>
+
+              {!!item.badge && item.badge > 0 && (
+                <span className="shrink-0 min-w-[1rem] h-4 px-1 rounded-md bg-red-500 text-[8px] font-black text-white flex items-center justify-center">
+                  {item.badge > 9 ? "9+" : item.badge}
+                </span>
+              )}
+            </motion.button>
+          );
+
+          if (item.id === "reviews") return <Link key={item.id} href="/reviews">{btn}</Link>;
+          if (item.id === "shop") return <Link key={item.id} href="/shop">{btn}</Link>;
+          return btn;
+        })}
+      </motion.nav>
     </>
   );
 }
