@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Coins, DollarSign, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield, GanttChartSquare } from "lucide-react";
-import { DUNGEONS } from "@/lib/dungeonData";
+import { DUNGEONS } from "@/lib/dungeonAssets";
 
 type BoostRequest = {
   id: string;
