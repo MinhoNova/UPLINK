@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { HeroBackground } from "@/components/HeroBackground";
 import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
@@ -65,6 +65,7 @@ export default function CommunityPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const lightMode = theme === 'light';
+  const pathname = usePathname();
   const [access, setAccess] = useState<boolean | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [content, setContent] = useState("");
@@ -104,13 +105,18 @@ export default function CommunityPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const member = new URLSearchParams(window.location.search).get("member");
-    if (member) {
-      setViewMemberId(member);
-      setShowMyPosts(false);
+    const segments = pathname.split("/").filter(Boolean);
+    const handleFromPath = segments[0] === "community" && segments[1] ? segments[1] : null;
+    if (handleFromPath && registeredUsers.length > 0) {
+      const user = registeredUsers.find(
+        (u: any) => String(u.username).toLowerCase() === handleFromPath.toLowerCase()
+      );
+      if (user) {
+        setViewMemberId(String(user.id));
+        setShowMyPosts(false);
+      }
     }
-  }, []);
+  }, [pathname, registeredUsers]);
 
   useEffect(() => {
     if (!visibilityMenuOpen) return;

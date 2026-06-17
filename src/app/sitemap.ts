@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { getKV, initTables } from "@/lib/db";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
   const now = new Date();
 
-  return [
+  const entries: MetadataRoute.Sitemap = [
     {
       url: siteUrl,
       lastModified: now,
@@ -37,4 +38,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
   ];
+
+  try {
+    await initTables();
+    const users: any[] = (await getKV("registeredUsers")) || [];
+    for (const user of users) {
+      if (!user.username) continue;
+      entries.push({
+        url: `${siteUrl}/community/${encodeURIComponent(user.username)}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.4,
+      });
+    }
+  } catch {
+    // sitemap should not fail on DB error
+  }
+
+  return entries;
 }
