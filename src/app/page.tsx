@@ -30,6 +30,7 @@ import { Track, RoomEvent, Participant, Room } from 'livekit-client';
 import '@livekit/components-styles';
 
 /* --- COMPONENTS --- */
+import BoostRequestModal from "@/components/modals/BoostRequestModal";
 import SecretClubCard from "@/components/SecretClubCard";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
@@ -651,6 +652,7 @@ export default function HomePage() {
         setIsNotifOpen(false);
         setIsGifModalOpen(false);
         setIsTicketModalOpen(false);
+        setIsBoostRequestModalOpen(false);
         setKickModal(null);
         setLeaveModal(null);
       };
@@ -752,8 +754,9 @@ export default function HomePage() {
       }
       return false;
    });
-   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-   const [submitError, setSubmitError] = useState("");
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isBoostRequestModalOpen, setIsBoostRequestModalOpen] = useState(false);
+    const [submitError, setSubmitError] = useState("");
    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
    const [isManageModalOpen, setIsManageModalOpen] = useState(false);
    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -931,14 +934,15 @@ export default function HomePage() {
             setIsManageModalOpen(false);
              setIsNotifOpen(false);
             setInviteToReview(null);
-            setIsAutoApplySettingsOpen(false);
-         }
-      };
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
-   }, []);
+             setIsAutoApplySettingsOpen(false);
+             setIsBoostRequestModalOpen(false);
+          }
+       };
+       window.addEventListener("keydown", handleKeyDown);
+       return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
-   // Listen for profile click from shared Navbar
+    // Listen for profile click from shared Navbar
    useEffect(() => {
       const handler = () => setIsArmoryModalOpen(true);
       window.addEventListener('open-armory-modal', handler);
@@ -4927,22 +4931,34 @@ export default function HomePage() {
                         {/* LEFT COLUMN: tabs + content */}
                            <div className="flex flex-col gap-2 min-w-0 flex-1">
 <div className="flex flex-col gap-1.5">
-                           <div className="flex justify-end">
-                           <button
-                              type="button"
-                              onClick={(e) => {
-                                 e.stopPropagation();
-                                 const next = !offerSoundsEnabled;
-                                 setOfferSoundsEnabled(next);
-                                 localStorage.setItem("uplink_offer_sounds", next.toString());
-                                 addToast(next ? "New offer alert sounds on." : "New offer alert sounds muted.", "info");
-                              }}
-                              className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] transition-all backdrop-blur-md cursor-pointer ${
-                                 offerSoundsEnabled
-                                    ? theme === 'light'
-                                       ? 'border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/20'
-                                       : 'border-[#00ffff]/25 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/15'
-                                    : theme === 'light'
+                            <div className="flex justify-end gap-1.5">
+                            <button
+                               type="button"
+                               onClick={() => {
+                                  if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
+                                  if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
+                                  setIsBoostRequestModalOpen(true);
+                               }}
+                               className="flex items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-400/10 px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] text-amber-400 hover:bg-amber-400/20 transition-all backdrop-blur-md cursor-pointer"
+                            >
+                               <TrendingUp className="w-3 h-3 shrink-0" />
+                               <span className="whitespace-nowrap">Boost Request</span>
+                            </button>
+                            <button
+                               type="button"
+                               onClick={(e) => {
+                                  e.stopPropagation();
+                                  const next = !offerSoundsEnabled;
+                                  setOfferSoundsEnabled(next);
+                                  localStorage.setItem("uplink_offer_sounds", next.toString());
+                                  addToast(next ? "New offer alert sounds on." : "New offer alert sounds muted.", "info");
+                               }}
+                               className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] transition-all backdrop-blur-md cursor-pointer ${
+                                  offerSoundsEnabled
+                                     ? theme === 'light'
+                                        ? 'border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/20'
+                                        : 'border-[#00ffff]/25 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/15'
+                                     : theme === 'light'
                                        ? 'border-gray-200 bg-white/80 text-gray-400 hover:text-gray-600'
                                        : 'border-white/10 bg-black/40 text-white/45 hover:text-white/70'
                               }`}
@@ -5695,6 +5711,13 @@ export default function HomePage() {
                   onDraftLoaded={(name) => addToast(`Loaded draft "${name}".`, "success")}
                 />
 
+                <BoostRequestModal
+                  isOpen={isBoostRequestModalOpen}
+                  onClose={() => setIsBoostRequestModalOpen(false)}
+                  currentUserId={currentUserId}
+                  userName={currentUserDisplay}
+                />
+
                 <AnimatePresence>
                    {isArmoryModalOpen && <ArmoryModal
                   isOpen={isArmoryModalOpen}
@@ -6149,12 +6172,11 @@ export default function HomePage() {
               <HomeFloatingActions
                   onOpenSupport={() => { setLoungeWidgetOpen(false); setSupportWidgetOpen(true); }}
                   onOpenClubLounge={() => { setSupportWidgetOpen(false); setLoungeWidgetOpen(true); }}
-                 onOpenPostRequest={() => {
-                   if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
-                   if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
-                   setSubmitError("");
-                   setIsCreateModalOpen(true);
-                 }}
+                  onOpenBoostRequest={() => {
+                    if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
+                    if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
+                    setIsBoostRequestModalOpen(true);
+                  }}
                  supportUnread={isAdmin ? adminTicketUnread : 0}
                  supportOpen={supportWidgetOpen}
                  loungeOpen={loungeWidgetOpen}

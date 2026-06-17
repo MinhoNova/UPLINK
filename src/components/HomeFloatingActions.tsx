@@ -9,7 +9,7 @@ import {
   ShoppingBag,
   Star,
   MessageCircle,
-  Megaphone,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
@@ -38,7 +38,7 @@ function DiscordGlyph({ className }: { className?: string }) {
 type Props = {
   onOpenSupport: () => void;
   onOpenClubLounge?: () => void;
-  onOpenPostRequest?: () => void;
+  onOpenBoostRequest?: () => void;
   supportUnread?: number;
   supportOpen?: boolean;
   loungeOpen?: boolean;
@@ -49,7 +49,7 @@ type Props = {
 const ACCENT_COLORS: Record<string, { text: string; bar: string; bg: string; border: string }> = {
   lounge: { text: "text-[#00ffff]", bar: "bg-[#00ffff]", bg: "bg-[#00ffff]/8", border: "border-[#00ffff]/25" },
   discord: { text: "text-[#5865F2]", bar: "bg-[#5865F2]", bg: "bg-[#5865F2]/8", border: "border-[#5865F2]/25" },
-  "post-request": { text: "text-[#ff007f]", bar: "bg-[#ff007f]", bg: "bg-[#ff007f]/8", border: "border-[#ff007f]/25" },
+  "post-request": { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
   reviews: { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
   shop: { text: "text-violet-400", bar: "bg-violet-400", bg: "bg-violet-400/8", border: "border-violet-400/25" },
   support: { text: "text-yellow-400", bar: "bg-yellow-400", bg: "bg-yellow-400/8", border: "border-yellow-400/25" },
@@ -58,7 +58,7 @@ const ACCENT_COLORS: Record<string, { text: string; bar: string; bg: string; bor
 export default function HomeFloatingActions({
   onOpenSupport,
   onOpenClubLounge,
-  onOpenPostRequest,
+  onOpenBoostRequest,
   supportUnread = 0,
   supportOpen = false,
   loungeOpen = false,
@@ -99,13 +99,13 @@ export default function HomeFloatingActions({
     },
     {
       id: "post-request",
-      label: "Post Request",
-      icon: Megaphone,
+      label: "Boost Request",
+      icon: TrendingUp,
       accentText: ACCENT_COLORS["post-request"].text,
       accentBar: ACCENT_COLORS["post-request"].bar,
       iconBg: ACCENT_COLORS["post-request"].bg,
       iconBorder: ACCENT_COLORS["post-request"].border,
-      onClick: () => onOpenPostRequest?.(),
+      onClick: () => onOpenBoostRequest?.(),
     },
     {
       id: "reviews",
