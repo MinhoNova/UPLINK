@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { TrendingUp, Coins, Loader2, Plus, ImagePlus, X, Upload, Link2 } from "lucide-react";
+import {
+  TrendingUp, Coins, Loader2, Plus, ImagePlus, X, Upload, Link2, Target
+} from "lucide-react";
+import { resolveVfxSrc, resolveVfxBannerUrl, resolveLobbyBannerBg } from "@/lib/vfxAssets";
 
 type Bid = {
   id: string;
@@ -39,29 +42,47 @@ type BoostRequest = {
 export default function BoostsPageContent() {
   const { data: session, status } = useSession();
   const [requests, setRequests] = useState<BoostRequest[]>([]);
+  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [biddingRequestId, setBiddingRequestId] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState(0);
   const [bidMsg, setBidMsg] = useState("");
   const [bidLoading, setBidLoading] = useState(false);
-  const [bgInput, setBgInput] = useState<string | null>(null);
-  const [bgUrl, setBgUrl] = useState("");
+  const [bgPickerId, setBgPickerId] = useState<string | null>(null);
+  const [bgCustomUrl, setBgCustomUrl] = useState("");
   const [bgSaving, setBgSaving] = useState(false);
+  const bgPickerRef = useRef<HTMLDivElement>(null);
 
   const currentUserId = (session?.user as any)?.id || "";
 
-  const fetchRequests = () => {
-    fetch("/api/boost-requests")
-      .then((r) => r.json())
-      .then((d) => { setRequests(d.requests || []); setLoading(false); })
-      .catch(() => setLoading(false));
+  const fetchAll = () => {
+    Promise.all([
+      fetch("/api/boost-requests").then((r) => r.json()),
+      fetch("/api/data").then((r) => r.json()),
+    ]).then(([brData, data]) => {
+      setRequests(brData.requests || []);
+      setRegisteredUsers(data.registeredUsers || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchRequests();
-    const interval = setInterval(fetchRequests, 10000);
+    fetchAll();
+    const interval = setInterval(fetchAll, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Close BG picker on outside click
+  useEffect(() => {
+    if (!bgPickerId) return;
+    const close = (e: MouseEvent) => {
+      if (bgPickerRef.current && !bgPickerRef.current.contains(e.target as Node)) {
+        setBgPickerId(null);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [bgPickerId]);
 
   const handleBid = async (requestId: string) => {
     if (bidAmount <= 0) return;
@@ -77,7 +98,7 @@ export default function BoostsPageContent() {
         setBiddingRequestId(null);
         setBidAmount(0);
         setBidMsg("");
-        fetchRequests();
+        fetchAll();
       } else {
         alert(data.error || "Failed to place bid");
       }
@@ -94,7 +115,7 @@ export default function BoostsPageContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "accept", requestId, bidId }),
     });
-    if (res.ok) fetchRequests();
+    if (res.ok) fetchAll();
     else { const d = await res.json(); alert(d.error || "Failed"); }
   };
 
@@ -104,37 +125,47 @@ export default function BoostsPageContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "cancel", requestId }),
     });
-    fetchRequests();
+    fetchAll();
   };
 
-  const handleSetBg = async (requestId: string) => {
+  const handleSetBg = async (requestId: string, url: string) => {
+    if (!url) return;
     setBgSaving(true);
     const res = await fetch("/api/boost-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "set-bg", requestId, url: bgUrl }),
+      body: JSON.stringify({ action: "set-bg", requestId, url }),
     });
-    if (res.ok) { setBgInput(null); setBgUrl(""); fetchRequests(); }
+    if (res.ok) { setBgPickerId(null); setBgCustomUrl(""); fetchAll(); }
+    setBgSaving(false);
+  };
+
+  const handleUploadBg = async (requestId: string, file: File) => {
+    setBgSaving(true);
+    const formData = new FormData();
+    formData.append("action", "set-bg");
+    formData.append("requestId", requestId);
+    formData.append("file", file);
+    const res = await fetch("/api/boost-requests", { method: "POST", body: formData });
+    if (res.ok) { setBgPickerId(null); setBgCustomUrl(""); fetchAll(); }
     setBgSaving(false);
   };
 
   const myRequests = requests.filter((r) => String(r.userId) === String(currentUserId));
   const openRequests = requests.filter((r) => r.status === "open");
 
+  const getOwnerUser = (r: BoostRequest) => registeredUsers.find((u) => String(u.id) === String(r.userId));
+  const resolveBg = (r: BoostRequest) => {
+    if (r.customBg) return r.customBg;
+    const owner = getOwnerUser(r);
+    if (owner?.activeVfx) return resolveLobbyBannerBg({}, owner, owner.activeVfx);
+    return null;
+  };
+
   const factionEmoji = (f: string | null) => {
     if (f === "horde") return <img src="/assets/Horde.svg" alt="Horde" className="w-3.5 h-3.5 inline opacity-70" />;
     if (f === "alliance") return <img src="/assets/Alliance.svg" alt="Alliance" className="w-3.5 h-3.5 inline opacity-70" />;
     return null;
-  };
-
-  const CardBg = ({ r }: { r: BoostRequest }) => {
-    if (!r.customBg) return null;
-    return (
-      <div className="absolute inset-0 z-0 overflow-hidden rounded-[2.5rem]">
-        <img src={r.customBg} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
-        <div className="absolute inset-0 bg-black/20" />
-      </div>
-    );
   };
 
   return (
@@ -169,16 +200,19 @@ export default function BoostsPageContent() {
                   r={r}
                   isOwner
                   currentUserId={currentUserId}
-                  factionEmoji={factionEmoji}
+                  bgUrl={resolveBg(r)}
+                  bgPickerId={bgPickerId}
+                  onOpenBgPicker={setBgPickerId}
+                  onCloseBgPicker={() => setBgPickerId(null)}
+                  onSelectVfx={(url) => handleSetBg(r.id, url)}
                   onCancel={handleCancel}
                   onAccept={handleAccept}
-                  onSetBg={(id) => { setBgInput(id); setBgUrl(r.customBg || ""); }}
-                  bgInput={bgInput}
-                  bgUrl={bgUrl}
+                  bgCustomUrl={bgCustomUrl}
+                  setBgCustomUrl={setBgCustomUrl}
                   bgSaving={bgSaving}
-                  onBgUrlChange={setBgUrl}
-                  onBgSave={handleSetBg}
-                  onCloseBg={() => { setBgInput(null); setBgUrl(""); }}
+                  onSetBgUrl={() => handleSetBg(r.id, bgCustomUrl)}
+                  onUploadBg={(f) => handleUploadBg(r.id, f)}
+                  registeredUsers={registeredUsers}
                 />
               ))}
             </div>
@@ -212,7 +246,7 @@ export default function BoostsPageContent() {
                   r={r}
                   isOwner={isOwn}
                   currentUserId={currentUserId}
-                  factionEmoji={factionEmoji}
+                  bgUrl={resolveBg(r)}
                   canBid={canBid}
                   myBid={myBid}
                   biddingRequestId={biddingRequestId}
@@ -225,13 +259,17 @@ export default function BoostsPageContent() {
                   onBidMsgChange={setBidMsg}
                   onBidSubmit={handleBid}
                   onAccept={handleAccept}
-                  onSetBg={(id) => { setBgInput(id); setBgUrl(r.customBg || ""); }}
-                  bgInput={bgInput}
-                  bgUrl={bgUrl}
+                  onCancel={handleCancel}
+                  bgPickerId={bgPickerId}
+                  onOpenBgPicker={setBgPickerId}
+                  onCloseBgPicker={() => setBgPickerId(null)}
+                  onSelectVfx={(url) => handleSetBg(r.id, url)}
+                  bgCustomUrl={bgCustomUrl}
+                  setBgCustomUrl={setBgCustomUrl}
                   bgSaving={bgSaving}
-                  onBgUrlChange={setBgUrl}
-                  onBgSave={handleSetBg}
-                  onCloseBg={() => { setBgInput(null); setBgUrl(""); }}
+                  onSetBgUrl={() => handleSetBg(r.id, bgCustomUrl)}
+                  onUploadBg={(f) => handleUploadBg(r.id, f)}
+                  registeredUsers={registeredUsers}
                 />
               );
             })}
@@ -243,28 +281,35 @@ export default function BoostsPageContent() {
 }
 
 function BoostCard({
-  r, isOwner, currentUserId, factionEmoji, canBid, myBid,
+  r, isOwner, currentUserId, bgUrl, canBid, myBid,
   biddingRequestId, bidAmount, bidMsg, bidLoading,
   onBidClick, onBidCancel, onBidAmountChange, onBidMsgChange, onBidSubmit,
-  onCancel, onAccept, onSetBg,
-  bgInput, bgUrl, bgSaving, onBgUrlChange, onBgSave, onCloseBg,
+  onCancel, onAccept,
+  bgPickerId, onOpenBgPicker, onCloseBgPicker, onSelectVfx,
+  bgCustomUrl, setBgCustomUrl, bgSaving, onSetBgUrl, onUploadBg,
+  registeredUsers,
 }: {
   r: BoostRequest; isOwner: boolean; currentUserId: string;
-  factionEmoji: (f: string | null) => React.ReactNode;
+  bgUrl: string | null;
   canBid?: boolean; myBid?: Bid | null;
   biddingRequestId?: string | null; bidAmount?: number; bidMsg?: string; bidLoading?: boolean;
   onBidClick?: () => void; onBidCancel?: () => void;
   onBidAmountChange?: (v: number) => void; onBidMsgChange?: (v: string) => void; onBidSubmit?: (id: string) => void;
   onCancel?: (id: string) => void; onAccept?: (id: string, bidId: string) => void;
-  onSetBg?: (id: string) => void;
-  bgInput?: string | null; bgUrl?: string; bgSaving?: boolean;
-  onBgUrlChange?: (v: string) => void; onBgSave?: (id: string) => void; onCloseBg?: () => void;
+  bgPickerId?: string | null; onOpenBgPicker?: (id: string | null) => void; onCloseBgPicker?: () => void;
+  onSelectVfx?: (url: string) => void;
+  bgCustomUrl?: string; setBgCustomUrl?: (v: string) => void; bgSaving?: boolean;
+  onSetBgUrl?: () => void; onUploadBg?: (file: File) => void;
+  registeredUsers: any[];
 }) {
   const title = r.type === "leveling"
     ? `Leveling ${r.startLevel} → ${r.endLevel}`
     : `${r.dungeonName} +${r.keyLevel}`;
   const canAcceptBid = isOwner && r.status === "open";
   const totalBidsShown = isOwner ? (r.bids?.length || 0) : (r.totalBids || 0);
+  const ownerUser = registeredUsers.find((u: any) => String(u.id) === String(r.userId));
+  const userVfx: any[] = ownerUser?.userVfx || [];
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <motion.div
@@ -276,10 +321,10 @@ function BoostCard({
         ${r.status === "open" ? "border-white/10 hover:border-white/30" : "border-amber-500/30"}
         bg-black/80`}
       >
-        {/* Banner background */}
-        {r.customBg ? (
+        {/* Banner background — same as lobby banner */}
+        {bgUrl ? (
           <div className="absolute inset-0 z-0 overflow-hidden rounded-[2.5rem]">
-            <img src={r.customBg} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
+            <img src={bgUrl} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
             <div className="absolute inset-0 bg-black/20" />
           </div>
         ) : (
@@ -335,14 +380,14 @@ function BoostCard({
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-1.5 p-3 xl:p-4 ml-auto">
-            {/* Background button (owner only) */}
+            {/* BG button — same as lobby BG button */}
             {isOwner && (
               <button
-                onClick={() => onSetBg?.(r.id)}
-                className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition"
-                title="Set background"
+                onClick={() => onOpenBgPicker?.(bgPickerId === r.id ? null : r.id)}
+                className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center hover:bg-amber-500/20 transition"
+                title="Choose background"
               >
-                <ImagePlus className="w-4 h-4 text-gray-400" />
+                <Target className="w-4 h-4 text-amber-400" />
               </button>
             )}
             {isOwner && r.status === "open" && (
@@ -353,67 +398,82 @@ function BoostCard({
           </div>
         </div>
 
-        {/* Background input (owner only) — like ArmoryModal Lobby Store */}
-        {isOwner && bgInput === r.id && (
-          <div className="relative z-20 px-4 pb-4">
-            <div className="p-4 rounded-2xl bg-black/60 border border-white/10">
-              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-3">Set Background Image/GIF</p>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <div className="flex-1 min-w-[200px] flex items-center gap-2 bg-black/50 border border-white/10 rounded-xl px-3 py-2">
+        {/* BG Picker — same style as lobby BG picker */}
+        {isOwner && bgPickerId === r.id && (
+          <div ref={bgPickerRef} className="relative z-30 px-4 pb-4" style={{ pointerEvents: "auto" }}>
+            <div className="bg-[#0a0a16]/95 border border-yellow-500/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(255,215,0,0.15)] backdrop-blur-xl">
+              <p className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-3">
+                {bgUrl ? "🎨" : ""} Set Background
+              </p>
+
+              {/* VFX entries from Lobby Store */}
+              {userVfx.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
+                  {userVfx.map((entry: any, i: number) => {
+                    const src = resolveVfxSrc(entry);
+                    const preview = resolveVfxBannerUrl(entry);
+                    const isActive = r.customBg === src || (!r.customBg && ownerUser?.activeVfx === src);
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => { onSelectVfx?.(src); }}
+                        className={`cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 aspect-video ${
+                          isActive
+                            ? "border-yellow-500 shadow-[0_0_10px_rgba(255,215,0,0.3)]"
+                            : "border-transparent hover:border-white/20"
+                        }`}
+                      >
+                        <img src={preview} className="w-full h-full object-cover" alt="" />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* URL + File upload */}
+              <div className="flex flex-wrap gap-2">
+                <div className="flex-1 min-w-[180px] flex items-center gap-2 bg-black/50 border border-white/10 rounded-xl px-3 py-2">
                   <Link2 className="w-4 h-4 text-gray-500 shrink-0" />
                   <input
-                    value={bgUrl || ""}
-                    onChange={(e) => onBgUrlChange?.(e.target.value)}
+                    value={bgCustomUrl || ""}
+                    onChange={(e) => setBgCustomUrl?.(e.target.value)}
                     placeholder="Paste GIF URL..."
                     className="flex-1 bg-transparent text-xs text-white outline-none placeholder:text-gray-600"
                   />
+                  {bgCustomUrl && (
+                    <button
+                      onClick={onSetBgUrl}
+                      disabled={bgSaving}
+                      className="text-[8px] font-black text-[#00ffff] uppercase tracking-widest hover:underline disabled:opacity-40"
+                    >
+                      {bgSaving ? "..." : "Set"}
+                    </button>
+                  )}
                 </div>
                 <label className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-[9px] font-black uppercase tracking-widest">
                   <Upload className="w-3.5 h-3.5" /> Upload
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/gif,image/webp,image/png,image/jpeg"
                     className="hidden"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
                       e.target.value = "";
-                      if (!file) return;
-                      const formData = new FormData();
-                      formData.append("action", "set-bg");
-                      formData.append("requestId", r.id);
-                      formData.append("file", file);
-                      onBgSave?.(r.id);
-                      try {
-                        const res = await fetch("/api/boost-requests", {
-                          method: "POST",
-                          body: formData,
-                        });
-                        if (res.ok) {
-                          const data = await res.json();
-                          onBgUrlChange?.(data.url || "");
-                        }
-                      } catch {}
+                      if (file) onUploadBg?.(file);
                     }}
                   />
                 </label>
               </div>
-              {bgUrl && (
-                <div className="relative w-full aspect-video max-h-32 rounded-xl overflow-hidden border border-white/10 mb-3">
-                  <img src={bgUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                </div>
+
+              {userVfx.length === 0 && !bgCustomUrl && (
+                <p className="text-[10px] text-gray-600 mt-3 text-center">
+                  No backgrounds yet. Paste a URL or upload a file.
+                  {ownerUser?.userVfx === undefined && currentUserId && (
+                    <span> Save backgrounds in <a href="/shop" className="text-[#00ffff] hover:underline">Secret Club → Lobby Store</a>.</span>
+                  )}
+                </p>
               )}
-              <div className="flex gap-2">
-                <button onClick={onCloseBg} className="flex-1 py-2 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10">
-                  Done
-                </button>
-                <button
-                  onClick={() => onBgSave?.(r.id)}
-                  disabled={bgSaving || !bgUrl}
-                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black text-[9px] font-black uppercase tracking-widest disabled:opacity-40 hover:opacity-90 transition"
-                >
-                  {bgSaving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : "Save"}
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -428,7 +488,6 @@ function BoostCard({
                   <span className="text-gray-600 ml-1">({totalBidsShown} total)</span>
                 )}
               </p>
-              {/* Show all bids to owner, or just my bid to others */}
               {(isOwner ? r.bids : (myBid ? [myBid] : [])).map((b) => (
                 <div key={b.id} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02]">
                   <div className="flex items-center gap-2 min-w-0">
@@ -457,62 +516,29 @@ function BoostCard({
           </div>
         )}
 
-        {/* Bid form (non-owners, non-bidders) */}
+        {/* Bid form */}
         {canBid && !myBid && biddingRequestId === r.id && (
           <div className="relative z-10 border-t border-white/5 p-4 space-y-2">
             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Your bid (K Gold)</p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => onBidAmountChange?.(Math.max(1, (bidAmount || 0) - 5))}
-                className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10"
-              >
-                −
-              </button>
+              <button onClick={() => onBidAmountChange?.(Math.max(1, (bidAmount || 0) - 5))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
               <span className="text-xl font-black text-[#00ffff] tabular-nums w-16 text-center">{bidAmount || 0}K</span>
-              <button
-                onClick={() => onBidAmountChange?.((bidAmount || 0) + 5)}
-                className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10"
-              >
-                +
-              </button>
+              <button onClick={() => onBidAmountChange?.((bidAmount || 0) + 5)} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
             </div>
-            <input
-              value={bidMsg || ""}
-              onChange={(e) => onBidMsgChange?.(e.target.value)}
-              placeholder="Message (optional)"
-              className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#00ffff]/50 placeholder:text-gray-600"
-            />
+            <input value={bidMsg || ""} onChange={(e) => onBidMsgChange?.(e.target.value)} placeholder="Message (optional)" className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#00ffff]/50 placeholder:text-gray-600" />
             <div className="flex gap-2">
-              <button
-                onClick={onBidCancel}
-                className="flex-1 py-2 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={bidLoading || !bidAmount || bidAmount <= 0}
-                onClick={() => onBidSubmit?.(r.id)}
-                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black text-[9px] font-black uppercase tracking-widest disabled:opacity-40 hover:opacity-90 transition"
-              >
+              <button onClick={onBidCancel} className="flex-1 py-2 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10">Cancel</button>
+              <button disabled={bidLoading || !bidAmount || bidAmount <= 0} onClick={() => onBidSubmit?.(r.id)} className="flex-1 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black text-[9px] font-black uppercase tracking-widest disabled:opacity-40 hover:opacity-90 transition">
                 {bidLoading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : "Place Bid"}
               </button>
             </div>
           </div>
         )}
-
-        {/* Place Bid button */}
         {canBid && !myBid && biddingRequestId !== r.id && (
           <div className="relative z-10 border-t border-white/5">
-            <button
-              onClick={onBidClick}
-              className="w-full py-3 rounded-b-[2.5rem] bg-gradient-to-r from-[#00ffff]/10 to-[#ff007f]/10 border-t-0 text-[#00ffff] text-[10px] font-black uppercase tracking-widest hover:from-[#00ffff]/20 hover:to-[#ff007f]/20 transition"
-            >
-              Place Bid
-            </button>
+            <button onClick={onBidClick} className="w-full py-3 rounded-b-[2.5rem] bg-gradient-to-r from-[#00ffff]/10 to-[#ff007f]/10 border-t-0 text-[#00ffff] text-[10px] font-black uppercase tracking-widest hover:from-[#00ffff]/20 hover:to-[#ff007f]/20 transition">Place Bid</button>
           </div>
         )}
-
-        {/* My existing bid status */}
         {canBid && myBid && (
           <div className="relative z-10 border-t border-white/5">
             <div className="px-4 py-2.5 flex items-center justify-between">
