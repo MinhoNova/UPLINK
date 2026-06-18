@@ -10,6 +10,8 @@ import {
   Star,
   MessageCircle,
   TrendingUp,
+  BookOpen,
+  Package,
   type LucideIcon,
 } from "lucide-react";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
@@ -38,7 +40,6 @@ function DiscordGlyph({ className }: { className?: string }) {
 type Props = {
   onOpenSupport: () => void;
   onOpenClubLounge?: () => void;
-  onOpenBoostRequest?: () => void;
   supportUnread?: number;
   supportOpen?: boolean;
   loungeOpen?: boolean;
@@ -53,12 +54,13 @@ const ACCENT_COLORS: Record<string, { text: string; bar: string; bg: string; bor
   reviews: { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
   shop: { text: "text-violet-400", bar: "bg-violet-400", bg: "bg-violet-400/8", border: "border-violet-400/25" },
   support: { text: "text-yellow-400", bar: "bg-yellow-400", bg: "bg-yellow-400/8", border: "border-yellow-400/25" },
+  guides: { text: "text-emerald-400", bar: "bg-emerald-400", bg: "bg-emerald-400/8", border: "border-emerald-400/25" },
+  addon: { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
 };
 
 export default function HomeFloatingActions({
   onOpenSupport,
   onOpenClubLounge,
-  onOpenBoostRequest,
   supportUnread = 0,
   supportOpen = false,
   loungeOpen = false,
@@ -99,13 +101,13 @@ export default function HomeFloatingActions({
     },
     {
       id: "post-request",
-      label: "Boost Request",
+      label: "Boost Requests",
       icon: TrendingUp,
       accentText: ACCENT_COLORS["post-request"].text,
       accentBar: ACCENT_COLORS["post-request"].bar,
       iconBg: ACCENT_COLORS["post-request"].bg,
       iconBorder: ACCENT_COLORS["post-request"].border,
-      onClick: () => onOpenBoostRequest?.(),
+      onClick: () => {},
     },
     {
       id: "reviews",
@@ -125,6 +127,26 @@ export default function HomeFloatingActions({
       accentBar: ACCENT_COLORS.shop.bar,
       iconBg: ACCENT_COLORS.shop.bg,
       iconBorder: ACCENT_COLORS.shop.border,
+      onClick: () => {},
+    },
+    {
+      id: "guides",
+      label: "Guides",
+      icon: BookOpen,
+      accentText: ACCENT_COLORS.guides.text,
+      accentBar: ACCENT_COLORS.guides.bar,
+      iconBg: ACCENT_COLORS.guides.bg,
+      iconBorder: ACCENT_COLORS.guides.border,
+      onClick: () => {},
+    },
+    {
+      id: "addon",
+      label: "Addon",
+      icon: Package,
+      accentText: ACCENT_COLORS.addon.text,
+      accentBar: ACCENT_COLORS.addon.bar,
+      iconBg: ACCENT_COLORS.addon.bg,
+      iconBorder: ACCENT_COLORS.addon.border,
       onClick: () => {},
     },
     {
@@ -208,6 +230,9 @@ export default function HomeFloatingActions({
           if (item.id === "lounge") return <Link key={item.id} href="/community">{btn}</Link>;
           if (item.id === "reviews") return <Link key={item.id} href="/reviews">{btn}</Link>;
           if (item.id === "shop") return <Link key={item.id} href="/shop">{btn}</Link>;
+          if (item.id === "post-request") return <Link key={item.id} href="/boosts">{btn}</Link>;
+          if (item.id === "guides") return <Link key={item.id} href="/guides">{btn}</Link>;
+          if (item.id === "addon") return <Link key={item.id} href="/addon">{btn}</Link>;
           return btn;
         })}
       </motion.nav>

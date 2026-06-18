@@ -109,6 +109,23 @@ export default function RootLayout({
           <CommunityNotificationsPanel />
           <PlayerProfileModal />
           {children}
+          <footer className="border-t border-white/5 mt-auto py-10 px-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] font-black uppercase tracking-widest">
+                <a href="/" className="text-gray-500 hover:text-white transition-colors">Home</a>
+                <a href="/boosts" className="text-gray-500 hover:text-white transition-colors">Boost Requests</a>
+                <a href="/shop" className="text-gray-500 hover:text-white transition-colors">Shop</a>
+                <a href="/reviews" className="text-gray-500 hover:text-white transition-colors">Reviews</a>
+                <a href="/community" className="text-gray-500 hover:text-white transition-colors">Community</a>
+                <a href="/leaderboard" className="text-gray-500 hover:text-white transition-colors">Leaderboard</a>
+                <a href="/guides" className="text-gray-500 hover:text-white transition-colors">Guides</a>
+                <a href="/addon" className="text-gray-500 hover:text-white transition-colors">Addon</a>
+              </div>
+              <p className="text-center mt-4 text-[8px] text-gray-700 font-black uppercase tracking-widest">
+                UPLINK — World of Warcraft Mythic+ LFG &amp; Boost Marketplace
+              </p>
+            </div>
+          </footer>
         </AuthProvider>
       </body>
     </html>

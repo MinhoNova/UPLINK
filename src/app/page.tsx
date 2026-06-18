@@ -6172,17 +6172,12 @@ export default function HomePage() {
               <HomeFloatingActions
                   onOpenSupport={() => { setLoungeWidgetOpen(false); setSupportWidgetOpen(true); }}
                   onOpenClubLounge={() => { setSupportWidgetOpen(false); setLoungeWidgetOpen(true); }}
-                  onOpenBoostRequest={() => {
-                    if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
-                    if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
-                    setIsBoostRequestModalOpen(true);
-                  }}
-                 supportUnread={isAdmin ? adminTicketUnread : 0}
-                 supportOpen={supportWidgetOpen}
-                 loungeOpen={loungeWidgetOpen}
-                 currentUserId={currentUserId}
-                 isAdmin={isAdmin}
-              />
+                  supportUnread={isAdmin ? adminTicketUnread : 0}
+                  supportOpen={supportWidgetOpen}
+                  loungeOpen={loungeWidgetOpen}
+                  currentUserId={currentUserId}
+                  isAdmin={isAdmin}
+               />
               <SupportChatWidget
                  tickets={tickets}
                  selectedTicket={selectedTicket}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Coins, DollarSign, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield, GanttChartSquare } from "lucide-react";
+import { X, Coins, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield } from "lucide-react";
 import { DUNGEONS } from "@/lib/dungeonAssets";
 
 type BoostRequest = {
@@ -16,7 +16,7 @@ type BoostRequest = {
   dungeonName: string | null;
   keyLevel: number | null;
   budget: number;
-  budgetCurrency: "gold" | "usd";
+  budgetCurrency: "gold";
   notes: string;
   status: "open" | "accepted" | "closed";
   bids: Bid[];
@@ -47,11 +47,10 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
   const [type, setType] = useState<"leveling" | "dungeon" | null>(null);
   const [faction, setFaction] = useState<"horde" | "alliance" | null>(null);
   const [startLevel, setStartLevel] = useState(1);
-  const [endLevel, setEndLevel] = useState(80);
+  const [endLevel, setEndLevel] = useState(70);
   const [dungeonName, setDungeonName] = useState("");
   const [keyLevel, setKeyLevel] = useState(2);
   const [budget, setBudget] = useState(50);
-  const [budgetCurrency, setBudgetCurrency] = useState<"gold" | "usd">("gold");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdRequest, setCreatedRequest] = useState<BoostRequest | null>(null);
@@ -76,11 +75,10 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
       setType(null);
       setFaction(null);
       setStartLevel(1);
-      setEndLevel(80);
+      setEndLevel(70);
       setDungeonName("");
       setKeyLevel(2);
       setBudget(50);
-      setBudgetCurrency("gold");
       setNotes("");
       setCreatedRequest(null);
       setTab("create");
@@ -91,7 +89,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
     if (!type) return;
     setLoading(true);
     try {
-      const body: any = { action: "create", type, budget, budgetCurrency, notes };
+      const body: any = { action: "create", type, budget, notes };
       if (type === "leveling") {
         body.faction = faction;
         body.startLevel = startLevel;
@@ -169,6 +167,9 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
   const openRequests = requests.filter((r) => r.status === "open" && String(r.userId) !== String(currentUserId));
   const myPastRequests = requests.filter((r) => String(r.userId) === String(currentUserId) && r.status !== "open");
 
+  const clampStartLevel = (val: number) => Math.max(1, Math.min(val, endLevel - 1));
+  const clampEndLevel = (val: number) => Math.max(startLevel + 1, Math.min(val, 90));
+
   if (!isOpen) return null;
 
   return (
@@ -186,7 +187,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
           </div>
           <div className="flex-1">
             <h2 className="text-sm font-black text-white uppercase tracking-widest">Boost Request</h2>
-            <p className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Lost? Let boosters find you</p>
+            <p className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Find a booster — gold only</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl">
             <X className="w-4 h-4 text-gray-400" />
@@ -230,7 +231,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                     </div>
                     <div>
                       <p className="text-sm font-black text-white">Power Leveling</p>
-                      <p className="text-[9px] text-gray-500">1–80 • Horde or Alliance</p>
+                      <p className="text-[9px] text-gray-500">1–90 • Horde or Alliance</p>
                     </div>
                   </div>
                 </button>
@@ -268,16 +269,16 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                           key={f}
                           type="button"
                           onClick={() => setFaction(f)}
-                          className={`p-4 rounded-2xl border text-center transition ${
+                          className={`p-3 rounded-2xl border text-center transition ${
                             faction === f ? "border-[#00ffff]/60 bg-[#00ffff]/10 shadow-[0_0_20px_rgba(0,255,255,0.1)]" : "border-white/10 bg-white/[0.03] hover:border-white/20"
                           }`}
                         >
                           <img
                             src={`/assets/${f === "horde" ? "Horde" : "Alliance"}.svg`}
                             alt={f}
-                            className="w-16 h-16 mx-auto mb-2 opacity-80"
+                            className="w-10 h-10 mx-auto mb-1 opacity-80"
                           />
-                          <p className={`text-[11px] font-black uppercase tracking-widest ${faction === f ? "text-[#00ffff]" : "text-gray-400"}`}>
+                          <p className={`text-[10px] font-black uppercase tracking-widest ${faction === f ? "text-[#00ffff]" : "text-gray-400"}`}>
                             {f === "horde" ? "Horde" : "Alliance"}
                           </p>
                         </button>
@@ -287,18 +288,32 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                     <div>
                       <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">From level</p>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => setStartLevel(Math.max(1, startLevel - 5))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
-                        <span className="text-lg font-black text-[#00d4ff] tabular-nums w-12 text-center">{startLevel}</span>
-                        <button onClick={() => setStartLevel(Math.min(endLevel - 1, startLevel + 5))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
+                        <button onClick={() => setStartLevel(clampStartLevel(startLevel - 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
+                        <input
+                          type="number"
+                          value={startLevel}
+                          onChange={(e) => setStartLevel(clampStartLevel(Number(e.target.value) || 1))}
+                          className="w-16 text-center text-lg font-black text-[#00d4ff] tabular-nums bg-black/50 border border-white/10 rounded-lg px-2 py-1 outline-none focus:border-[#00ffff]/50"
+                          min={1}
+                          max={89}
+                        />
+                        <button onClick={() => setStartLevel(clampStartLevel(startLevel + 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
                       </div>
                     </div>
 
                     <div>
                       <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">To level</p>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => setEndLevel(Math.max(startLevel + 1, endLevel - 5))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
-                        <span className="text-lg font-black text-[#ff007f] tabular-nums w-12 text-center">{endLevel}</span>
-                        <button onClick={() => setEndLevel(Math.min(80, endLevel + 5))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
+                        <button onClick={() => setEndLevel(clampEndLevel(endLevel - 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
+                        <input
+                          type="number"
+                          value={endLevel}
+                          onChange={(e) => setEndLevel(clampEndLevel(Number(e.target.value) || 1))}
+                          className="w-16 text-center text-lg font-black text-[#ff007f] tabular-nums bg-black/50 border border-white/10 rounded-lg px-2 py-1 outline-none focus:border-[#ff007f]/50"
+                          min={2}
+                          max={90}
+                        />
+                        <button onClick={() => setEndLevel(clampEndLevel(endLevel + 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
                       </div>
                     </div>
                   </>
@@ -353,60 +368,31 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                 </button>
               </div>
             ) : step === 2 ? (
-              /* Step 3: Budget */
+              /* Step 3: Budget — gold only */
               <div className="space-y-4">
                 <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1 text-[9px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition">
                   <ChevronLeft className="w-3 h-3" /> Back
                 </button>
 
-                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Your budget</p>
-                <p className="text-[8px] text-gray-600">Boosters will bid on your request. Set a starting budget.</p>
+                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Your budget (gold)</p>
+                <p className="text-[8px] text-gray-600">Boosters will bid on your request. Set a starting budget in gold.</p>
 
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <button
-                        type="button"
-                        onClick={() => { setBudgetCurrency("gold"); setBudget(Math.max(1, Math.round(budget / 10))); }}
-                        className={`flex-1 p-3 rounded-xl border text-center transition ${
-                          budgetCurrency === "gold" ? "border-yellow-400/60 bg-yellow-400/10" : "border-white/10 bg-white/[0.03]"
-                        }`}
-                      >
-                        <Coins className={`w-4 h-4 mx-auto mb-1 ${budgetCurrency === "gold" ? "text-yellow-400" : "text-gray-500"}`} />
-                        <p className={`text-[8px] font-black uppercase ${budgetCurrency === "gold" ? "text-yellow-400" : "text-gray-500"}`}>Gold</p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setBudgetCurrency("usd"); setBudget(Math.max(1, Math.round(budget * 10))); }}
-                        className={`flex-1 p-3 rounded-xl border text-center transition ${
-                          budgetCurrency === "usd" ? "border-[#00ffff]/60 bg-[#00ffff]/10" : "border-white/10 bg-white/[0.03]"
-                        }`}
-                      >
-                        <DollarSign className={`w-4 h-4 mx-auto mb-1 ${budgetCurrency === "usd" ? "text-[#00ffff]" : "text-gray-500"}`} />
-                        <p className={`text-[8px] font-black uppercase ${budgetCurrency === "usd" ? "text-[#00ffff]" : "text-gray-500"}`}>USD</p>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-3 justify-center">
-                      <button onClick={() => setBudget(Math.max(1, budget - (budgetCurrency === "gold" ? 10 : 1)))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/10">−</button>
-                      <div className="text-center">
-                        <span className="text-2xl font-black text-white tabular-nums">{budget}</span>
-                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{budgetCurrency === "gold" ? "K Gold" : "USD"}</p>
-                      </div>
-                      <button onClick={() => setBudget(budget + (budgetCurrency === "gold" ? 10 : 1))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/10">+</button>
-                    </div>
+                <div className="flex items-center gap-3 justify-center">
+                  <button onClick={() => setBudget(Math.max(1, budget - 10))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/10">−</button>
+                  <div className="text-center">
+                    <span className="text-2xl font-black text-yellow-400 tabular-nums">{budget}</span>
+                    <p className="text-[8px] font-black text-yellow-400/60 uppercase tracking-widest">K Gold</p>
                   </div>
+                  <button onClick={() => setBudget(budget + 10)} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/10">+</button>
                 </div>
 
-                {budgetCurrency === "gold" && (
-                  <div className="flex gap-2 flex-wrap justify-center">
-                    {[10, 25, 50, 100, 200, 500].map((v) => (
-                      <button key={v} type="button" onClick={() => setBudget(v)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition ${
-                        budget === v ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/40" : "bg-white/5 text-gray-500 border border-white/10 hover:border-white/20"
-                      }`}>{v}K</button>
-                    ))}
-                  </div>
-                )}
+                <div className="flex gap-2 flex-wrap justify-center">
+                  {[10, 25, 50, 100, 200, 500].map((v) => (
+                    <button key={v} type="button" onClick={() => setBudget(v)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition ${
+                      budget === v ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/40" : "bg-white/5 text-gray-500 border border-white/10 hover:border-white/20"
+                    }`}>{v}K</button>
+                  ))}
+                </div>
 
                 <button
                   type="button"
@@ -415,7 +401,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                   className="w-full py-3.5 rounded-xl font-black uppercase text-[11px] tracking-widest transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:opacity-90"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  {loading ? "Posting..." : `Post Request — ${budgetCurrency === "gold" ? `${budget}K Gold` : `$${budget}`}`}
+                  {loading ? "Posting..." : `Post Request — ${budget}K Gold`}
                 </button>
               </div>
             ) : (
@@ -433,7 +419,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                         ? `Leveling ${createdRequest.startLevel}→${createdRequest.endLevel}`
                         : `${createdRequest.dungeonName} +${createdRequest.keyLevel}`}
                     </p>
-                    <p className="text-sm font-black text-amber-400">{createdRequest.budgetCurrency === "gold" ? `${createdRequest.budget}K Gold` : `$${createdRequest.budget}`}</p>
+                    <p className="text-sm font-black text-amber-400">{createdRequest.budget}K Gold</p>
                   </div>
                 )}
                 <button
@@ -458,7 +444,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                           <p className="text-xs font-black text-white">
                             {r.type === "leveling" ? `Leveling ${r.startLevel}→${r.endLevel}` : `${r.dungeonName} +${r.keyLevel}`}
                           </p>
-                          <p className="text-[9px] font-black text-amber-400">{r.budgetCurrency === "gold" ? `${r.budget}K Gold` : `$${r.budget}`}</p>
+                          <p className="text-[9px] font-black text-amber-400">{r.budget}K Gold</p>
                         </div>
                         <button type="button" onClick={() => handleCancel(r.id)} className="text-[8px] text-gray-600 hover:text-red-400 font-black uppercase tracking-widest">Cancel</button>
                       </div>
@@ -472,7 +458,7 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                                 <p className="text-[8px] text-gray-500">{b.message}</p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-xs font-black text-green-400">{r.budgetCurrency === "gold" ? `${b.amount}K` : `$${b.amount}`}</p>
+                                <p className="text-xs font-black text-green-400">{b.amount}K</p>
                                 <button
                                   type="button"
                                   onClick={() => handleAccept(r.id, b.id)}
@@ -508,24 +494,24 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                           <img
                             src={`/assets/${r.faction === "horde" ? "Horde" : "Alliance"}.svg`}
                             alt={r.faction}
-                            className="w-5 h-5 opacity-60"
+                            className="w-4 h-4 opacity-60"
                           />
                         )}
                         <p className="text-xs font-black text-white">
                           {r.type === "leveling" ? `Leveling ${r.startLevel}→${r.endLevel}` : `${r.dungeonName} +${r.keyLevel}`}
                         </p>
                       </div>
-                      <p className="text-xs font-black text-amber-400">{r.budgetCurrency === "gold" ? `${r.budget}K` : `$${r.budget}`}</p>
+                      <p className="text-xs font-black text-amber-400">{r.budget}K</p>
                     </div>
                     <p className="text-[9px] text-gray-500 mb-2">by {r.userName}{r.notes ? ` • ${r.notes}` : ""}</p>
 
                     {biddingRequestId === r.id ? (
                       <div className="space-y-2 mt-2 pt-2 border-t border-white/5">
-                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Your bid</p>
+                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Your bid (K Gold)</p>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => setBidAmount(Math.max(1, bidAmount - (r.budgetCurrency === "gold" ? 5 : 1)))} className="w-7 h-7 flex items-center justify-center bg-white/5 rounded-lg text-white font-black">−</button>
-                          <span className="text-base font-black text-[#00ffff] tabular-nums w-16 text-center">{bidAmount}{r.budgetCurrency === "gold" ? "K" : "$"}</span>
-                          <button onClick={() => setBidAmount(bidAmount + (r.budgetCurrency === "gold" ? 5 : 1))} className="w-7 h-7 flex items-center justify-center bg-white/5 rounded-lg text-white font-black">+</button>
+                          <button onClick={() => setBidAmount(Math.max(1, bidAmount - 5))} className="w-7 h-7 flex items-center justify-center bg-white/5 rounded-lg text-white font-black">−</button>
+                          <span className="text-base font-black text-[#00ffff] tabular-nums w-16 text-center">{bidAmount}K</span>
+                          <button onClick={() => setBidAmount(bidAmount + 5)} className="w-7 h-7 flex items-center justify-center bg-white/5 rounded-lg text-white font-black">+</button>
                         </div>
                         <input
                           value={bidMsg}

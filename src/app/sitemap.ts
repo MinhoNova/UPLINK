@@ -37,6 +37,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.6,
     },
+    {
+      url: `${siteUrl}/boosts`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/guides`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
+    {
+      url: `${siteUrl}/guides/mythic-plus-boosting`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${siteUrl}/addon`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
   ];
 
   try {

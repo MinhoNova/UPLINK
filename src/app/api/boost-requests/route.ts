@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const requests: any[] = (await getKV("boostRequests")) || [];
 
   if (action === "create") {
-    const { type, faction, dungeonName, keyLevel, startLevel, endLevel, budget, budgetCurrency, notes } = payload;
+    const { type, faction, dungeonName, keyLevel, startLevel, endLevel, budget, notes } = payload;
     if (!type || !["leveling", "dungeon"].includes(type)) {
       return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       dungeonName: type === "dungeon" ? (dungeonName || "") : null,
       keyLevel: type === "dungeon" ? (Number(keyLevel) || 0) : null,
       budget: Number(budget),
-      budgetCurrency: budgetCurrency === "usd" ? "usd" : "gold",
+      budgetCurrency: "gold",
       notes: notes || "",
       status: "open",
       bids: [],
