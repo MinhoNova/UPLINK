@@ -8,7 +8,20 @@ export async function GET(req: Request) {
 
   await initTables();
   const requests: any[] = (await getKV("boostRequests")) || [];
-  return NextResponse.json({ requests });
+
+  const myUserId = String(auth.user.id);
+  const masked = requests.map((r) => {
+    const isOwner = String(r.userId) === myUserId;
+    if (isOwner) return r;
+    const myBid = r.bids?.find((b: any) => String(b.userId) === myUserId);
+    return {
+      ...r,
+      bids: myBid ? [myBid] : [],
+      totalBids: r.bids?.length || 0,
+    };
+  });
+
+  return NextResponse.json({ requests: masked });
 }
 
 export async function POST(req: Request) {
@@ -42,6 +55,7 @@ export async function POST(req: Request) {
       budget: Number(budget),
       budgetCurrency: "gold",
       notes: notes || "",
+      customBg: "",
       status: "open",
       bids: [],
       acceptedBidId: null,
@@ -64,16 +78,44 @@ export async function POST(req: Request) {
     if (String(req2.userId) === String(auth.user.id)) {
       return NextResponse.json({ error: "Cannot bid on your own request" }, { status: 403 });
     }
+
+    const newAmount = Number(amount);
     const bid = {
       id: `bid_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       userId: String(auth.user.id),
       userName: auth.user.name || auth.user.username || "Operative",
-      amount: Number(amount),
+      userHandle: auth.user.username || "",
+      amount: newAmount,
       message: message || "",
       createdAt: Date.now(),
     };
     req2.bids.push(bid);
     requests[idx] = req2;
+
+    // Undercut notification
+    const requestTitle = req2.dungeonName
+      ? `${req2.dungeonName} +${req2.keyLevel}`
+      : `Leveling ${req2.startLevel}→${req2.endLevel}`;
+    const undercutBidders = req2.bids.filter(
+      (b: any) => b.amount > newAmount && String(b.userId) !== String(auth.user.id) && b.id !== bid.id
+    );
+    if (undercutBidders.length > 0) {
+      const notifications: any[] = (await getKV("notifications")) || [];
+      for (const bidder of undercutBidders) {
+        notifications.push({
+          id: Date.now() + Math.random(),
+          toUser: bidder.userHandle || bidder.userName,
+          fromUser: "UPLINK System",
+          fromHandle: "system",
+          fromAvatar: null,
+          message: `Someone placed a lower bid (${newAmount}K) on "${requestTitle}" — your bid was ${bidder.amount}K.`,
+          type: "system_alert",
+          timestamp: Date.now(),
+        });
+      }
+      await setKV("notifications", notifications);
+    }
+
     await setKV("boostRequests", requests);
     return NextResponse.json({ success: true, bid });
   }
@@ -109,6 +151,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Only the requester can cancel" }, { status: 403 });
     }
     req2.status = "closed";
+    requests[idx] = req2;
+    await setKV("boostRequests", requests);
+    return NextResponse.json({ success: true });
+  }
+
+  if (action === "set-bg") {
+    const { requestId, url } = payload;
+    const idx = requests.findIndex((r) => r.id === requestId);
+    if (idx === -1) return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    const req2 = requests[idx];
+    if (String(req2.userId) !== String(auth.user.id)) {
+      return NextResponse.json({ error: "Only the requester can set background" }, { status: 403 });
+    }
+    req2.customBg = url || "";
     requests[idx] = req2;
     await setKV("boostRequests", requests);
     return NextResponse.json({ success: true });
