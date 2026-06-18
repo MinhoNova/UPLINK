@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { TrendingUp, Coins, Loader2, Plus, ImagePlus, X } from "lucide-react";
+import { TrendingUp, Coins, Loader2, Plus, ImagePlus, X, Upload, Link2 } from "lucide-react";
 
 type Bid = {
   id: string;
@@ -353,29 +353,67 @@ function BoostCard({
           </div>
         </div>
 
-        {/* Background input (owner only) */}
+        {/* Background input (owner only) — like ArmoryModal Lobby Store */}
         {isOwner && bgInput === r.id && (
           <div className="relative z-20 px-4 pb-4">
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-black/60 border border-white/10">
-              <input
-                value={bgUrl || ""}
-                onChange={(e) => onBgUrlChange?.(e.target.value)}
-                placeholder="Paste image/GIF URL..."
-                className="flex-1 bg-transparent text-xs text-white outline-none placeholder:text-gray-600"
-              />
+            <div className="p-4 rounded-2xl bg-black/60 border border-white/10">
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-3">Set Background Image/GIF</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex-1 min-w-[200px] flex items-center gap-2 bg-black/50 border border-white/10 rounded-xl px-3 py-2">
+                  <Link2 className="w-4 h-4 text-gray-500 shrink-0" />
+                  <input
+                    value={bgUrl || ""}
+                    onChange={(e) => onBgUrlChange?.(e.target.value)}
+                    placeholder="Paste GIF URL..."
+                    className="flex-1 bg-transparent text-xs text-white outline-none placeholder:text-gray-600"
+                  />
+                </div>
+                <label className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-[9px] font-black uppercase tracking-widest">
+                  <Upload className="w-3.5 h-3.5" /> Upload
+                  <input
+                    type="file"
+                    accept="image/gif,image/webp,image/png,image/jpeg"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file) return;
+                      const formData = new FormData();
+                      formData.append("action", "set-bg");
+                      formData.append("requestId", r.id);
+                      formData.append("file", file);
+                      onBgSave?.(r.id);
+                      try {
+                        const res = await fetch("/api/boost-requests", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          onBgUrlChange?.(data.url || "");
+                        }
+                      } catch {}
+                    }}
+                  />
+                </label>
+              </div>
               {bgUrl && (
-                <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10 shrink-0">
+                <div className="relative w-full aspect-video max-h-32 rounded-xl overflow-hidden border border-white/10 mb-3">
                   <img src={bgUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 </div>
               )}
-              <button onClick={onCloseBg} className="text-gray-500 hover:text-white"><X className="w-4 h-4" /></button>
-              <button
-                onClick={() => onBgSave?.(r.id)}
-                disabled={bgSaving}
-                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
-              >
-                {bgSaving ? "..." : "Save"}
-              </button>
+              <div className="flex gap-2">
+                <button onClick={onCloseBg} className="flex-1 py-2 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10">
+                  Done
+                </button>
+                <button
+                  onClick={() => onBgSave?.(r.id)}
+                  disabled={bgSaving || !bgUrl}
+                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black text-[9px] font-black uppercase tracking-widest disabled:opacity-40 hover:opacity-90 transition"
+                >
+                  {bgSaving ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : "Save"}
+                </button>
+              </div>
             </div>
           </div>
         )}

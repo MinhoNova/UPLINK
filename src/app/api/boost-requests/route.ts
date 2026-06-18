@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
+import { storeUserMediaFile } from "@/lib/userMediaStorage";
+import { getImageMetadata, normalizeLobbyVfx } from "@/lib/imageProcess";
 
 export async function GET(req: Request) {
   const auth = await requireSession(req);
@@ -28,11 +30,26 @@ export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
-  const { action, ...payload } = body;
-
   await initTables();
   const requests: any[] = (await getKV("boostRequests")) || [];
+
+  const contentType = req.headers.get("content-type") || "";
+  const isMultipart = contentType.includes("multipart/form-data");
+
+  let action: string;
+  let payload: any = {};
+
+  if (isMultipart) {
+    const formData = await req.formData();
+    action = String(formData.get("action") || "");
+    for (const [key, val] of formData.entries()) {
+      payload[key] = val;
+    }
+  } else {
+    const body = await req.json();
+    action = body.action;
+    payload = body;
+  }
 
   if (action === "create") {
     const { type, faction, dungeonName, keyLevel, startLevel, endLevel, budget, notes } = payload;
@@ -164,10 +181,36 @@ export async function POST(req: Request) {
     if (String(req2.userId) !== String(auth.user.id)) {
       return NextResponse.json({ error: "Only the requester can set background" }, { status: 403 });
     }
-    req2.customBg = url || "";
+
+    let bgUrl = url || "";
+
+    // Handle file upload via FormData
+    if (isMultipart) {
+      const file = payload.file as File | undefined;
+      if (file?.size) {
+        try {
+          const buffer = Buffer.from(await file.arrayBuffer());
+          const isGif = file.type.includes("gif") || file.name.toLowerCase().endsWith(".gif");
+          const meta = await getImageMetadata(buffer).catch(() => null);
+          const gifDetected = isGif || (meta?.format === "gif");
+          const normalized = await normalizeLobbyVfx(buffer, gifDetected);
+          const mime = normalized.ext === "gif" ? "image/gif" : "image/webp";
+          bgUrl = await storeUserMediaFile(
+            String(auth.user.id),
+            normalized.buffer,
+            normalized.ext,
+            mime
+          );
+        } catch {
+          return NextResponse.json({ error: "Image processing failed" }, { status: 400 });
+        }
+      }
+    }
+
+    req2.customBg = bgUrl;
     requests[idx] = req2;
     await setKV("boostRequests", requests);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, url: bgUrl });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
