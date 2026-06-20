@@ -38,7 +38,7 @@ export async function getOfferDailyUsage(
 }
 
 export function offerDailyLimitError(): string {
-  return `Daily limit reached (${FREE_DAILY_OFFER_LIMIT}/day). Secret Club members have unlimited offers.`;
+  return `Daily limit reached (${FREE_DAILY_OFFER_LIMIT}/day).`;
 }
 
 /** Atomically check limit and record one offer action (create or apply). */

@@ -17,11 +17,7 @@ export default function LeaderboardClient() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/");
-      return;
-    }
-    if (status !== "authenticated") return;
+    if (status === "loading") return;
 
     let cancelled = false;
     (async () => {

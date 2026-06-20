@@ -2132,16 +2132,9 @@ export default function HomePage() {
       }
     }, [session, currentUserDiscordHandle, registeredUsers]);
 
-    const getUserTier = useCallback((userId?: string): "free" | "secret_club" => {
-        if (!userId) return "free";
-        if (userId === "1497295886223544471") return "secret_club";
-        const user = registeredUsers.find((u: any) => String(u.id) === String(userId) || u.username === userId);
-        if (!user?.subscription) return "free";
-        const sub = user.subscription;
-        if (sub.tier !== "secret_club") return "free";
-        if (sub.endDate && Date.now() > sub.endDate) return "free";
+    const getUserTier = useCallback((_userId?: string): "free" | "secret_club" => {
         return "secret_club";
-     }, [registeredUsers]);
+     }, []);
 
      const activeBoostLobbyIds = useMemo(() => {
         const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));

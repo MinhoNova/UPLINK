@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
+import { requireOptionalSession } from "@/lib/authz";
 import { getDb } from "@/db";
 import { posts, reactions, reports } from "@/db/schema";
 import { eq, and, inArray, gte } from "drizzle-orm";
@@ -32,8 +33,8 @@ async function saveCommunityImage(userId: string, buffer: Buffer, preferGif: boo
 
 export async function GET(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireOptionalSession(req);
+  const viewerId = auth.ok && auth.user ? auth.user.id : "guest";
 
   const { searchParams } = new URL(req.url);
   const tag = searchParams.get("tag");
@@ -64,7 +65,6 @@ export async function GET(req: NextRequest) {
 
   await initTables();
   const friends = (await getKV("friends")) || [];
-  const viewerId = (session.user as { id?: string }).id || "";
   rows = rows.filter((p: any) => canViewPost(viewerId, p, friends));
 
   const postIds = rows.map((p: any) => p.id);
@@ -78,9 +78,9 @@ export async function GET(req: NextRequest) {
     const existing = reactionMap[r.postId].find((x) => x.type === r.type);
     if (existing) {
       existing.count++;
-      if (r.userId === (session.user as any).id) existing.userReacted = true;
+      if (auth.ok && auth.user && r.userId === auth.user.id) existing.userReacted = true;
     } else {
-      reactionMap[r.postId].push({ type: r.type, count: 1, userReacted: r.userId === (session.user as any).id });
+      reactionMap[r.postId].push({ type: r.type, count: 1, userReacted: auth.ok && auth.user ? r.userId === auth.user.id : false });
     }
   }
 

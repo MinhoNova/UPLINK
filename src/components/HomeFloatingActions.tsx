@@ -69,7 +69,8 @@ export default function HomeFloatingActions({
 }: Props) {
   const { data: session, status } = useSession();
 
-  if (status !== "authenticated" || !session?.user) return null;
+  // Dock is always visible (public site)
+  // if (status !== "authenticated" || !session?.user) return null;
 
   const openDiscord = () => {
     window.open(getDiscordInviteUrl(), "_blank", "noopener,noreferrer");

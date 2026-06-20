@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/authz";
+import { requireSession, requireOptionalSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { storeUserMediaFile } from "@/lib/userMediaStorage";
 import { getImageMetadata, normalizeLobbyVfx } from "@/lib/imageProcess";
 
 export async function GET(req: Request) {
-  const auth = await requireSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const auth = await requireOptionalSession(req);
+  const myUserId = auth.ok && auth.user ? String(auth.user.id) : null;
 
   await initTables();
   const requests: any[] = (await getKV("boostRequests")) || [];
 
-  const myUserId = String(auth.user.id);
   const masked = requests.map((r) => {
-    const isOwner = String(r.userId) === myUserId;
+    const isOwner = myUserId && String(r.userId) === myUserId;
     if (isOwner) return r;
+    if (!myUserId) {
+      return { ...r, bids: [], totalBids: r.bids?.length || 0 };
+    }
     const myBid = r.bids?.find((b: any) => String(b.userId) === myUserId);
     return {
       ...r,

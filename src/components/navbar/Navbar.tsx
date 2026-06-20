@@ -149,7 +149,8 @@ export default function Navbar() {
     }
   }, [currentHandle, registeredUsers, session]);
 
-  if (status !== "loading" && !session) return null;
+  // Navbar is always visible (public site)
+  // if (status !== "loading" && !session) return null;
 
   // Use session user as fallback if not in registeredUsers
   const currentUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId)) || {
@@ -162,11 +163,8 @@ export default function Navbar() {
   const adminHandle = "minhonovazen";
   const adminId = "1497295886223544471";
 
-  const getUserTier = (userId: string) => {
-    const handle = (session?.user as any)?.username || "";
-    if (handle === adminHandle || userId === adminId) return "secret_club";
-    const u = registeredUsers.find((uu: any) => String(uu.id) === String(userId));
-    return u?.subscription?.tier || "free";
+  const getUserTier = (_userId: string) => {
+    return "secret_club";
   };
 
   const getUserTierLabel = (userId: string) => {
