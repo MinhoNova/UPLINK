@@ -4914,16 +4914,15 @@ export default function HomePage() {
                                   <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#ff007f]/60" />
                                </div>
                             </div>
-                          </motion.div>
-                       </div>
-                    </section>
-
-                     {/* SEO paragraph — visible, keyword-rich */}
-                     <div className="relative z-10 px-4 py-6 max-w-2xl mx-auto text-center">
-                       <p className={`text-[9px] font-bold uppercase tracking-[0.18em] leading-relaxed ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
-                         WoWLFG — World of Warcraft Looking for Group. Browse Mythic+ offers, post boost requests, check Raider.io scores, and find your next dungeon group on UPLINK. Free for all players.
-                       </p>
-                     </div>
+                           </motion.div>
+                        </div>
+                        {/* SEO paragraph — visible, keyword-rich */}
+                        <div className="relative z-10 px-4 py-4 max-w-2xl mx-auto text-center pointer-events-auto">
+                          <p className={`text-[9px] font-bold uppercase tracking-[0.18em] leading-relaxed ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
+                            WoWLFG — World of Warcraft Looking for Group. Browse Mythic+ offers, post boost requests, check Raider.io scores, and find your next dungeon group on UPLINK. Free for all players.
+                          </p>
+                        </div>
+                     </section>
                      {/* Main feed — full width on mobile; desktop uses slight scale for density */}
                     <div className="px-2 sm:px-[5%] xl:px-12 py-4 -mt-8 sm:-mt-16 relative z-20">
                     <div className="w-full mx-auto origin-top scale-100 md:scale-[0.85] lg:scale-[0.7]">
