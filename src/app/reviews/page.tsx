@@ -5,11 +5,11 @@ import ReviewsPageContent from "./ReviewsPageContent";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Reviews — UPLINK",
-  description: "Read reviews and ratings from the UPLINK community. Share your experience with the premier WoW boosting marketplace.",
+  title: "WoWLFG Reviews — UPLINK",
+  description: "WoWLFG — Read reviews and ratings from the UPLINK boosting community. Share your experience with the premier WoW LFG and boosting marketplace.",
   openGraph: {
-    title: "Reviews — UPLINK",
-    description: "Read reviews and ratings from the UPLINK community. Share your experience with the premier WoW boosting marketplace.",
+    title: "WoWLFG Reviews — UPLINK",
+    description: "WoWLFG — Read reviews and ratings from the UPLINK boosting community. Share your experience.",
   },
   alternates: {
     canonical: `${siteUrl}/reviews`,

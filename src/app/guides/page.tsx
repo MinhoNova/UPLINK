@@ -5,13 +5,13 @@ import { getSiteUrl } from "@/lib/siteUrl";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "WoW Guides — UPLINK",
+  title: "WoWLFG Guides — UPLINK",
   description:
-    "Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft players. Learn how to find groups and climb the leaderboard.",
+    "WoWLFG — Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft players. Learn how to find groups and climb the leaderboard.",
   openGraph: {
-    title: "WoW Guides — UPLINK",
+    title: "WoWLFG Guides — UPLINK",
     description:
-      "Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft.",
+      "WoWLFG — Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft.",
   },
   alternates: { canonical: `${siteUrl}/guides` },
 };

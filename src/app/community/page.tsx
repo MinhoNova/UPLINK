@@ -150,6 +150,7 @@ export default function CommunityPage() {
    const currentUserId = (session?.user as any)?.id || "guest";
   const currentUserHandle = (session?.user as any)?.username || "";
   const isAdmin = currentUserId === "1497295886223544471" || currentUserHandle === "minhonovazen";
+  const WOWLFG_HASHTAG = "#wowlfg";
 
   const openProfile = (userId: string) => {
     window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId } }));

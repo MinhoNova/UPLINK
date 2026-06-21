@@ -6,13 +6,13 @@ import { Download, Package, Shield, Zap, GitBranch } from "lucide-react";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "UPLINK Addon — WoW Group Finder Integration",
+  title: "WoWLFG Addon — UPLINK WoW Group Finder",
   description:
-    "Download the UPLINK World of Warcraft addon for seamless group finder integration. Browse Mythic+ groups, check Raider.io scores, and find your next run directly in-game.",
+    "WoWLFG — Download the UPLINK World of Warcraft addon for seamless group finder integration. Browse Mythic+ groups, check Raider.io scores, and find your next run in-game.",
   openGraph: {
-    title: "UPLINK Addon — WoW Group Finder Integration",
+    title: "WoWLFG Addon — UPLINK WoW Group Finder",
     description:
-      "Browse Mythic+ groups, check Raider.io scores, and find runs directly in-game with the UPLINK addon.",
+      "WoWLFG — Browse Mythic+ groups, check Raider.io scores, and find runs in-game with the UPLINK addon.",
   },
   alternates: { canonical: `${siteUrl}/addon` },
 };

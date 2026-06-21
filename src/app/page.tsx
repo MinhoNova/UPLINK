@@ -4746,112 +4746,113 @@ export default function HomePage() {
         <PageContext.Provider value={pageContextValue}>
          <div className={`min-h-screen ${theme === 'light' ? 'bg-[#f8f9fc] text-[#1a1a2e]' : 'bg-[#06060c] text-gray-200'} selection:bg-[#ff007f]/30 font-[family-name:var(--font-outfit)] overflow-x-hidden transition-colors duration-700`}>
            {toastLayer}
-           {status !== 'unauthenticated' ? (
-             showOnboarding ? (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#030308]">
-                   <HeroBackground />
+           {status === 'authenticated' && showOnboarding && (
+                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#030308]">
+                    <HeroBackground />
 
-                   <motion.div
-                      variants={{
-                         hidden: { opacity: 0, scale: 0.95, y: 30 },
-                         visible: { 
-                            opacity: 1, 
-                            scale: 1, 
-                            y: 0, 
-                            transition: { 
-                               type: "spring", 
-                               damping: 25, 
-                               stiffness: 120,
-                               staggerChildren: 0.1
-                            } 
-                         }
-                      }}
-                      initial="hidden"
-                      animate="visible"
-                      onMouseMove={(e) => {
-                         const rect = e.currentTarget.getBoundingClientRect();
-                         const x = e.clientX - rect.left;
-                         const y = e.clientY - rect.top;
-                         e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
-                         e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
-                      }}
-                      style={{ background: 'rgba(255, 255, 255, 0.03)' }}
-                      className="w-full max-w-lg backdrop-blur-2xl border border-white/20 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.3)] relative p-8 sm:p-12 group/modal"
-                   >
-                      {/* INTERACTIVE MOUSE GLOW */}
-                      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover/modal:opacity-100 transition-opacity duration-500">
-                         <div 
-                            className="absolute inset-0 bg-[radial-gradient(circle_600px_at_var(--mouse-x)_var(--mouse-y),rgba(99,102,241,0.15),rgba(168,85,247,0.1),transparent_80%)]"
-                         ></div>
-                      </div>
+                    <motion.div
+                       variants={{
+                          hidden: { opacity: 0, scale: 0.95, y: 30 },
+                          visible: { 
+                             opacity: 1, 
+                             scale: 1, 
+                             y: 0, 
+                             transition: { 
+                                type: "spring", 
+                                damping: 25, 
+                                stiffness: 120,
+                                staggerChildren: 0.1
+                             } 
+                          }
+                       }}
+                       initial="hidden"
+                       animate="visible"
+                       onMouseMove={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = e.clientX - rect.left;
+                          const y = e.clientY - rect.top;
+                          e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
+                          e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
+                       }}
+                       style={{ background: 'rgba(255, 255, 255, 0.03)' }}
+                       className="w-full max-w-lg backdrop-blur-2xl border border-white/20 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.3)] relative p-8 sm:p-12 group/modal"
+                    >
+                       {/* INTERACTIVE MOUSE GLOW */}
+                       <div className="absolute inset-0 pointer-events-none opacity-0 group-hover/modal:opacity-100 transition-opacity duration-500">
+                          <div 
+                             className="absolute inset-0 bg-[radial-gradient(circle_600px_at_var(--mouse-x)_var(--mouse-y),rgba(99,102,241,0.15),rgba(168,85,247,0.1),transparent_80%)]"
+                          ></div>
+                       </div>
 
-                      <div className="relative z-10">
-                         <motion.div variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col items-center text-center mb-12">
-                            <ProtocolMark variant={1} className="w-20 h-20 text-white mb-6 drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" />
-                            <h2 className="text-5xl font-black tracking-widest uppercase mb-1 bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">UPLINK</h2>
-                            <span className="text-[9px] font-black uppercase tracking-[0.55em] text-amber-400/90 mb-2">Beta</span>
-                         </motion.div>
+                       <div className="relative z-10">
+                          <motion.div variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col items-center text-center mb-12">
+                             <ProtocolMark variant={1} className="w-20 h-20 text-white mb-6 drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" />
+                             <h2 className="text-5xl font-black tracking-widest uppercase mb-1 bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">UPLINK</h2>
+                             <span className="text-[9px] font-black uppercase tracking-[0.55em] text-amber-400/90 mb-2">Beta</span>
+                          </motion.div>
 
-                         <div className="space-y-6">
-                            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
-                               <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">Neural Signature</label>
-                               <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
-                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                  <div className="flex items-center gap-4 px-4 relative z-10">
-                                     <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="Bnet" />
-                                     <input
-                                        type="text"
-                                        placeholder="Username#1234"
-                                        value={onboardingData.battleTag}
-                                        onChange={(e) => {
-                                           setOnboardingData({ ...onboardingData, battleTag: e.target.value });
-                                           if (onboardingError) setOnboardingError("");
-                                        }}
-                                        className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
-                                     />
-                                  </div>
-                               </div>
-                            </motion.div>
+                          <div className="space-y-6">
+                             <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
+                                <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">Neural Signature</label>
+                                <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
+                                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                   <div className="flex items-center gap-4 px-4 relative z-10">
+                                      <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="WoWLFG Battle.net" />
+                                      <input
+                                         type="text"
+                                         placeholder="Username#1234"
+                                         value={onboardingData.battleTag}
+                                         onChange={(e) => {
+                                            setOnboardingData({ ...onboardingData, battleTag: e.target.value });
+                                            if (onboardingError) setOnboardingError("");
+                                         }}
+                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
+                                      />
+                                   </div>
+                                </div>
+                             </motion.div>
 
-                            <motion.div variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
-                               <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">Combat Registry</label>
-                               <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
-                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                  <div className="flex items-center gap-4 px-4 relative z-10">
-                                     <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="RIO" />
-                                     <input
-                                        type="text"
-                                        placeholder="https://raider.io/characters/..."
-                                        value={onboardingData.raiderLink}
-                                        onChange={(e) => {
-                                           setOnboardingData({ ...onboardingData, raiderLink: e.target.value });
-                                           if (onboardingError) setOnboardingError("");
-                                        }}
-                                        className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
-                                     />
-                                  </div>
-                               </div>
-                            </motion.div>
-                         </div>
+                             <motion.div variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
+                                <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">Combat Registry</label>
+                                <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
+                                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                   <div className="flex items-center gap-4 px-4 relative z-10">
+                                      <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="WoWLFG Raider.io" />
+                                      <input
+                                         type="text"
+                                         placeholder="https://raider.io/characters/..."
+                                         value={onboardingData.raiderLink}
+                                         onChange={(e) => {
+                                            setOnboardingData({ ...onboardingData, raiderLink: e.target.value });
+                                            if (onboardingError) setOnboardingError("");
+                                         }}
+                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
+                                      />
+                                   </div>
+                                </div>
+                             </motion.div>
+                          </div>
 
-                         {onboardingError ? (
-                            <p className="mt-6 text-center text-sm font-bold text-red-400 px-4">{onboardingError}</p>
-                         ) : null}
+                          {onboardingError ? (
+                             <p className="mt-6 text-center text-sm font-bold text-red-400 px-4">{onboardingError}</p>
+                          ) : null}
 
-                         <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12">
-                            <button
-                               onClick={handleApplyOperative}
-                               disabled={isSyncing}
-                               className="w-full group relative py-6 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-[0_20px_40px_rgba(0,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
-                               <span className="relative z-10">{isSyncing ? "VERIFYING..." : "AUTHORIZE UPLINK"}</span>
-                            </button>
-                         </motion.div>
-                      </div>
-                   </motion.div>
-                </div>
-              ) : (() => {
+                          <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12">
+                             <button
+                                onClick={handleApplyOperative}
+                                disabled={isSyncing}
+                                className="w-full group relative py-6 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-[0_20px_40px_rgba(0,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                             >
+                                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+                                <span className="relative z-10">{isSyncing ? "VERIFYING..." : "AUTHORIZE UPLINK"}</span>
+                             </button>
+                          </motion.div>
+                       </div>
+                    </motion.div>
+                 </div>
+               )}
+
+              {(() => {
                  const innerAppContent = (
                    <>
 
@@ -4895,7 +4896,7 @@ export default function HomePage() {
                                </div>
                                <p className={`mt-5 text-[10px] font-black uppercase tracking-[0.35em] ${theme === "light" ? "text-gray-500" : "text-gray-500"}`}>{session ? "Open profile" : "Sign in to continue"}</p>
                             </motion.button>
-                            <p className={`text-sm md:text-base font-bold uppercase tracking-[0.16em] max-w-lg leading-relaxed ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-10`}>Find your crew for keys, boosts &amp; leveling — fast, clear, no clutter.</p>
+                             <h1 className={`text-sm md:text-base font-bold uppercase tracking-[0.16em] max-w-lg leading-relaxed ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-10`}>WoWLFG — Find your crew for keys, Mythic+ boosts &amp; leveling — fast, clear, no clutter.</h1>
                             <div className="flex flex-col sm:flex-row gap-6 items-center">
                                <motion.button
                                   onClick={() => { if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error"); if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error"); setSubmitError(""); setIsCreateModalOpen(true); }}
@@ -4917,7 +4918,13 @@ export default function HomePage() {
                        </div>
                     </section>
 
-                    {/* Main feed — full width on mobile; desktop uses slight scale for density */}
+                     {/* SEO paragraph — visible, keyword-rich */}
+                     <div className="relative z-10 px-4 py-6 max-w-2xl mx-auto text-center">
+                       <p className={`text-[9px] font-bold uppercase tracking-[0.18em] leading-relaxed ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
+                         WoWLFG — World of Warcraft Looking for Group. Browse Mythic+ offers, post boost requests, check Raider.io scores, and find your next dungeon group on UPLINK. Free for all players.
+                       </p>
+                     </div>
+                     {/* Main feed — full width on mobile; desktop uses slight scale for density */}
                     <div className="px-2 sm:px-[5%] xl:px-12 py-4 -mt-8 sm:-mt-16 relative z-20">
                     <div className="w-full mx-auto origin-top scale-100 md:scale-[0.85] lg:scale-[0.7]">
                           <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
@@ -6122,45 +6129,8 @@ export default function HomePage() {
                       </AnimatePresence>
                     </LiveKitRoom>
                   );
-                })()
-               ) : (
-              <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=1600')] bg-cover opacity-10 grayscale" />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#ff007f]/20 via-transparent to-black" />
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 text-center max-w-2xl">
-                   <h1 className="text-8xl font-black text-white uppercase tracking-tighter mb-4 italic">UPLINK</h1>
-                   <p className="text-[#ff007f] font-black tracking-[0.5em] mb-12 uppercase text-xs">Secure Gaming Network</p>
-                   <div className="p-12 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 shadow-2xl">
-                      <p className="text-gray-400 mb-12 font-medium leading-relaxed text-lg">This site is for registered members only. Please sign in to access the system.</p>
-                      <motion.button onClick={() => signIn("discord")} className="w-full py-8 bg-white text-black font-black uppercase text-2xl rounded-[2rem] flex items-center justify-center gap-4 hover:bg-[#ff007f] hover:text-white transition-all shadow-xl group">
-                         <ShieldCheck className="w-8 h-8" /> Sign in with Discord
-                      </motion.button>
-                   </div>
-                  {deleteConfirmation?.isOpen && (
-                     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <div className="bg-[#05050a] border border-[#ff007f]/30 p-8 rounded-3xl max-w-sm w-full text-center">
-                           <h3 className="text-xl font-black text-white mb-4">DELETE BACKGROUND</h3>
-                           <p className="text-gray-400 text-sm mb-8">Are you sure you want to delete this background? This action cannot be undone.</p>
-                           <div className="flex gap-4">
-                              <button onClick={() => setDeleteConfirmation(null)} className="w-1/3 shrink-0 py-3 bg-white/5 text-white font-black uppercase text-[10px] rounded-xl hover:bg-white/10">CANCEL</button>
-                              <button onClick={() => {
-                                 const { index, userId } = deleteConfirmation;
-                                 const userIdx = registeredUsersRef.current.findIndex((u: any) => u.id === userId);
-                                 if (userIdx !== -1) {
-                                    const updatedUsers = [...registeredUsersRef.current];
-                                    updatedUsers[userIdx].userVfx.splice(index, 1);
-                                    setRegisteredUsers(updatedUsers);
-                                    saveGlobalData({ registeredUsers: updatedUsers });
-                                 }
-                                 setDeleteConfirmation(null);
-                              }} className="w-1/3 shrink-0 py-3 bg-red-600 text-white font-black uppercase text-[10px] rounded-xl hover:bg-red-500">CONFIRM</button>
-                           </div>
-                        </div>
-                       </div>
-                    )}
-                 </motion.div>    </div>
-           )}
-           {status === "authenticated" && session?.user && !showOnboarding && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
+                })()}
+           {!showOnboarding && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
               <>
               <HomeFloatingActions
                   onOpenSupport={() => { setLoungeWidgetOpen(false); setSupportWidgetOpen(true); }}

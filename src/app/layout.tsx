@@ -19,12 +19,14 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "UPLINK | WoW Mythic+ LFG",
-    template: "%s | UPLINK",
+    default: "WoWLFG | UPLINK — WoW Mythic+ Group Finder & Boosting",
+    template: "%s | WoWLFG",
   },
   description:
-    "Find Mythic+ groups, leveling squads, and dungeon runs for World of Warcraft. Sync Raider.io, apply to offers, and coordinate with Discord.",
+    "WoWLFG — World of Warcraft Looking for Group. Find Mythic+ groups, leveling squads, boost requests, and dungeon runs. Sync Raider.io, place bids in gold, and join the UPLINK boosting marketplace.",
   keywords: [
+    "WoWLFG",
+    "wowlfg",
     "UPLINK",
     "WoW",
     "World of Warcraft",
@@ -32,9 +34,14 @@ export const metadata: Metadata = {
     "Mythic Plus",
     "Raider.io",
     "LFG",
+    "Looking for Group",
     "Dungeon",
     "Leveling",
+    "Boost",
+    "Boosting",
     "Retail WoW",
+    "WoW LFG",
+    "Group Finder",
   ],
   alternates: {
     canonical: siteUrl,
@@ -43,25 +50,25 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    siteName: "UPLINK",
-    title: "UPLINK | WoW Mythic+ LFG",
+    siteName: "WoWLFG — UPLINK",
+    title: "WoWLFG | UPLINK — WoW Group Finder & Boosting",
     description:
-      "Tactical WoW group finder — Mythic+ offers, leveling squads, Raider.io sync, and Discord coordination.",
+      "WoWLFG — World of Warcraft Looking for Group. Find Mythic+ groups, leveling squads, boost requests, and dungeon runs on UPLINK.",
     images: [
       {
         url: `${siteUrl}/og.png`,
         width: 1200,
         height: 630,
-        alt: "UPLINK — WoW Mythic+ LFG",
+        alt: "WoWLFG — UPLINK — WoW Group Finder",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "UPLINK | WoW Mythic+ LFG",
+    title: "WoWLFG | UPLINK — WoW Group Finder & Boosting",
     description:
-      "Find Mythic+ groups and leveling squads. Raider.io sync and Discord bot included.",
+      "WoWLFG — Find Mythic+ groups, boost requests, leveling squads on UPLINK. Raider.io sync and Discord bot included.",
     images: [`${siteUrl}/og.png`],
   },
   robots: {
@@ -89,10 +96,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "UPLINK",
+              name: "WoWLFG — UPLINK",
               url: siteUrl,
               description:
-                "Find Mythic+ groups, leveling squads, and dungeon runs for World of Warcraft.",
+                "WoWLFG — World of Warcraft Looking for Group. Find Mythic+ groups, leveling squads, boost requests, and dungeon runs.",
               potentialAction: {
                 "@type": "SearchAction",
                 target: `${siteUrl}/?q={search_term_string}`,
@@ -120,9 +127,11 @@ export default function RootLayout({
                 <a href="/leaderboard" className="text-gray-500 hover:text-white transition-colors">Leaderboard</a>
                 <a href="/guides" className="text-gray-500 hover:text-white transition-colors">Guides</a>
                 <a href="/addon" className="text-gray-500 hover:text-white transition-colors">Addon</a>
+                <span className="text-white/20">·</span>
+                <a href="/wowlfg" className="text-gray-500 hover:text-white transition-colors">WoWLFG</a>
               </div>
               <p className="text-center mt-4 text-[8px] text-gray-700 font-black uppercase tracking-widest">
-                UPLINK — World of Warcraft Mythic+ LFG &amp; Boost Marketplace
+                WoWLFG — World of Warcraft LFG, Boosting &amp; Group Finder | UPLINK
               </p>
             </div>
           </footer>
