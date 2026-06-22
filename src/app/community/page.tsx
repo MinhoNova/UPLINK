@@ -17,6 +17,7 @@ import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
   { type: "Love", icon: "❤️", label: "Love" },
+  { type: "Sad", icon: "😢", label: "Sad" },
   { type: "Wipe", icon: "💀", label: "Wipe" },
   { type: "Carry", icon: "🏆", label: "Carry" },
 ];
@@ -716,9 +717,9 @@ export default function CommunityPage() {
                               <button
                                 type="button"
                                 onClick={() => handleReaction(post.id, rt.type)}
-                                className={`flex items-center gap-1 px-1.5 py-1 text-sm transition-all ${active ? "bg-[#00ffff]/15" : ""}`}
-                              >
-                                <span>{rt.icon}</span>
+                                  className={`flex items-center gap-1 px-1.5 py-1 text-lg transition-all ${active ? "bg-[#00ffff]/15" : ""}`}
+                                >
+                                  <span className="hover:scale-125 transition-transform inline-block">{rt.icon}</span>
                               </button>
                               <button
                                 type="button"
@@ -738,7 +739,7 @@ export default function CommunityPage() {
                                 key={rt.type}
                                 type="button"
                                 onClick={() => { handleReaction(post.id, rt.type); setReactionPickerPostId(null); }}
-                                className="text-base hover:scale-125 transition-transform px-0.5"
+                                className="text-lg hover:scale-125 transition-transform px-0.5"
                                 title={rt.label}
                               >
                                 {rt.icon}
@@ -812,12 +813,12 @@ export default function CommunityPage() {
                                     </div>
                                     <p className="text-[12px] text-white/70">{c.content}</p>
                                     <div className="flex items-center gap-0.5 mt-1">
-                                      {["😂","❤️","💀","🏆"].map((icon, ri) => {
-                                        const r = commentReactions[c.id]?.find((rx: any) => rx.type === ["LOL","Love","Wipe","Carry"][ri]);
+                                      {REACTION_TYPES.map((rt, ri) => {
+                                        const r = commentReactions[c.id]?.find((rx: any) => rx.type === rt.type);
                                         const active = r?.userReacted;
                                         return (
-                                          <button key={ri} onClick={() => handleCommentReaction(c.id, ["LOL","Love","Wipe","Carry"][ri])} className={`text-[10px] px-1 py-0.5 rounded-lg transition ${active ? "bg-[#00ffff]/10" : "hover:bg-white/5"}`}>
-                                            {icon}{r?.count ? <span className={`text-[8px] ml-0.5 font-black ${active ? "text-[#00ffff]" : "text-gray-500"}`}>{r.count}</span> : null}
+                                          <button key={ri} onClick={() => handleCommentReaction(c.id, rt.type)} className={`text-[10px] px-1 py-0.5 rounded-lg transition ${active ? "bg-[#00ffff]/10" : "hover:bg-white/5"}`}>
+                                            {rt.icon}{r?.count ? <span className={`text-[8px] ml-0.5 font-black ${active ? "text-[#00ffff]" : "text-gray-500"}`}>{r.count}</span> : null}
                                           </button>
                                         );
                                       })}
@@ -860,11 +861,11 @@ export default function CommunityPage() {
                                               </div>
                                               <p className="text-[11px] text-white/60">{r.content}</p>
                                               <div className="flex items-center gap-0.5 mt-0.5">
-                                                {["😂","❤️","💀","🏆"].map((icon, ri) => {
-                                                  const rr = commentReactions[r.id]?.find((rx: any) => rx.type === ["LOL","Love","Wipe","Carry"][ri]);
+                                                {REACTION_TYPES.map((rt, ri) => {
+                                                  const rr = commentReactions[r.id]?.find((rx: any) => rx.type === rt.type);
                                                   return (
-                                                    <button key={ri} onClick={() => handleCommentReaction(r.id, ["LOL","Love","Wipe","Carry"][ri])} className={`text-[9px] px-1 py-0.5 rounded-lg transition ${rr?.userReacted ? "bg-[#00ffff]/10" : "hover:bg-white/5"}`}>
-                                                      {icon}{rr?.count ? <span className={`text-[7px] ml-0.5 font-black ${rr?.userReacted ? "text-[#00ffff]" : "text-gray-500"}`}>{rr.count}</span> : null}
+                                                    <button key={ri} onClick={() => handleCommentReaction(r.id, rt.type)} className={`text-[9px] px-1 py-0.5 rounded-lg transition ${rr?.userReacted ? "bg-[#00ffff]/10" : "hover:bg-white/5"}`}>
+                                                      {rt.icon}{rr?.count ? <span className={`text-[7px] ml-0.5 font-black ${rr?.userReacted ? "text-[#00ffff]" : "text-gray-500"}`}>{rr.count}</span> : null}
                                                     </button>
                                                   );
                                                 })}
