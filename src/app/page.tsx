@@ -4923,8 +4923,7 @@ export default function HomePage() {
                           </p>
                         </div>
                      </section>
-                     {status === "authenticated" && (
-                     /* Main feed — full width on mobile; desktop uses slight scale for density */
+                     {/* Main feed — full width on mobile; desktop uses slight scale for density */}
                     <div className="px-2 sm:px-[5%] xl:px-12 py-4 -mt-8 sm:-mt-16 relative z-20">
                     <div className="w-full mx-auto origin-top scale-100 md:scale-[0.85] lg:scale-[0.7]">
                           <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
@@ -5475,10 +5474,9 @@ export default function HomePage() {
                                    alignOfferIds={activeBoostLobbyIds}
                                 />
                              )}
-                    </div>
                      </div>
                      </div>
-                     )}
+                     </div>
                   </main>
 
                 {/* MODALS */}
@@ -6109,7 +6107,39 @@ export default function HomePage() {
                          localStorage.removeItem('uplink_voice_lobby');
                        }}
                      >
-                       {innerAppContent}
+                        {status === "authenticated" ? innerAppContent : (
+                          <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+                            {theme === 'dark' && <HeroBackground />}
+                            <div className="relative z-10 flex flex-col items-center text-center px-6">
+                              <motion.button
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => signIn("discord")}
+                                className="group mb-6 rounded-[2rem] border border-white/10 bg-black/35 px-6 py-9 backdrop-blur-md transition-all hover:border-[#00ffff]/45 hover:shadow-[0_0_50px_rgba(0,255,255,0.14)] sm:px-10 sm:py-11 cursor-pointer"
+                              >
+                                <div className="flex flex-col items-center gap-1 sm:gap-2">
+                                  <span className="font-[family-name:var(--font-space-grotesk)] text-[2.2rem] font-black leading-none tracking-tighter text-[#00ffff] drop-shadow-[0_0_22px_rgba(0,255,255,0.45)] sm:text-5xl md:text-6xl]">YOUR</span>
+                                  <div className="flex items-center justify-center gap-1 font-[family-name:var(--font-space-grotesk)] text-[2.2rem] font-black leading-none tracking-tighter sm:gap-2 sm:text-5xl md:text-6xl]">
+                                    <span className="text-[#8a2be2]">H</span>
+                                    <span className="mx-1 flex items-center justify-center text-[#ff007f] sm:mx-2"><DoorClosed className="w-[0.9em] h-[0.9em]" /></span>
+                                    <span className="text-[#8a2be2]">ME</span>
+                                  </div>
+                                </div>
+                                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.35em] text-gray-500">Sign in with Discord to continue</p>
+                              </motion.button>
+                              <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.4 }}
+                                className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-500 max-w-lg leading-relaxed"
+                              >
+                                WoWLFG — World of Warcraft Looking for Group. Sign in with Discord to browse offers, post boost requests, and find your next group.
+                              </motion.p>
+                            </div>
+                          </div>
+                        )}
                        {voiceToken ? <RoomAudioRenderer /> : null}
                        <AnimatePresence>
                          {voiceToken && !isManageModalOpen && (
