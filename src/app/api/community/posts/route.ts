@@ -6,7 +6,6 @@ import { posts, reactions, reports } from "@/db/schema";
 import { eq, and, inArray, gte } from "drizzle-orm";
 import { normalizeCommunityImage } from "@/lib/imageProcess";
 import { getKV, initTables } from "@/lib/db";
-import { canViewPost } from "@/lib/postVisibility";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
 
@@ -64,8 +63,6 @@ export async function GET(req: NextRequest) {
   }
 
   await initTables();
-  const friends = (await getKV("friends")) || [];
-  rows = rows.filter((p: any) => canViewPost(viewerId, p, friends));
 
   const postIds = rows.map((p: any) => p.id);
   const allReactions = postIds.length > 0
@@ -109,7 +106,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const contentType = req.headers.get("content-type") || "";
-  let content: string, tagsRaw: string, imageUrl: string | null, visibilityRaw: string;
+  let content: string, tagsRaw: string, imageUrl: string | null;
   let file: File | null = null;
 
   if (contentType.includes("application/json")) {
@@ -117,19 +114,13 @@ export async function POST(req: NextRequest) {
     content = json.content || "";
     tagsRaw = typeof json.tags === "string" ? json.tags : JSON.stringify(json.tags ?? []);
     imageUrl = json.imageUrl || null;
-    visibilityRaw = json.visibility || "public";
   } else {
     const formData = await req.formData();
     content = formData.get("content") as string;
     tagsRaw = formData.get("tags") as string;
     imageUrl = formData.get("imageUrl") as string | null;
-    visibilityRaw = (formData.get("visibility") as string) || "public";
     file = formData.get("image") as File | null;
   }
-
-  const visibility = ["public", "friends", "friends_of_friends"].includes(visibilityRaw)
-    ? visibilityRaw
-    : "public";
 
   if (!content?.trim() && !imageUrl && !file?.size) return NextResponse.json({ error: "Content or image required" }, { status: 400 });
 
@@ -194,7 +185,7 @@ export async function POST(req: NextRequest) {
       content: content.trim(),
       image: imagePath,
       tags: JSON.stringify(tags),
-      visibility,
+      visibility: "public",
       createdAt: Date.now(),
     }).returning();
 

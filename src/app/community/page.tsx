@@ -9,18 +9,10 @@ import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
 import {
   MessageSquare, Send, Flag,
   Trash2, Swords, AlertTriangle, X, Loader2,
-  Zap, ImagePlus, Globe, Users, Pin, Smile, ChevronDown, Pencil, Users2,
+  Zap, ImagePlus, Pin, Smile, Pencil,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
 import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
-
-const VISIBILITY_OPTIONS = [
-  { id: "public" as const, label: "Public", hint: "Everyone in the club", icon: Globe, accent: "text-[#00ffff] border-[#00ffff]/60 bg-[#00ffff]/15" },
-  { id: "friends" as const, label: "Friends", hint: "Friends only", icon: Users, accent: "text-[#ff007f] border-[#ff007f]/40 bg-[#ff007f]/10" },
-  { id: "friends_of_friends" as const, label: "Friends of Friends", hint: "Friends + their friends", icon: Users2, accent: "text-[#8a2be2] border-[#8a2be2]/40 bg-[#8a2be2]/10" },
-];
-
-type PostVisibility = (typeof VISIBILITY_OPTIONS)[number]["id"];
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -89,15 +81,12 @@ export default function CommunityPage() {
   const [replyText, setReplyText] = useState("");
   const [showMyPosts, setShowMyPosts] = useState(false);
   const [viewMemberId, setViewMemberId] = useState<string | null>(null);
-  const [postVisibility, setPostVisibility] = useState<PostVisibility>("public");
-  const [visibilityMenuOpen, setVisibilityMenuOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any | null>(null);
   const [editContent, setEditContent] = useState("");
   const [editRemoveImage, setEditRemoveImage] = useState(false);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const visibilityMenuRef = useRef<HTMLDivElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [reactionPickerPostId, setReactionPickerPostId] = useState<number | null>(null);
   const [friends, setFriends] = useState<any[]>([]);
@@ -117,17 +106,6 @@ export default function CommunityPage() {
       }
     }
   }, [pathname, registeredUsers]);
-
-  useEffect(() => {
-    if (!visibilityMenuOpen) return;
-    const close = (e: MouseEvent) => {
-      if (visibilityMenuRef.current && !visibilityMenuRef.current.contains(e.target as Node)) {
-        setVisibilityMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [visibilityMenuOpen]);
 
   useEffect(() => {
     (async () => {
@@ -276,7 +254,6 @@ export default function CommunityPage() {
 
   const myProfile = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
 
-  const selectedVisibility = VISIBILITY_OPTIONS.find((v) => v.id === postVisibility) || VISIBILITY_OPTIONS[0];
   const viewMemberProfile = viewMemberId
     ? registeredUsers.find((u: any) => String(u.id) === String(viewMemberId))
     : null;
@@ -325,13 +302,12 @@ export default function CommunityPage() {
         res = await fetch("/api/community/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: urlToSend, visibility: postVisibility }),
+          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: urlToSend }),
         });
       } else {
         const formData = new FormData();
         formData.append("content", cleanContent);
         formData.append("tags", JSON.stringify(selectedTags));
-        formData.append("visibility", postVisibility);
         if (imageFile) formData.append("image", imageFile);
         res = await fetch("/api/community/posts", { method: "POST", body: formData });
       }
@@ -340,7 +316,7 @@ export default function CommunityPage() {
         setPostError(err.error || `Failed to post (${res.status})`);
         return;
       }
-      setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]); setPostVisibility("public");
+      setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]);
       fetchPosts();
     } catch {
       setPostError("Network error — try again");
@@ -650,51 +626,7 @@ export default function CommunityPage() {
                     </div>
                   )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2 overflow-visible">
-                    <div className="relative z-40" ref={visibilityMenuRef}>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Audience</span>
-                        <button
-                          type="button"
-                          onClick={() => setVisibilityMenuOpen((v) => !v)}
-                          className={`flex items-center gap-1.5 text-[9px] font-black uppercase px-3 py-2 rounded-xl border transition shadow-[0_0_20px_rgba(0,255,255,0.12)] ${selectedVisibility.accent}`}
-                        >
-                          <selectedVisibility.icon className="w-3.5 h-3.5" />
-                          {selectedVisibility.label}
-                          <ChevronDown className={`w-3 h-3 transition ${visibilityMenuOpen ? "rotate-180" : ""}`} />
-                        </button>
-                      </div>
-                      <AnimatePresence>
-                        {visibilityMenuOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                            className="absolute left-0 bottom-full mb-2 z-50 min-w-[240px] rounded-2xl border border-white/15 bg-[#0a0a16] shadow-[0_20px_60px_rgba(0,0,0,0.75)] overflow-hidden"
-                          >
-                            {VISIBILITY_OPTIONS.map((opt) => (
-                              <button
-                                key={opt.id}
-                                type="button"
-                                onClick={() => {
-                                  setPostVisibility(opt.id);
-                                  setVisibilityMenuOpen(false);
-                                }}
-                                className={`w-full flex items-start gap-3 px-4 py-3 text-left transition hover:bg-white/[0.06] ${
-                                  postVisibility === opt.id ? "bg-white/[0.04]" : ""
-                                }`}
-                              >
-                                <opt.icon className={`w-4 h-4 mt-0.5 shrink-0 ${opt.accent.split(" ")[0]}`} />
-                                <div>
-                                  <p className="text-[10px] font-black uppercase tracking-widest text-white">{opt.label}</p>
-                                  <p className="text-[8px] text-gray-500 font-bold mt-0.5">{opt.hint}</p>
-                                </div>
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex items-center gap-2">
                       <input ref={imageInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleImageSelect} />
                       <button
                         type="button"
@@ -743,24 +675,6 @@ export default function CommunityPage() {
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-black text-white/90 truncate block">{renderAuthorName(post.userId, post.userName)}</span>
                         <span className="text-[9px] text-gray-500 font-black">{new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                        <span className="text-[8px] font-black uppercase flex items-center gap-1 mt-0.5 text-gray-500">
-                          {post.visibility === "friends" ? (
-                            <>
-                              <Users className="w-3 h-3 text-[#ff007f]/80" />
-                              <span className="text-[#ff007f]/80">Friends</span>
-                            </>
-                          ) : post.visibility === "friends_of_friends" ? (
-                            <>
-                              <Users2 className="w-3 h-3 text-[#8a2be2]/80" />
-                              <span className="text-[#8a2be2]/80">Friends of Friends</span>
-                            </>
-                          ) : (
-                            <>
-                              <Globe className="w-3 h-3 text-[#00ffff]/80" />
-                              <span className="text-[#00ffff]/80">Public</span>
-                            </>
-                          )}
-                        </span>
                       </div>
                     </div>
                     <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">{post.content}</p>
