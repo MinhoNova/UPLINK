@@ -4718,7 +4718,7 @@ export default function HomePage() {
        );
      }
 
-     const showOnboarding = isOnboardingModalOpen;
+      const showOnboarding = false;
 
      const toastLayer = (
         <div className="fixed bottom-10 right-10 z-[250] flex flex-col gap-4 pointer-events-none">
@@ -4899,7 +4899,7 @@ export default function HomePage() {
                              <h1 className={`text-sm md:text-base font-bold uppercase tracking-[0.16em] max-w-lg leading-relaxed ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-10`}>WoWLFG — Find your crew for keys, Mythic+ boosts &amp; leveling — fast, clear, no clutter.</h1>
                             <div className="flex flex-col sm:flex-row gap-6 items-center">
                                <motion.button
-                                  onClick={() => { if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error"); if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error"); setSubmitError(""); setIsCreateModalOpen(true); }}
+                                   onClick={() => { if (!session) { signIn("discord"); return; } if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error"); if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error"); setSubmitError(""); setIsCreateModalOpen(true); }}
                                   className="group relative px-12 py-6 bg-gradient-to-r from-[#00ffff] via-[#8a2be2] to-[#ff007f] text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[0_0_40px_rgba(0,255,255,0.25)] hover:shadow-[0_0_60px_rgba(255,0,127,0.4)] hover:scale-105 active:scale-95 flex items-center gap-4"
                                >
                                   <PlusCircle className="w-6 h-6 relative z-10 text-[#00ffff] group-hover:text-white transition-colors" />
@@ -4923,7 +4923,8 @@ export default function HomePage() {
                           </p>
                         </div>
                      </section>
-                     {/* Main feed — full width on mobile; desktop uses slight scale for density */}
+                     {status === "authenticated" && (
+                     /* Main feed — full width on mobile; desktop uses slight scale for density */
                     <div className="px-2 sm:px-[5%] xl:px-12 py-4 -mt-8 sm:-mt-16 relative z-20">
                     <div className="w-full mx-auto origin-top scale-100 md:scale-[0.85] lg:scale-[0.7]">
                           <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
@@ -5475,9 +5476,10 @@ export default function HomePage() {
                                 />
                              )}
                     </div>
-                    </div>
-                    </div>
-                 </main>
+                     </div>
+                     </div>
+                     )}
+                  </main>
 
                 {/* MODALS */}
                <AnimatePresence>
