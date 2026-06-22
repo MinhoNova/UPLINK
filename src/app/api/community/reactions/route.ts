@@ -3,6 +3,34 @@ import { getAppSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { reactions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { getKV } from "@/lib/db";
+import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
+
+export async function GET(req: NextRequest) {
+  const db = await getDb();
+  const { searchParams } = new URL(req.url);
+  const postId = searchParams.get("postId");
+  const type = searchParams.get("type");
+  if (!postId || !type) return NextResponse.json({ error: "Missing postId or type" }, { status: 400 });
+
+  const rows = await db.select()
+    .from(reactions)
+    .where(and(eq(reactions.postId, Number(postId)), eq(reactions.type, type)));
+
+  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+
+  const users = rows.map((r: any) => {
+    const user = registeredUsers.find((u: any) => String(u.id) === String(r.userId));
+    return {
+      userId: r.userId,
+      name: user ? resolveProfileDisplayName(user) : "Member",
+      image: user ? resolveProfileImage(user) : "",
+    };
+  });
+
+  return NextResponse.json({ users, total: users.length });
+}
+
 export async function POST(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);

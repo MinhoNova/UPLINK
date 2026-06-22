@@ -89,6 +89,8 @@ export default function CommunityPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const [reactionPickerPostId, setReactionPickerPostId] = useState<number | null>(null);
+  const [viewingReactors, setViewingReactors] = useState<{ postId: number; type: string; users: { userId: string; name: string; image: string }[] } | null>(null);
+  const [loadingReactors, setLoadingReactors] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -332,6 +334,19 @@ export default function CommunityPage() {
       body: JSON.stringify({ postId, type }),
     });
     fetchPosts();
+  };
+
+  const handleViewReactors = async (postId: number, type: string) => {
+    setLoadingReactors(true);
+    try {
+      const res = await fetch(`/api/community/reactions?postId=${postId}&type=${type}`);
+      const data = await res.json();
+      setViewingReactors({ postId, type, users: data.users || [] });
+    } catch {
+      setViewingReactors(null);
+    } finally {
+      setLoadingReactors(false);
+    }
   };
 
   const handleDeletePost = async (postId: number) => {
@@ -697,17 +712,23 @@ export default function CommunityPage() {
                           if (!reaction?.count) return null;
                           const active = reaction?.userReacted;
                           return (
-                            <button
-                              key={rt.type}
-                              type="button"
-                              onClick={() => handleReaction(post.id, rt.type)}
-                              className={`flex items-center gap-1 px-2 py-1 rounded-xl text-sm transition-all ${
-                                active ? "bg-[#00ffff]/15 border border-[#00ffff]/30" : "bg-white/[0.04] border border-white/5 hover:bg-white/10"
-                              }`}
-                            >
-                              <span>{rt.icon}</span>
-                              <span className={`text-[10px] font-black ${active ? "text-[#00ffff]" : "text-gray-500"}`}>{reaction.count}</span>
-                            </button>
+                            <div key={rt.type} className="flex items-center overflow-hidden rounded-xl border transition-all bg-white/[0.04] border-white/5 hover:bg-white/10">
+                              <button
+                                type="button"
+                                onClick={() => handleReaction(post.id, rt.type)}
+                                className={`flex items-center gap-1 px-1.5 py-1 text-sm transition-all ${active ? "bg-[#00ffff]/15" : ""}`}
+                              >
+                                <span>{rt.icon}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleViewReactors(post.id, rt.type)}
+                                className={`px-1.5 py-1 text-[10px] font-black border-l border-white/10 hover:bg-white/10 transition-all ${active ? "text-[#00ffff]" : "text-gray-500"}`}
+                                title="View reactors"
+                              >
+                                {reaction.count}
+                              </button>
+                            </div>
                           );
                         })}
                         {reactionPickerPostId === post.id ? (
@@ -948,6 +969,51 @@ export default function CommunityPage() {
             <div className="flex items-center justify-end gap-2 mt-4">
               <button onClick={() => { setReportModal(null); setReportReason(""); }} className="px-5 py-2 text-[10px] font-black text-gray-500 hover:text-white transition">Cancel</button>
               <button onClick={handleReport} disabled={!reportReason.trim()} className="px-5 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black hover:bg-red-500 hover:text-white transition disabled:opacity-30">Submit Report</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Reactors Popup */}
+      {viewingReactors && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingReactors(null)}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-[#0a0a16] border border-white/10 rounded-[2rem] p-6 w-full max-w-sm mx-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-300">
+                Reactions — {viewingReactors.type}
+              </h3>
+              <button onClick={() => setViewingReactors(null)} className="p-1 text-gray-500 hover:text-white transition">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+              {loadingReactors ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                </div>
+              ) : viewingReactors.users.length === 0 ? (
+                <p className="text-center text-gray-500 text-sm py-6">No reactions yet</p>
+              ) : (
+                viewingReactors.users.map((u) => (
+                  <div key={u.userId} className="flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
+                      {u.image ? (
+                        <img src={u.image} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-white/10 flex items-center justify-center text-[10px] font-black text-gray-500">
+                          ?
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-bold text-white truncate">{u.name}</span>
+                  </div>
+                ))
+              )}
             </div>
           </motion.div>
         </div>
