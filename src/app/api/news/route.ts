@@ -4,12 +4,6 @@ import { news } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { getAppSession } from "@/lib/authEnv";
 
-const ADMIN_IDS = ["1497295886223544471"];
-
-function isAdmin(user: any): boolean {
-  return ADMIN_IDS.includes(user.id) || user.username === "minhonovazen";
-}
-
 export async function GET(req: NextRequest) {
   const db = await getDb();
   const { searchParams } = new URL(req.url);
@@ -27,8 +21,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getAppSession(req);
-  if (!session?.user || !isAdmin(session.user))
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = await getDb();
   const body = await req.json();
@@ -48,7 +41,7 @@ export async function POST(req: NextRequest) {
     section: body.section,
     sourcePostId: body.sourcePostId || null,
     authorId: (session.user as any).id,
-    authorName: session.user.name || "Admin",
+    authorName: session.user.name || "Unknown",
     createdAt: now,
     updatedAt: now,
   }).returning();
