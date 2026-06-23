@@ -21,6 +21,8 @@
     "prebuild": "node scripts/generate-og.cjs"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@livekit/components-react": "^2.9.21",
     "@livekit/components-styles": "^1.2.0",
     "@neondatabase/serverless": "^1.1.0",

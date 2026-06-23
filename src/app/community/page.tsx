@@ -9,7 +9,7 @@ import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
 import {
   MessageSquare, Send, Flag,
   Trash2, Swords, AlertTriangle, X, Loader2,
-  Zap, ImagePlus, Pin, Smile, Pencil,
+  Zap, ImagePlus, Video, Pin, Smile, Pencil,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
 import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
@@ -93,6 +93,10 @@ export default function CommunityPage() {
   const [viewingReactors, setViewingReactors] = useState<{ postId: number; type: string; users: { userId: string; name: string; image: string }[] } | null>(null);
   const [loadingReactors, setLoadingReactors] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,6 +232,15 @@ export default function CommunityPage() {
     e.target.value = "";
   };
 
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { alert("Max 50MB before compression"); e.target.value = ""; return; }
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -300,12 +313,43 @@ export default function CommunityPage() {
     }
 
     try {
+      let finalImageUrl = urlToSend;
+      // If a video file is selected, compress and upload first
+      if (videoFile) {
+        setCompressing(true);
+        setPostError(null);
+        try {
+          const { compressVideo } = await import("@/lib/videoCompress");
+          const compressedBlob = await compressVideo(videoFile);
+          const videoFormData = new FormData();
+          const origName = videoFile.name.match(/(.+)\.\w+$/)?.[1] || "video";
+          videoFormData.append("video", compressedBlob, `${origName}.mp4`);
+          const uploadRes = await fetch("/api/community/video-upload", {
+            method: "POST",
+            body: videoFormData,
+          });
+          if (!uploadRes.ok) {
+            const err = await uploadRes.json().catch(() => ({}));
+            setPostError(err.error || "Video upload failed");
+            setCompressing(false); setPosting(false);
+            return;
+          }
+          const uploadData = await uploadRes.json();
+          finalImageUrl = uploadData.url;
+        } catch {
+          setPostError("Video compression failed — try a shorter/smaller clip");
+          setCompressing(false); setPosting(false);
+          return;
+        } finally {
+          setCompressing(false);
+        }
+      }
       let res: Response;
-      if (urlToSend) {
+      if (finalImageUrl) {
         res = await fetch("/api/community/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: urlToSend }),
+          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: finalImageUrl }),
         });
       } else {
         const formData = new FormData();
@@ -319,7 +363,7 @@ export default function CommunityPage() {
         setPostError(err.error || `Failed to post (${res.status})`);
         return;
       }
-      setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]);
+      setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]); setVideoFile(null); setVideoPreview(null);
       fetchPosts();
     } catch {
       setPostError("Network error — try again");
@@ -641,6 +685,20 @@ export default function CommunityPage() {
                       </button>
                     </div>
                   )}
+                  {/* Video preview */}
+                  {videoPreview && (
+                    <div className="relative mt-2 inline-block">
+                      <video src={videoPreview} className="max-h-40 rounded-xl border border-white/10" controls />
+                      <button onClick={() => { setVideoFile(null); setVideoPreview(null); }} className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  {compressing && (
+                    <div className="flex items-center gap-2 mt-2 text-[10px] font-black uppercase tracking-wider text-[#00ffff]">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Compressing video...
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2 overflow-visible">
                     <div className="flex items-center gap-2">
                       <input ref={imageInputRef} type="file" accept="image/*,.gif" className="hidden" onChange={handleImageSelect} />
@@ -652,6 +710,15 @@ export default function CommunityPage() {
                       >
                         <ImagePlus className="w-3.5 h-3.5" />
                       </button>
+                      <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current?.click()}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase text-gray-500 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition"
+                        title="Upload video (compressed before upload)"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                      </button>
                       <div className="flex items-center gap-1">
                         {["Mythic+", "Raid", "PvP", "Meme", "Leveling", "Delves"].map((tag) => (
                           <button key={tag} onClick={() => toggleTag(tag)} className={`text-[8px] font-black uppercase px-1.5 py-1 rounded transition ${selectedTags.includes(tag) ? "bg-[#00ffff]/20 text-[#00ffff]" : "text-gray-600 hover:text-gray-400"}`}>
@@ -659,7 +726,7 @@ export default function CommunityPage() {
                           </button>
                         ))}
                       </div>
-                      <button onClick={handleSubmit} disabled={posting || (!content.trim() && !imageFile && !detectedImageUrl)} className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black rounded-xl font-black text-[10px] uppercase hover:opacity-90 transition disabled:opacity-30">
+                      <button onClick={handleSubmit} disabled={posting || compressing || (!content.trim() && !imageFile && !detectedImageUrl && !videoFile)} className="flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black rounded-xl font-black text-[10px] uppercase hover:opacity-90 transition disabled:opacity-30">
                         {posting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />} Post
                       </button>
                     </div>
@@ -696,7 +763,11 @@ export default function CommunityPage() {
                     <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">{post.content}</p>
                     {post.image && (
                       <div className="mb-3 rounded-2xl overflow-hidden border border-white/5 relative z-10">
-                        <img src={post.image} alt="" className="w-full max-h-96 object-contain bg-black/40" loading="lazy" />
+                        {post.image.match(/\.(mp4|webm|mov)(\?|$)/i) ? (
+                          <video src={post.image} className="w-full max-h-96 bg-black/40" controls preload="metadata" />
+                        ) : (
+                          <img src={post.image} alt="" className="w-full max-h-96 object-contain bg-black/40" loading="lazy" />
+                        )}
                       </div>
                     )}
                     {post.tags?.length > 0 && (
@@ -920,11 +991,14 @@ export default function CommunityPage() {
             />
             {(editImagePreview || (editingPost.image && !editRemoveImage)) && (
               <div className="relative mt-3 inline-block">
-                <img
-                  src={editImagePreview || editingPost.image}
-                  alt=""
-                  className="max-h-40 rounded-xl border border-white/10"
-                />
+                {(() => {
+                  const editSrc = editImagePreview || editingPost.image;
+                  return editSrc?.match(/\.(mp4|webm|mov)(\?|$)/i) ? (
+                    <video src={editSrc} className="max-h-40 rounded-xl border border-white/10" controls preload="metadata" />
+                  ) : (
+                    <img src={editSrc} alt="" className="max-h-40 rounded-xl border border-white/10" />
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() => {
