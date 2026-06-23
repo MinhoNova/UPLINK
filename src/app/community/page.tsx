@@ -237,7 +237,7 @@ export default function CommunityPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoError(null);
-    if (file.size > 200 * 1024 * 1024) { setVideoError("File too large — max 200MB. Compress it first online: clideo.com/compress-video or veed.io"); e.target.value = ""; return; }
+    if (file.size > 200 * 1024 * 1024) { setVideoError("File too large — max 200MB. Compress it first: https://clideo.com/compress-video or https://veed.io"); e.target.value = ""; return; }
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
     e.target.value = "";
@@ -299,7 +299,7 @@ export default function CommunityPage() {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !imageFile && !detectedImageUrl) return;
+    if (!content.trim() && !imageFile && !detectedImageUrl && !videoFile) return;
     setPosting(true);
     setPostError(null);
     // Strip the detected URL from content so it doesn't appear as text
@@ -321,16 +321,22 @@ export default function CommunityPage() {
         setCompressing(true);
         setPostError(null);
         try {
-          const { compressVideo } = await import("@/lib/videoCompress");
-          const compressedBlob = await compressVideo(videoFile);
-          if (compressedBlob.size > 15 * 1024 * 1024) {
-            setPostError("Compressed video too large — try a shorter clip (max ~2-3 minutes)");
-            setCompressing(false); setPosting(false);
-            return;
+          let uploadBlob: Blob;
+          // If already small enough, skip FFmpeg and upload directly
+          if (videoFile.size <= 15 * 1024 * 1024) {
+            uploadBlob = videoFile;
+          } else {
+            const { compressVideo } = await import("@/lib/videoCompress");
+            uploadBlob = await compressVideo(videoFile);
+            if (uploadBlob.size > 15 * 1024 * 1024) {
+              setPostError("Compressed video too large — try a shorter clip (max ~2-3 minutes)");
+              setCompressing(false); setPosting(false);
+              return;
+            }
           }
           const videoFormData = new FormData();
           const origName = videoFile.name.match(/(.+)\.\w+$/)?.[1] || "video";
-          videoFormData.append("video", compressedBlob, `${origName}.mp4`);
+          videoFormData.append("video", uploadBlob, `${origName}.mp4`);
           const uploadRes = await fetch("/api/community/video-upload", {
             method: "POST",
             body: videoFormData,
@@ -343,8 +349,9 @@ export default function CommunityPage() {
           }
           const uploadData = await uploadRes.json();
           finalImageUrl = uploadData.url;
-        } catch {
-          setPostError("Video compression failed — try a shorter/smaller clip");
+        } catch (e) {
+          console.error("Video compression error:", e);
+          setPostError("Video compression failed — try again or use a shorter clip");
           setCompressing(false); setPosting(false);
           return;
         } finally {
@@ -707,7 +714,11 @@ export default function CommunityPage() {
                     </div>
                   )}
                   {videoError && (
-                    <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-red-400">{videoError}</p>
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-red-400 leading-relaxed">
+                      {videoError.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                        part.startsWith("http") ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition"> {part} </a> : part
+                      )}
+                    </p>
                   )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2 overflow-visible">
                     <div className="flex items-center gap-2">
