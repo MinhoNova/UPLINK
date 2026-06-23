@@ -237,7 +237,7 @@ export default function CommunityPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoError(null);
-    if (file.size > 2000 * 1024 * 1024) { setVideoError("File too large — max 2GB before compression"); e.target.value = ""; return; }
+    if (file.size > 200 * 1024 * 1024) { setVideoError("File too large — max 200MB before compression"); e.target.value = ""; return; }
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
     e.target.value = "";
@@ -323,6 +323,11 @@ export default function CommunityPage() {
         try {
           const { compressVideo } = await import("@/lib/videoCompress");
           const compressedBlob = await compressVideo(videoFile);
+          if (compressedBlob.size > 15 * 1024 * 1024) {
+            setPostError("Compressed video too large — try a shorter clip (max ~2-3 minutes)");
+            setCompressing(false); setPosting(false);
+            return;
+          }
           const videoFormData = new FormData();
           const origName = videoFile.name.match(/(.+)\.\w+$/)?.[1] || "video";
           videoFormData.append("video", compressedBlob, `${origName}.mp4`);
