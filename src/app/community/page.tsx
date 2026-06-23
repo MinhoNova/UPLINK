@@ -96,6 +96,7 @@ export default function CommunityPage() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -235,7 +236,8 @@ export default function CommunityPage() {
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) { alert("Max 50MB before compression"); e.target.value = ""; return; }
+    setVideoError(null);
+    if (file.size > 2000 * 1024 * 1024) { setVideoError("File too large — max 2GB before compression"); e.target.value = ""; return; }
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
     e.target.value = "";
@@ -689,7 +691,7 @@ export default function CommunityPage() {
                   {videoPreview && (
                     <div className="relative mt-2 inline-block">
                       <video src={videoPreview} className="max-h-40 rounded-xl border border-white/10" controls />
-                      <button onClick={() => { setVideoFile(null); setVideoPreview(null); }} className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition">
+                      <button onClick={() => { setVideoFile(null); setVideoPreview(null); setVideoError(null); }} className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -698,6 +700,9 @@ export default function CommunityPage() {
                     <div className="flex items-center gap-2 mt-2 text-[10px] font-black uppercase tracking-wider text-[#00ffff]">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" /> Compressing video...
                     </div>
+                  )}
+                  {videoError && (
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-red-400">{videoError}</p>
                   )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 flex-wrap gap-2 overflow-visible">
                     <div className="flex items-center gap-2">
