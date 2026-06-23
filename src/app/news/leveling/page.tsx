@@ -4,6 +4,8 @@ import { eq, desc } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Leveling News — WoWLFG",
   description: "AFK leveling methods, XP farms, 80-90 boosts, rotations, and leveling updates for WoW The War Within.",
