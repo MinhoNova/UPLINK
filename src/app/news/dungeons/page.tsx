@@ -23,15 +23,15 @@ export default async function DungeonsPage() {
 
   return (
     <main className="min-h-screen bg-[#05050a] text-white">
-      <nav className="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center gap-6">
-          <Link href="/news" className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition">← News</Link>
-          <span className="text-sm font-black text-white tracking-wider">Dungeon News</span>
-        </div>
-      </nav>
-
       <div className="max-w-5xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-black text-white mb-8">🏰 Dungeon News</h1>
+        <div className="flex items-center gap-2 mb-8">
+          <Link href="/news/leveling" className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/40 hover:text-[#00ffff] hover:border-[#00ffff]/30 hover:bg-[#00ffff]/10 transition-all">
+            <span>⚡</span> Leveling News
+          </Link>
+          <Link href="/news/dungeons" className="flex items-center gap-1.5 rounded-lg border border-[#ff007f]/25 bg-[#ff007f]/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#ff007f] transition-all">
+            <span>🏰</span> Dungeon News
+          </Link>
+        </div>
 
         <div className="space-y-4">
           {items.map((item) => (
