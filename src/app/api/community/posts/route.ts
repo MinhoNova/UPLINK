@@ -153,19 +153,24 @@ export async function POST(req: NextRequest) {
 
   // Handle URL image (download + compress)
   if (!imagePath && imageUrl) {
-    try {
-      const resp = await fetch(imageUrl, {
-        headers: { "User-Agent": "UPLINK/1.0" },
-      });
-      if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
-      const buffer = Buffer.from(await resp.arrayBuffer());
-      const remoteType = resp.headers.get("content-type") || "";
-      if (!remoteType.startsWith("image/")) throw new Error("URL is not an image");
-      if (buffer.byteLength > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
-      imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif(?:$|\?)/i.test(imageUrl));
-    } catch (e) {
-      console.error("Failed to download image from URL:", e);
-      return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+    // Internal media URL (video/image already stored) — use directly
+    if (imageUrl.startsWith("/api/user/media")) {
+      imagePath = imageUrl;
+    } else {
+      try {
+        const resp = await fetch(imageUrl, {
+          headers: { "User-Agent": "UPLINK/1.0" },
+        });
+        if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        const remoteType = resp.headers.get("content-type") || "";
+        if (!remoteType.startsWith("image/")) throw new Error("URL is not an image");
+        if (buffer.byteLength > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
+        imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif(?:$|\?)/i.test(imageUrl));
+      } catch (e) {
+        console.error("Failed to download image from URL:", e);
+        return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+      }
     }
   }
 
