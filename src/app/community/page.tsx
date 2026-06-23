@@ -237,7 +237,7 @@ export default function CommunityPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoError(null);
-    if (file.size > 200 * 1024 * 1024) { setVideoError("File too large — max 200MB before compression"); e.target.value = ""; return; }
+    if (file.size > 200 * 1024 * 1024) { setVideoError("File too large — max 200MB. Compress it first online: clideo.com/compress-video or veed.io"); e.target.value = ""; return; }
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
     e.target.value = "";
