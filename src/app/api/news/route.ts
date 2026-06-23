@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { news } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { news, posts, reactions } from "@/db/schema";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { getAppSession } from "@/lib/authEnv";
+import { getKV, initTables } from "@/lib/db";
+import { resolvePublicAuthorFields } from "@/lib/profileImage";
 
 export async function GET(req: NextRequest) {
   const db = await getDb();
+  const session = await getAppSession(req);
   const { searchParams } = new URL(req.url);
   const section = searchParams.get("section");
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
@@ -16,7 +19,57 @@ export async function GET(req: NextRequest) {
   }
 
   const rows = await query;
-  return NextResponse.json(rows);
+
+  // Enrich news items that have a sourcePostId
+  const sourcePostIds = rows.map((r: any) => r.sourcePostId).filter(Boolean) as number[];
+  let enrichedRows = rows.map((r: any) => ({ ...r, sourcePost: null as any }));
+
+  if (sourcePostIds.length > 0) {
+    const dbPosts = await db.select().from(posts).where(inArray(posts.id, sourcePostIds));
+    const allReactions = await db.select().from(reactions).where(inArray(reactions.postId, sourcePostIds));
+    
+    await initTables();
+    const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+
+    const reactionMap: Record<number, { type: string; count: number; userReacted: boolean }[]> = {};
+    for (const r of allReactions as any[]) {
+      if (!reactionMap[r.postId]) reactionMap[r.postId] = [];
+      const existing = reactionMap[r.postId].find((x) => x.type === r.type);
+      if (existing) {
+        existing.count++;
+        if (session?.user && String(r.userId) === String((session.user as any).id)) {
+          existing.userReacted = true;
+        }
+      } else {
+        reactionMap[r.postId].push({
+          type: r.type,
+          count: 1,
+          userReacted: session?.user ? String(r.userId) === String((session.user as any).id) : false,
+        });
+      }
+    }
+
+    const postsMap = new Map();
+    for (const p of dbPosts as any[]) {
+      const author = registeredUsers.find((u: any) => String(u.id) === String(p.userId));
+      const authorFields = resolvePublicAuthorFields(author, { name: p.userName, image: p.userImage });
+      postsMap.set(p.id, {
+        ...p,
+        userName: authorFields.userName,
+        userImage: authorFields.userImage,
+        hiddenIdentity: authorFields.hiddenIdentity,
+        reactions: reactionMap[p.id] || [],
+        tags: JSON.parse(p.tags || "[]"),
+      });
+    }
+
+    enrichedRows = rows.map((r: any) => ({
+      ...r,
+      sourcePost: r.sourcePostId ? (postsMap.get(r.sourcePostId) || null) : null,
+    }));
+  }
+
+  return NextResponse.json(enrichedRows);
 }
 
 export async function POST(req: NextRequest) {
