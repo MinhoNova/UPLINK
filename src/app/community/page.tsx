@@ -917,7 +917,7 @@ export default function CommunityPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => setPromotePost({ id: post.id, title: post.title || "", content: post.content, image: post.image, tags: JSON.parse(post.tags || "[]") })}
+                          onClick={() => setPromotePost({ id: post.id, title: post.title || "", content: post.content, image: post.image, tags: Array.isArray(post.tags) ? post.tags : JSON.parse(post.tags || "[]") })}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-green-400 hover:bg-green-500/5 transition"
                         >
                           <Send className="w-3 h-3" /> Share
