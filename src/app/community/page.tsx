@@ -719,7 +719,7 @@ export default function CommunityPage() {
                   <input
                     value={postTitle}
                     onChange={(e) => setPostTitle(e.target.value)}
-                    placeholder="Title (for SEO — e.g. &quot;New AFK Method 80-90 Hallowfall&quot;)"
+                    placeholder="Title"
                     className="w-full bg-transparent text-sm font-black text-white/90 placeholder-gray-600 outline-none mb-1"
                   />
                   <textarea
