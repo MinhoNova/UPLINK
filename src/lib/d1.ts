@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS posts (
   userId TEXT NOT NULL,
   userName TEXT NOT NULL,
   userImage TEXT NOT NULL,
+  title TEXT,
   content TEXT NOT NULL,
   image TEXT,
   tags TEXT DEFAULT '[]',
@@ -152,6 +153,11 @@ export async function ensureD1Schema() {
     }
     try {
       await d1.prepare("ALTER TABLE posts ADD COLUMN pinnedBy TEXT").run();
+    } catch {
+      /* column may exist */
+    }
+    try {
+      await d1.prepare("ALTER TABLE posts ADD COLUMN title TEXT").run();
     } catch {
       /* column may exist */
     }

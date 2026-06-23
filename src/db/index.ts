@@ -23,6 +23,7 @@ async function getSqliteDrizzle(): Promise<SqliteDrizzle> {
       if (!postCols.includes("visibility")) sqlite.exec("ALTER TABLE posts ADD COLUMN visibility TEXT DEFAULT 'public'");
       if (!postCols.includes("pinnedAt")) sqlite.exec("ALTER TABLE posts ADD COLUMN pinnedAt INTEGER");
       if (!postCols.includes("pinnedBy")) sqlite.exec("ALTER TABLE posts ADD COLUMN pinnedBy TEXT");
+      if (!postCols.includes("title")) sqlite.exec("ALTER TABLE posts ADD COLUMN title TEXT");
       sqliteSchemaReady = true;
     }
     sqliteDrizzle = drizzleSqlite(sqlite, { schema });

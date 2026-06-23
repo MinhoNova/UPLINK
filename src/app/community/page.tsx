@@ -62,6 +62,7 @@ export default function CommunityPage() {
   const [access, setAccess] = useState<boolean | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [content, setContent] = useState("");
+  const [postTitle, setPostTitle] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [detectedImageUrl, setDetectedImageUrl] = useState<string | null>(null);
@@ -363,12 +364,13 @@ export default function CommunityPage() {
         res = await fetch("/api/community/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: finalImageUrl }),
+          body: JSON.stringify({ content: cleanContent, tags: selectedTags, imageUrl: finalImageUrl, title: postTitle.trim() }),
         });
       } else {
         const formData = new FormData();
         formData.append("content", cleanContent);
         formData.append("tags", JSON.stringify(selectedTags));
+        formData.append("title", postTitle.trim());
         if (imageFile) formData.append("image", imageFile);
         res = await fetch("/api/community/posts", { method: "POST", body: formData });
       }
@@ -377,7 +379,7 @@ export default function CommunityPage() {
         setPostError(err.error || `Failed to post (${res.status})`);
         return;
       }
-      setContent(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]); setVideoFile(null); setVideoPreview(null);
+      setContent(""); setPostTitle(""); setImageFile(null); setImagePreview(null); setDetectedImageUrl(null); setSelectedTags([]); setVideoFile(null); setVideoPreview(null);
       fetchPosts();
     } catch {
       setPostError("Network error — try again");
@@ -679,6 +681,12 @@ export default function CommunityPage() {
               <div className="flex gap-3 relative z-10">
                 <UserAvatar src={session?.user?.image || ""} userId={(session?.user as any)?.id || ""} className="w-10 h-10" />
                 <div className="flex-1">
+                  <input
+                    value={postTitle}
+                    onChange={(e) => setPostTitle(e.target.value)}
+                    placeholder="Title (for SEO — e.g. &quot;New AFK Method 80-90 Hallowfall&quot;)"
+                    className="w-full bg-transparent text-sm font-black text-white/90 placeholder-gray-600 outline-none mb-1"
+                  />
                   <textarea
                     value={content}
                     onChange={(e) => { setPostError(null); handleContentChange(e.target.value); }}
@@ -781,6 +789,9 @@ export default function CommunityPage() {
                         <span className="text-[9px] text-gray-500 font-black">{new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
                     </div>
+                    {post.title && (
+                      <a href={`/community/post/${post.id}`} className="block text-base font-black text-white mb-1 relative z-10 hover:text-[#00ffff] transition">{post.title}</a>
+                    )}
                     <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">{post.content}</p>
                     {post.image && (
                       <div className="mb-3 rounded-2xl overflow-hidden border border-white/5 relative z-10">

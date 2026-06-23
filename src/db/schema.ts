@@ -5,6 +5,7 @@ export const posts = sqliteTable("posts", {
   userId: text("userId").notNull(),
   userName: text("userName").notNull(),
   userImage: text("userImage").notNull(),
+  title: text("title"),
   content: text("content").notNull(),
   image: text("image"),
   tags: text("tags").default("[]"),

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getKV, initTables } from "@/lib/db";
+import { getDb } from "@/db";
+import { posts } from "@/db/schema";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
@@ -79,6 +81,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency: "weekly",
         priority: 0.4,
+      });
+    }
+  } catch {
+    // sitemap should not fail on DB error
+  }
+
+  try {
+    const db = await getDb();
+    const allPosts = await db.select({ id: posts.id, createdAt: posts.createdAt, title: posts.title }).from(posts).limit(200);
+    for (const p of allPosts) {
+      entries.push({
+        url: `${siteUrl}/community/post/${p.id}`,
+        lastModified: new Date(p.createdAt),
+        changeFrequency: "weekly",
+        priority: 0.5,
       });
     }
   } catch {

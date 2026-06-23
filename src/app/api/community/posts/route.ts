@@ -106,23 +106,25 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const contentType = req.headers.get("content-type") || "";
-  let content: string, tagsRaw: string, imageUrl: string | null;
+  let content: string, title: string, tagsRaw: string, imageUrl: string | null;
   let file: File | null = null;
 
   if (contentType.includes("application/json")) {
     const json = await req.json();
     content = json.content || "";
+    title = json.title || "";
     tagsRaw = typeof json.tags === "string" ? json.tags : JSON.stringify(json.tags ?? []);
     imageUrl = json.imageUrl || null;
   } else {
     const formData = await req.formData();
     content = formData.get("content") as string;
+    title = formData.get("title") as string;
     tagsRaw = formData.get("tags") as string;
     imageUrl = formData.get("imageUrl") as string | null;
     file = formData.get("image") as File | null;
   }
 
-  if (!content?.trim() && !imageUrl && !file?.size) return NextResponse.json({ error: "Content or image required" }, { status: 400 });
+  if (!content?.trim() && !title?.trim() && !imageUrl && !file?.size) return NextResponse.json({ error: "Content or image required" }, { status: 400 });
 
   const tags = tagsRaw ? JSON.parse(tagsRaw) : [];
   let imagePath: string | null = null;
@@ -187,6 +189,7 @@ export async function POST(req: NextRequest) {
       userId: (session.user as any).id,
       userName: authorFields.userName,
       userImage: authorFields.userImage,
+      title: title?.trim() || null,
       content: content.trim(),
       image: imagePath,
       tags: JSON.stringify(tags),
