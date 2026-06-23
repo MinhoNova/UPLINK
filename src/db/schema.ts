@@ -39,6 +39,20 @@ export const commentReactions = sqliteTable("commentReactions", {
   createdAt: integer("createdAt").notNull(),
 });
 
+export const news = sqliteTable("news", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  image: text("image"),
+  tags: text("tags").default("[]"),
+  section: text("section").notNull(),
+  sourcePostId: integer("sourcePostId"),
+  authorId: text("authorId").notNull(),
+  authorName: text("authorName").notNull(),
+  createdAt: integer("createdAt").notNull(),
+  updatedAt: integer("updatedAt").notNull(),
+});
+
 export const comments = sqliteTable("comments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   postId: integer("postId").notNull(),

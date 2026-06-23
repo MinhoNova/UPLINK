@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getKV, initTables } from "@/lib/db";
 import { getDb } from "@/db";
-import { posts } from "@/db/schema";
+import { posts, news } from "@/db/schema";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
@@ -64,6 +64,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
+      url: `${siteUrl}/news`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/news/leveling`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/news/dungeons`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.7,
+    },
+    {
       url: `${siteUrl}/wowlfg`,
       lastModified: now,
       changeFrequency: "monthly",
@@ -89,6 +107,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const db = await getDb();
+    const allNews = await db.select({ id: news.id, createdAt: news.createdAt }).from(news).limit(200);
+    for (const n of allNews) {
+      entries.push({
+        url: `${siteUrl}/news/${n.id}`,
+        lastModified: new Date(n.createdAt),
+        changeFrequency: "weekly",
+        priority: 0.6,
+      });
+    }
     const allPosts = await db.select({ id: posts.id, createdAt: posts.createdAt, title: posts.title }).from(posts).limit(200);
     for (const p of allPosts) {
       entries.push({

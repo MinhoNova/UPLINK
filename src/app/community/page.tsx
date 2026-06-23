@@ -94,6 +94,7 @@ export default function CommunityPage() {
   const [viewingReactors, setViewingReactors] = useState<{ postId: number; type: string; users: { userId: string; name: string; image: string }[] } | null>(null);
   const [loadingReactors, setLoadingReactors] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
+  const [promotePost, setPromotePost] = useState<{ id: number; title: string; content: string; image: string | null; tags: string[] } | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
@@ -408,6 +409,26 @@ export default function CommunityPage() {
     } finally {
       setLoadingReactors(false);
     }
+  };
+
+  const handlePromote = async (section: string) => {
+    if (!promotePost) return;
+    const res = await fetch("/api/news", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: promotePost.title || promotePost.content.slice(0, 60),
+        content: promotePost.content,
+        image: promotePost.image,
+        tags: promotePost.tags,
+        section,
+        sourcePostId: promotePost.id,
+      }),
+    });
+    if (res.ok) {
+      window.open(`/news/${section}`, "_blank");
+    }
+    setPromotePost(null);
   };
 
   const handleDeletePost = async (postId: number) => {
@@ -872,6 +893,14 @@ export default function CommunityPage() {
                             <Pin className="w-3 h-3" /> {post.pinnedAt ? "Unpin" : "Pin"}
                           </button>
                         )}
+                        {isAdmin && (
+                          <button
+                            onClick={() => setPromotePost({ id: post.id, title: post.title || "", content: post.content, image: post.image, tags: JSON.parse(post.tags || "[]") })}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-green-400 hover:bg-green-500/5 transition"
+                          >
+                            <Send className="w-3 h-3" /> News
+                          </button>
+                        )}
                         <button onClick={() => toggleComments(post.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black text-gray-600 hover:text-[#00ffff] hover:bg-[#00ffff]/5 transition">
                           <MessageSquare className="w-3 h-3" /> {openComments.has(post.id) ? "Hide" : `Comment${(comments[post.id]?.length || 0) > 0 ? ` (${comments[post.id].length})` : ""}`}
                         </button>
@@ -1122,6 +1151,28 @@ export default function CommunityPage() {
                 ))
               )}
             </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Promote to News */}
+      {promotePost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0a0a16] border border-white/10 rounded-[2rem] p-6 w-full max-w-sm mx-4 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <Send className="w-5 h-5 text-green-400" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-green-400">Promote to News</h3>
+            </div>
+            <p className="text-[11px] text-gray-500 mb-4">Choose section to publish this post as news:</p>
+            <div className="flex gap-3">
+              <button onClick={() => handlePromote("leveling")} className="flex-1 px-4 py-3 bg-[#00ffff]/10 border border-[#00ffff]/30 rounded-xl text-[10px] font-black text-[#00ffff] hover:bg-[#00ffff]/20 transition text-center">
+                ⚡ Leveling
+              </button>
+              <button onClick={() => handlePromote("dungeons")} className="flex-1 px-4 py-3 bg-[#ff007f]/10 border border-[#ff007f]/30 rounded-xl text-[10px] font-black text-[#ff007f] hover:bg-[#ff007f]/20 transition text-center">
+                🏰 Dungeons
+              </button>
+            </div>
+            <button onClick={() => setPromotePost(null)} className="mt-4 w-full px-5 py-2 text-[10px] font-black text-gray-500 hover:text-white transition">Cancel</button>
           </motion.div>
         </div>
       )}

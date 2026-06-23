@@ -24,6 +24,7 @@ async function getSqliteDrizzle(): Promise<SqliteDrizzle> {
       if (!postCols.includes("pinnedAt")) sqlite.exec("ALTER TABLE posts ADD COLUMN pinnedAt INTEGER");
       if (!postCols.includes("pinnedBy")) sqlite.exec("ALTER TABLE posts ADD COLUMN pinnedBy TEXT");
       if (!postCols.includes("title")) sqlite.exec("ALTER TABLE posts ADD COLUMN title TEXT");
+      sqlite.exec("CREATE TABLE IF NOT EXISTS news (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, image TEXT, tags TEXT DEFAULT '[]', section TEXT NOT NULL, sourcePostId INTEGER, authorId TEXT NOT NULL, authorName TEXT NOT NULL, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)");
       sqliteSchemaReady = true;
     }
     sqliteDrizzle = drizzleSqlite(sqlite, { schema });
