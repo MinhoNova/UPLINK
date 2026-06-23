@@ -12,6 +12,8 @@ import {
   TrendingUp,
   BookOpen,
   Package,
+  Zap,
+  Swords,
   type LucideIcon,
 } from "lucide-react";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
@@ -48,6 +50,8 @@ type Props = {
 };
 
 const ACCENT_COLORS: Record<string, { text: string; bar: string; bg: string; border: string }> = {
+  "news-leveling": { text: "text-[#00ffff]", bar: "bg-[#00ffff]", bg: "bg-[#00ffff]/8", border: "border-[#00ffff]/25" },
+  "news-dungeons": { text: "text-[#ff007f]", bar: "bg-[#ff007f]", bg: "bg-[#ff007f]/8", border: "border-[#ff007f]/25" },
   lounge: { text: "text-[#00ffff]", bar: "bg-[#00ffff]", bg: "bg-[#00ffff]/8", border: "border-[#00ffff]/25" },
   discord: { text: "text-[#5865F2]", bar: "bg-[#5865F2]", bg: "bg-[#5865F2]/8", border: "border-[#5865F2]/25" },
   "post-request": { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
@@ -80,6 +84,26 @@ export default function HomeFloatingActions({
   };
 
   const items: DockItem[] = [
+    {
+      id: "news-leveling",
+      label: "Leveling News",
+      icon: Zap,
+      accentText: ACCENT_COLORS["news-leveling"].text,
+      accentBar: ACCENT_COLORS["news-leveling"].bar,
+      iconBg: ACCENT_COLORS["news-leveling"].bg,
+      iconBorder: ACCENT_COLORS["news-leveling"].border,
+      onClick: () => {},
+    },
+    {
+      id: "news-dungeons",
+      label: "Dungeon News",
+      icon: Swords,
+      accentText: ACCENT_COLORS["news-dungeons"].text,
+      accentBar: ACCENT_COLORS["news-dungeons"].bar,
+      iconBg: ACCENT_COLORS["news-dungeons"].bg,
+      iconBorder: ACCENT_COLORS["news-dungeons"].border,
+      onClick: () => {},
+    },
     {
       id: "lounge",
       label: "Community Chat",
@@ -228,6 +252,8 @@ export default function HomeFloatingActions({
             </motion.button>
           );
 
+          if (item.id === "news-leveling") return <Link key={item.id} href="/news/leveling">{btn}</Link>;
+          if (item.id === "news-dungeons") return <Link key={item.id} href="/news/dungeons">{btn}</Link>;
           if (item.id === "lounge") return <Link key={item.id} href="/community">{btn}</Link>;
           if (item.id === "reviews") return <Link key={item.id} href="/reviews">{btn}</Link>;
           if (item.id === "shop") return <Link key={item.id} href="/shop">{btn}</Link>;

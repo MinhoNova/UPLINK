@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
    PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search,
@@ -4932,20 +4931,6 @@ export default function HomePage() {
                            <div className="flex flex-col gap-2 min-w-0 flex-1">
 <div className="flex flex-col gap-1.5">
                              <div className="flex justify-end gap-1.5">
-                             <Link
-                                href="/news/leveling"
-                                className="flex items-center gap-1.5 rounded-lg border border-[#00ffff]/25 bg-[#00ffff]/10 px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] text-[#00ffff] hover:bg-[#00ffff]/20 transition-all backdrop-blur-md cursor-pointer"
-                             >
-                                <Zap className="w-3 h-3 shrink-0" />
-                                <span className="whitespace-nowrap">Leveling News</span>
-                             </Link>
-                             <Link
-                                href="/news/dungeons"
-                                className="flex items-center gap-1.5 rounded-lg border border-[#ff007f]/25 bg-[#ff007f]/10 px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] text-[#ff007f] hover:bg-[#ff007f]/20 transition-all backdrop-blur-md cursor-pointer"
-                             >
-                                <Swords className="w-3 h-3 shrink-0" />
-                                <span className="whitespace-nowrap">Dungeon News</span>
-                             </Link>
                              <button
                                 type="button"
                                 onClick={() => {
