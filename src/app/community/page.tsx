@@ -684,7 +684,16 @@ export default function CommunityPage() {
               </div>
             )}
             {/* Create Post (hide when viewing my profile) */}
-            <div className="max-w-[1600px] mx-auto px-6 py-4 flex flex-wrap items-center gap-2">
+            <div className="max-w-[1600px] mx-auto px-6 py-3 flex flex-wrap items-center gap-2">
+              <a href="/news/leveling" className="text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/20 hover:bg-[#00ffff]/20 transition">
+                ⚡ Leveling News
+              </a>
+              <a href="/news/dungeons" className="text-[9px] font-black uppercase px-3 py-1.5 rounded-xl bg-[#ff007f]/10 text-[#ff007f] border border-[#ff007f]/20 hover:bg-[#ff007f]/20 transition">
+                🏰 Dungeon News
+              </a>
+              <span className="w-px h-4 bg-white/10 mx-1" />
+            </div>
+            <div className="max-w-[1600px] mx-auto px-6 pb-4 flex flex-wrap items-center gap-2">
               <button onClick={() => setFilterTag(null)} className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg transition ${!filterTag ? "bg-[#00ffff]/20 text-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.15)]" : "bg-white/5 text-gray-500 hover:bg-white/10"}`}>
                 All
               </button>
