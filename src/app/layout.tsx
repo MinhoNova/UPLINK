@@ -131,6 +131,7 @@ export default function RootLayout({
                 <span className="text-white/20">·</span>
                 <a href="/wowlfg" className="text-gray-500 hover:text-white transition-colors">WoWLFG</a>
                 <a href="/wow-boosting" className="text-gray-500 hover:text-white transition-colors">WoW Boosting</a>
+                <a href="/gold-auction" className="text-gray-500 hover:text-white transition-colors">Gold Auction</a>
                 <a href="/news" className="text-gray-500 hover:text-white transition-colors">News</a>
               </div>
               <p className="text-center mt-4 text-[8px] text-gray-700 font-black uppercase tracking-widest">

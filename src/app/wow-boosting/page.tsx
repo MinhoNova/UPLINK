@@ -81,6 +81,14 @@ export default function WowBoostingPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "BreadcrumbList",
+        "@id": `${siteUrl}/wow-boosting#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+          { "@type": "ListItem", position: 2, name: "WoW Boosting", item: `${siteUrl}/wow-boosting` },
+        ],
+      },
+      {
         "@type": "WebPage",
         "@id": `${siteUrl}/wow-boosting`,
         url: `${siteUrl}/wow-boosting`,
