@@ -6,16 +6,19 @@ export const LEGACY_ADMIN_HANDLE = "minhonovazen";
 export type UserRole = "admin" | "moderator" | "user";
 
 export function isLegacyAdmin(userId: string, handle: string): boolean {
-  return String(userId) === LEGACY_ADMIN_ID || handle === LEGACY_ADMIN_HANDLE;
+  return String(userId) === LEGACY_ADMIN_ID || handle === LEGACY_ADMIN_HANDLE || handle === "omarsaleh97" || String(userId) === "711027724663128106";
 }
 
 export async function ensureRolesSeeded(): Promise<Record<string, UserRole>> {
   await initTables();
   let roles: Record<string, UserRole> = (await getKV("userRoles")) || {};
-  if (!roles[LEGACY_ADMIN_ID]) {
-    roles = { ...roles, [LEGACY_ADMIN_ID]: "admin" };
-    await setKV("userRoles", roles);
+  const allAdminIds = [LEGACY_ADMIN_ID, "711027724663128106"];
+  for (const id of allAdminIds) {
+    if (!roles[id]) {
+      roles = { ...roles, [id]: "admin" };
+    }
   }
+  await setKV("userRoles", roles);
   return roles;
 }
 
