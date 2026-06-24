@@ -4,7 +4,7 @@ export const LEGACY_ADMIN_HANDLE = "minhonovazen";
 export type UserRole = "admin" | "moderator" | "user";
 
 export function isPrimaryAdmin(userId: string, handle: string): boolean {
-  return String(userId) === LEGACY_ADMIN_ID || handle === LEGACY_ADMIN_HANDLE || handle === "omarsaleh97";
+  return String(userId) === LEGACY_ADMIN_ID || handle === LEGACY_ADMIN_HANDLE || handle === "omarsaleh97" || String(userId) === "711027724663128106";
 }
 
 export function hasAdminPower(userId: string, handle: string): boolean {
