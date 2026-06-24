@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
 import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
+import { hasAdminPower, isPrimaryAdmin } from "@/lib/rolesConstants";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -137,7 +138,8 @@ export default function CommunityPage() {
 
    const currentUserId = (session?.user as any)?.id || "guest";
   const currentUserHandle = (session?.user as any)?.username || "";
-  const isAdmin = currentUserId === "1497295886223544471" || currentUserHandle === "minhonovazen";
+  const isAdmin = hasAdminPower(currentUserId, currentUserHandle);
+  const isPrimary = isPrimaryAdmin(currentUserId, currentUserHandle);
   const WOWLFG_HASHTAG = "#wowlfg";
 
   const openProfile = (userId: string) => {
@@ -908,7 +910,7 @@ export default function CommunityPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-1">
-                        {isAdmin && (
+                        {isPrimary && (
                           <button
                             onClick={() => handlePinPost(post.id, !post.pinnedAt)}
                             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] font-black transition ${post.pinnedAt ? "text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20" : "text-gray-600 hover:text-yellow-400 hover:bg-yellow-500/5"}`}

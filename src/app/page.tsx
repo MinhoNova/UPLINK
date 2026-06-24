@@ -66,6 +66,7 @@ import { classThumbUrl, roleIconUrl, roleIconClass } from "@/lib/classThumb";
 import { OfferFeedAvatar as OfferFeedAvatarBase } from "@/components/OfferFeedAvatar";
 import { resolveLobbyBannerBg, resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 import { formatIpForAdmin } from "@/lib/formatIp";
+import { isPrimaryAdmin, hasAdminPower } from "@/lib/rolesConstants";
 
 const VoiceParticipant = ({ participant }: { participant: Participant }) => {
   const isSpeaking = useIsSpeaking(participant);
@@ -551,8 +552,9 @@ export default function HomePage() {
       const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
       return resolveOfferFeedProfileImage(me, currentUserDisplay);
    }, [registeredUsers, currentUserId, currentUserDisplay]);
-   const currentUserDiscordHandle = (session?.user as any)?.username || "";
-   const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471";
+    const currentUserDiscordHandle = (session?.user as any)?.username || "";
+    const isAdmin = hasAdminPower(currentUserId, currentUserDiscordHandle);
+    const isPrimary = isPrimaryAdmin(currentUserId, currentUserDiscordHandle);
 
     const [activeMainTab, setActiveMainTab] = useState(() => {
        if (typeof window !== "undefined") {
@@ -3192,7 +3194,7 @@ export default function HomePage() {
       if (!char) return;
 
       const currentRoleScore = char.roleScores?.[char.role] ?? char.score;
-      const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471";
+      const isAdmin = hasAdminPower(currentUserId, currentUserDiscordHandle);
 
       if (!isAdmin) {
         if ((targetLobby.roles[char.role] || 0) <= 0) return addToast(`This run doesn't need a ${char.role.toUpperCase()} anymore.`, "error");
@@ -4974,7 +4976,7 @@ export default function HomePage() {
 <button onClick={() => setActiveMainTab("boosts")} className={`flex-1 py-3 px-4 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] outline-none cursor-pointer text-center transition-all ${activeMainTab === "boosts" ? "bg-[#ff007f] shadow-[0_0_30px_rgba(255,0,127,0.4)] text-white" : `${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-white hover:text-white/80'}`}`}>
 ⚡ Offers
 </button>
-                             {isAdmin && (
+                             {isPrimary && (
 <motion.button onClick={() => setActiveMainTab("admin")} className={`flex-1 py-3 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${activeMainTab === "admin" ? "bg-red-600 text-white shadow-[0_0_30px_rgba(220,38,38,0.4)]" : "text-red-500/50 hover:text-red-500"}`}>
                                    <ShieldAlert className="w-4 h-4" /> Admin
                                </motion.button>

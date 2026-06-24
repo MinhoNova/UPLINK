@@ -15,6 +15,7 @@ import HomeFloatingActions from "@/components/HomeFloatingActions";
 import SupportChatWidget from "@/components/SupportChatWidget";
 import TicketModal from "@/components/modals/TicketModal";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
+import { hasAdminPower } from "@/lib/rolesConstants";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -74,7 +75,7 @@ export default function NewsFeed({ section }: NewsFeedProps) {
   const currentUserId = (session?.user as any)?.id || "guest";
   const currentUserDisplay = session?.user?.name || "Member";
   const currentUserDiscordHandle = (session?.user as any)?.username || "";
-  const isAdmin = currentUserId === "1497295886223544471" || currentUserDiscordHandle === "minhonovazen";
+  const isAdmin = hasAdminPower(currentUserId, currentUserDiscordHandle);
 
   // Fetch initial news feed
   const fetchNews = useCallback(async () => {

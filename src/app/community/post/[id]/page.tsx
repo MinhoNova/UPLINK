@@ -37,21 +37,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <main className="min-h-screen bg-[#05050a] text-white">
-      {/* Navigation bar */}
-      <nav className="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-3xl mx-auto px-4 h-12 flex items-center gap-3">
-          <a href="/community" className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition">
-            ← Community
-          </a>
-          {tags.map((t) => (
-            <a key={t} href={`/community?tag=${t}`} className="text-[9px] font-black uppercase text-gray-500 hover:text-[#00ffff] transition">
-              #{t}
-            </a>
-          ))}
-        </div>
-      </nav>
-
-      <article className="max-w-3xl mx-auto px-4 py-8">
+      <article className="max-w-3xl mx-auto px-4 pt-28 pb-8">
         <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-6 shadow-xl">
           {/* Author */}
           <div className="flex items-center gap-3 mb-4">
