@@ -132,7 +132,11 @@ export default function RootLayout({
                 <a href="/wowlfg" className="text-gray-500 hover:text-white transition-colors">WoWLFG</a>
                 <a href="/wow-boosting" className="text-gray-500 hover:text-white transition-colors">WoW Boosting</a>
                 <a href="/gold-auction" className="text-gray-500 hover:text-white transition-colors">Gold Auction</a>
-                <a href="/news" className="text-gray-500 hover:text-white transition-colors">News</a>
+                <span className="text-white/20">·</span>
+                <a href="/about" className="text-gray-500 hover:text-white transition-colors">About</a>
+                <a href="/contact" className="text-gray-500 hover:text-white transition-colors">Contact</a>
+                <a href="/privacy" className="text-gray-500 hover:text-white transition-colors">Privacy</a>
+                <a href="/terms" className="text-gray-500 hover:text-white transition-colors">Terms</a>
               </div>
               <p className="text-center mt-4 text-[8px] text-gray-700 font-black uppercase tracking-widest">
                 WoWLFG — World of Warcraft LFG, Boosting &amp; Group Finder | UPLINK
