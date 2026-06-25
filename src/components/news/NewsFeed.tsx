@@ -503,25 +503,31 @@ export default function NewsFeed({ section }: NewsFeedProps) {
                 return (
                   <div
                     key={item.id}
-                    className={`bg-gradient-to-br from-[#070710] to-black border-2 border-dashed ${
-                      section === "leveling" ? "border-[#00ffff]/20 hover:border-[#00ffff]/40" : "border-[#ff007f]/20 hover:border-[#ff007f]/40"
-                    } rounded-[2.5rem] p-5 md:p-6 shadow-2xl relative transition-all`}
+                    className="bg-gradient-to-br from-[#070710] to-black border border-white/5 rounded-[2rem] p-5 md:p-6 shadow-2xl transition"
                   >
-                    {/* Share details badge */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-                        <span>🔁</span> Shared from Community
-                      </div>
-                      <div className="text-[10px] text-gray-500 font-black">
-                        Shared by: <span className="text-white/80">{item.authorName}</span>
-                      </div>
+                    {/* Shared by header */}
+                    <div className="flex items-center gap-2 mb-4">
+                      {item.authorImage ? (
+                        <img
+                          src={item.authorImage}
+                          alt=""
+                          className="w-5 h-5 rounded-full border border-white/10 bg-black"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10" />
+                      )}
+                      <span className="text-[10px] text-gray-500 font-black">
+                        Shared by <span className="text-white/80">{item.authorName}</span>
+                      </span>
                     </div>
 
-                    {/* Nested original post box */}
-                    <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 shadow-inner relative overflow-hidden">
+                                        {/* Nested original post box */}
+                    <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 shadow-inner relative overflow-hidden group">
                       <div className="absolute top-0 right-0 w-16 h-16 bg-[#ff007f]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
                       
-                      {/* Author Header */}
+                      {/* Author Header */
+}
                       <div className="flex items-center gap-3 mb-3 relative z-10">
                         <UserAvatar src={post.userImage || ""} userId={post.userId || ""} className="w-9 h-9" />
                         <div className="flex-1 min-w-0">
@@ -543,26 +549,28 @@ export default function NewsFeed({ section }: NewsFeedProps) {
                       {post.title && (
                         <Link
                           href={`/community/post/${post.id}`}
-                          className="block text-base font-black text-white mb-2 relative z-10 hover:text-[#00ffff] transition"
+                          className="block text-base font-black text-white mb-2 relative z-10 group-hover:text-[#00ffff] transition"
                         >
                           {post.title}
                         </Link>
                       )}
 
                       {/* Post Content */}
-                      <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">
-                        {post.content}
-                      </p>
+                      <Link href={`/community/post/${post.id}`} className="block relative z-10">
+                        <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed group-hover:text-white/90 transition">
+                          {post.content}
+                        </p>
+                      </Link>
 
                       {/* Post Image/Video */}
                       {post.image && (
-                        <div className="mb-3 rounded-2xl overflow-hidden border border-white/5 relative z-10">
+                        <Link href={`/community/post/${post.id}`} className="block mb-3 rounded-2xl overflow-hidden border border-white/5 relative z-10">
                           {post.image.match(/\.(mp4|webm|mov)(\?|$)/i) ? (
-                            <video src={post.image} className="w-full max-h-96 bg-black/40" controls preload="metadata" />
+                            <video src={post.image} className="w-full max-h-96 bg-black/40" controls preload="metadata" onClick={(e) => e.stopPropagation()} />
                           ) : (
                             <img src={post.image} alt="" className="w-full max-h-96 object-contain bg-black/40" loading="lazy" />
                           )}
-                        </div>
+                        </Link>
                       )}
 
                       {/* Post Tags */}
@@ -825,17 +833,6 @@ export default function NewsFeed({ section }: NewsFeedProps) {
                       )}
                     </div>
 
-                    {/* View Main Post Action Button */}
-                    <div className="mt-4 flex justify-end">
-                      <Link
-                        href={`/community/post/${post.id}`}
-                        className={`flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:text-white hover:bg-white/10 transition-all ${
-                          section === "leveling" ? "hover:border-[#00ffff]/40" : "hover:border-[#ff007f]/40"
-                        }`}
-                      >
-                        View Main Post 🔗
-                      </Link>
-                    </div>
                   </div>
                 );
               }

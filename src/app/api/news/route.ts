@@ -20,16 +20,23 @@ export async function GET(req: NextRequest) {
 
   const rows = await query;
 
+  await initTables();
+  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+
+  // Resolve author image + live display name for every news item
+  const authorResolved = rows.map((r: any) => {
+    const authorData = registeredUsers.find((u: any) => String(u.id) === String(r.authorId));
+    const authorFields = resolvePublicAuthorFields(authorData, { name: r.authorName, image: null });
+    return { ...r, authorName: authorFields.userName, authorImage: authorFields.userImage };
+  });
+
   // Enrich news items that have a sourcePostId
   const sourcePostIds = rows.map((r: any) => r.sourcePostId).filter(Boolean) as number[];
-  let enrichedRows = rows.map((r: any) => ({ ...r, sourcePost: null as any }));
+  let enrichedRows = authorResolved.map((r: any) => ({ ...r, sourcePost: null as any }));
 
   if (sourcePostIds.length > 0) {
     const dbPosts = await db.select().from(posts).where(inArray(posts.id, sourcePostIds));
     const allReactions = await db.select().from(reactions).where(inArray(reactions.postId, sourcePostIds));
-    
-    await initTables();
-    const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
 
     const reactionMap: Record<number, { type: string; count: number; userReacted: boolean }[]> = {};
     for (const r of allReactions as any[]) {
@@ -63,7 +70,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    enrichedRows = rows.map((r: any) => ({
+    enrichedRows = authorResolved.map((r: any) => ({
       ...r,
       sourcePost: r.sourcePostId ? (postsMap.get(r.sourcePostId) || null) : null,
     }));

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getKV, initTables } from "@/lib/db";
-import { resolvePublicAuthorFields } from "@/lib/profileImage";
+import { resolvePublicAuthorFields, resolveProfileImage, resolveProfileDisplayName } from "@/lib/profileImage";
 
 const REACTION_ICONS: Record<string, string> = {
   LOL: "😂", Love: "❤️", Sad: "😢", Wipe: "💀", Carry: "🏆",
@@ -42,13 +42,17 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
   const isVideo = item.image?.match(/\.(mp4|webm|mov)(\?|$)/i);
   const sectionLabel = item.section === "leveling" ? "Leveling" : "Dungeons";
 
+  // Resolve sharer (author) info
+  await initTables();
+  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+  const sharerData = registeredUsers.find((u: any) => String(u.id) === String(item.authorId));
+  const sharerName = resolveProfileDisplayName(sharerData, item.authorName);
+
   // Fetch sourcePost if exists
   let sourcePost: any = null;
   if (item.sourcePostId) {
     const dbPost = await db.select().from(posts).where(eq(posts.id, item.sourcePostId)).limit(1).then((r) => r[0]) as any;
     if (dbPost) {
-      await initTables();
-      const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
       const author = registeredUsers.find((u: any) => String(u.id) === String(dbPost.userId));
       const authorFields = resolvePublicAuthorFields(author, { name: dbPost.userName, image: dbPost.userImage });
 
@@ -82,74 +86,69 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
         </div>
 
         {sourcePost ? (
-          <div className={`border-2 border-dashed ${item.section === "leveling" ? "border-[#00ffff]/20" : "border-[#ff007f]/20"} rounded-[2.5rem] p-5 md:p-6 shadow-2xl`}>
-            {/* Share badge */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-                <span>🔁</span> Shared from Community
-              </div>
-              <div className="text-[10px] text-gray-500 font-black">
-                Shared by: <span className="text-white/80">{item.authorName}</span>
-              </div>
+          <div className="bg-gradient-to-br from-[#070710] to-black border border-white/5 rounded-[2rem] p-5 md:p-6 shadow-2xl">
+            {/* Shared by header */}
+            <div className="flex items-center gap-2 mb-4">
+              <img
+                src={sharerData ? resolveProfileImage(sharerData) : ""}
+                alt=""
+                className="w-6 h-6 rounded-full border border-white/10 bg-black"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+              <span className="text-[10px] text-gray-500 font-black">
+                Shared by <span className="text-white/80">{sharerName}</span>
+              </span>
             </div>
 
-            {/* Original post card */}
-            <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 shadow-inner relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-16 h-16 bg-[#ff007f]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
-              <div className="flex items-center gap-3 mb-3 relative z-10">
-                <img src={sourcePost.userImage || ""} alt="" className="w-9 h-9 rounded-full border-2 border-white/10 bg-black" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-black text-white/90 truncate block">{sourcePost.userName}</span>
-                  <span className="text-[9px] text-gray-500 font-black">
-                    {new Date(sourcePost.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-              </div>
-
-              {sourcePost.title && (
-                <h2 className="text-base font-black text-white mb-2 relative z-10">{sourcePost.title}</h2>
-              )}
-              <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">{sourcePost.content}</p>
-
-              {sourcePost.image && (
-                <div className="mb-3 rounded-2xl overflow-hidden border border-white/5 relative z-10">
-                  {sourcePost.image.match(/\.(mp4|webm|mov)(\?|$)/i) ? (
-                    <video src={sourcePost.image} className="w-full max-h-96 bg-black/40" controls preload="metadata" />
-                  ) : (
-                    <img src={sourcePost.image} alt="" className="w-full max-h-96 object-contain bg-black/40" />
-                  )}
-                </div>
-              )}
-
-              {sourcePost.tags?.length > 0 && (
-                <div className="flex items-center gap-1.5 mb-3 flex-wrap relative z-10">
-                  {sourcePost.tags.map((tag: string) => (
-                    <span key={tag} className="text-[8px] font-black bg-white/5 text-gray-400 px-2 py-0.5 rounded-full uppercase tracking-wider">#{tag}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Static reactions display */}
-              {sourcePost.reactions?.length > 0 && (
-                <div className="flex items-center gap-2 pt-3 border-t border-white/5 relative z-10">
-                  {sourcePost.reactions.map((r: any) => (
-                    <span key={r.type} className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/[0.04] border border-white/5 text-sm">
-                      {REACTION_ICONS[r.type] || r.type} <span className="text-[10px] font-black text-gray-400">{r.count}</span>
+            {/* Original post card — entire card links to main post */}
+            <Link href={`/community/post/${sourcePost.id}`} className="block group">
+              <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 shadow-inner relative overflow-hidden group-hover:border-[#00ffff]/20 transition">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-[#ff007f]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
+                <div className="flex items-center gap-3 mb-3 relative z-10">
+                  <img src={sourcePost.userImage || ""} alt="" className="w-9 h-9 rounded-full border-2 border-white/10 bg-black" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-black text-white/90 truncate block">{sourcePost.userName}</span>
+                    <span className="text-[9px] text-gray-500 font-black">
+                      {new Date(sourcePost.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </span>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* View Main Post */}
-            <div className="mt-4 flex justify-end">
-              <Link
-                href={`/community/post/${sourcePost.id}`}
-                className={`flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-white/10 transition-all ${item.section === "leveling" ? "hover:border-[#00ffff]/40" : "hover:border-[#ff007f]/40"}`}
-              >
-                View Main Post 🔗
-              </Link>
-            </div>
+                {sourcePost.title && (
+                  <h2 className="text-base font-black text-white mb-2 relative z-10 group-hover:text-[#00ffff] transition">{sourcePost.title}</h2>
+                )}
+                <p className="text-sm text-white/70 mb-3 whitespace-pre-wrap leading-relaxed relative z-10">{sourcePost.content}</p>
+
+                {sourcePost.image && (
+                  <div className="mb-3 rounded-2xl overflow-hidden border border-white/5 relative z-10">
+                    {sourcePost.image.match(/\.(mp4|webm|mov)(\?|$)/i) ? (
+                      <video src={sourcePost.image} className="w-full max-h-96 bg-black/40" controls preload="metadata" onClick={(e) => e.stopPropagation()} />
+                    ) : (
+                      <img src={sourcePost.image} alt="" className="w-full max-h-96 object-contain bg-black/40" />
+                    )}
+                  </div>
+                )}
+
+                {sourcePost.tags?.length > 0 && (
+                  <div className="flex items-center gap-1.5 mb-3 flex-wrap relative z-10">
+                    {sourcePost.tags.map((tag: string) => (
+                      <span key={tag} className="text-[8px] font-black bg-white/5 text-gray-400 px-2 py-0.5 rounded-full uppercase tracking-wider">#{tag}</span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Static reactions display */}
+                {sourcePost.reactions?.length > 0 && (
+                  <div className="flex items-center gap-2 pt-3 border-t border-white/5 relative z-10">
+                    {sourcePost.reactions.map((r: any) => (
+                      <span key={r.type} className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/[0.04] border border-white/5 text-sm">
+                        {REACTION_ICONS[r.type] || r.type} <span className="text-[10px] font-black text-gray-400">{r.count}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Link>
           </div>
         ) : (
           <article>
