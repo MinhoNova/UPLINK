@@ -6,6 +6,10 @@ import { SPECS, getClassColor, getSpecData } from "@/lib/wowData";
 
 const siteUrl = getSiteUrl();
 
+export async function generateStaticParams() {
+  return SPECS.map((spec) => ({ id: spec.id }));
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const spec = SPECS.find((s) => s.id === id);
