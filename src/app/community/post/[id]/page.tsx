@@ -3,6 +3,7 @@ import { posts } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { isAnimatedImageUrl } from "@/lib/profileImage";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -41,7 +42,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-6 shadow-xl">
           {/* Author */}
           <div className="flex items-center gap-3 mb-4">
-            <img src={post.userImage || ""} alt="" className="w-10 h-10 rounded-full bg-black/40" />
+            <img src={post.userImage || ""} alt="" className={`w-10 h-10 rounded-full bg-black/40 ${isAnimatedImageUrl(post.userImage || "") ? "object-contain" : "object-cover"}`} />
             <div>
               <p className="text-sm font-black text-white/90">{post.userName}</p>
               <p className="text-[9px] text-gray-500 font-black">

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getKV, initTables } from "@/lib/db";
-import { resolvePublicAuthorFields, resolveProfileImage, resolveProfileDisplayName } from "@/lib/profileImage";
+import { resolvePublicAuthorFields, resolveProfileImage, resolveProfileDisplayName, isAnimatedImageUrl } from "@/lib/profileImage";
 
 const REACTION_ICONS: Record<string, string> = {
   LOL: "😂", Love: "❤️", Sad: "😢", Wipe: "💀", Carry: "🏆",
@@ -105,7 +105,11 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
               <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 shadow-inner relative overflow-hidden group-hover:border-[#00ffff]/20 transition">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-[#ff007f]/5 blur-3xl rounded-full translate-x-6 -translate-y-6" />
                 <div className="flex items-center gap-3 mb-3 relative z-10">
-                  <img src={sourcePost.userImage || ""} alt="" className="w-9 h-9 rounded-full border-2 border-white/10 bg-black" />
+                  <img
+                    src={sourcePost.userImage || ""}
+                    alt=""
+                    className={`w-9 h-9 rounded-full border-2 border-white/10 bg-black ${isAnimatedImageUrl(sourcePost.userImage || "") ? "object-contain" : "object-cover"}`}
+                  />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-black text-white/90 truncate block">{sourcePost.userName}</span>
                     <span className="text-[9px] text-gray-500 font-black">
