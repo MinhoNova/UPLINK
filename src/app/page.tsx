@@ -5372,7 +5372,7 @@ export default function HomePage() {
                                          return (
                                          <div key={user.id} className="flex items-center justify-between p-6 bg-black/40 rounded-2xl border border-white/5 hover:border-red-500/30 transition-all group">
                                             <div className="flex items-center gap-6">
-                                               <AvatarWithEffect src={user.avatar} effect={user.effect} className="w-16 h-16" />
+                                                <AvatarWithEffect src={user.avatar} effect="none" className="w-16 h-16" />
                                                <div>
                                                    <h4 className="text-xl font-black text-white uppercase">{user.name}</h4>
                                                    <p className="text-[9px] font-mono mt-1">
