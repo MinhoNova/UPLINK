@@ -84,3 +84,190 @@ export function getSpecsByRole(role: string): WoWSpec[] {
 export function getSpecsByClass(classId: string): WoWSpec[] {
   return SPECS.filter((s) => s.classId === classId);
 }
+
+/* ───── BIS Gear, Enchants, Gems, Talents ───── */
+
+export interface BISItem {
+  slot: string;
+  name: string;
+}
+
+export interface EnchantItem {
+  slot: string;
+  name: string;
+}
+
+export interface GemItem {
+  slot: string;
+  name: string;
+}
+
+export interface TalentBuild {
+  player: string;
+  class: string;
+  region: string;
+  score: number;
+  talents: string[];
+}
+
+export interface SpecData {
+  bis: BISItem[];
+  enchants: EnchantItem[];
+  gems: string[];
+  talents: TalentBuild[];
+  statPriority: string[];
+}
+
+const SPEC_DATA: Record<string, SpecData> = {
+  "devastation-evoker": {
+    bis: [
+      { slot: "Head", name: "Crown of Elders" },
+      { slot: "Neck", name: "Amulet of the Deep" },
+      { slot: "Shoulders", name: "Mantle of the Tempest" },
+      { slot: "Back", name: "Drape of Cascading Flame" },
+      { slot: "Chest", name: "Vest of the Firestorm" },
+      { slot: "Wrist", name: "Bracers of Surging Power" },
+      { slot: "Hands", name: "Handlers of the Ember" },
+      { slot: "Waist", name: "Belt of the Inferno" },
+      { slot: "Legs", name: "Leggings of the Blazing" },
+      { slot: "Feet", name: "Treads of the Magma" },
+      { slot: "Ring 1", name: "Signet of Blazing Power" },
+      { slot: "Ring 2", name: "Band of the Earthen" },
+      { slot: "Trinket 1", name: "Crystalline Salvation" },
+      { slot: "Trinket 2", name: "Spoiled Rotten" },
+      { slot: "Weapon", name: "Razortail Staff" },
+      { slot: "Off-Hand", name: "Codex of the Flame" },
+    ],
+    enchants: [
+      { slot: "Weapon", name: "Authority of the Depths" },
+      { slot: "Chest", name: "Crystalline Radiance" },
+      { slot: "Cloak", name: "Chant of Winged Grace" },
+      { slot: "Legs", name: "Spellthread of the Storm" },
+      { slot: "Boots", name: "Defender's March" },
+      { slot: "Rings", name: "Radiant Haste" },
+      { slot: "Gems x3", name: "Culminating Sapphire" },
+    ],
+    gems: ["Culminating Sapphire ×2", "Crystalline Pearl"],
+    talents: [
+      { player: "Zaelia", class: "Evoker", region: "EU", score: 3512, talents: ["Font of Magic", "Eternal Span", "Scintillating Strike", "Charged Blast", "Tip the Scales", "Dragonrage", "Firestorm", "Polarize", "Shifting Sands", "Engulfing Blaze", "Time Sink", "Prolong Life"] },
+      { player: "Skylarker", class: "Evoker", region: "US", score: 3478, talents: ["Font of Magic", "Eternal Span", "Scintillating Strike", "Charged Blast", "Tip the Scales", "Dragonrage", "Firestorm", "Polarize", "Shifting Sands", "Engulfing Blaze", "Spatial Paradox", "Prolong Life"] },
+      { player: "Void", class: "Evoker", region: "KR", score: 3410, talents: ["Font of Magic", "Eternal Span", "Scintillating Strike", "Charged Blast", "Tip the Scales", "Dragonrage", "Firestorm", "Regenerate", "Polarize", "Engulfing Blaze", "Time Sink", "Spatial Paradox"] },
+    ],
+    statPriority: ["Intellect", "Haste > 30%", "Mastery", "Critical Strike", "Versatility"],
+  },
+  "discipline-priest": {
+    bis: [
+      { slot: "Head", name: "Cowl of the Redeemed" },
+      { slot: "Neck", name: "Choker of Forgiveness" },
+      { slot: "Shoulders", name: "Shoulderguards of Atonement" },
+      { slot: "Back", name: "Cloak of Penitence" },
+      { slot: "Chest", name: "Vestments of the Light" },
+      { slot: "Wrist", name: "Bindings of Absolution" },
+      { slot: "Hands", name: "Gloves of the Healer" },
+      { slot: "Waist", name: "Cord of the Ascended" },
+      { slot: "Legs", name: "Leggings of Salvation" },
+      { slot: "Feet", name: "Sandals of the Pilgrim" },
+      { slot: "Ring 1", name: "Solace of the Divine" },
+      { slot: "Ring 2", name: "Loop of Enduring Hope" },
+      { slot: "Trinket 1", name: "Rekindled Ember" },
+      { slot: "Trinket 2", name: "Soul of the Martyr" },
+      { slot: "Weapon", name: "Scepter of the Light" },
+      { slot: "Off-Hand", name: "Tome of Redemption" },
+    ],
+    enchants: [
+      { slot: "Weapon", name: "Authority of the Depths" },
+      { slot: "Chest", name: "Crystalline Radiance" },
+      { slot: "Cloak", name: "Chant of Winged Grace" },
+      { slot: "Legs", name: "Spellthread of the Storm" },
+      { slot: "Boots", name: "Defender's March" },
+      { slot: "Rings", name: "Radiant Haste" },
+      { slot: "Gems x3", name: "Culminating Sapphire" },
+    ],
+    gems: ["Culminating Sapphire ×2", "Crystalline Pearl"],
+    talents: [
+      { player: "Nerft", class: "Priest", region: "EU", score: 3740, talents: ["Atonement", "Rapture", "Evangelism", "Penance", "Power Word: Solace", "Schism", "Mindbender", "Halo", "Shadow Covenant", "Twist of Fate", "Contrition", "Purge the Wicked"] },
+      { player: "Revived", class: "Priest", region: "US", score: 3698, talents: ["Atonement", "Rapture", "Evangelism", "Penance", "Power Word: Solace", "Schism", "Mindbender", "Halo", "Shield of Faith", "Twist of Fate", "Contrition", "Purge the Wicked"] },
+      { player: "Soni", class: "Priest", region: "EU", score: 3655, talents: ["Atonement", "Rapture", "Evangelism", "Penance", "Power Word: Solace", "Schism", "Mindbender", "Halo", "Shadow Covenant", "Twist of Fate", "Contrition", "Lenience"] },
+    ],
+    statPriority: ["Intellect", "Haste > 25%", "Critical Strike", "Mastery", "Versatility"],
+  },
+  "arms-warrior": {
+    bis: [
+      { slot: "Head", name: "Helm of the Warlord" },
+      { slot: "Neck", name: "Pendant of Victory" },
+      { slot: "Shoulders", name: "Pauldrons of the Colossus" },
+      { slot: "Back", name: "Cloak of the Unyielding" },
+      { slot: "Chest", name: "Brestplate of the Champion" },
+      { slot: "Wrist", name: "Vambraces of the Skirmisher" },
+      { slot: "Hands", name: "Gauntlets of the Blade" },
+      { slot: "Waist", name: "Belt of the Juggernaut" },
+      { slot: "Legs", name: "Legplates of the Conqueror" },
+      { slot: "Feet", name: "Greaves of the Vanguard" },
+      { slot: "Ring 1", name: "Signet of the Colossus" },
+      { slot: "Ring 2", name: "Band of the Warbringer" },
+      { slot: "Trinket 1", name: "Desperate Invocation" },
+      { slot: "Trinket 2", name: "Embrace of the Earth" },
+      { slot: "Weapon", name: "Decapitator (2H Axe)" },
+      { slot: "Off-Hand", name: "—" },
+    ],
+    enchants: [
+      { slot: "Weapon", name: "Authority of the Depths" },
+      { slot: "Chest", name: "Crystalline Radiance" },
+      { slot: "Cloak", name: "Chant of Winged Grace" },
+      { slot: "Legs", name: "Fanged Sporoderm" },
+      { slot: "Boots", name: "Defender's March" },
+      { slot: "Rings", name: "Radiant Haste" },
+      { slot: "Gems x3", name: "Squall of Storms" },
+    ],
+    gems: ["Squall of Storms ×2", "Crystalline Pearl"],
+    talents: [
+      { player: "Xaryu", class: "Warrior", region: "US", score: 3800, talents: ["Warbreaker", "Cleave", "Skullsplitter", "Colossus Smash", "Mortal Strike", "Sudden Death", "Anger Management", "In for the Kill", "Storm of Swords", "Titan's Grip", "Defensive Stance", "Banner of Aggression"] },
+      { player: "Jazgg", class: "Warrior", region: "EU", score: 3750, talents: ["Warbreaker", "Cleave", "Skullsplitter", "Colossus Smash", "Mortal Strike", "Sudden Death", "Anger Management", "In for the Kill", "Storm of Swords", "Titan's Grip", "Impenetrable Wall", "Banner of Aggression"] },
+      { player: "Savix", class: "Warrior", region: "US", score: 3712, talents: ["Warbreaker", "Cleave", "Skullsplitter", "Colossus Smash", "Mortal Strike", "Sudden Death", "Anger Management", "In for the Kill", "Storm of Swords", "Test of Might", "Defensive Stance", "Strength of Arms"] },
+    ],
+    statPriority: ["Strength", "Haste > 20%", "Critical Strike", "Mastery", "Versatility"],
+  },
+  "blood-death-knight": {
+    bis: [
+      { slot: "Head", name: "Helm of the Darkfallen" },
+      { slot: "Neck", name: "Amulet of the Damned" },
+      { slot: "Shoulders", name: "Pauldrons of the Lich" },
+      { slot: "Back", name: "Drape of the Frostwyrm" },
+      { slot: "Chest", name: "Boneplate Vest" },
+      { slot: "Wrist", name: "Bindings of the Grave" },
+      { slot: "Hands", name: "Gauntlets of the Scourge" },
+      { slot: "Waist", name: "Girdle of the Frozen" },
+      { slot: "Legs", name: "Greaves of the Plague" },
+      { slot: "Feet", name: "Treads of the Lich" },
+      { slot: "Ring 1", name: "Seal of the Damned" },
+      { slot: "Ring 2", name: "Loop of the Unholy" },
+      { slot: "Trinket 1", name: "Rage of the Frozen" },
+      { slot: "Trinket 2", name: "Soul of the Damned" },
+      { slot: "Weapon", name: "Soulsever (2H Sword)" },
+      { slot: "Off-Hand", name: "—" },
+    ],
+    enchants: [
+      { slot: "Weapon", name: "Rune of the Stoneskin Gargoyle" },
+      { slot: "Chest", name: "Crystalline Radiance" },
+      { slot: "Cloak", name: "Chant of Winged Grace" },
+      { slot: "Legs", name: "Fanged Sporoderm" },
+      { slot: "Boots", name: "Defender's March" },
+      { slot: "Rings", name: "Radiant Haste" },
+      { slot: "Gems x3", name: "Squall of Storms" },
+    ],
+    gems: ["Squall of Storms ×2", "Crystalline Pearl"],
+    talents: [
+      { player: "Darkmech", class: "DK", region: "EU", score: 3825, talents: ["Heart Strike", "Marrowrend", "Death Strike", "Blood Boil", "Dancing Rune Weapon", "Vampiric Blood", "Icy Touch", "Anti-Magic Shell", "Consumption", "Bone Shield", "Crimson Scourge", "Relish in Blood"] },
+      { player: "Taylen", class: "DK", region: "US", score: 3780, talents: ["Heart Strike", "Marrowrend", "Death Strike", "Blood Boil", "Dancing Rune Weapon", "Vampiric Blood", "Icy Touch", "Anti-Magic Shell", "Consumption", "Bone Shield", "Blood Tap", "Drain Blood"] },
+    ],
+    statPriority: ["Strength", "Haste > 20%", "Versatility", "Mastery", "Critical Strike"],
+  },
+};
+
+export function getSpecData(specId: string): SpecData | undefined {
+  return SPEC_DATA[specId];
+}
+
+export function getAllSpecData(): Record<string, SpecData> {
+  return SPEC_DATA;
+}

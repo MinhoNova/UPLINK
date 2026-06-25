@@ -27,15 +27,19 @@ export default function WowLanding() {
           Class rankings, tier lists, and meta data for World of Warcraft.
         </p>
 
-        <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <div className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
           <Link href="/wow/tier-list" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#00ffff]/30 transition group text-left">
             <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#00ffff] transition">Tier List</h2>
             <p className="text-sm text-gray-500">DPS, Healer & Tank rankings. See which specs top the charts.</p>
           </Link>
-          <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 opacity-50">
-            <h2 className="text-lg font-black text-gray-500 mb-2">Meta Builds</h2>
-            <p className="text-sm text-gray-600">Coming soon — talents, gear, and stat priorities.</p>
-          </div>
+          <Link href="/wow/dungeons" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#ff007f]/30 transition group text-left">
+            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#ff007f] transition">Dungeons</h2>
+            <p className="text-sm text-gray-500">Mythic+ dungeon difficulty rankings and affixes.</p>
+          </Link>
+          <Link href="/wow/spec/discipline-priest" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#aaff00]/30 transition group text-left">
+            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#aaff00] transition">Meta Builds</h2>
+            <p className="text-sm text-gray-500">BIS gear, enchants, talents, and stat priorities from top players.</p>
+          </Link>
         </div>
       </div>
     </div>
