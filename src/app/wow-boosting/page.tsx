@@ -8,17 +8,19 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   title: "WoW Boosting & Boost Marketplace — UPLINK",
   description:
-    "WoW boosting platform for Mythic+ dungeons, leveling, and raids. Post boost requests, place gold bids, and find boosters on UPLINK. Free for all players, no subscriptions.",
+    "WoW boosting platform for Mythic+ dungeons, leveling, and raids. Join WoW boosting communities, find boosting jobs, bid for gold, and connect via Discord. Post boost requests and find boosters on UPLINK. Free for all players, no subscriptions.",
   openGraph: {
     title: "WoW Boosting — UPLINK | Gold Auctions & Community Boost Marketplace",
     description:
-      "Post WoW boost requests and let boosters bid in gold. Mythic+, leveling, and raid boosting. Free blind auction system on UPLINK.",
+      "Post WoW boost requests and let boosters bid in gold. Mythic+, leveling, and raid boosting. Free blind auction system with active WoW boosting Discord community on UPLINK.",
     siteName: "WoWLFG — UPLINK",
   },
   keywords: [
     "wow boosting", "wowboost", "WoW boost", "World of Warcraft boosting",
     "Mythic+ boost", "WoW leveling boost", "boosting marketplace",
     "gold auction boosting", "UPLINK boosting",
+    "WoW boosting communities", "WoW boosting jobs", "WoW boosting for gold",
+    "WoW boosting Discord", "WoW boosting service",
   ],
   alternates: { canonical: `${siteUrl}/wow-boosting` },
 };

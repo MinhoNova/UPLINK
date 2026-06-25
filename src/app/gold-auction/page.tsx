@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     "wow gold auction", "blind auction wow", "gold boosting wow",
     "wow boost gold bid", "wow auction boosting", "buy wow boost gold",
     "wow mythic plus gold", "gold bid wow",
+    "WoW boosting for gold", "WoW boosting service",
+    "WoW boosting communities", "WoW boosting Discord",
   ],
   alternates: { canonical: `${siteUrl}/gold-auction` },
 };
