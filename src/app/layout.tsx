@@ -133,6 +133,8 @@ export default function RootLayout({
                 <a href="/wow-boosting" className="text-gray-500 hover:text-white transition-colors">WoW Boosting</a>
                 <a href="/gold-auction" className="text-gray-500 hover:text-white transition-colors">Gold Auction</a>
                 <span className="text-white/20">·</span>
+                <a href="/wow/tier-list" className="text-[#ff007f] hover:text-white transition-colors">WoW Tier List</a>
+                <span className="text-white/20">·</span>
                 <a href="/about" className="text-gray-500 hover:text-white transition-colors">About</a>
                 <a href="/contact" className="text-gray-500 hover:text-white transition-colors">Contact</a>
                 <a href="/privacy" className="text-gray-500 hover:text-white transition-colors">Privacy</a>

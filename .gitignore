@@ -52,3 +52,6 @@ src/db/uplink.db-wal
 src/data/uplink.db
 src/data/uplink.db-shm
 src/data/uplink.db-wal
+
+# wow meta assets
+META CLASS/
