@@ -3,6 +3,7 @@ import { getSiteUrl } from "@/lib/siteUrl";
 import { getKV, initTables } from "@/lib/db";
 import { getDb } from "@/db";
 import { posts, news } from "@/db/schema";
+import { SPECS } from "@/lib/wowData";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
@@ -135,6 +136,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    {
+      url: `${siteUrl}/wow/dungeons`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    },
+    ...SPECS.map((spec) => ({
+      url: `${siteUrl}/wow/spec/${spec.id}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    })),
   ];
 
   try {
