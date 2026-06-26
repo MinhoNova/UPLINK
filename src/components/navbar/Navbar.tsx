@@ -210,11 +210,7 @@ export default function Navbar() {
                   {pathname === '/community' ? 'CLUB' : 'Uplink'}
                 </span>
               </span>
-              {pathname !== '/community' && (
-                <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.28em] text-amber-400/95 leading-none">
-                  Beta
-                </span>
-              )}
+
             </div>
             </a>
 
@@ -243,9 +239,15 @@ export default function Navbar() {
                 <Trophy className="w-4 h-4" /> Top
               </motion.a>
             )}
-            <motion.a title="Meta Classes" href="/wow/tier-list" className={`h-8 px-2.5 rounded-lg flex items-center gap-1 font-black uppercase text-[9px] tracking-widest transition-all bg-[#ff007f]/10 text-[#ff007f] border border-[#ff007f]/30 hover:bg-[#ff007f]/20 shrink-0 ${pathname === '/wow/tier-list' ? 'bg-[#ff007f] text-white shadow-[0_0_12px_rgba(255,0,127,0.3)]' : ''}`}>
-              🏆 Meta Classes
-            </motion.a>
+            {pathname.startsWith('/wow') ? (
+              <motion.a title="Back to Home" href="/" className="h-8 px-4 rounded-lg flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30 shrink-0">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </motion.a>
+            ) : (
+              <motion.a title="Meta Classes" href="/wow/tier-list" className={`h-8 px-2.5 rounded-lg flex items-center gap-1 font-black uppercase text-[9px] tracking-widest transition-all bg-[#ff007f]/10 text-[#ff007f] border border-[#ff007f]/30 hover:bg-[#ff007f]/20 shrink-0 ${pathname === '/wow/tier-list' ? 'bg-[#ff007f] text-white shadow-[0_0_12px_rgba(255,0,127,0.3)]' : ''}`}>
+                🏆 Meta Classes
+              </motion.a>
+            )}
             <motion.button title="Direct Messages" onClick={() => {
               window.dispatchEvent(new CustomEvent('toggle-dm'));
             }} className="h-8 px-2.5 sm:px-4 rounded-lg flex items-center gap-1.5 sm:gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative shrink-0">
