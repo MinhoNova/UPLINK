@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getKV, initTables } from "@/lib/db";
 import { resolvePublicAuthorFields, resolveProfileImage, resolveProfileDisplayName, isAnimatedImageUrl } from "@/lib/profileImage";
+import { getAppSession } from "@/lib/authEnv";
+import DeleteNewsButton from "@/components/news/DeleteNewsButton";
 
 const REACTION_ICONS: Record<string, string> = {
   LOL: "😂", Love: "❤️", Sad: "😢", Wipe: "💀", Carry: "🏆",
@@ -41,6 +43,10 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
   const tags = JSON.parse(item.tags || "[]") as string[];
   const isVideo = item.image?.match(/\.(mp4|webm|mov)(\?|$)/i);
   const sectionLabel = item.section === "leveling" ? "Leveling" : "Dungeons";
+
+  // Get session for delete authorization
+  const session = await getAppSession(undefined as any);
+  const currentUserId = (session?.user as any)?.id || "";
 
   // Resolve sharer (author) info
   await initTables();
@@ -98,6 +104,11 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
               <span className="text-[10px] text-gray-500 font-black">
                 Shared by <span className="text-white/80">{sharerName}</span>
               </span>
+              {String(item.authorId) === String(currentUserId) && (
+                <div className="ml-auto">
+                  <DeleteNewsButton newsId={item.id} authorId={item.authorId} />
+                </div>
+              )}
             </div>
 
             {/* Original post card — entire card links to main post */}

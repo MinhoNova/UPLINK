@@ -16,6 +16,7 @@ import SupportChatWidget from "@/components/SupportChatWidget";
 import TicketModal from "@/components/modals/TicketModal";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
 import { hasAdminPower } from "@/lib/rolesConstants";
+import DeleteNewsButton from "@/components/news/DeleteNewsButton";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -520,6 +521,11 @@ export default function NewsFeed({ section }: NewsFeedProps) {
                       <span className="text-[10px] text-gray-500 font-black">
                         Shared by <span className="text-white/80">{item.authorName}</span>
                       </span>
+                      {String(item.authorId) === String(currentUserId) && (
+                        <div className="ml-auto">
+                          <DeleteNewsButton newsId={item.id} authorId={item.authorId} onDeleted={() => setItems((prev) => prev.filter((i) => i.id !== item.id))} />
+                        </div>
+                      )}
                     </div>
 
                                         {/* Nested original post box */}

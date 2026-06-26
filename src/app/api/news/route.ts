@@ -108,3 +108,27 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(result[0] ?? { success: true });
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await getAppSession(req);
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const db = await getDb();
+  const item = await db.select().from(news).where(eq(news.id, Number(id))).limit(1).then((r) => r[0]) as any;
+  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const userId = (session.user as any).id;
+  const username = (session.user as any).username || "";
+  const isAdmin = username === "minhonovazen" || (session.user as any).roles?.includes("admin");
+
+  if (String(item.authorId) !== String(userId) && !isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  await db.delete(news).where(eq(news.id, Number(id)));
+  return NextResponse.json({ success: true });
+}
