@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Copy, Check } from "lucide-react";
 import { SPECS, getClassColor, getSpecData, type SpecData, type PlayerBuild } from "@/lib/wowData";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 
@@ -114,15 +115,12 @@ export default function SpecDetailClient({ id }: { id: string }) {
                       </div>
                     </div>
 
-                    {/* Copy talent string */}
+                    {/* Copy talent string — just a button, no visible string */}
                     <div className="mb-4">
-                      <div className="flex items-center gap-2">
-                        <code className="text-[8px] font-mono text-gray-400 bg-black/40 px-2 py-1.5 rounded-lg flex-1 truncate select-all border border-white/5">{build.talentString}</code>
-                        <button onClick={() => copyTalentString(build.talentString, buildIndex)} className={`shrink-0 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all ${copiedIndex === buildIndex ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff]/20"}`}>
-                          {copiedIndex === buildIndex ? "Copied!" : "Copy"}
-                        </button>
-                      </div>
-                      <p className="text-[7px] text-gray-600 mt-1">Click Copy to import this talent build into WoW.</p>
+                      <button onClick={() => copyTalentString(build.talentString, buildIndex)} className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border ${copiedIndex === buildIndex ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/40"}`}>
+                        {copiedIndex === buildIndex ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        {copiedIndex === buildIndex ? "Copied!" : "Copy Talent String"}
+                      </button>
                     </div>
 
                     {/* Talent trees visual */}

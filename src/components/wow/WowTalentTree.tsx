@@ -1,24 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import type { TalentTree, TalentNode } from "@/lib/wowData";
+import { Check, Copy } from "lucide-react";
+import type { TalentTree } from "@/lib/wowData";
 
-function TalentNodeCell({ node, color }: { node: TalentNode; color: string }) {
+function TalentIcon({ name, selected, color }: { name: string; selected: boolean; color: string }) {
+  const shortName = name
+    .replace(/['']/g, "")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+
   return (
     <div
-      className={`flex items-center justify-center rounded-lg text-[8px] font-black text-center leading-tight px-1 py-1.5 transition-all ${
-        node.selected
-          ? "text-white border-2 shadow-lg"
-          : "text-gray-600 border border-white/5 bg-white/[0.02]"
+      className={`relative flex items-center justify-center aspect-square rounded-xl text-[6px] font-black leading-tight transition-all select-none ${
+        selected ? "shadow-lg" : "opacity-40"
       }`}
       style={
-        node.selected
-          ? { backgroundColor: `${color}25`, borderColor: `${color}80`, boxShadow: `0 0 8px ${color}30` }
-          : {}
+        selected
+          ? { backgroundColor: `${color}20`, border: `2px solid ${color}`, boxShadow: `0 0 10px ${color}40` }
+          : { backgroundColor: "#0a0a16", border: "1px solid rgba(255,255,255,0.06)" }
       }
-      title={node.name}
+      title={name}
     >
-      <span className={`${node.selected ? "opacity-100" : "opacity-40"}`}>{node.name}</span>
+      <span className={`${selected ? "text-white" : "text-gray-600"} text-center px-0.5 leading-tight`}>
+        {shortName}
+      </span>
     </div>
   );
 }
@@ -27,27 +36,27 @@ export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTr
   if (!trees || trees.length === 0) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {trees.map((tree) => {
-        const maxRow = Math.max(...tree.nodes.map((n) => n.row));
-        const maxCol = Math.max(...tree.nodes.map((n) => n.col));
-        const rows: TalentNode[][] = [];
-        for (let r = 1; r <= maxRow; r++) {
-          const rowNodes: (TalentNode | null)[] = [];
-          for (let c = 1; c <= maxCol; c++) {
-            const node = tree.nodes.find((n) => n.row === r && n.col === c) || null;
-            rowNodes.push(node);
-          }
-          rows.push(rowNodes.filter(Boolean) as TalentNode[]);
-        }
-
+        const maxCol = 2;
         return (
           <div key={tree.name}>
-            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">{tree.name}</h4>
-            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${maxCol}, 1fr)` }}>
-              {tree.nodes.map((node) => (
-                <TalentNodeCell key={node.name} node={node} color={color} />
-              ))}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-[1px] flex-1 bg-white/5" />
+              <span className="text-[7px] font-black text-gray-500 uppercase tracking-[0.2em]">{tree.name}</span>
+              <div className="h-[1px] flex-1 bg-white/5" />
+            </div>
+            <div className="flex flex-col gap-1">
+              {tree.nodes
+                .filter((n) => n.selected)
+                .map((node) => (
+                  <div key={node.name} className="flex items-center gap-2">
+                    <div className="w-6 h-6 shrink-0">
+                      <TalentIcon name={node.name} selected={true} color={color} />
+                    </div>
+                    <span className="text-[11px] font-bold text-white/90 truncate">{node.name}</span>
+                  </div>
+                ))}
             </div>
           </div>
         );
