@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Swords, Shield, ArrowLeft } from "lucide-react";
+import { Swords, Shield, ScrollText, ArrowLeft } from "lucide-react";
 
 const SIDEBAR_LINKS = [
   { href: "/wow/tier-list", label: "Tier List", icon: Swords },
   { href: "/wow/dungeons", label: "Dungeons", icon: Shield },
+  { href: "/wow/talents", label: "Talents", icon: ScrollText },
 ];
 
 export default function WowLayout({ children }: { children: React.ReactNode }) {

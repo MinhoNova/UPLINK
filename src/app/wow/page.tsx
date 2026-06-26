@@ -36,9 +36,9 @@ export default function WowLanding() {
             <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#ff007f] transition">Dungeons</h2>
             <p className="text-sm text-gray-500">Mythic+ dungeon difficulty rankings and affixes.</p>
           </Link>
-          <Link href="/wow/spec/discipline-priest" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#aaff00]/30 transition group text-left">
-            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#aaff00] transition">Meta Builds</h2>
-            <p className="text-sm text-gray-500">BIS gear, enchants, talents, and stat priorities from top players.</p>
+          <Link href="/wow/talents" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#aaff00]/30 transition group text-left">
+            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#aaff00] transition">Talents</h2>
+            <p className="text-sm text-gray-500">All spec talent builds. Filter by role, class, or search by name.</p>
           </Link>
         </div>
       </div>
