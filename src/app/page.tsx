@@ -5119,50 +5119,60 @@ export default function HomePage() {
                                                          <X className="w-3.5 h-3.5" /> CANCEL
                                                      </motion.button>
                                                   </div>
-                                                ) : (
-                                                  <div className="flex flex-col gap-2 w-full relative" onClick={e => e.stopPropagation()}>
+                                                 ) : session ? (
+                                                   <div className="flex flex-col gap-2 w-full relative" onClick={e => e.stopPropagation()}>
 <motion.button
-                                                            onClick={() => { if (isUserEligibleForLobby(lobby)) { setTargetLobby(lobby); setIsApplyModalOpen(true); setIsAutoApplySettingsOpen(true); } }}
-                                                            onMouseEnter={() => !isUserEligibleForLobby(lobby) && setHoveredLockedId(lobby.id)}
-                                                            onMouseLeave={() => setHoveredLockedId(null)}
-                                                            className={`w-full py-2 bg-[#ff007f]/10 border border-[#ff007f]/30 text-[#ff007f] text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#ff007f] hover:text-white transition-all shadow-[0_0_15px_rgba(255,0,127,0.1)] text-center flex justify-center gap-2 items-center overflow-hidden relative ${!isUserEligibleForLobby(lobby) ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}
-                                                        >
-                                                           <div className="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
-                                                           <Zap className={`w-4 h-4 relative z-10 ${isUserEligibleForLobby(lobby) ? 'animate-pulse' : ''}`} />
-                                                           <span className="relative z-10">{isUserEligibleForLobby(lobby) ? 'APPLY' : 'LOCKED'}</span>
-                                                        </motion.button>
+                                                             onClick={() => { if (isUserEligibleForLobby(lobby)) { setTargetLobby(lobby); setIsApplyModalOpen(true); setIsAutoApplySettingsOpen(true); } }}
+                                                             onMouseEnter={() => !isUserEligibleForLobby(lobby) && setHoveredLockedId(lobby.id)}
+                                                             onMouseLeave={() => setHoveredLockedId(null)}
+                                                             className={`w-full py-2 bg-[#ff007f]/10 border border-[#ff007f]/30 text-[#ff007f] text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#ff007f] hover:text-white transition-all shadow-[0_0_15px_rgba(255,0,127,0.1)] text-center flex justify-center gap-2 items-center overflow-hidden relative ${!isUserEligibleForLobby(lobby) ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}
+                                                         >
+                                                            <div className="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
+                                                            <Zap className={`w-4 h-4 relative z-10 ${isUserEligibleForLobby(lobby) ? 'animate-pulse' : ''}`} />
+                                                            <span className="relative z-10">{isUserEligibleForLobby(lobby) ? 'APPLY' : 'LOCKED'}</span>
+                                                         </motion.button>
 
-                                                       {hoveredLockedId === lobby.id && !isUserEligibleForLobby(lobby) && (
-                                                           <div className="absolute left-1/2 z-[9999] pointer-events-none w-max max-w-[min(420px,calc(100vw-2rem))]" style={{ top: 'calc(100% + 10px)', transform: 'translateX(-50%)' }}>
-                                                                <div className="bg-[#0a0a16]/98 text-white text-sm font-bold px-6 py-5 border-2 border-[#ff007f]/60 relative rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_30px_rgba(255,0,127,0.25)] backdrop-blur-xl text-left whitespace-normal">
-                                                                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#ff007f]/20">
-                                                                   <span className="text-lg leading-none">⛔</span>
-                                                                   <span className="text-[13px] text-[#ff007f] font-black uppercase tracking-[0.14em]">Access Denied</span>
+                                                        {hoveredLockedId === lobby.id && !isUserEligibleForLobby(lobby) && (
+                                                            <div className="absolute left-1/2 z-[9999] pointer-events-none w-max max-w-[min(420px,calc(100vw-2rem))]" style={{ top: 'calc(100% + 10px)', transform: 'translateX(-50%)' }}>
+                                                                 <div className="bg-[#0a0a16]/98 text-white text-sm font-bold px-6 py-5 border-2 border-[#ff007f]/60 relative rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_30px_rgba(255,0,127,0.25)] backdrop-blur-xl text-left whitespace-normal">
+                                                                 <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#ff007f]/20">
+                                                                    <span className="text-lg leading-none">⛔</span>
+                                                                    <span className="text-[13px] text-[#ff007f] font-black uppercase tracking-[0.14em]">Access Denied</span>
+                                                                 </div>
+                                                                 <div className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-white/90">
+                                                                   {(() => {
+                                                                      const reason = getEligibilityReason(lobby);
+                                                                      if (reason === "ALREADY IN THIS SQUAD") return <p className="text-white/80">You are already in this squad.</p>;
+                                                                      if (reason === "ALREADY APPLIED") return <p className="text-white/80">You already applied to this offer.</p>;
+                                                                      if (reason === "NO CHARACTERS SYNCED") return <p className="text-white/80">No characters detected. Sync your character via Raider.io first in the Armory.</p>;
+                                                                      if (reason === "NO QUALIFIED CHARACTER") return <p className="text-white/80">None of your characters meet the requirements for this operation.</p>;
+                                                                        return reason.split(" | ").map((r, i) => {
+                                                                           const cleaned = r
+                                                                             .replace(/^(\w+) ILVL (\d+) < (\d+)$/, '🔸 $1 — Your item level: $2 | Required: $3')
+                                                                             .replace(/^(\w+) IO (\d+) < (\d+)$/, '🔸 $1 — Your Raider IO: $2 | Required: $3')
+                                                                             .replace(/^(\w+) SLOTS FULL$/i, '🔸 $1 — No open slots available')
+                                                                             .replace(/^(\w+) (\w+) BLOCKED$/i, '🔸 $1 $2 is blacklisted for this role')
+                                                                             .replace(/^(\w+) CHARACTER MISSING$/i, '🔸 You have no characters on $1');
+                                                                           return <p key={i} className="text-white/90">{cleaned}</p>;
+                                                                      });
+                                                                   })()}
                                                                 </div>
-                                                                <div className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-white/90">
-                                                                  {(() => {
-                                                                     const reason = getEligibilityReason(lobby);
-                                                                     if (reason === "ALREADY IN THIS SQUAD") return <p className="text-white/80">You are already in this squad.</p>;
-                                                                     if (reason === "ALREADY APPLIED") return <p className="text-white/80">You already applied to this offer.</p>;
-                                                                     if (reason === "NO CHARACTERS SYNCED") return <p className="text-white/80">No characters detected. Sync your character via Raider.io first in the Armory.</p>;
-                                                                     if (reason === "NO QUALIFIED CHARACTER") return <p className="text-white/80">None of your characters meet the requirements for this operation.</p>;
-                                                                       return reason.split(" | ").map((r, i) => {
-                                                                          const cleaned = r
-                                                                            .replace(/^(\w+) ILVL (\d+) < (\d+)$/, '🔸 $1 — Your item level: $2 | Required: $3')
-                                                                            .replace(/^(\w+) IO (\d+) < (\d+)$/, '🔸 $1 — Your Raider IO: $2 | Required: $3')
-                                                                            .replace(/^(\w+) SLOTS FULL$/i, '🔸 $1 — No open slots available')
-                                                                            .replace(/^(\w+) (\w+) BLOCKED$/i, '🔸 $1 $2 is blacklisted for this role')
-                                                                            .replace(/^(\w+) CHARACTER MISSING$/i, '🔸 You have no characters on $1');
-                                                                          return <p key={i} className="text-white/90">{cleaned}</p>;
-                                                                     });
-                                                                  })()}
-                                                               </div>
-                                                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-b-[#0a0a16]" />
-                                                            </div>
-                                                       </div>
-                                                   )}
-                                                 </div>
-                                             )}
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-b-[#0a0a16]" />
+                                                             </div>
+                                                        </div>
+                                                    )}
+                                                  </div>
+                                              ) : (
+                                                <div className="flex flex-col gap-2 w-full relative" onClick={e => e.stopPropagation()}>
+                                                  <motion.button
+                                                    onClick={() => signIn("discord")}
+                                                    className="w-full py-2 bg-[#ff007f]/10 border border-[#ff007f]/30 text-[#ff007f] text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#ff007f] hover:text-white transition-all shadow-[0_0_15px_rgba(255,0,127,0.1)] text-center flex justify-center gap-2 items-center overflow-hidden relative"
+                                                  >
+                                                    <div className="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
+                                                    <span className="relative z-10">SIGN IN TO APPLY</span>
+                                                  </motion.button>
+                                                </div>
+                                              )}
                                            </div>
                                            </div>
                                        </div>
@@ -6107,39 +6117,7 @@ export default function HomePage() {
                          localStorage.removeItem('uplink_voice_lobby');
                        }}
                      >
-                        {status === "authenticated" ? innerAppContent : (
-                          <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-                            {theme === 'dark' && <HeroBackground />}
-                            <div className="relative z-10 flex flex-col items-center text-center px-6">
-                              <motion.button
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => signIn("discord")}
-                                className="group mb-6 rounded-[2rem] border border-white/10 bg-black/35 px-6 py-9 backdrop-blur-md transition-all hover:border-[#00ffff]/45 hover:shadow-[0_0_50px_rgba(0,255,255,0.14)] sm:px-10 sm:py-11 cursor-pointer"
-                              >
-                                <div className="flex flex-col items-center gap-1 sm:gap-2">
-                                  <span className="font-[family-name:var(--font-space-grotesk)] text-[2.2rem] font-black leading-none tracking-tighter text-[#00ffff] drop-shadow-[0_0_22px_rgba(0,255,255,0.45)] sm:text-5xl md:text-6xl]">YOUR</span>
-                                  <div className="flex items-center justify-center gap-1 font-[family-name:var(--font-space-grotesk)] text-[2.2rem] font-black leading-none tracking-tighter sm:gap-2 sm:text-5xl md:text-6xl]">
-                                    <span className="text-[#8a2be2]">H</span>
-                                    <span className="mx-1 flex items-center justify-center text-[#ff007f] sm:mx-2"><DoorClosed className="w-[0.9em] h-[0.9em]" /></span>
-                                    <span className="text-[#8a2be2]">ME</span>
-                                  </div>
-                                </div>
-                                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.35em] text-gray-500">Sign in with Discord to continue</p>
-                              </motion.button>
-                              <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                                className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-500 max-w-lg leading-relaxed"
-                              >
-                                WoWLFG — World of Warcraft Looking for Group. Sign in with Discord to browse offers, post boost requests, and find your next group.
-                              </motion.p>
-                            </div>
-                          </div>
-                        )}
+                         {innerAppContent}
                        {voiceToken ? <RoomAudioRenderer /> : null}
                        <AnimatePresence>
                          {voiceToken && !isManageModalOpen && (
