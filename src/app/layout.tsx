@@ -122,7 +122,6 @@ export default function RootLayout({
                 <a href="/" className="text-gray-500 hover:text-white transition-colors">Home</a>
                 <a href="/boosts" className="text-gray-500 hover:text-white transition-colors">Boost Requests</a>
                 <a href="/news" className="text-[#00ffff] hover:text-white transition-colors">News</a>
-                <a href="/shop" className="text-gray-500 hover:text-white transition-colors">Shop</a>
                 <a href="/reviews" className="text-gray-500 hover:text-white transition-colors">Reviews</a>
                 <a href="/community" className="text-gray-500 hover:text-white transition-colors">Community</a>
                 <a href="/leaderboard" className="text-gray-500 hover:text-white transition-colors">Leaderboard</a>

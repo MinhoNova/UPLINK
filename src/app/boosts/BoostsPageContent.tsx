@@ -470,7 +470,7 @@ function BoostCard({
                 <p className="text-[10px] text-gray-600 mt-3 text-center">
                   No backgrounds yet. Paste a URL or upload a file.
                   {ownerUser?.userVfx === undefined && currentUserId && (
-                    <span> Save backgrounds in <a href="/shop" className="text-[#00ffff] hover:underline">Secret Club → Lobby Store</a>.</span>
+                    <span> Save backgrounds in the Lobby Store.</span>
                   )}
                 </p>
               )}

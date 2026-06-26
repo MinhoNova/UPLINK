@@ -6,7 +6,6 @@ import { usePage } from "@/contexts/PageContext";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
 import RankBadge from "@/components/RankBadge";
-import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob, uploadProfileGifBlob } from "@/lib/clientImagePoster";
@@ -159,26 +158,7 @@ const ArmoryModal = ({
                                <motion.button onClick={() => setActiveArmoryTab("bank")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'bank' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500'}`}>Gold Bank Vault</motion.button>
                               </div>
                               <div className="mt-auto flex flex-col gap-4">
-                                  {(() => {
-                                    const me = registeredUsers.find((u: any) => u.id === currentUserId);
-                                    const daysLeft = getSubscriptionDaysLeft(me);
-                                    const tier = getUserTier(currentUserId);
-                                    if (tier !== "secret_club" || daysLeft === null) return null;
-                                    return (
-                                      <div className="p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/5">
-                                        <p className="text-[8px] font-black text-yellow-500/70 uppercase tracking-widest mb-1">Secret Club</p>
-                                        <p className="text-lg font-black text-yellow-400">
-                                          {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : "Expired"}
-                                        </p>
-                                        {me?.subscription?.endDate && daysLeft > 0 && (
-                                          <p className="text-[8px] text-gray-500 mt-1">
-                                            Until {new Date(me.subscription.endDate).toLocaleDateString()}
-                                          </p>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-                                  <motion.button onClick={() => signOut()} className="w-full py-5 bg-red-500/10 border-2 border-red-500/30 text-red-500 font-black rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"><LogOut className="w-4 h-4" /> Log Out</motion.button>
+                                   <motion.button onClick={() => signOut()} className="w-full py-5 bg-red-500/10 border-2 border-red-500/30 text-red-500 font-black rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"><LogOut className="w-4 h-4" /> Log Out</motion.button>
                                  <motion.button onClick={() => onClose()} className="w-full py-5 border-2 border-white/5 bg-white/5 text-gray-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:text-white transition-all">Close Access</motion.button>
                               </div>
                            </div>

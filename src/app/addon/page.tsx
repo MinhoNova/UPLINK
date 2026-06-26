@@ -109,8 +109,6 @@ export default function AddonPage() {
           <div className="flex flex-wrap justify-center gap-2">
             <Link href="/boosts" className="text-[10px] font-black text-gray-500 hover:text-[#00ffff] uppercase tracking-widest">Boost Requests</Link>
             <span className="text-gray-700">·</span>
-            <Link href="/shop" className="text-[10px] font-black text-gray-500 hover:text-[#00ffff] uppercase tracking-widest">Secret Club</Link>
-            <span className="text-gray-700">·</span>
             <Link href="/reviews" className="text-[10px] font-black text-gray-500 hover:text-[#00ffff] uppercase tracking-widest">Reviews</Link>
             <span className="text-gray-700">·</span>
             <Link href="/community" className="text-[10px] font-black text-gray-500 hover:text-[#00ffff] uppercase tracking-widest">Community</Link>

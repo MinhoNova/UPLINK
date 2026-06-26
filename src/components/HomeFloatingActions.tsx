@@ -6,7 +6,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
-  ShoppingBag,
   Star,
   MessageCircle,
   TrendingUp,
@@ -56,7 +55,7 @@ const ACCENT_COLORS: Record<string, { text: string; bar: string; bg: string; bor
   discord: { text: "text-[#5865F2]", bar: "bg-[#5865F2]", bg: "bg-[#5865F2]/8", border: "border-[#5865F2]/25" },
   "post-request": { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
   reviews: { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
-  shop: { text: "text-violet-400", bar: "bg-violet-400", bg: "bg-violet-400/8", border: "border-violet-400/25" },
+
   support: { text: "text-yellow-400", bar: "bg-yellow-400", bg: "bg-yellow-400/8", border: "border-yellow-400/25" },
   guides: { text: "text-emerald-400", bar: "bg-emerald-400", bg: "bg-emerald-400/8", border: "border-emerald-400/25" },
   addon: { text: "text-amber-400", bar: "bg-amber-400", bg: "bg-amber-400/8", border: "border-amber-400/25" },
@@ -142,16 +141,6 @@ export default function HomeFloatingActions({
       accentBar: ACCENT_COLORS.reviews.bar,
       iconBg: ACCENT_COLORS.reviews.bg,
       iconBorder: ACCENT_COLORS.reviews.border,
-      onClick: () => {},
-    },
-    {
-      id: "shop",
-      label: "Shop",
-      icon: ShoppingBag,
-      accentText: ACCENT_COLORS.shop.text,
-      accentBar: ACCENT_COLORS.shop.bar,
-      iconBg: ACCENT_COLORS.shop.bg,
-      iconBorder: ACCENT_COLORS.shop.border,
       onClick: () => {},
     },
     {
@@ -256,7 +245,6 @@ export default function HomeFloatingActions({
           if (item.id === "news-dungeons") return <Link key={item.id} href="/news/dungeons">{btn}</Link>;
           if (item.id === "lounge") return <Link key={item.id} href="/community">{btn}</Link>;
           if (item.id === "reviews") return <Link key={item.id} href="/reviews">{btn}</Link>;
-          if (item.id === "shop") return <Link key={item.id} href="/shop">{btn}</Link>;
           if (item.id === "post-request") return <Link key={item.id} href="/boosts">{btn}</Link>;
           if (item.id === "guides") return <Link key={item.id} href="/guides">{btn}</Link>;
           if (item.id === "addon") return <Link key={item.id} href="/addon">{btn}</Link>;

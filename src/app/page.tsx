@@ -5382,12 +5382,7 @@ export default function HomePage() {
                                                       <span className="text-gray-600 uppercase text-[8px] font-black tracking-widest mr-1">IP</span>
                                                       <span className="font-black">{ipInfo.text}</span>
                                                    </p>
-                                                   {getUserTier(user.id) === "secret_club" && (
-                                                      <p className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest mt-1">
-                                                         {getSubscriptionDaysLeft(user) ?? 0} days remaining
-                                                      </p>
-                                                   )}
-                                               </div>
+                                                </div>
                                             </div>
                                                 <div className="flex items-center gap-4">
                                                 <div className="flex items-center gap-2 text-xs">
