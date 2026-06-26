@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Swords, Shield, ScrollText, ArrowLeft } from "lucide-react";
+import { Swords, Shield, ScrollText } from "lucide-react";
 
 const SIDEBAR_LINKS = [
   { href: "/wow/tier-list", label: "Tier List", icon: Swords },
@@ -29,11 +29,7 @@ export default function WowLayout({ children }: { children: React.ReactNode }) {
             </Link>
           );
         })}
-        <div className="mt-auto pt-4 border-t border-white/5">
-          <Link href="/" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 transition">
-            <ArrowLeft className="w-3.5 h-3.5" /> Home
-          </Link>
-        </div>
+
       </aside>
       <main className="flex-1 min-w-0">{children}</main>
     </div>
