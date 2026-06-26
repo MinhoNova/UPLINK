@@ -4,6 +4,7 @@ import Navbar from "@/components/navbar/Navbar";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { getSiteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
@@ -114,7 +115,8 @@ export default function RootLayout({
           <Navbar />
           <DirectCommsPanel />
           <CommunityNotificationsPanel />
-          <PlayerProfileModal />
+           <PlayerProfileModal />
+          <AnalyticsTracker />
           {children}
           <footer className="border-t border-white/5 mt-auto py-10 px-4">
             <div className="max-w-6xl mx-auto">

@@ -55,6 +55,7 @@ import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotific
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
 import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
+import AdminAnalyticsPanel from "@/components/admin/AdminAnalyticsPanel";
 import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets";
 import { validateBattleTag } from "@/lib/battleTagValidation";
 import { resolveProfileDisplayName, resolveProfileImage, resolveOfferFeedProfileImage } from "@/lib/profileImage";
@@ -5318,11 +5319,12 @@ export default function HomePage() {
                           {activeMainTab === "admin" && isAdmin && (
                              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
                                 <div className="flex flex-wrap gap-2 p-2 bg-black/30 rounded-2xl border border-white/5">
-                                   {[
-                                      { id: "admin-users", label: "Users" },
-                                      { id: "admin-audit", label: "Audit Log" },
-                                      { id: "admin-ip", label: "IP Bans" },
-                                   ].map((tab) => (
+                                    {[
+                                       { id: "admin-users", label: "Users" },
+                                       { id: "admin-analytics", label: "Analytics" },
+                                       { id: "admin-audit", label: "Audit Log" },
+                                       { id: "admin-ip", label: "IP Bans" },
+                                    ].map((tab) => (
                                       <a
                                          key={tab.id}
                                          href={`#${tab.id}`}
@@ -5447,7 +5449,8 @@ export default function HomePage() {
                                       )}
                                    </div>
 
-                                   <AdminAuditPanel />
+                                    <AdminAnalyticsPanel />
+                                    <AdminAuditPanel />
                                    <div id="admin-ip" className="scroll-mt-24">
                                       <AdminIpBanPanel />
                                    </div>
