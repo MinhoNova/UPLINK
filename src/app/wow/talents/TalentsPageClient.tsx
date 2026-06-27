@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Swords, HeartHandshake, Shield, ArrowUpDown } from "lucide-react";
+import Image from "next/image";
 import { SPECS, getClassColor, type WoWSpec } from "@/lib/wowData";
 
 const CLASS_NAMES: Record<string, string> = {
@@ -233,7 +234,7 @@ function SpecCard({ spec }: { spec: WoWSpec }) {
         className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
         style={{ backgroundColor: `${color}20` }}
       >
-        <img src={spec.icon} alt="" className="w-8 h-8 rounded-lg" />
+        <Image src={spec.icon} alt="" width={32} height={32} className="rounded-lg" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-black text-white group-hover:text-[#00ffff] transition truncate">

@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { Swords, Shield, ScrollText, Radio, CalendarDays, Trophy } from "lucide-react";
+import { Swords, Shield, ScrollText, Radio, CalendarDays, Trophy, Users } from "lucide-react";
 
 const SIDEBAR_LINKS = [
   { href: "/wow/tier-list", label: "Tier List", icon: Swords },
   { href: "/wow/dungeons", label: "Dungeons", icon: Shield },
   { href: "/wow/talents", label: "Talents", icon: ScrollText },
-  { href: "/wow/pipeline", label: "The Pipeline", icon: Radio },
   { href: "/wow/affixes", label: "Affixes", icon: CalendarDays },
   { href: "/wow/leaderboard", label: "Leaderboard", icon: Trophy },
+  { href: "/wow/pipeline", label: "The Pipeline", icon: Radio },
 ];
 
 export default function WowLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +33,11 @@ export default function WowLayout({ children }: { children: React.ReactNode }) {
           );
         })}
 
+        <div className="mt-auto pt-4 border-t border-white/5">
+          <Link href="/wow" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <Users className="w-4 h-4" /> All Classes
+          </Link>
+        </div>
       </aside>
       <main className="flex-1 min-w-0">{children}</main>
     </div>

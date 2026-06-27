@@ -86,6 +86,22 @@ export function getSpecsByClass(classId: string): WoWSpec[] {
   return SPECS.filter((s) => s.classId === classId);
 }
 
+export const CLASS_NAMES: Record<string, string> = {
+  "death-knight": "Death Knight",
+  "demon-hunter": "Demon Hunter",
+  druid: "Druid",
+  evoker: "Evoker",
+  hunter: "Hunter",
+  mage: "Mage",
+  monk: "Monk",
+  paladin: "Paladin",
+  priest: "Priest",
+  rogue: "Rogue",
+  shaman: "Shaman",
+  warlock: "Warlock",
+  warrior: "Warrior",
+};
+
 /* ───── BIS Gear, Enchants, Gems, Talents ───── */
 
 export interface BISItem {

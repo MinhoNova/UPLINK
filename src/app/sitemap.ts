@@ -3,7 +3,7 @@ import { getSiteUrl } from "@/lib/siteUrl";
 import { getKV, initTables } from "@/lib/db";
 import { getDb } from "@/db";
 import { posts, news } from "@/db/schema";
-import { SPECS } from "@/lib/wowData";
+import { CLASS_NAMES, SPECS } from "@/lib/wowData";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
@@ -165,6 +165,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.5,
+    })),
+    ...Object.keys(CLASS_NAMES).map((classId) => ({
+      url: `${siteUrl}/wow/class/${classId}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
     })),
   ];
 

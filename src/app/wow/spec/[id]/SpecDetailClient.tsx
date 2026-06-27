@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Copy, Check, Swords, HeartHandshake, Shield, ChevronLeft } from "lucide-react";
 import { SPECS, getClassColor, getSpecData, type SpecData, type PlayerBuild } from "@/lib/wowData";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
@@ -40,7 +41,7 @@ export default function SpecDetailClient({ id }: { id: string }) {
         <div className="relative z-10 max-w-4xl mx-auto px-4 py-12">
           <Link href="/wow/tier-list" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors"><ChevronLeft className="w-3 h-3" /> Back to Tier List</Link>
           <div className="flex items-center gap-4 mt-6 mb-10">
-            <img src={spec.icon} alt={spec.name} className="w-16 h-16 rounded-2xl" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 30px ${color}20` }} />
+            <Image src={spec.icon} alt={spec.name} width={64} height={64} className="rounded-2xl" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 30px ${color}20` }} />
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white">{spec.name}</h1>
               <p className="text-xs font-black uppercase tracking-wider" style={{ color }}>{spec.classId.replace(/-/g, " ")} · {spec.role.toUpperCase()}</p>
@@ -70,7 +71,7 @@ export default function SpecDetailClient({ id }: { id: string }) {
             return (
               <Link key={cs.id} href={`/wow/spec/${cs.id}`} className={`group flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition-all duration-200 ${active ? "bg-white/10 border border-white/10" : "border border-transparent hover:bg-white/[0.04]"}`}>
                 <div className="relative">
-                  <img src={cs.icon} alt={cs.name} className={`w-8 h-8 rounded-lg transition-all duration-200 ${active ? "scale-110" : "group-hover:scale-105"}`} style={active ? { backgroundColor: `${csColor}25`, boxShadow: `0 0 15px ${csColor}30` } : {}} />
+                  <Image src={cs.icon} alt={cs.name} width={32} height={32} className={`rounded-lg transition-all duration-200 ${active ? "scale-110" : "group-hover:scale-105"}`} style={active ? { backgroundColor: `${csColor}25`, boxShadow: `0 0 15px ${csColor}30` } : {}} />
                   {active && <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full" style={{ backgroundColor: csColor }} />}
                 </div>
                 <div className="min-w-0">
@@ -90,7 +91,7 @@ export default function SpecDetailClient({ id }: { id: string }) {
           <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
           <div className="relative px-7 py-8">
             <div className="flex items-center gap-5 mb-4">
-              <img src={spec.icon} alt={`${spec.name} talents and build`} className="w-20 h-20 rounded-2xl shrink-0" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 40px ${color}25` }} />
+              <Image src={spec.icon} alt={`${spec.name} talents and build`} width={80} height={80} priority className="rounded-2xl shrink-0" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 40px ${color}25` }} />
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest" style={{ backgroundColor: roleMeta.bg, color: roleMeta.color }}>

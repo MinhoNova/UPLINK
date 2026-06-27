@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getClassColor, SPECS } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import { Swords, HeartHandshake, Shield, Trophy, AlertCircle } from "lucide-react";
@@ -135,7 +136,7 @@ export default function LeaderboardPageClient() {
                         </td>
                         <td className="px-4 py-3">
                           <Link href={`/wow/spec/${entry.specId}`} className="flex items-center gap-3">
-                            {icon && <img src={icon} alt={name} className="w-9 h-9 rounded-lg shrink-0" />}
+                            {icon && <Image src={icon} alt={name} width={36} height={36} className="rounded-lg shrink-0" />}
                             <div>
                               <div className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>{entry.classId.replace(/-/g, " ")}</div>
                               <div className="text-sm font-bold text-white">{name}</div>

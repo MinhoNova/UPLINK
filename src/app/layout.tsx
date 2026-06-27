@@ -109,6 +109,21 @@ export default function RootLayout({
             }),
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "WoWLFG — UPLINK",
+              url: siteUrl,
+              logo: `${siteUrl}/og.png`,
+              description:
+                "WoWLFG — World of Warcraft Looking for Group. Mythic+ group finder, boosting marketplace, and WoW community tools.",
+              sameAs: [`${siteUrl}/discord`],
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen flex flex-col font-sans">
         <AuthProvider>
