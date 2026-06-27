@@ -27,7 +27,7 @@ export default function WowLanding() {
           Class rankings, tier lists, and meta data for World of Warcraft.
         </p>
 
-        <div className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+        <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
           <Link href="/wow/tier-list" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#00ffff]/30 transition group text-left">
             <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#00ffff] transition">Tier List</h2>
             <p className="text-sm text-gray-500">DPS, Healer & Tank rankings. See which specs top the charts.</p>
@@ -39,6 +39,10 @@ export default function WowLanding() {
           <Link href="/wow/talents" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#aaff00]/30 transition group text-left">
             <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#aaff00] transition">Talents</h2>
             <p className="text-sm text-gray-500">All spec talent builds. Filter by role, class, or search by name.</p>
+          </Link>
+          <Link href="/wow/pipeline" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#00ffff]/30 transition group text-left">
+            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#00ffff] transition">The Pipeline</h2>
+            <p className="text-sm text-gray-500">Class tuning, hotfixes & Blizzard news — live from the forums.</p>
           </Link>
         </div>
       </div>
