@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getClassColor, SPECS } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
-import { Swords, HeartHandshake, Shield, Trophy, RefreshCw, AlertCircle } from "lucide-react";
+import { Swords, HeartHandshake, Shield, Trophy, AlertCircle } from "lucide-react";
 
 const ROLES = [
   { id: "all", label: "All", icon: Trophy },
@@ -13,19 +13,13 @@ const ROLES = [
   { id: "tank", label: "Tank", icon: Shield },
 ] as const;
 
-function specIconFromId(specId: string): string {
-  const spec = SPECS.find((s) => s.id === specId);
-  return spec?.icon || "";
-}
-
 function specNameFromId(specId: string): string {
   const spec = SPECS.find((s) => s.id === specId);
   return spec?.name || specId.replace(/-/g, " ");
 }
 
 function classIdFromSpecId(specId: string): string {
-  const spec = SPECS.find((s) => s.id === specId);
-  return spec?.classId || "";
+  return SPECS.find((s) => s.id === specId)?.classId || "";
 }
 
 export default function LeaderboardPageClient() {
@@ -33,25 +27,23 @@ export default function LeaderboardPageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeRole, setActiveRole] = useState("all");
-  const [season, setSeason] = useState("");
+  const [seasonDisplay, setSeasonDisplay] = useState("");
 
   async function fetchLeaderboard() {
-    setLoading(true);
-    setError("");
     try {
       const res = await fetch("/api/wow/leaderboard");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) return;
       const data = await res.json();
       setEntries(data.entries || []);
-      if (data.season) setSeason(data.season);
-    } catch {
-      setError("Failed to load leaderboard.");
-    } finally {
-      setLoading(false);
-    }
+      if (data.seasonDisplay) setSeasonDisplay(data.seasonDisplay);
+    } catch { /* will retry */ }
   }
 
-  useEffect(() => { fetchLeaderboard(); }, []);
+  useEffect(() => {
+    fetchLeaderboard().finally(() => setLoading(false));
+    const interval = setInterval(fetchLeaderboard, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filtered = activeRole === "all"
     ? entries
@@ -67,7 +59,6 @@ export default function LeaderboardPageClient() {
         <div className="absolute top-[-10%] left-1/3 w-[600px] h-[600px] bg-[#ff8c00]/[0.03] blur-[160px] rounded-full" />
         <div className="absolute bottom-[-10%] right-1/4 w-[500px] h-[500px] bg-[#ff007f]/[0.03] blur-[140px] rounded-full" />
       </div>
-
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-12">
         <div className="mb-10 pt-8">
           <Link href="/wow" className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors">← Back to WoW</Link>
@@ -75,18 +66,19 @@ export default function LeaderboardPageClient() {
             M+ <span className="text-[#ff8c00] drop-shadow-[0_0_15px_rgba(255,140,0,0.4)]">Leaderboard</span>
           </h1>
           <p className="text-sm text-gray-400 max-w-2xl">
-            Top Mythic+ specs and scores for the current season. Data from Raider.IO.
+            Top Mythic+ specs and scores for the current season. Data from Raider.IO — auto-updates every minute.
           </p>
-          <div className="flex items-center gap-3 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-500">
-            {season && <span>{season.replace("-", " ")}</span>}
-            {season && <span>·</span>}
-            <button onClick={fetchLeaderboard} disabled={loading} className="flex items-center gap-1.5 text-gray-500 hover:text-white transition-colors disabled:opacity-50">
-              <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} /> Refresh
-            </button>
+          <div className="flex flex-wrap items-center gap-3 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+              Live
+            </span>
+            {seasonDisplay && (
+              <><span>·</span><span className="text-white">{seasonDisplay}</span></>
+            )}
           </div>
         </div>
 
-        {/* Role filter */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/5 mb-8 w-fit">
           {ROLES.map((role) => {
             const Icon = role.icon;
@@ -98,7 +90,6 @@ export default function LeaderboardPageClient() {
           })}
         </div>
 
-        {/* Table */}
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 10 }).map((_, i) => (
@@ -133,7 +124,7 @@ export default function LeaderboardPageClient() {
                 <tbody>
                   {filtered.map((entry) => {
                     const color = getClassColor(classIdFromSpecId(entry.specId) || entry.classId);
-                    const icon = specIconFromId(entry.specId);
+                    const icon = SPECS.find((s) => s.id === entry.specId)?.icon || "";
                     const name = specNameFromId(entry.specId);
                     return (
                       <tr key={entry.rank} className="border-b border-white/5 hover:bg-white/[0.02] transition">
@@ -151,9 +142,7 @@ export default function LeaderboardPageClient() {
                             </div>
                           </Link>
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className="text-xs text-gray-500">{entry.realm}</span>
-                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell"><span className="text-xs text-gray-500">{entry.realm}</span></td>
                         <td className="px-4 py-3 hidden sm:table-cell">
                           <span className={`text-[10px] font-black uppercase tracking-widest ${entry.region === "US" ? "text-[#00ffff]" : "text-[#ff007f]"}`}>{entry.region}</span>
                         </td>

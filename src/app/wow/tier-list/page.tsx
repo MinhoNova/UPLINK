@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { SPECS, getClassColor } from "@/lib/wowData";
-import { Swords, HeartHandshake, Shield, Trophy, AlertCircle, RefreshCw } from "lucide-react";
+import { Swords, HeartHandshake, Shield, AlertCircle } from "lucide-react";
 
 const ROLES = [
   { id: "dps", label: "DPS", icon: Swords },
@@ -31,23 +31,13 @@ interface MetaSpec {
 
 function SpecCard({ spec, score, highestKey, tier }: { spec: { id: string; name: string; classId: string; icon: string }; score: number; highestKey: string; tier: string }) {
   const color = getClassColor(spec.classId);
-  const tierColor = TIER_META[tier]?.color || "#888";
   return (
     <Link
       href={`/wow/spec/${spec.id}`}
       className="group flex items-center gap-3 bg-[#0c0c18] rounded-xl px-4 py-3 transition-all duration-200 min-w-[250px] flex-1 sm:flex-none"
-      style={{
-        border: `2px solid ${color}35`,
-        boxShadow: `0 0 0 0 ${color}00`,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = color;
-        e.currentTarget.style.boxShadow = `0 0 25px ${color}30`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = `${color}35`;
-        e.currentTarget.style.boxShadow = `0 0 0 0 ${color}00`;
-      }}
+      style={{ border: `2px solid ${color}35`, boxShadow: `0 0 0 0 ${color}00` }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 0 25px ${color}30`; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${color}35`; e.currentTarget.style.boxShadow = `0 0 0 0 ${color}00`; }}
     >
       <img src={spec.icon} alt={spec.name} className="w-10 h-10 rounded-lg shrink-0" />
       <div className="min-w-0 flex-1">
@@ -74,14 +64,8 @@ function SkeletonSpecCard() {
   return (
     <div className="flex items-center gap-3 bg-[#0c0c18] rounded-xl px-4 py-3 min-w-[250px] flex-1 sm:flex-none animate-pulse">
       <div className="w-10 h-10 rounded-lg bg-white/10 shrink-0" />
-      <div className="flex-1">
-        <div className="h-3 w-16 bg-white/10 rounded mb-1" />
-        <div className="h-4 w-28 bg-white/10 rounded" />
-      </div>
-      <div className="text-right">
-        <div className="h-4 w-12 bg-white/10 rounded mb-1" />
-        <div className="h-3 w-8 bg-white/10 rounded ml-auto" />
-      </div>
+      <div className="flex-1"><div className="h-3 w-16 bg-white/10 rounded mb-1" /><div className="h-4 w-28 bg-white/10 rounded" /></div>
+      <div className="text-right"><div className="h-4 w-12 bg-white/10 rounded mb-1" /><div className="h-3 w-8 bg-white/10 rounded ml-auto" /></div>
     </div>
   );
 }
@@ -91,36 +75,32 @@ export default function WowTierListPage() {
   const [data, setData] = useState<Record<string, MetaSpec[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [seasonDisplay, setSeasonDisplay] = useState("");
 
   async function fetchData() {
-    setLoading(true);
-    setError("");
     try {
       const res = await fetch("/api/wow/meta-classes");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) return;
       const json = await res.json();
       if (json.roles) {
         const grouped: Record<string, MetaSpec[]> = {};
-        for (const role of ["dps", "healer", "tank"]) {
-          grouped[role] = json.roles[role]?.specs || [];
-        }
+        for (const role of ["dps", "healer", "tank"]) grouped[role] = json.roles[role]?.specs || [];
         setData(grouped);
       }
-    } catch {
-      setError("Failed to load meta classes data.");
-    } finally {
-      setLoading(false);
-    }
+      if (json.seasonDisplay) setSeasonDisplay(json.seasonDisplay);
+    } catch { /* will retry */ }
   }
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const specs = data?.[activeRole] || [];
   const grouped: Record<string, MetaSpec[]> = {};
   for (const tier of TIERS) grouped[tier] = [];
-  for (const s of specs) {
-    if (grouped[s.tier]) grouped[s.tier].push(s);
-  }
+  for (const s of specs) { if (grouped[s.tier]) grouped[s.tier].push(s); }
 
   const totalParses = data ? Object.values(data).flat().reduce((sum, s) => sum + s.score, 0) : 0;
 
@@ -130,39 +110,34 @@ export default function WowTierListPage() {
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#ff8c00]/[0.04] blur-[160px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#9b59b6]/[0.04] blur-[140px] rounded-full" />
       </div>
-
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-12">
-        {/* Hero header */}
         <div className="relative mb-10 pt-8 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black">
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
           <div className="relative px-8 py-10">
             <Link href="/wow" className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors">← Back to WoW</Link>
             <h1 className="text-4xl sm:text-5xl font-black text-white mt-4 mb-2 tracking-tight">
               Meta <span className="text-[#ff8c00] drop-shadow-[0_0_15px_rgba(255,140,0,0.4)]">Classes</span>
             </h1>
             <p className="text-sm text-gray-400 max-w-2xl">
-              WoW spec rankings for Mythic+. Powered by live Raider.IO data. Updated every 30 minutes.
+              WoW spec rankings for Mythic+. Powered by live Raider.IO data — auto-updates every minute.
             </p>
-            {!loading && !error && (
-              <div className="flex flex-wrap items-center gap-4 mt-6 pt-5 border-t border-white/5">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                  Live data
-                </div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                  Total Score: <span className="text-white">{totalParses.toLocaleString()}</span>
-                </div>
-                <button onClick={fetchData} disabled={loading} className="flex items-center gap-1.5 text-gray-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
-                  <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} /> Refresh
-                </button>
+            <div className="flex flex-wrap items-center gap-4 mt-6 pt-5 border-t border-white/5">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+                Live
               </div>
-            )}
+              {seasonDisplay && (
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  <span className="text-white">{seasonDisplay}</span>
+                </div>
+              )}
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                Total Score: <span className="text-white">{totalParses.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Role Tabs */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/5 mb-8 w-fit">
           {ROLES.map((role) => {
             const Icon = role.icon;
@@ -174,17 +149,14 @@ export default function WowTierListPage() {
           })}
         </div>
 
-        {/* Error */}
-        {error && (
+        {error && !loading && (
           <div className="text-center py-16">
             <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-3" />
-            <p className="text-sm text-gray-500 font-black uppercase tracking-widest mb-4">{error}</p>
-            <button onClick={fetchData} className="px-4 py-2 rounded-lg bg-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition">Retry</button>
+            <p className="text-sm text-gray-500 font-black uppercase tracking-widest">{error}</p>
           </div>
         )}
 
-        {/* Loading */}
-        {loading && !error && (
+        {loading && (
           <div className="space-y-2">
             {TIERS.map((tier) => (
               <div key={tier} className="rounded-xl overflow-hidden border border-white/[0.06] opacity-50">
@@ -203,7 +175,6 @@ export default function WowTierListPage() {
           </div>
         )}
 
-        {/* Tier List */}
         {!loading && !error && (
           <div className="space-y-2">
             {TIERS.map((tier) => {
@@ -214,9 +185,7 @@ export default function WowTierListPage() {
                 <div key={tier} className="rounded-xl overflow-hidden border border-white/[0.06]">
                   <div className="flex items-stretch">
                     <div className="w-20 flex items-center justify-center shrink-0" style={{ backgroundColor: meta.pillarBg }}>
-                      <span className="text-5xl font-black" style={{ color: meta.color, textShadow: `0 0 20px ${meta.color}60` }}>
-                        {meta.label}
-                      </span>
+                      <span className="text-5xl font-black" style={{ color: meta.color, textShadow: `0 0 20px ${meta.color}60` }}>{meta.label}</span>
                     </div>
                     <div className="flex-1 bg-black/40 p-3.5">
                       <div className="flex flex-wrap gap-2.5">
@@ -238,7 +207,6 @@ export default function WowTierListPage() {
           <div className="text-center py-12 text-gray-500 text-xs font-black uppercase tracking-widest">No data available for this role yet.</div>
         )}
 
-        {/* Spec Detail Section */}
         <div className="mt-16 border-t border-white/5 pt-10">
           <h2 className="text-lg font-black text-white mb-1">Spec Details</h2>
           <p className="text-sm text-gray-400 mb-6">Click any spec card above to see its full breakdown — talents, gear, enchants, gems, and stat priorities.</p>

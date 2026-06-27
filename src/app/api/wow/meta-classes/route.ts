@@ -4,6 +4,15 @@ import { getKV, setKV, initTables } from "@/lib/db";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_KEY = "wow:meta-classes";
 
+function formatSeasonName(slug: string): string {
+  const parts = slug.split("-");
+  if (parts.length < 2) return slug;
+  const expMap: Record<string, string> = { tww: "The War Within", mn: "Midnight", df: "Dragonflight", sl: "Shadowlands" };
+  const exp = expMap[parts[1]] || parts[1];
+  const num = parts[2];
+  return `${exp} — Season ${num}`;
+}
+
 function estimateHighestKey(score: number): string {
   if (score >= 4200) return "27";
   if (score >= 4000) return "26";
@@ -108,7 +117,7 @@ export async function GET() {
       result[role] = { specs, maxScore, minScore };
     }
 
-    const payload = { roles: result, season: seasonSlug, timestamp: Date.now() };
+    const payload = { roles: result, season: seasonSlug, seasonDisplay: formatSeasonName(seasonSlug), timestamp: Date.now() };
     await setKV(CACHE_KEY, payload);
 
     return NextResponse.json({ ...payload, cached: false });

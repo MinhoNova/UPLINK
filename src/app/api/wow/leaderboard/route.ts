@@ -5,6 +5,13 @@ import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_KEY = "wow:leaderboard";
 
+function formatSeasonName(slug: string): string {
+  const parts = slug.split("-");
+  if (parts.length < 2) return slug;
+  const expMap: Record<string, string> = { tww: "The War Within", mn: "Midnight", df: "Dragonflight", sl: "Shadowlands" };
+  return `${expMap[parts[1]] || parts[1]} — Season ${parts[2]}`;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   name: string;
@@ -77,9 +84,10 @@ export async function GET() {
       entries = FALLBACK;
     }
 
-    await setKV(CACHE_KEY, { entries, season: seasonSlug, timestamp: Date.now() });
+    const seasonDisplay = formatSeasonName(seasonSlug);
+    await setKV(CACHE_KEY, { entries, season: seasonSlug, seasonDisplay, timestamp: Date.now() });
 
-    return NextResponse.json({ entries, season: seasonSlug, cached: false });
+    return NextResponse.json({ entries, season: seasonSlug, seasonDisplay, cached: false });
   } catch (err) {
     console.error("Leaderboard fetch error:", err);
     return NextResponse.json({ entries: FALLBACK, season: "", cached: true, stale: true });
