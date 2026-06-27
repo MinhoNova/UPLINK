@@ -34,26 +34,43 @@ function SpecCard({ spec, score, highestKey, tier }: { spec: { id: string; name:
   return (
     <Link
       href={`/wow/spec/${spec.id}`}
-      className="group flex items-center gap-3 bg-[#0c0c18] rounded-xl px-4 py-3 transition-all duration-200 min-w-[250px] flex-1 sm:flex-none"
-      style={{ border: `2px solid ${color}35`, boxShadow: `0 0 0 0 ${color}00` }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 0 25px ${color}30`; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${color}35`; e.currentTarget.style.boxShadow = `0 0 0 0 ${color}00`; }}
+      className="group relative flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 min-w-[260px] flex-1 sm:flex-none overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${color}12 0%, ${color}06 40%, #0c0c18 70%)`,
+        border: `1.5px solid ${color}30`,
+        boxShadow: `0 0 0 0 ${color}00, inset 0 1px 0 ${color}10`,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = `${color}80`;
+        e.currentTarget.style.boxShadow = `0 0 30px ${color}25, inset 0 1px 0 ${color}20`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = `${color}30`;
+        e.currentTarget.style.boxShadow = `0 0 0 0 ${color}00, inset 0 1px 0 ${color}10`;
+      }}
     >
-      <img src={spec.icon} alt={spec.name} className="w-10 h-10 rounded-lg shrink-0" />
-      <div className="min-w-0 flex-1">
-        <span className="inline-block px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider mb-0.5" style={{ backgroundColor: `${color}20`, color }}>
-          {spec.classId.replace(/-/g, " ")}
-        </span>
-        <div className="text-sm font-bold text-white truncate">{spec.name}</div>
-      </div>
-      <div className="text-right shrink-0 flex items-center gap-3">
-        <div>
-          <div className="text-[10px] font-black leading-none text-gray-600 uppercase tracking-widest">+{highestKey}</div>
-          <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">KEY</div>
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: `radial-gradient(200px at 40% 50%, ${color}15 0%, transparent 70%)` }} />
+      <div className="relative z-10 flex items-center gap-3 w-full">
+        <div className="relative shrink-0">
+          <img src={spec.icon} alt={spec.name} className="w-10 h-10 rounded-lg transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: `${color}20` }} />
+          <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ boxShadow: `inset 0 0 15px ${color}40` }} />
         </div>
-        <div>
-          <div className="text-base font-black leading-none" style={{ color }}>{score > 0 ? score.toLocaleString() : "—"}</div>
-          <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mt-0.5">SCORE</div>
+        <div className="min-w-0 flex-1">
+          <span className="inline-block px-1.5 py-0.5 rounded text-[6px] font-black uppercase tracking-wider mb-0.5" style={{ backgroundColor: `${color}25`, color }}>
+            {spec.classId.replace(/-/g, " ")}
+          </span>
+          <div className="text-sm font-bold text-white truncate">{spec.name}</div>
+        </div>
+        <div className="text-right shrink-0 flex items-center gap-3 z-10">
+          <div>
+            <div className="text-[10px] font-black leading-none" style={{ color: `${color}bb` }}>+{highestKey}</div>
+            <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">KEY</div>
+          </div>
+          <div className="w-px h-8" style={{ backgroundColor: `${color}20` }} />
+          <div>
+            <div className="text-base font-black leading-none" style={{ color }}>{score > 0 ? score.toLocaleString() : "—"}</div>
+            <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mt-0.5">SCORE</div>
+          </div>
         </div>
       </div>
     </Link>
@@ -62,10 +79,10 @@ function SpecCard({ spec, score, highestKey, tier }: { spec: { id: string; name:
 
 function SkeletonSpecCard() {
   return (
-    <div className="flex items-center gap-3 bg-[#0c0c18] rounded-xl px-4 py-3 min-w-[250px] flex-1 sm:flex-none animate-pulse">
+    <div className="flex items-center gap-3 bg-[#0c0c18] rounded-xl px-4 py-3 min-w-[260px] flex-1 sm:flex-none animate-pulse" style={{ border: "1.5px solid rgba(255,255,255,0.06)" }}>
       <div className="w-10 h-10 rounded-lg bg-white/10 shrink-0" />
       <div className="flex-1"><div className="h-3 w-16 bg-white/10 rounded mb-1" /><div className="h-4 w-28 bg-white/10 rounded" /></div>
-      <div className="text-right"><div className="h-4 w-12 bg-white/10 rounded mb-1" /><div className="h-3 w-8 bg-white/10 rounded ml-auto" /></div>
+      <div className="text-right flex items-center gap-3"><div className="h-8 w-10 bg-white/10 rounded" /><div className="h-8 w-14 bg-white/10 rounded" /></div>
     </div>
   );
 }
