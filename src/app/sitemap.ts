@@ -148,6 +148,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "hourly",
       priority: 0.7,
     },
+    {
+      url: `${siteUrl}/wow/affixes`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    },
+    {
+      url: `${siteUrl}/wow/leaderboard`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.7,
+    },
     ...SPECS.map((spec) => ({
       url: `${siteUrl}/wow/spec/${spec.id}`,
       lastModified: now,

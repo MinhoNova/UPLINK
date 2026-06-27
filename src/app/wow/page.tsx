@@ -27,7 +27,7 @@ export default function WowLanding() {
           Class rankings, tier lists, and meta data for World of Warcraft.
         </p>
 
-        <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
           <Link href="/wow/tier-list" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#00ffff]/30 transition group text-left">
             <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#00ffff] transition">Tier List</h2>
             <p className="text-sm text-gray-500">DPS, Healer & Tank rankings. See which specs top the charts.</p>
@@ -43,6 +43,14 @@ export default function WowLanding() {
           <Link href="/wow/pipeline" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#00ffff]/30 transition group text-left">
             <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#00ffff] transition">The Pipeline</h2>
             <p className="text-sm text-gray-500">Class tuning, hotfixes & Blizzard news — live from the forums.</p>
+          </Link>
+          <Link href="/wow/affixes" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#9b59b6]/30 transition group text-left">
+            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#9b59b6] transition">Affixes</h2>
+            <p className="text-sm text-gray-500">Mythic+ affix calendar. See current and next week&apos;s affixes.</p>
+          </Link>
+          <Link href="/wow/leaderboard" className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-8 hover:border-[#ff8c00]/30 transition group text-left">
+            <h2 className="text-lg font-black text-white mb-2 group-hover:text-[#ff8c00] transition">Leaderboard</h2>
+            <p className="text-sm text-gray-500">Top Mythic+ specs and scores for the current season.</p>
           </Link>
         </div>
       </div>

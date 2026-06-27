@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { Swords, Shield, ScrollText, Radio } from "lucide-react";
+import { Swords, Shield, ScrollText, Radio, CalendarDays, Trophy } from "lucide-react";
 
 const SIDEBAR_LINKS = [
   { href: "/wow/tier-list", label: "Tier List", icon: Swords },
   { href: "/wow/dungeons", label: "Dungeons", icon: Shield },
   { href: "/wow/talents", label: "Talents", icon: ScrollText },
   { href: "/wow/pipeline", label: "The Pipeline", icon: Radio },
+  { href: "/wow/affixes", label: "Affixes", icon: CalendarDays },
+  { href: "/wow/leaderboard", label: "Leaderboard", icon: Trophy },
 ];
 
 export default function WowLayout({ children }: { children: React.ReactNode }) {
