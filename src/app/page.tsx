@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-   PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search,
+   PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search, Compass,
    Mic, MicOff, Headphones, PhoneOff, VolumeX, Volume2, Video, VideoOff, Phone, Settings
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -4914,10 +4914,22 @@ export default function HomePage() {
                                      <span className="h-2 w-2 rounded-full bg-[#00ffff] shadow-[0_0_10px_#00ffff]" />
                                      <span className="h-2 w-2 rounded-full bg-[#ff007f] shadow-[0_0_10px_#ff007f]" />
                                   </div>
-                                  <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#ff007f]/60" />
-                               </div>
-                            </div>
-                           </motion.div>
+                                   <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#ff007f]/60" />
+                                </div>
+                                <button
+                                   type="button"
+                                   onClick={() => {
+                                      if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
+                                      if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
+                                      setIsBoostRequestModalOpen(true);
+                                   }}
+                                   className="group flex items-center gap-2.5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] px-5 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-amber-400/70 hover:text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/40 transition-all backdrop-blur-sm"
+                                >
+                                   <Compass className="w-4 h-4 shrink-0 text-amber-400/50 group-hover:text-amber-400 transition-colors" />
+                                   <span>Feeling lost? Request a Boost</span>
+                                </button>
+                             </div>
+                            </motion.div>
                         </div>
                         {/* SEO paragraph — visible, keyword-rich */}
                         <div className="relative z-10 px-4 py-4 max-w-2xl mx-auto text-center pointer-events-auto">
@@ -4935,18 +4947,6 @@ export default function HomePage() {
 <div className="flex flex-col gap-1.5">
                              <div className="flex justify-end gap-1.5">
                              <button
-                                type="button"
-                                onClick={() => {
-                                   if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
-                                   if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
-                                   setIsBoostRequestModalOpen(true);
-                                }}
-                                className="flex items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-400/10 px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] text-amber-400 hover:bg-amber-400/20 transition-all backdrop-blur-md cursor-pointer"
-                             >
-                                <TrendingUp className="w-3 h-3 shrink-0" />
-                                <span className="whitespace-nowrap">Boost Request</span>
-                             </button>
-                            <button
                                type="button"
                                onClick={(e) => {
                                   e.stopPropagation();
