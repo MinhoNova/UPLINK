@@ -11,22 +11,23 @@ const ROLES = [
   { id: "tank", label: "Tank", icon: Shield },
 ] as const;
 
-const TIERS = ["S", "A", "B", "C", "D"] as const;
+const TIERS = ["S", "A", "B", "C", "D", "F"] as const;
 
 const TIER_COLORS: Record<string, string> = {
-  S: "from-[#ffd700]/10 border-[#ffd700]/30",
-  A: "from-[#00ff88]/10 border-[#00ff88]/20",
-  B: "from-[#00ccff]/10 border-[#00ccff]/15",
-  C: "from-[#aa77ff]/10 border-[#aa77ff]/15",
-  D: "from-[#ff6666]/10 border-[#ff6666]/15",
+  S: "from-[#ff8c00]/20 border-[#ff8c00]/40",
+  A: "from-[#9b59b6]/20 border-[#9b59b6]/40",
+  B: "from-[#3498db]/20 border-[#3498db]/40",
+  C: "from-[#2ecc71]/20 border-[#2ecc71]/40",
+  D: "from-[#ffffff]/10 border-[#ffffff]/30",
+  F: "from-[#888888]/20 border-[#888888]/40",
 };
 
 const TIER_TEXT: Record<string, string> = {
-  S: "text-[#ffd700]", A: "text-[#00ff88]", B: "text-[#00ccff]", C: "text-[#aa77ff]", D: "text-[#ff6666]",
+  S: "text-[#ff8c00]", A: "text-[#9b59b6]", B: "text-[#3498db]", C: "text-[#2ecc71]", D: "text-[#ffffff]", F: "text-[#888888]",
 };
 
 const TIER_BG: Record<string, string> = {
-  S: "bg-[#ffd700]/10", A: "bg-[#00ff88]/10", B: "bg-[#00ccff]/10", C: "bg-[#aa77ff]/10", D: "bg-[#ff6666]/10",
+  S: "bg-[#ff8c00]/20", A: "bg-[#9b59b6]/20", B: "bg-[#3498db]/20", C: "bg-[#2ecc71]/20", D: "bg-[#ffffff]/10", F: "bg-[#888888]/20",
 };
 
 const TIER_DATA: Record<string, Record<string, { id: string; score: number }[]>> = {
@@ -67,6 +68,7 @@ const TIER_DATA: Record<string, Record<string, { id: string; score: number }[]>>
       { id: "devastation-evoker", score: 3356 },
     ],
     D: [],
+    F: [],
   },
   healer: {
     S: [
@@ -83,6 +85,7 @@ const TIER_DATA: Record<string, Record<string, { id: string; score: number }[]>>
     ],
     C: [{ id: "holy-priest", score: 3300 }],
     D: [],
+    F: [],
   },
   tank: {
     S: [
@@ -99,13 +102,14 @@ const TIER_DATA: Record<string, Record<string, { id: string; score: number }[]>>
     ],
     C: [],
     D: [],
+    F: [],
   },
 };
 
 export default function WowTierListPage() {
   const [activeRole, setActiveRole] = useState<string>("dps");
   const [content, setContent] = useState<"raid" | "mythic">("mythic");
-  const tiers = TIER_DATA[activeRole] || { S: [], A: [], B: [], C: [], D: [] };
+  const tiers = TIER_DATA[activeRole] || { S: [], A: [], B: [], C: [], D: [], F: [] };
 
   return (
     <div className="min-h-screen bg-[#05050a] text-white">
@@ -145,40 +149,42 @@ export default function WowTierListPage() {
         </div>
 
         {/* Tier List */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {TIERS.map((tier) => {
             const tierSpecs = tiers[tier] || [];
             if (tierSpecs.length === 0) return null;
             return (
-              <div key={tier} className={`bg-gradient-to-r ${TIER_COLORS[tier]} border rounded-2xl overflow-hidden`}>
+              <div key={tier} className="rounded-xl overflow-hidden">
                 <div className="flex items-stretch">
-                  <div className={`w-12 flex items-center justify-center font-black text-xl shrink-0 ${TIER_BG[tier]}`}>
+                  <div className={`w-16 flex items-center justify-center font-black text-2xl shrink-0 ${TIER_BG[tier]}`}>
                     <span className={TIER_TEXT[tier]}>{tier}</span>
                   </div>
-                  <div className="flex flex-wrap gap-2 p-3 flex-1">
-                    {tierSpecs.map(({ id, score }) => {
-                      const spec = SPECS.find((s) => s.id === id);
-                      if (!spec) return null;
-                      const color = getClassColor(spec.classId);
-                      return (
-                        <Link
-                          key={id}
-                          href={`/wow/spec/${id}`}
-                          className="flex items-center gap-2 bg-black/60 border rounded-xl px-3 py-2 hover:bg-black/80 transition min-w-[180px]"
-                          style={{ borderColor: `${color}30` }}
-                        >
-                          <img src={spec.icon} alt={spec.name} className="w-9 h-9 rounded-lg shrink-0" style={{ backgroundColor: `${color}20` }} />
-                          <div className="min-w-0">
-                            <div className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>{spec.classId.replace("-", " ")}</div>
-                            <div className="text-xs font-black text-white truncate">{spec.name}</div>
-                          </div>
-                          <div className="ml-auto text-right shrink-0">
-                            <div className="text-xs font-black text-white">{score}</div>
-                            <div className="text-[7px] font-black text-gray-500 uppercase tracking-wider">Score</div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                  <div className={`flex-1 bg-gradient-to-r ${TIER_COLORS[tier]} border-y border-r rounded-r-xl p-3`}>
+                    <div className="flex flex-wrap gap-2">
+                      {tierSpecs.map(({ id, score }) => {
+                        const spec = SPECS.find((s) => s.id === id);
+                        if (!spec) return null;
+                        const color = getClassColor(spec.classId);
+                        return (
+                          <Link
+                            key={id}
+                            href={`/wow/spec/${id}`}
+                            className="flex items-center gap-2.5 bg-black/70 border rounded-xl px-3 py-2 hover:bg-black/90 transition min-w-[200px]"
+                            style={{ borderColor: color }}
+                          >
+                            <img src={spec.icon} alt={spec.name} className="w-9 h-9 rounded-lg shrink-0" style={{ backgroundColor: `${color}25` }} />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-[8px] font-black uppercase tracking-wider" style={{ color }}>{spec.classId.replace("-", " ")}</div>
+                              <div className="text-xs font-black text-white truncate">{spec.name}</div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-xs font-black text-white">{score}</div>
+                              <div className="text-[6px] font-black text-gray-500 uppercase tracking-wider">SCORE</div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
