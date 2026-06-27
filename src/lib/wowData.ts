@@ -70,7 +70,7 @@ export const SPECS: WoWSpec[] = [
   { id: "subtlety-rogue", name: "Subtlety Rogue", classId: "rogue", role: "dps", icon: "/wow/specs/subtlety-rogue.webp", seo: ["subtlety rogue talents", "sub rogue talents", "rogue subtlety build"] },
   { id: "survival-hunter", name: "Survival Hunter", classId: "hunter", role: "dps", icon: "/wow/specs/survival-hunter.webp", seo: ["survival hunter talents", "surv hunter talents", "hunter survival build"] },
   { id: "unholy-death-knight", name: "Unholy Death Knight", classId: "death-knight", role: "dps", icon: "/wow/specs/unholy-death-knight.webp", seo: ["unholy dk talents", "unholy death knight build", "dk unholy dps"] },
-  { id: "vengeance-demon-hunter", name: "Vengeance Demon Hunter", classId: "demon-hunter", role: "dps", icon: "/wow/specs/vengeance-demon-hunter.webp", seo: ["vengeance demon hunter talents", "vengeance dh build", "dh tank talents", "vengeance dh mythic+"] },
+  { id: "vengeance-demon-hunter", name: "Vengeance Demon Hunter", classId: "demon-hunter", role: "tank", icon: "/wow/specs/vengeance-demon-hunter.webp", seo: ["vengeance demon hunter talents", "vengeance dh build", "dh tank talents", "vengeance dh mythic+"] },
   { id: "windwalker-monk", name: "Windwalker Monk", classId: "monk", role: "dps", icon: "/wow/specs/windwalker-monk.webp", seo: ["windwalker monk talents", "ww monk talents", "monk windwalker build"] },
 ];
 

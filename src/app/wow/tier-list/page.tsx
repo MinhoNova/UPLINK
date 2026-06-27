@@ -95,7 +95,7 @@ const TIER_DATA: Record<string, Record<string, { id: string; score: number }[]>>
     ],
     B: [
       { id: "protection-paladin", score: 3550 },
-      { id: "devourer-demon-hunter", score: 3500 },
+      { id: "vengeance-demon-hunter", score: 3500 },
     ],
     C: [],
     D: [],
