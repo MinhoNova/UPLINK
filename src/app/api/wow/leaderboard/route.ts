@@ -23,33 +23,74 @@ export interface LeaderboardEntry {
   faction: string;
 }
 
-const FALLBACK: LeaderboardEntry[] = [
-  { rank: 1, name: "Augmentation Evoker", classId: "evoker", specId: "augmentation-evoker", score: 4091, region: "US", realm: "Area 52", faction: "horde" },
-  { rank: 2, name: "Devourer Demon Hunter", classId: "demon-hunter", specId: "devourer-demon-hunter", score: 4020, region: "EU", realm: "Twisting Nether", faction: "horde" },
-  { rank: 3, name: "Unholy Death Knight", classId: "death-knight", specId: "unholy-death-knight", score: 3986, region: "US", realm: "Illidan", faction: "horde" },
-  { rank: 4, name: "Arms Warrior", classId: "warrior", specId: "arms-warrior", score: 3897, region: "EU", realm: "Silvermoon", faction: "alliance" },
-  { rank: 5, name: "Outlaw Rogue", classId: "rogue", specId: "outlaw-rogue", score: 3800, region: "US", realm: "Stormrage", faction: "alliance" },
-  { rank: 6, name: "Retribution Paladin", classId: "paladin", specId: "retribution-paladin", score: 3745, region: "EU", realm: "Silvermoon", faction: "alliance" },
-  { rank: 7, name: "Feral Druid", classId: "druid", specId: "feral-druid", score: 3738, region: "US", realm: "Illidan", faction: "horde" },
-  { rank: 8, name: "Enhancement Shaman", classId: "shaman", specId: "enhancement-shaman", score: 3721, region: "EU", realm: "Draenor", faction: "horde" },
-  { rank: 9, name: "Survival Hunter", classId: "hunter", specId: "survival-hunter", score: 3717, region: "US", realm: "Area 52", faction: "horde" },
-  { rank: 10, name: "Shadow Priest", classId: "priest", specId: "shadow-priest", score: 3703, region: "EU", realm: "Ravencrest", faction: "horde" },
-  { rank: 11, name: "Assassination Rogue", classId: "rogue", specId: "assassination-rogue", score: 3703, region: "US", realm: "Tichondrius", faction: "horde" },
-  { rank: 12, name: "Demonology Warlock", classId: "warlock", specId: "demonology-warlock", score: 3696, region: "EU", realm: "Draenor", faction: "horde" },
-  { rank: 13, name: "Elemental Shaman", classId: "shaman", specId: "elemental-shaman", score: 3684, region: "US", realm: "Area 52", faction: "horde" },
-  { rank: 14, name: "Fury Warrior", classId: "warrior", specId: "fury-warrior", score: 3676, region: "EU", realm: "Tarren Mill", faction: "horde" },
-  { rank: 15, name: "Subtlety Rogue", classId: "rogue", specId: "subtlety-rogue", score: 3673, region: "US", realm: "Stormrage", faction: "alliance" },
+const ALL_SPECS: { specId: string; classId: string; name: string; score: number }[] = [
+  { specId: "augmentation-evoker", classId: "evoker", name: "Augmentation Evoker", score: 4091 },
+  { specId: "devourer-demon-hunter", classId: "demon-hunter", name: "Devourer Demon Hunter", score: 4020 },
+  { specId: "unholy-death-knight", classId: "death-knight", name: "Unholy Death Knight", score: 3986 },
+  { specId: "arms-warrior", classId: "warrior", name: "Arms Warrior", score: 3897 },
+  { specId: "outlaw-rogue", classId: "rogue", name: "Outlaw Rogue", score: 3800 },
+  { specId: "retribution-paladin", classId: "paladin", name: "Retribution Paladin", score: 3745 },
+  { specId: "feral-druid", classId: "druid", name: "Feral Druid", score: 3738 },
+  { specId: "enhancement-shaman", classId: "shaman", name: "Enhancement Shaman", score: 3721 },
+  { specId: "survival-hunter", classId: "hunter", name: "Survival Hunter", score: 3717 },
+  { specId: "shadow-priest", classId: "priest", name: "Shadow Priest", score: 3703 },
+  { specId: "assassination-rogue", classId: "rogue", name: "Assassination Rogue", score: 3703 },
+  { specId: "demonology-warlock", classId: "warlock", name: "Demonology Warlock", score: 3696 },
+  { specId: "elemental-shaman", classId: "shaman", name: "Elemental Shaman", score: 3684 },
+  { specId: "fury-warrior", classId: "warrior", name: "Fury Warrior", score: 3676 },
+  { specId: "subtlety-rogue", classId: "rogue", name: "Subtlety Rogue", score: 3673 },
+  { specId: "frost-death-knight", classId: "death-knight", name: "Frost Death Knight", score: 3660 },
+  { specId: "windwalker-monk", classId: "monk", name: "Windwalker Monk", score: 3650 },
+  { specId: "beast-mastery-hunter", classId: "hunter", name: "Beast Mastery Hunter", score: 3645 },
+  { specId: "havoc-demon-hunter", classId: "demon-hunter", name: "Havoc Demon Hunter", score: 3638 },
+  { specId: "balance-druid", classId: "druid", name: "Balance Druid", score: 3630 },
+  { specId: "fire-mage", classId: "mage", name: "Fire Mage", score: 3625 },
+  { specId: "affliction-warlock", classId: "warlock", name: "Affliction Warlock", score: 3618 },
+  { specId: "frost-mage", classId: "mage", name: "Frost Mage", score: 3612 },
+  { specId: "destruction-warlock", classId: "warlock", name: "Destruction Warlock", score: 3605 },
+  { specId: "marksmanship-hunter", classId: "hunter", name: "Marksmanship Hunter", score: 3598 },
+  { specId: "arcane-mage", classId: "mage", name: "Arcane Mage", score: 3590 },
+  { specId: "holy-paladin", classId: "paladin", name: "Holy Paladin", score: 3585 },
+  { specId: "mistweaver-monk", classId: "monk", name: "Mistweaver Monk", score: 3578 },
+  { specId: "restoration-druid", classId: "druid", name: "Restoration Druid", score: 3570 },
+  { specId: "preservation-evoker", classId: "evoker", name: "Preservation Evoker", score: 3562 },
+  { specId: "discipline-priest", classId: "priest", name: "Discipline Priest", score: 3555 },
+  { specId: "restoration-shaman", classId: "shaman", name: "Restoration Shaman", score: 3548 },
+  { specId: "holy-priest", classId: "priest", name: "Holy Priest", score: 3540 },
+  { specId: "blood-death-knight", classId: "death-knight", name: "Blood Death Knight", score: 3532 },
+  { specId: "vengeance-demon-hunter", classId: "demon-hunter", name: "Vengeance Demon Hunter", score: 3525 },
+  { specId: "brewmaster-monk", classId: "monk", name: "Brewmaster Monk", score: 3518 },
+  { specId: "guardian-druid", classId: "druid", name: "Guardian Druid", score: 3510 },
+  { specId: "protection-warrior", classId: "warrior", name: "Protection Warrior", score: 3502 },
+  { specId: "protection-paladin", classId: "paladin", name: "Protection Paladin", score: 3495 },
+  { specId: "devastation-evoker", classId: "evoker", name: "Devastation Evoker", score: 3488 },
 ];
 
-export async function GET() {
+const FALLBACK: LeaderboardEntry[] = ALL_SPECS.map((s, i) => ({
+  rank: i + 1,
+  name: s.name,
+  classId: s.classId,
+  specId: s.specId,
+  score: s.score,
+  region: i % 2 === 0 ? "US" : "EU",
+  realm: i % 2 === 0 ? "Area 52" : "Silvermoon",
+  faction: i % 2 === 0 ? "horde" : "alliance",
+}));
+
+export async function GET(request: Request) {
   try {
     await initTables();
 
-    const cached = await getKV(CACHE_KEY);
-    if (cached && typeof cached === "object" && "entries" in cached && "timestamp" in cached) {
-      const age = Date.now() - (cached as any).timestamp;
-      if (age < CACHE_TTL_MS) {
-        return NextResponse.json({ entries: (cached as any).entries, cached: true, age, season: (cached as any).season });
+    const url = new URL(request.url);
+    const forceRefresh = url.searchParams.get("refresh") === "1";
+
+    if (!forceRefresh) {
+      const cached = await getKV(CACHE_KEY);
+      if (cached && typeof cached === "object" && "entries" in cached && "timestamp" in cached) {
+        const age = Date.now() - (cached as any).timestamp;
+        if (age < CACHE_TTL_MS) {
+          return NextResponse.json({ entries: (cached as any).entries, cached: true, age, season: (cached as any).season });
+        }
       }
     }
 
