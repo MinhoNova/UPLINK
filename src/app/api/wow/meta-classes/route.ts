@@ -85,7 +85,9 @@ export async function GET() {
 
     const bestBySpec: Record<string, number> = {};
     for (const r of rankings) {
-      const specKey = (r.spec || r.character?.spec || "").toLowerCase().replace(/\s+/g, "-");
+      const specName = (r.character?.spec || "").toLowerCase().replace(/\s+/g, "-");
+      const className = (r.character?.class || "").toLowerCase().replace(/\s+/g, "-");
+      const specKey = specName && className ? `${specName}-${className}` : "";
       const score = r.score || r.mythic_plus_score || 0;
       if (specKey && (!bestBySpec[specKey] || score > bestBySpec[specKey])) {
         bestBySpec[specKey] = score;
