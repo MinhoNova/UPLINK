@@ -4,6 +4,23 @@ import { getKV, setKV, initTables } from "@/lib/db";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_KEY = "wow:meta-classes";
 
+const FALLBACK_RANKINGS: Record<string, number> = {
+  "affliction-warlock": 3200, "arcane-mage": 3300, "arms-warrior": 3800,
+  "assassination-rogue": 2950, "augmentation-evoker": 4050, "balance-druid": 3100,
+  "beast-mastery-hunter": 3550, "blood-death-knight": 3650, "brewmaster-monk": 3600,
+  "demonology-warlock": 3050, "destruction-warlock": 3400, "devastation-evoker": 2650,
+  "devourer-demon-hunter": 4000, "discipline-priest": 3700, "elemental-shaman": 3700,
+  "enhancement-shaman": 3750, "feral-druid": 2900, "fire-mage": 3500,
+  "frost-death-knight": 3200, "frost-mage": 3450, "fury-warrior": 3600,
+  "guardian-druid": 3050, "havoc-demon-hunter": 2850, "holy-paladin": 3950,
+  "holy-priest": 3150, "marksmanship-hunter": 2750, "mistweaver-monk": 3400,
+  "outlaw-rogue": 3780, "preservation-evoker": 3900, "protection-paladin": 3850,
+  "protection-warrior": 3450, "restoration-druid": 2950, "restoration-shaman": 3600,
+  "retribution-paladin": 3750, "shadow-priest": 3500, "subtlety-rogue": 2800,
+  "survival-hunter": 3550, "unholy-death-knight": 3900, "vengeance-demon-hunter": 3500,
+  "windwalker-monk": 3150,
+};
+
 function shouldRefresh(req: Request): boolean {
   const url = new URL(req.url);
   return url.searchParams.get("refresh") === "1";
@@ -97,6 +114,11 @@ export async function GET(req: Request) {
       const score = r.score || r.mythic_plus_score || 0;
       if (specKey && (!bestBySpec[specKey] || score > bestBySpec[specKey])) {
         bestBySpec[specKey] = score;
+      }
+    }
+    if (Object.keys(bestBySpec).length < 10) {
+      for (const [key, score] of Object.entries(FALLBACK_RANKINGS)) {
+        bestBySpec[key] = score;
       }
     }
 
