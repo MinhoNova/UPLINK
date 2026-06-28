@@ -69,7 +69,7 @@ export async function GET() {
           rank: i + 1,
           name: r.name || r.character?.name || "Unknown",
           classId: (r.class || r.character?.class || "").toLowerCase().replace(/\s+/g, "-"),
-          specId: (r.spec || r.character?.spec || "").toLowerCase().replace(/\s+/g, "-"),
+          specId: ((r.spec || r.character?.spec || "") + "-" + (r.class || r.character?.class || "")).toLowerCase().replace(/\s+/g, "-").replace(/^-+|-+$/g, ""),
           score: r.score || r.mythic_plus_score || 0,
           region: (r.region || r.character?.region || "US").toUpperCase(),
           realm: r.realm || r.character?.realm || "Unknown",
