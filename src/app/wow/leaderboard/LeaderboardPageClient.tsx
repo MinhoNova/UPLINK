@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getClassColor, SPECS } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
-import { Swords, HeartHandshake, Shield, Trophy, AlertCircle } from "lucide-react";
+import { Swords, HeartHandshake, Shield, Trophy, AlertCircle, ExternalLink } from "lucide-react";
 
 const ROLES = [
   { id: "all", label: "All", icon: Trophy },
@@ -14,9 +14,17 @@ const ROLES = [
   { id: "tank", label: "Tank", icon: Shield },
 ] as const;
 
-function specNameFromId(specId: string): string {
-  const spec = SPECS.find((s) => s.id === specId);
-  return spec?.name || specId.replace(/-/g, " ");
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+const REGION_FLAGS: Record<string, string> = {
+  US: "/flags/us.svg",
+  EU: "/flags/eu.svg",
+};
+
+function playerProfileUrl(name: string, realm: string, region: string): string {
+  const slug = name.toLowerCase().replace(/\s+/g, "-");
+  const params = new URLSearchParams({ realm, region });
+  return `/wow/player/${slug}?${params.toString()}`;
 }
 
 function classIdFromSpecId(specId: string): string {
@@ -49,7 +57,6 @@ export default function LeaderboardPageClient() {
   const filtered = activeRole === "all"
     ? entries
     : entries.filter((e) => {
-        const cid = classIdFromSpecId(e.specId);
         const spec = SPECS.find((s) => s.id === e.specId);
         return spec?.role === activeRole;
       });
@@ -67,7 +74,7 @@ export default function LeaderboardPageClient() {
             M+ <span className="text-[#ff8c00] drop-shadow-[0_0_15px_rgba(255,140,0,0.4)]">Leaderboard</span>
           </h1>
           <p className="text-sm text-gray-400 max-w-2xl">
-            Top Mythic+ specs and scores for the current season. Data from Raider.IO — auto-updates every minute.
+            Top Mythic+ players and scores for the current season. Data from Raider.IO — auto-updates every minute.
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-4 text-[10px] font-black uppercase tracking-widest text-gray-500">
             <span className="flex items-center gap-1.5">
@@ -116,37 +123,70 @@ export default function LeaderboardPageClient() {
                 <thead>
                   <tr className="border-b border-white/5 bg-white/[0.02]">
                     <th className="text-left px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 w-12">Rank</th>
-                    <th className="text-left px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Spec</th>
+                    <th className="text-left px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Player</th>
                     <th className="text-left px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 hidden sm:table-cell">Realm</th>
-                    <th className="text-left px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 hidden sm:table-cell">Region</th>
+                    <th className="text-left px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 hidden sm:table-cell w-16">Region</th>
                     <th className="text-right px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Score</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((entry) => {
                     const color = getClassColor(classIdFromSpecId(entry.specId) || entry.classId);
-                    const icon = SPECS.find((s) => s.id === entry.specId)?.icon || "";
-                    const name = specNameFromId(entry.specId);
+                    const spec = SPECS.find((s) => s.id === entry.specId);
+                    const icon = spec?.icon || "";
+                    const flag = REGION_FLAGS[entry.region?.toUpperCase()] || null;
+                    const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
                     return (
                       <tr key={entry.rank} className="border-b border-white/5 hover:bg-white/[0.02] transition">
+                        {/* Rank */}
                         <td className="px-4 py-3">
-                          <span className={`text-sm font-black ${entry.rank <= 3 ? "text-[#ff8c00]" : "text-gray-400"}`}>
-                            {entry.rank <= 3 ? ["🥇", "🥈", "🥉"][entry.rank - 1] : `#${entry.rank}`}
-                          </span>
+                          {entry.rank <= 3 ? (
+                            <span className="text-lg drop-shadow-[0_0_8px_rgba(255,215,0,0.4)]">{MEDALS[entry.rank - 1]}</span>
+                          ) : (
+                            <span className="text-xs font-black text-gray-500">#{entry.rank}</span>
+                          )}
                         </td>
+                        {/* Player Name + Spec */}
                         <td className="px-4 py-3">
-                          <Link href={`/wow/spec/${entry.specId}`} className="flex items-center gap-3">
-                            {icon && <Image src={icon} alt={name} width={36} height={36} className="rounded-lg shrink-0" />}
-                            <div>
-                              <div className="text-[9px] font-black uppercase tracking-wider" style={{ color }}>{entry.classId.replace(/-/g, " ")}</div>
-                              <div className="text-sm font-bold text-white">{name}</div>
+                          <div className="flex items-center gap-3">
+                            {/* Spec icon */}
+                            {icon && (
+                              <Link href={`/wow/spec/${entry.specId}`}>
+                                <Image src={icon} alt="" width={36} height={36} className="rounded-lg shrink-0 hover:scale-105 transition-transform" style={{ backgroundColor: `${color}20` }} />
+                              </Link>
+                            )}
+                            <div className="min-w-0">
+                              {/* Player name - clickable to profile */}
+                              <Link
+                                href={profileUrl}
+                                className="text-sm font-bold text-white hover:text-[#00ffff] transition-colors truncate block"
+                              >
+                                {entry.name}
+                              </Link>
+                              {/* Spec + Class */}
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[8px] font-black uppercase tracking-wider" style={{ color: `${color}bb` }}>{spec?.name || entry.specId.replace(/-/g, " ")}</span>
+                                <Link href={`/wow/player/${entry.name.toLowerCase().replace(/\s+/g, "-")}?realm=${encodeURIComponent(entry.realm)}&region=${entry.region}`}>
+                                  <ExternalLink className="w-2.5 h-2.5 text-gray-600 hover:text-white transition-colors" />
+                                </Link>
+                              </div>
                             </div>
-                          </Link>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell"><span className="text-xs text-gray-500">{entry.realm}</span></td>
+                        {/* Realm */}
                         <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${entry.region === "US" ? "text-[#00ffff]" : "text-[#ff007f]"}`}>{entry.region}</span>
+                          <span className="text-xs text-gray-500 truncate block max-w-[120px]">{entry.realm}</span>
                         </td>
+                        {/* Region with flag */}
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <div className="flex items-center gap-1.5">
+                            {flag && (
+                              <Image src={flag} alt={entry.region} width={18} height={12} className="rounded-[2px] shrink-0" />
+                            )}
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{entry.region}</span>
+                          </div>
+                        </td>
+                        {/* Score */}
                         <td className="px-4 py-3 text-right">
                           <span className="text-sm font-black" style={{ color }}>{entry.score.toLocaleString()}</span>
                         </td>
