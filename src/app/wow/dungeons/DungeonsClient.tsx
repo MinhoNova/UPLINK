@@ -4,14 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 
 const DUNGEONS = [
-  { id: "the-rookery", name: "The Rookery", difficulty: "Very Hard", level: 12, affixes: ["Fortified", "Bursting", "Sanguine"] },
-  { id: "cinderbrew-meadery", name: "Cinderbrew Meadery", difficulty: "Hard", level: 11, affixes: ["Fortified", "Raging", "Volcanic"] },
-  { id: "darkflame-cleft", name: "Darkflame Cleft", difficulty: "Hard", level: 11, affixes: ["Tyranical", "Spiteful", "Grievous"] },
-  { id: "priory-of-the-sacred-flame", name: "Priory of the Sacred Flame", difficulty: "Hard", level: 10, affixes: ["Fortified", "Bolstering", "Quaking"] },
-  { id: "the-motherlode", name: "The MOTHERLODE!!", difficulty: "Moderate", level: 9, affixes: ["Tyranical", "Bursting", "Storming"] },
-  { id: "operation-mechagon", name: "Operation: Mechagon", difficulty: "Moderate", level: 9, affixes: ["Fortified", "Bolstering", "Sanguine"] },
-  { id: "siege-of-boralus", name: "Siege of Boralus", difficulty: "Moderate", level: 8, affixes: ["Tyranical", "Raging", "Volcanic"] },
-  { id: "theater-of-pain", name: "Theater of Pain", difficulty: "Easy", level: 6, affixes: ["Fortified", "Bursting", "Sanguine"] },
+  { id: "nexuspoint-xenas", name: "Nexus-Point Xenas", difficulty: "Very Hard", level: 22 },
+  { id: "skyreach", name: "Skyreach", difficulty: "Hard", level: 19 },
+  { id: "windrunner-spire", name: "Windrunner Spire", difficulty: "Hard", level: 18 },
+  { id: "maisara-caverns", name: "Maisara Caverns", difficulty: "Moderate", level: 16 },
+  { id: "algethar-academy", name: "Algeth'ar Academy", difficulty: "Moderate", level: 15 },
+  { id: "pit-of-saron", name: "Pit of Saron", difficulty: "Moderate", level: 14 },
+  { id: "seat-of-the-triumvirate", name: "Seat of the Triumvirate", difficulty: "Easy", level: 12 },
+  { id: "magisters-terrace", name: "Magisters' Terrace", difficulty: "Easy", level: 11 },
 ];
 
 const DIFFICULTY_ORDER = ["Very Hard", "Hard", "Moderate", "Easy"];
@@ -53,12 +53,6 @@ export default function DungeonsClient() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black text-gray-500">Recommended Key Level: <span className="text-white">{d.level}</span></span>
-                <span className="text-gray-600">·</span>
-                <div className="flex items-center gap-1">
-                  {d.affixes.map((a) => (
-                    <span key={a} className="text-[9px] font-black bg-white/5 px-1.5 py-0.5 rounded text-gray-300">{a}</span>
-                  ))}
-                </div>
               </div>
             </div>
           ))}
