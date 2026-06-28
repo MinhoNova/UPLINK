@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Swords, HeartHandshake, Shield, ChevronLeft, ExternalLink, Medal } from "lucide-react";
+import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight } from "lucide-react";
 import { SPECS, getClassColor, getSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 
@@ -136,50 +136,67 @@ export default function SpecDetailClient({ id }: { id: string }) {
                 <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">No leaderboard data available for this spec yet.</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {leaderboardEntries.map((entry) => {
                   const flag = REGION_FLAGS[entry.region?.toUpperCase()] || null;
                   const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
+                  const renderUrl = `https://raider.io/render/v1/character/${entry.region?.toLowerCase()}/${entry.realm?.toLowerCase().replace(/\s+/g, "-")}/${entry.name?.toLowerCase()}.png`;
                   return (
                     <Link
                       key={entry.rank}
                       href={profileUrl}
-                      className="flex items-center gap-3 sm:gap-4 rounded-xl px-4 py-3 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all group"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10 transition-all group"
                     >
-                      {/* Rank */}
-                      <div className="w-8 shrink-0 text-center">
-                        {entry.rank <= 3 ? (
-                          <span className="text-lg drop-shadow-[0_0_8px_rgba(255,215,0,0.4)]">{MEDALS[entry.rank - 1]}</span>
-                        ) : (
-                          <span className="text-[10px] font-black text-gray-500">#{entry.rank}</span>
-                        )}
+                      {/* Rank badge */}
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black" style={{
+                        backgroundColor: entry.rank <= 3 ? `${color}25` : 'rgba(255,255,255,0.05)',
+                        color: entry.rank <= 3 ? color : 'rgba(255,255,255,0.3)',
+                        boxShadow: entry.rank <= 3 ? `0 0 12px ${color}20` : 'none',
+                      }}>
+                        {entry.rank <= 3 ? MEDALS[entry.rank - 1] : `#${entry.rank}`}
                       </div>
 
-                      {/* Spec icon */}
-                      <Image src={spec.icon} alt="" width={36} height={36} className="rounded-lg shrink-0" style={{ backgroundColor: `${color}20` }} />
+                      {/* Character render */}
+                      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-white/[0.03] border border-white/5">
+                        <img
+                          src={renderUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="eager"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                        />
+                      </div>
+
+                      {/* Spec icon fallback */}
+                      <Image src={spec.icon} alt="" width={32} height={32} className="rounded-lg shrink-0 -ml-2" style={{ backgroundColor: `${color}20` }} />
 
                       {/* Player info */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white group-hover:text-[#00ffff] transition-colors truncate">{entry.name}</span>
-                          <ExternalLink className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[9px] text-gray-500 truncate">{entry.realm}</span>
-                          <span className="text-[6px] text-gray-600">·</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white group-hover:text-[#00ffff] transition-colors truncate">{entry.name}</span>
                           {flag && (
-                            <Image src={flag} alt={entry.region} width={14} height={10} className="rounded-[2px] shrink-0" />
+                            <Image src={flag} alt={entry.region} width={12} height={8} className="rounded-[1px] shrink-0" />
                           )}
-                          <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">{entry.region}</span>
-                          <span className="text-[6px] text-gray-600">·</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: `${color}99` }}>{entry.faction}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[8px] text-gray-500 truncate">{entry.realm}</span>
+                          <span className="text-[5px] text-gray-600">·</span>
+                          <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color: `${color}99` }}>{spec.name}</span>
+                          {entry.faction === "alliance" ? (
+                            <span className="text-[8px] text-yellow-500/60">A</span>
+                          ) : (
+                            <span className="text-[8px] text-red-400/60">H</span>
+                          )}
                         </div>
                       </div>
 
                       {/* Score */}
-                      <div className="text-right shrink-0">
-                        <div className="text-sm font-black" style={{ color }}>{entry.score.toLocaleString()}</div>
-                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">SCORE</div>
+                      <div className="text-right shrink-0 flex items-center gap-1.5">
+                        <div className="leading-tight">
+                          <div className="text-sm font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
+                          <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
+                        </div>
+                        <ChevronRight className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-all -mr-1" />
                       </div>
                     </Link>
                   );
