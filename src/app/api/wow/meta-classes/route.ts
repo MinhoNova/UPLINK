@@ -4,6 +4,11 @@ import { getKV, setKV, initTables } from "@/lib/db";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_KEY = "wow:meta-classes";
 
+function shouldRefresh(req: Request): boolean {
+  const url = new URL(req.url);
+  return url.searchParams.get("refresh") === "1";
+}
+
 function formatSeasonName(slug: string): string {
   const parts = slug.split("-");
   if (parts.length < 2) return slug;
@@ -50,11 +55,12 @@ interface MetaSpec {
   tier: string;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await initTables();
+    const forceRefresh = shouldRefresh(req);
     const cached = await getKV(CACHE_KEY);
-    if (cached && typeof cached === "object" && "timestamp" in cached) {
+    if (!forceRefresh && cached && typeof cached === "object" && "timestamp" in cached) {
       const age = Date.now() - (cached as any).timestamp;
       if (age < CACHE_TTL_MS) {
         return NextResponse.json({ ...(cached as any), cached: true });
