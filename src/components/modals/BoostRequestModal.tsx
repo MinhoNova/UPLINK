@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Coins, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield } from "lucide-react";
 import { DUNGEONS } from "@/lib/dungeonAssets";
 
 type BoostRequest = {
@@ -54,23 +54,9 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdRequest, setCreatedRequest] = useState<BoostRequest | null>(null);
-  const [requests, setRequests] = useState<BoostRequest[]>([]);
-  const [tab, setTab] = useState<"create" | "browse">("create");
-  const [biddingRequestId, setBiddingRequestId] = useState<string | null>(null);
-  const [bidAmount, setBidAmount] = useState(0);
-  const [bidMsg, setBidMsg] = useState("");
-  const [bidLoading, setBidLoading] = useState(false);
-
-  const fetchRequests = () => {
-    fetch("/api/boost-requests")
-      .then((r) => r.json())
-      .then((d) => setRequests(d.requests || []))
-      .catch(() => {});
-  };
 
   useEffect(() => {
     if (isOpen) {
-      fetchRequests();
       setStep(0);
       setType(null);
       setFaction(null);
@@ -81,7 +67,6 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
       setBudget(50);
       setNotes("");
       setCreatedRequest(null);
-      setTab("create");
     }
   }, [isOpen]);
 
@@ -107,7 +92,6 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
       if (res.ok) {
         setCreatedRequest(data.request);
         setStep(3);
-        fetchRequests();
       } else {
         alert(data.error || "Failed to create request");
       }
@@ -117,55 +101,6 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
       setLoading(false);
     }
   };
-
-  const handleBid = async (requestId: string) => {
-    if (bidAmount <= 0) return;
-    setBidLoading(true);
-    try {
-      const res = await fetch("/api/boost-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "bid", requestId, amount: bidAmount, message: bidMsg }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setBiddingRequestId(null);
-        setBidAmount(0);
-        setBidMsg("");
-        fetchRequests();
-      } else {
-        alert(data.error || "Failed to place bid");
-      }
-    } catch {
-      alert("Network error");
-    } finally {
-      setBidLoading(false);
-    }
-  };
-
-  const handleAccept = async (requestId: string, bidId: string) => {
-    const res = await fetch("/api/boost-requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "accept", requestId, bidId }),
-    });
-    const data = await res.json();
-    if (res.ok) fetchRequests();
-    else alert(data.error || "Failed to accept bid");
-  };
-
-  const handleCancel = async (requestId: string) => {
-    const res = await fetch("/api/boost-requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "cancel", requestId }),
-    });
-    if (res.ok) fetchRequests();
-  };
-
-  const myOpenRequests = requests.filter((r) => String(r.userId) === String(currentUserId) && r.status === "open");
-  const openRequests = requests.filter((r) => r.status === "open" && String(r.userId) !== String(currentUserId));
-  const myPastRequests = requests.filter((r) => String(r.userId) === String(currentUserId) && r.status !== "open");
 
   const clampStartLevel = (val: number) => Math.max(1, Math.min(val, endLevel - 1));
   const clampEndLevel = (val: number) => Math.max(startLevel + 1, Math.min(val, 90));
@@ -194,27 +129,8 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-white/5 px-4 gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setTab("create")}
-            className={`text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-t-xl transition ${tab === "create" ? "text-amber-400 border-b-2 border-amber-400" : "text-gray-500"}`}
-          >
-            New Request
-          </button>
-          <button
-            type="button"
-            onClick={() => { setTab("browse"); fetchRequests(); }}
-            className={`text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-t-xl transition ${tab === "browse" ? "text-amber-400 border-b-2 border-amber-400" : "text-gray-500"}`}
-          >
-            Browse {openRequests.length > 0 ? `(${openRequests.length})` : ""}
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-          {tab === "create" ? (
-            step === 0 ? (
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+              {step === 0 ? (
               /* Step 1: Choose type */
               <div className="space-y-3">
                 <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">What do you need?</p>
@@ -424,138 +340,13 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
                 )}
                 <button
                   type="button"
-                  onClick={() => { setTab("browse"); fetchRequests(); }}
+                  onClick={onClose}
                   className="w-full py-3 rounded-xl bg-white/5 text-gray-400 font-black uppercase text-[10px] tracking-widest hover:bg-white/10 hover:text-white transition"
                 >
-                  Browse Other Requests
+                  Close
                 </button>
               </div>
-            )
-          ) : (
-            /* Browse Tab */
-            <div className="space-y-3">
-              {myOpenRequests.length > 0 && (
-                <div>
-                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-2">Your Open Requests</p>
-                  {myOpenRequests.map((r) => (
-                    <div key={r.id} className="p-4 rounded-2xl bg-white/[0.03] border border-amber-500/20 mb-2">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div>
-                          <p className="text-xs font-black text-white">
-                            {r.type === "leveling" ? `Leveling ${r.startLevel}→${r.endLevel}` : `${r.dungeonName} +${r.keyLevel}`}
-                          </p>
-                          <p className="text-[9px] font-black text-amber-400">{r.budget}K Gold</p>
-                        </div>
-                        <button type="button" onClick={() => handleCancel(r.id)} className="text-[8px] text-gray-600 hover:text-red-400 font-black uppercase tracking-widest">Cancel</button>
-                      </div>
-                      {r.bids.length > 0 && (
-                        <div className="space-y-1.5 mt-2 pt-2 border-t border-white/5">
-                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Bids ({r.bids.length})</p>
-                          {r.bids.map((b) => (
-                            <div key={b.id} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/[0.02]">
-                              <div>
-                                <p className="text-[10px] font-black text-white">{b.userName}</p>
-                                <p className="text-[8px] text-gray-500">{b.message}</p>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-xs font-black text-green-400">{b.amount}K</p>
-                                <button
-                                  type="button"
-                                  onClick={() => handleAccept(r.id, b.id)}
-                                  className="text-[8px] font-black text-[#00ffff] uppercase tracking-widest hover:underline"
-                                >
-                                  Accept
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {r.bids.length === 0 && (
-                        <p className="text-[8px] text-gray-600 italic">No bids yet</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Open Requests</p>
-              {openRequests.length === 0 ? (
-                <div className="text-center py-8">
-                  <TrendingUp className="w-10 h-10 text-gray-600 mx-auto mb-3 opacity-40" />
-                  <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">No open requests</p>
-                </div>
-              ) : (
-                openRequests.map((r) => (
-                  <div key={r.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        {r.faction && (
-                          <img
-                            src={`/assets/${r.faction === "horde" ? "Horde" : "Alliance"}.svg`}
-                            alt={r.faction}
-                            className="w-4 h-4 opacity-60"
-                          />
-                        )}
-                        <p className="text-xs font-black text-white">
-                          {r.type === "leveling" ? `Leveling ${r.startLevel}→${r.endLevel}` : `${r.dungeonName} +${r.keyLevel}`}
-                        </p>
-                      </div>
-                      <p className="text-xs font-black text-amber-400">{r.budget}K</p>
-                    </div>
-                    <p className="text-[9px] text-gray-500 mb-2">by {r.userName}{r.notes ? ` • ${r.notes}` : ""}</p>
-
-                    {biddingRequestId === r.id ? (
-                      <div className="space-y-2 mt-2 pt-2 border-t border-white/5">
-                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Your bid (K Gold)</p>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setBidAmount(Math.max(1, bidAmount - 5))} className="w-7 h-7 flex items-center justify-center bg-white/5 rounded-lg text-white font-black">−</button>
-                          <span className="text-base font-black text-[#00ffff] tabular-nums w-16 text-center">{bidAmount}K</span>
-                          <button onClick={() => setBidAmount(bidAmount + 5)} className="w-7 h-7 flex items-center justify-center bg-white/5 rounded-lg text-white font-black">+</button>
-                        </div>
-                        <input
-                          value={bidMsg}
-                          onChange={(e) => setBidMsg(e.target.value)}
-                          placeholder="Message (optional)"
-                          className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#00ffff]/50 placeholder:text-gray-600"
-                        />
-                        <div className="flex gap-2">
-                          <button type="button" onClick={() => setBiddingRequestId(null)} className="flex-1 py-2 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest">Cancel</button>
-                          <button type="button" disabled={bidLoading || bidAmount <= 0} onClick={() => handleBid(r.id)} className="flex-1 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black text-[9px] font-black uppercase tracking-widest disabled:opacity-40">
-                            {bidLoading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : "Place Bid"}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => { setBiddingRequestId(r.id); setBidAmount(r.budget); setBidMsg(""); }}
-                        className="w-full py-2 rounded-lg bg-gradient-to-r from-[#00ffff]/10 to-[#ff007f]/10 border border-[#00ffff]/20 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/20 transition"
-                      >
-                        Place Bid
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-
-              {myPastRequests.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Past Requests</p>
-                  {myPastRequests.map((r) => (
-                    <div key={r.id} className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 mb-1 opacity-60">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-black text-white">
-                          {r.type === "leveling" ? `Leveling ${r.startLevel}→${r.endLevel}` : `${r.dungeonName} +${r.keyLevel}`}
-                        </p>
-                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{r.status}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            )}
         </div>
       </motion.div>
     </div>

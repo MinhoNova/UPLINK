@@ -96,12 +96,25 @@ export default function PlayerProfileClient({
 
           <div className="relative px-6 sm:px-8 py-8">
             <div className="flex items-center gap-6">
-              {/* Spec Icon */}
+              {/* Character Render + Spec Icon */}
               {spec && (
-                <div className="relative shrink-0">
-                  <Image src={spec.icon} alt={spec.name} width={80} height={80} priority className="rounded-2xl" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 40px ${color}30` }} />
+                <div className="relative shrink-0 flex -space-x-3">
+                  {/* Character render */}
+                  <div className="w-[80px] h-[80px] rounded-2xl overflow-hidden border border-white/10 bg-black/40 z-10" style={{ boxShadow: `0 0 30px ${color}20` }}>
+                    <img
+                      src={`https://raider.io/render/v1/character/${player.region?.toLowerCase()}/${player.realm?.toLowerCase().replace(/\s+/g, "-")}/${player.name?.toLowerCase()}.png`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="eager"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                    />
+                  </div>
+                  {/* Spec icon overlay */}
+                  <div className="relative z-20 -ml-6 mt-auto mb-0.5">
+                    <Image src={spec.icon} alt={spec.name} width={36} height={36} className="rounded-lg border-2 border-[#05050a]" style={{ backgroundColor: `${color}30` }} />
+                  </div>
                   {rank >= 1 && rank <= 3 && (
-                    <div className="absolute -top-2 -right-2">
+                    <div className="absolute -top-2 left-1/2 z-30">
                       <MedalBadge rank={rank} />
                     </div>
                   )}

@@ -7,6 +7,7 @@ import {
   TrendingUp, Coins, Loader2, Plus, ImagePlus, X, Upload, Link2, Target
 } from "lucide-react";
 import { resolveVfxSrc, resolveVfxBannerUrl, resolveLobbyBannerBg } from "@/lib/vfxAssets";
+import BoostRequestModal from "@/components/modals/BoostRequestModal";
 
 type Bid = {
   id: string;
@@ -51,6 +52,7 @@ export default function BoostsPageContent() {
   const [bgPickerId, setBgPickerId] = useState<string | null>(null);
   const [bgCustomUrl, setBgCustomUrl] = useState("");
   const [bgSaving, setBgSaving] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const bgPickerRef = useRef<HTMLDivElement>(null);
 
   const currentUserId = (session?.user as any)?.id || "";
@@ -151,7 +153,7 @@ export default function BoostsPageContent() {
     setBgSaving(false);
   };
 
-  const myRequests = requests.filter((r) => String(r.userId) === String(currentUserId));
+  const myRequests = requests.filter((r) => String(r.userId) === String(currentUserId) && r.status !== "closed");
   const openRequests = requests.filter((r) => r.status === "open");
 
   const getOwnerUser = (r: BoostRequest) => registeredUsers.find((u) => String(u.id) === String(r.userId));
@@ -175,16 +177,16 @@ export default function BoostsPageContent() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/5 blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-12">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-24 pb-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center mb-4">
             <TrendingUp className="w-8 h-8 text-amber-400" />
           </div>
           <h1 className="text-3xl font-black uppercase tracking-[0.2em] mb-2">Boost Requests</h1>
           <p className="text-gray-500 text-sm font-bold uppercase tracking-widest mb-5">Gold-only marketplace • Find or offer boost contracts</p>
-          <a href="/" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest hover:from-amber-500/30 hover:to-orange-500/30 transition-all">
+          <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest hover:from-amber-500/30 hover:to-orange-500/30 transition-all">
             <Plus className="w-4 h-4" /> New Request
-          </a>
+          </button>
         </motion.div>
 
         {/* My Requests */}
@@ -276,6 +278,15 @@ export default function BoostsPageContent() {
           </div>
         )}
       </div>
+
+      {showCreateModal && (
+        <BoostRequestModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          currentUserId={currentUserId}
+          userName={(session?.user as any)?.name || "Operative"}
+        />
+      )}
     </div>
   );
 }
