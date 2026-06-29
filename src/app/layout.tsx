@@ -72,6 +72,10 @@ export const metadata: Metadata = {
       "WoWLFG — Find Mythic+ groups, boost requests, leveling squads on UPLINK. Raider.io sync and Discord bot included.",
     images: [`${siteUrl}/og.png`],
   },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
   robots: {
     index: true,
     follow: true,
