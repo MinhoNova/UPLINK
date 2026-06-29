@@ -43,7 +43,11 @@ export default function SpecDetailClient({ id }: { id: string }) {
         if (!res.ok) return;
         const json = await res.json();
         const entries: LeaderboardEntry[] = json.entries || [];
-        setLeaderboardEntries(entries.filter((e) => e.specId === id));
+        const filtered = entries
+          .filter((e) => e.specId === id)
+          .sort((a, b) => b.score - a.score)
+          .map((e, i) => ({ ...e, rank: i + 1 }));
+        setLeaderboardEntries(filtered);
       } catch { /* ignore */ } finally {
         setLoading(false);
       }

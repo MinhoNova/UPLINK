@@ -3,7 +3,7 @@ import { getKV, setKV, initTables } from "@/lib/db";
 import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
-const CACHE_KEY = "wow:leaderboard2";
+const CACHE_KEY = "wow:leaderboard3";
 const RUNS_PAGES = 12;
 
 function formatSeasonName(slug: string): string {
@@ -24,48 +24,55 @@ export interface LeaderboardEntry {
   faction: string;
 }
 
-const ALL_SPEC_FALLBACK: { specId: string; classId: string; name: string; score: number }[] = [
-  { specId: "augmentation-evoker", classId: "evoker", name: "Augmentation Evoker", score: 4340 },
-  { specId: "devourer-demon-hunter", classId: "demon-hunter", name: "Devourer Demon Hunter", score: 4337 },
-  { specId: "unholy-death-knight", classId: "death-knight", name: "Unholy Death Knight", score: 4333 },
-  { specId: "arms-warrior", classId: "warrior", name: "Arms Warrior", score: 4318 },
-  { specId: "outlaw-rogue", classId: "rogue", name: "Outlaw Rogue", score: 4318 },
-  { specId: "retribution-paladin", classId: "paladin", name: "Retribution Paladin", score: 4318 },
-  { specId: "feral-druid", classId: "druid", name: "Feral Druid", score: 4318 },
-  { specId: "enhancement-shaman", classId: "shaman", name: "Enhancement Shaman", score: 4318 },
-  { specId: "survival-hunter", classId: "hunter", name: "Survival Hunter", score: 4315 },
-  { specId: "shadow-priest", classId: "priest", name: "Shadow Priest", score: 4315 },
-  { specId: "assassination-rogue", classId: "rogue", name: "Assassination Rogue", score: 4315 },
-  { specId: "demonology-warlock", classId: "warlock", name: "Demonology Warlock", score: 4315 },
-  { specId: "elemental-shaman", classId: "shaman", name: "Elemental Shaman", score: 4315 },
-  { specId: "fury-warrior", classId: "warrior", name: "Fury Warrior", score: 4315 },
-  { specId: "subtlety-rogue", classId: "rogue", name: "Subtlety Rogue", score: 4315 },
-  { specId: "frost-death-knight", classId: "death-knight", name: "Frost Death Knight", score: 4312 },
-  { specId: "windwalker-monk", classId: "monk", name: "Windwalker Monk", score: 4312 },
-  { specId: "beast-mastery-hunter", classId: "hunter", name: "Beast Mastery Hunter", score: 4312 },
-  { specId: "havoc-demon-hunter", classId: "demon-hunter", name: "Havoc Demon Hunter", score: 4312 },
-  { specId: "balance-druid", classId: "druid", name: "Balance Druid", score: 4312 },
-  { specId: "fire-mage", classId: "mage", name: "Fire Mage", score: 4310 },
-  { specId: "affliction-warlock", classId: "warlock", name: "Affliction Warlock", score: 4310 },
-  { specId: "frost-mage", classId: "mage", name: "Frost Mage", score: 4310 },
-  { specId: "destruction-warlock", classId: "warlock", name: "Destruction Warlock", score: 4310 },
-  { specId: "marksmanship-hunter", classId: "hunter", name: "Marksmanship Hunter", score: 4310 },
-  { specId: "arcane-mage", classId: "mage", name: "Arcane Mage", score: 4310 },
-  { specId: "holy-paladin", classId: "paladin", name: "Holy Paladin", score: 4308 },
-  { specId: "mistweaver-monk", classId: "monk", name: "Mistweaver Monk", score: 4308 },
-  { specId: "restoration-druid", classId: "druid", name: "Restoration Druid", score: 4308 },
-  { specId: "preservation-evoker", classId: "evoker", name: "Preservation Evoker", score: 4308 },
-  { specId: "discipline-priest", classId: "priest", name: "Discipline Priest", score: 4305 },
-  { specId: "restoration-shaman", classId: "shaman", name: "Restoration Shaman", score: 4305 },
-  { specId: "holy-priest", classId: "priest", name: "Holy Priest", score: 4305 },
-  { specId: "blood-death-knight", classId: "death-knight", name: "Blood Death Knight", score: 4305 },
-  { specId: "vengeance-demon-hunter", classId: "demon-hunter", name: "Vengeance Demon Hunter", score: 4305 },
-  { specId: "brewmaster-monk", classId: "monk", name: "Brewmaster Monk", score: 4302 },
-  { specId: "guardian-druid", classId: "druid", name: "Guardian Druid", score: 4302 },
-  { specId: "protection-warrior", classId: "warrior", name: "Protection Warrior", score: 4302 },
-  { specId: "protection-paladin", classId: "paladin", name: "Protection Paladin", score: 4302 },
-  { specId: "devastation-evoker", classId: "evoker", name: "Devastation Evoker", score: 4302 },
-];
+const ALL_TIMED_SCORES: Record<number, number> = {
+  29: 4960, 28: 4840, 27: 4720, 26: 4600, 25: 4480,
+  24: 4360, 23: 4240, 22: 4120, 21: 4000, 20: 3880,
+  19: 3760, 18: 3640, 17: 3520, 16: 3400, 15: 3280,
+  14: 3160, 13: 3040, 12: 2920, 11: 2680, 10: 2560,
+  9: 2320, 8: 2200, 7: 2080, 6: 1840, 5: 1720, 4: 1480,
+  3: 1360, 2: 1240,
+};
+
+function estimateTotalScore(runScore: number, mythicLevel: number): number {
+  const allTimed = ALL_TIMED_SCORES[mythicLevel];
+  if (allTimed) return Math.round(allTimed * 0.75);
+  return Math.round(runScore * 6);
+}
+
+const FALLBACK_SCORE_MAP: Record<string, number> = {
+  "augmentation-evoker": 3350, "devourer-demon-hunter": 3330,
+  "unholy-death-knight": 3310, "arms-warrior": 3290,
+  "outlaw-rogue": 3280, "retribution-paladin": 3270,
+  "feral-druid": 3260, "enhancement-shaman": 3250,
+  "survival-hunter": 3240, "shadow-priest": 3235,
+  "assassination-rogue": 3230, "demonology-warlock": 3225,
+  "elemental-shaman": 3220, "fury-warrior": 3215,
+  "subtlety-rogue": 3210, "frost-death-knight": 3205,
+  "windwalker-monk": 3200, "beast-mastery-hunter": 3195,
+  "havoc-demon-hunter": 3190, "balance-druid": 3185,
+  "fire-mage": 3180, "affliction-warlock": 3175,
+  "frost-mage": 3170, "destruction-warlock": 3165,
+  "marksmanship-hunter": 3160, "arcane-mage": 3155,
+  "holy-paladin": 3150, "mistweaver-monk": 3145,
+  "restoration-druid": 3140, "preservation-evoker": 3135,
+  "discipline-priest": 3130, "restoration-shaman": 3125,
+  "holy-priest": 3120, "blood-death-knight": 3115,
+  "vengeance-demon-hunter": 3110, "brewmaster-monk": 3105,
+  "guardian-druid": 3100, "protection-warrior": 3095,
+  "protection-paladin": 3090, "devastation-evoker": 3085,
+};
+
+const ALL_SPEC_FALLBACK: { specId: string; classId: string; name: string; score: number }[] =
+  Object.entries(FALLBACK_SCORE_MAP).map(([specId, score]) => {
+    const [specSlug, ...classParts] = specId.split("-");
+    const classSlug = classParts.join("-");
+    return {
+      specId,
+      classId: classSlug,
+      name: specId.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" "),
+      score,
+    };
+  });
 
 function buildFallback(): LeaderboardEntry[] {
   return ALL_SPEC_FALLBACK.map((s, i) => ({
@@ -107,7 +114,7 @@ export async function GET(request: Request) {
     }
 
     let seasonSlug = "";
-    const charMap = new Map<string, { entry: LeaderboardEntry; runScore: number }>();
+    const charMap = new Map<string, { entry: LeaderboardEntry; runScore: number; runLevel: number }>();
     let runsFailed = false;
 
     try {
@@ -128,6 +135,7 @@ export async function GET(request: Request) {
         if (!page?.rankings) continue;
         for (const ranking of page.rankings) {
           const runScore = ranking.score || 0;
+          const runLevel = ranking.run?.mythic_level || 0;
           for (const member of ranking.run?.roster || []) {
             const c = member.character;
             if (!c) continue;
@@ -144,10 +152,10 @@ export async function GET(request: Request) {
               region: (c.region?.slug || "us").toUpperCase(),
               specId: specKey,
               classId: (c.class?.slug || "").toLowerCase(),
-              score: Math.round(runScore * 8),
+              score: estimateTotalScore(runScore, runLevel),
               faction: (c.faction || "horde").toLowerCase(),
             };
-            charMap.set(charKey, { entry, runScore });
+            charMap.set(charKey, { entry, runScore, runLevel });
           }
         }
       }

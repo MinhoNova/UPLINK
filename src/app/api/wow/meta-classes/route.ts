@@ -5,20 +5,20 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_KEY = "wow:meta-classes";
 
 const FALLBACK_RANKINGS: Record<string, number> = {
-  "affliction-warlock": 3200, "arcane-mage": 3300, "arms-warrior": 3800,
-  "assassination-rogue": 2950, "augmentation-evoker": 4050, "balance-druid": 3100,
-  "beast-mastery-hunter": 3550, "blood-death-knight": 3650, "brewmaster-monk": 3600,
-  "demonology-warlock": 3050, "destruction-warlock": 3400, "devastation-evoker": 2650,
-  "devourer-demon-hunter": 4000, "discipline-priest": 3700, "elemental-shaman": 3700,
-  "enhancement-shaman": 3750, "feral-druid": 2900, "fire-mage": 3500,
-  "frost-death-knight": 3200, "frost-mage": 3450, "fury-warrior": 3600,
-  "guardian-druid": 3050, "havoc-demon-hunter": 2850, "holy-paladin": 3950,
-  "holy-priest": 3150, "marksmanship-hunter": 2750, "mistweaver-monk": 3400,
-  "outlaw-rogue": 3780, "preservation-evoker": 3900, "protection-paladin": 3850,
-  "protection-warrior": 3450, "restoration-druid": 2950, "restoration-shaman": 3600,
-  "retribution-paladin": 3750, "shadow-priest": 3500, "subtlety-rogue": 2800,
-  "survival-hunter": 3550, "unholy-death-knight": 3900, "vengeance-demon-hunter": 3500,
-  "windwalker-monk": 3150,
+  "augmentation-evoker": 3350, "devourer-demon-hunter": 3330, "unholy-death-knight": 3310,
+  "arms-warrior": 3290, "outlaw-rogue": 3280, "retribution-paladin": 3270,
+  "feral-druid": 3260, "enhancement-shaman": 3250, "survival-hunter": 3240,
+  "shadow-priest": 3235, "assassination-rogue": 3230, "demonology-warlock": 3225,
+  "elemental-shaman": 3220, "fury-warrior": 3215, "subtlety-rogue": 3210,
+  "frost-death-knight": 3205, "windwalker-monk": 3200, "beast-mastery-hunter": 3195,
+  "havoc-demon-hunter": 3190, "balance-druid": 3185, "fire-mage": 3180,
+  "affliction-warlock": 3175, "frost-mage": 3170, "destruction-warlock": 3165,
+  "marksmanship-hunter": 3160, "arcane-mage": 3155, "holy-paladin": 3150,
+  "mistweaver-monk": 3145, "restoration-druid": 3140, "preservation-evoker": 3135,
+  "discipline-priest": 3130, "restoration-shaman": 3125, "holy-priest": 3120,
+  "blood-death-knight": 3115, "vengeance-demon-hunter": 3110, "brewmaster-monk": 3105,
+  "guardian-druid": 3100, "protection-warrior": 3095, "protection-paladin": 3090,
+  "devastation-evoker": 3085,
 };
 
 function shouldRefresh(req: Request): boolean {
@@ -36,20 +36,19 @@ function formatSeasonName(slug: string): string {
 }
 
 function estimateHighestKey(score: number): string {
-  if (score >= 4200) return "27";
-  if (score >= 4000) return "26";
-  if (score >= 3800) return "25";
-  if (score >= 3600) return "24";
-  if (score >= 3400) return "23";
-  if (score >= 3200) return "22";
+  if (score >= 3400) return "25";
+  if (score >= 3300) return "24";
+  if (score >= 3200) return "23";
+  if (score >= 3100) return "22";
   if (score >= 3000) return "21";
-  if (score >= 2800) return "20";
-  if (score >= 2600) return "19";
-  if (score >= 2400) return "18";
-  if (score >= 2200) return "17";
-  if (score >= 2000) return "16";
-  if (score >= 1800) return "15";
-  if (score >= 1400) return "14";
+  if (score >= 2900) return "20";
+  if (score >= 2800) return "19";
+  if (score >= 2700) return "18";
+  if (score >= 2600) return "17";
+  if (score >= 2500) return "16";
+  if (score >= 2400) return "15";
+  if (score >= 2200) return "14";
+  if (score >= 2000) return "13";
   return "12";
 }
 
