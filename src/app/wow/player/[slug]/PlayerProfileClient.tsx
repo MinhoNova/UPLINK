@@ -105,7 +105,8 @@ export default function PlayerProfileClient({
                       src={`https://raider.io/render/v1/character/${player.region?.toLowerCase()}/${player.realm?.toLowerCase().replace(/\s+/g, "-")}/${player.name?.toLowerCase()}.png`}
                       alt=""
                       className="w-full h-full object-cover"
-                      loading="eager"
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                     />
                   </div>

@@ -167,15 +167,16 @@ export default function SpecDetailClient({ id }: { id: string }) {
                         </div>
 
                         {/* Character render */}
-                        <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-white/[0.03] border border-white/5">
-                          <img
-                            src={renderUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="eager"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                          />
-                        </div>
+                      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-white/[0.03] border border-white/5">
+                        <img
+                          src={renderUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                        />
+                      </div>
 
                         {/* Spec icon fallback */}
                         <Image src={spec.icon} alt="" width={32} height={32} className="rounded-lg shrink-0 -ml-2" style={{ backgroundColor: `${color}20` }} />
