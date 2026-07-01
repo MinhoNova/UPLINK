@@ -26,7 +26,7 @@ function playerProfileUrl(name: string, realm: string, region: string): string {
   return `/wow/player/${slug}?${params.toString()}`;
 }
 
-export default function SpecDetailClient({ id }: { id: string }) {
+export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolean }) {
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return null;
 
@@ -108,8 +108,13 @@ export default function SpecDetailClient({ id }: { id: string }) {
                   </span>
                   <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest" style={{ color: `${color}99` }}>{spec.classId.replace(/-/g, " ")}</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white">{spec.name}</h1>
-                <p className="text-xs text-gray-500 mt-1">Top players, BIS Gear, Enchants, Gems & Stat Priority — {spec.classId.replace(/-/g, " ")} Mythic+ Guide</p>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-black text-white">{spec.name}</h1>
+                  {ptr && (
+                    <span className="px-2 py-0.5 rounded-md bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-400 text-[8px] font-black uppercase tracking-widest">PTR S2</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Top players, BIS Gear, Enchants, Gems & Stat Priority — {spec.classId.replace(/-/g, " ")} Mythic+ Guide{ptr ? " (PTR Season 2 Preview)" : ""}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">

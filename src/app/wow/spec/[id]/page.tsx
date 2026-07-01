@@ -18,20 +18,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const className = spec.classId.replace(/-/g, " ");
   const roleLabel = spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS";
   const talentKeywords = spec.seo.join(", ");
+  const ptrKeywords = `ptr ${spec.name.toLowerCase()} talents, ptr s2 ${spec.classId.toLowerCase()} ${roleLabel.toLowerCase()}, ${spec.name.toLowerCase()} ptr s2 build, wow ptr ${spec.classId.toLowerCase()} talents`;
   return {
     title: `${spec.name} Talents & ${roleLabel} Build — BIS Gear, Enchants | UPLINK`,
-    description: `Best ${spec.name} talents for Mythic+ and raid in Midnight. ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${className} players.`,
-    keywords: talentKeywords,
+    description: `Best ${spec.name} talents for Mythic+ and raid in Midnight. ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${className} players. PTR Season 2 preview available.`,
+    keywords: [talentKeywords, ptrKeywords].join(", "),
     openGraph: {
       title: `${spec.name} Talents & ${roleLabel} Build — WoW Meta | UPLINK`,
-      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${className} players.`,
+      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${className} players. PTR Season 2 preview.`,
     },
     alternates: { canonical: `${siteUrl}/wow/spec/${id}` },
   };
 }
 
-export default async function SpecDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function SpecDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ ptr?: string }> }) {
   const { id } = await params;
+  const ptr = searchParams ? (await searchParams).ptr === "1" : false;
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) notFound();
   const data = getSpecData(id);
@@ -88,7 +90,7 @@ export default async function SpecDetail({ params }: { params: Promise<{ id: str
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
-      <SpecDetailClient id={id} />
+      <SpecDetailClient id={id} ptr={ptr} />
     </>
   );
 }
