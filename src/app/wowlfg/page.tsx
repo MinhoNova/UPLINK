@@ -6,13 +6,14 @@ import { Users, Target, Trophy, Shield, Coins, MessageSquare } from "lucide-reac
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "WoWLFG — World of Warcraft Looking For Group | UPLINK",
+  title: "WoWLFG — WoW Looking For Group & Mythic+ Group Finder | UPLINK",
   description:
-    "WoWLFG (World of Warcraft Looking For Group) is a free community-powered platform. Find Mythic+ groups, post boost requests with gold auctions, check Raider.io scores, and coordinate with your squad on UPLINK.",
+    "WoWLFG (World of Warcraft Looking For Group) is a free community-powered platform. Find Mythic+ groups, post boost requests with gold auctions, check Raider.io scores, and coordinate with your squad on UPLINK. The best WoW LFG tool for dungeon groups, M+ keys, and boost services.",
+  keywords: "wow looking for group, wow lfg, world of warcraft looking for group, wow group finder, mythic plus group finder, wowlfg, wow mythic+ lfg, wow community, find wow group",
   openGraph: {
-    title: "WoWLFG — World of Warcraft Looking For Group | UPLINK",
+    title: "WoWLFG — WoW Looking For Group & Mythic+ Group Finder | UPLINK",
     description:
-      "WoWLFG — Free WoW Looking For Group platform. Mythic+ offers, boost requests with gold bidding, Raider.io sync, and community tools.",
+      "WoWLFG — Free WoW Looking For Group platform. Mythic+ offers, boost requests with gold bidding, Raider.io sync, and community tools. Find your Mythic+ group today.",
     siteName: "WoWLFG — UPLINK",
   },
   alternates: { canonical: `${siteUrl}/wowlfg` },
@@ -105,10 +106,10 @@ export default function WoWLFGPage() {
             <Users className="w-8 h-8 text-cyan-400" />
           </div>
           <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-[0.15em] mb-3">
-            WoWLFG
+            WoW Looking For Group
           </h1>
           <p className="text-base sm:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-400 mb-2">
-            World of Warcraft Looking For Group
+            WoWLFG — World of Warcraft LFG & Mythic+ Group Finder
           </p>
           <p className="text-gray-500 text-sm font-bold uppercase tracking-widest max-w-xl mx-auto">
             Free community-powered platform for Mythic+ groups, boost requests, and reputation building

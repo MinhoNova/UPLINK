@@ -15,13 +15,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return { title: "Spec not found" };
   const data = getSpecData(id);
-  const talentKeywords = spec.seo.slice(0, 3).join(", ");
+  const className = spec.classId.replace(/-/g, " ");
+  const roleLabel = spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS";
+  const talentKeywords = spec.seo.join(", ");
   return {
-    title: `${spec.name} Talents & Build — ${spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS"} BIS Gear, Enchants | UPLINK`,
-    description: `Best ${spec.name} talents for Mythic+ and raid in The War Within. ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${spec.classId.replace("-", " ")} players.`,
+    title: `${spec.name} Talents & ${roleLabel} Build — BIS Gear, Enchants | UPLINK`,
+    description: `Best ${spec.name} talents for Mythic+ and raid in Midnight. ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${className} players.`,
+    keywords: talentKeywords,
     openGraph: {
-      title: `${spec.name} Talents & Build — WoW Meta | UPLINK`,
-      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${spec.classId.replace("-", " ")} players.`,
+      title: `${spec.name} Talents & ${roleLabel} Build — WoW Meta | UPLINK`,
+      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${className} players.`,
     },
     alternates: { canonical: `${siteUrl}/wow/spec/${id}` },
   };
