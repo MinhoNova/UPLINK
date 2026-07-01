@@ -150,7 +150,6 @@ export default function SpecDetailClient({ id }: { id: string }) {
                   {visibleEntries.map((entry) => {
                     const flag = REGION_FLAGS[entry.region?.toUpperCase()] || null;
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
-                    const renderUrl = `https://render.raider.io/character/${entry.region?.toLowerCase()}/${entry.realm?.toLowerCase().replace(/\s+/g, "-")}/${entry.name?.toLowerCase()}.png`;
                     return (
                       <Link
                         key={entry.rank}
@@ -166,20 +165,8 @@ export default function SpecDetailClient({ id }: { id: string }) {
                           {entry.rank <= 3 ? MEDALS[entry.rank - 1] : `#${entry.rank}`}
                         </div>
 
-                        {/* Character render */}
-                      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-white/[0.03] border border-white/5">
-                        <img
-                          src={renderUrl}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          crossOrigin="anonymous"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                        />
-                      </div>
-
-                        {/* Spec icon fallback */}
-                        <Image src={spec.icon} alt="" width={32} height={32} className="rounded-lg shrink-0 -ml-2" style={{ backgroundColor: `${color}20` }} />
+                        {/* Spec icon */}
+                        <Image src={spec.icon} alt="" width={36} height={36} className="rounded-lg shrink-0" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 12px ${color}15` }} />
 
                         {/* Player info */}
                         <div className="min-w-0 flex-1">
