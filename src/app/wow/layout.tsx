@@ -6,6 +6,7 @@ import { Swords, Shield, ScrollText, Radio, CalendarDays, Trophy, Users, Beaker 
 
 const SIDEBAR_LINKS: { href: string; label: string; icon: typeof Swords; color: string; hoverBg: string }[] = [
   { href: "/wow/tier-list", label: "Tier List", icon: Swords, color: "#ff007f", hoverBg: "rgba(255,0,127,0.1)" },
+  { href: "/wow/s2", label: "S2 Tier List", icon: Swords, color: "#d946ef", hoverBg: "rgba(217,70,239,0.1)" },
   { href: "/wow/dungeons", label: "Dungeons", icon: Shield, color: "#00ffff", hoverBg: "rgba(0,255,255,0.1)" },
   { href: "/wow/talents", label: "Talents", icon: ScrollText, color: "#aaff00", hoverBg: "rgba(170,255,0,0.1)" },
   { href: "/wow/affixes", label: "Affixes", icon: CalendarDays, color: "#9b59b6", hoverBg: "rgba(155,89,182,0.1)" },

@@ -94,8 +94,9 @@ function SkeletonSpecCard() {
   );
 }
 
-export default function TierListClient() {
+export default function TierListClient({ ptr: initialPtr = false }: { ptr?: boolean }) {
   const [activeRole, setActiveRole] = useState<string>("dps");
+  const [ptr, setPtr] = useState(initialPtr);
   const [data, setData] = useState<Record<string, MetaSpec[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -103,7 +104,8 @@ export default function TierListClient() {
 
   async function fetchData() {
     try {
-      const res = await fetch("/api/wow/meta-classes");
+      const url = ptr ? "/api/wow/meta-classes?ptr=1" : "/api/wow/meta-classes";
+      const res = await fetch(url);
       if (!res.ok) return;
       const json = await res.json();
       if (json.roles) {
@@ -116,10 +118,12 @@ export default function TierListClient() {
   }
 
   useEffect(() => {
+    setLoading(true);
+    setData(null);
     fetchData().finally(() => setLoading(false));
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [ptr]);
 
   const specs = data?.[activeRole] || [];
   const grouped: Record<string, MetaSpec[]> = {};
@@ -141,15 +145,31 @@ export default function TierListClient() {
             <Link href="/wow" className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors">← Back to WoW</Link>
             <h1 className="text-4xl sm:text-5xl font-black text-white mt-4 mb-2 tracking-tight">
               Meta <span className="text-[#ff8c00] drop-shadow-[0_0_15px_rgba(255,140,0,0.4)]">Classes</span>
+              {ptr && (
+                <span className="ml-3 inline-block align-middle text-sm font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-2.5 py-1 rounded-lg tracking-wider">
+                  PTR S2 Preview
+                </span>
+              )}
             </h1>
             <p className="text-sm text-gray-400 max-w-2xl">
-              WoW spec rankings for Mythic+. Powered by live Raider.IO data — auto-updates every minute.
+              {ptr
+                ? "Projected WoW spec rankings for Midnight Season 2 based on current PTR data. Auto-updates every minute."
+                : "WoW spec rankings for Mythic+. Powered by live Raider.IO data — auto-updates every minute."
+              }
             </p>
             <div className="flex flex-wrap items-center gap-4 mt-6 pt-5 border-t border-white/5">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                Live
-              </div>
+              <button onClick={() => setPtr(!ptr)} className="group relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all duration-200" style={{
+                background: ptr ? 'rgba(200,50,255,0.1)' : 'rgba(16,185,129,0.1)',
+                border: `1px solid ${ptr ? 'rgba(200,50,255,0.3)' : 'rgba(16,185,129,0.3)'}`,
+                color: ptr ? '#d946ef' : '#10b981',
+              }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{
+                  backgroundColor: ptr ? '#d946ef' : '#10b981',
+                  boxShadow: ptr ? '0 0 6px rgba(217,70,239,0.5)' : '0 0 6px rgba(16,185,129,0.5)',
+                }} />
+                <span>{ptr ? 'PTR S2 Preview' : 'Live'}</span>
+                <span className="text-[8px] opacity-50 ml-1 transition-transform group-hover:translate-x-0.5">({ptr ? 'switch to live' : 'switch to ptr'})</span>
+              </button>
               {seasonDisplay && (
                 <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">
                   <span className="text-white">{seasonDisplay}</span>

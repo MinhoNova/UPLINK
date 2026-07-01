@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: siteUrl, changeFrequency: "weekly" as const, priority: 1 },
     { url: `${siteUrl}/wowlfg`, changeFrequency: "weekly" as const, priority: 0.9 },
     { url: `${siteUrl}/wow/ptr`, changeFrequency: "daily" as const, priority: 0.8 },
+    { url: `${siteUrl}/wow/s2`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${siteUrl}/wow/tier-list`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${siteUrl}/wow/leaderboard`, changeFrequency: "hourly" as const, priority: 0.8 },
     { url: `${siteUrl}/boosts`, changeFrequency: "hourly" as const, priority: 0.8 },

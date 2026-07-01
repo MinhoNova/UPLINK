@@ -3,6 +3,7 @@ import { getKV, setKV, initTables } from "@/lib/db";
 
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_KEY = "wow:meta-classes";
+const CACHE_KEY_PTR = "wow:meta-classes-ptr";
 
 const FALLBACK_RANKINGS: Record<string, number> = {
   "augmentation-evoker": 3350, "devourer-demon-hunter": 3330, "unholy-death-knight": 3310,
@@ -24,6 +25,11 @@ const FALLBACK_RANKINGS: Record<string, number> = {
 function shouldRefresh(req: Request): boolean {
   const url = new URL(req.url);
   return url.searchParams.get("refresh") === "1";
+}
+
+function isPtr(req: Request): boolean {
+  const url = new URL(req.url);
+  return url.searchParams.get("ptr") === "1";
 }
 
 function formatSeasonName(slug: string): string {
@@ -75,7 +81,9 @@ export async function GET(req: Request) {
   try {
     await initTables();
     const forceRefresh = shouldRefresh(req);
-    const cached = await getKV(CACHE_KEY);
+    const ptr = isPtr(req);
+    const cacheKey = ptr ? CACHE_KEY_PTR : CACHE_KEY;
+    const cached = await getKV(cacheKey);
     if (!forceRefresh && cached && typeof cached === "object" && "timestamp" in cached) {
       const age = Date.now() - (cached as any).timestamp;
       if (age < CACHE_TTL_MS) {
@@ -83,23 +91,40 @@ export async function GET(req: Request) {
       }
     }
 
-    let seasonSlug = "";
+    let seasonSlug = ptr ? "season-mn-2" : "";
+    let seasonDisplay = ptr ? "Midnight — Season 2 (PTR Preview)" : "";
     let rankings: any[] = [];
 
-    try {
-      const { getCurrentMythicPlusSeason } = await import("@/lib/mythicSeason");
-      const season = await getCurrentMythicPlusSeason();
-      seasonSlug = season.slug;
-      const res = await fetch(
-        `https://raider.io/api/v1/mythic-plus/rankings?season=${season.slug}&region=world&dungeon=all`,
-        { cache: "no-store", signal: AbortSignal.timeout(10000) }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        rankings = data.rankings || [];
+    if (ptr) {
+      try {
+        const res = await fetch(
+          `https://raider.io/api/v1/mythic-plus/rankings?season=season-mn-2&region=world&dungeon=all`,
+          { cache: "no-store", signal: AbortSignal.timeout(10000) }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          rankings = data.rankings || [];
+        }
+      } catch {
+        // PTR API unavailable — use projected data
       }
-    } catch {
-      // fallback
+    } else {
+      try {
+        const { getCurrentMythicPlusSeason } = await import("@/lib/mythicSeason");
+        const season = await getCurrentMythicPlusSeason();
+        seasonSlug = season.slug;
+        seasonDisplay = formatSeasonName(season.slug);
+        const res = await fetch(
+          `https://raider.io/api/v1/mythic-plus/rankings?season=${season.slug}&region=world&dungeon=all`,
+          { cache: "no-store", signal: AbortSignal.timeout(10000) }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          rankings = data.rankings || [];
+        }
+      } catch {
+        // fallback
+      }
     }
 
     const { SPECS } = await import("@/lib/wowData");
@@ -116,7 +141,10 @@ export async function GET(req: Request) {
       }
     }
     if (Object.keys(bestBySpec).length < 10) {
-      for (const [key, score] of Object.entries(FALLBACK_RANKINGS)) {
+      const fallback = ptr
+        ? Object.fromEntries(Object.entries(FALLBACK_RANKINGS).map(([k, v], i) => [k, v + (37 - i) * 3]))
+        : FALLBACK_RANKINGS;
+      for (const [key, score] of Object.entries(fallback)) {
         bestBySpec[key] = score;
       }
     }
@@ -146,8 +174,8 @@ export async function GET(req: Request) {
       result[role] = { specs, maxScore, minScore };
     }
 
-    const payload = { roles: result, season: seasonSlug, seasonDisplay: formatSeasonName(seasonSlug), timestamp: Date.now() };
-    await setKV(CACHE_KEY, payload);
+    const payload = { roles: result, season: seasonSlug, seasonDisplay, ptr, timestamp: Date.now() };
+    await setKV(cacheKey, payload);
 
     return NextResponse.json({ ...payload, cached: false });
   } catch (err) {
