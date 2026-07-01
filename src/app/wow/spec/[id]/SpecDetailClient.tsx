@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight } from "lucide-react";
 import { SPECS, getClassColor, getSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
+import CharacterAvatar from "@/components/wow/CharacterAvatar";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -170,8 +171,8 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           {entry.rank <= 3 ? MEDALS[entry.rank - 1] : `#${entry.rank}`}
                         </div>
 
-                        {/* Spec icon */}
-                        <Image src={spec.icon} alt="" width={36} height={36} className="rounded-lg shrink-0" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 12px ${color}15` }} />
+                        {/* Character render */}
+                        <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={36} />
 
                         {/* Player info */}
                         <div className="min-w-0 flex-1">
@@ -318,14 +319,26 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">{spec.name} Stat Priority{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-6">Stat weights for {spec.role} {spec.classId.replace(/-/g, " ")}.</p>
-              <div className="flex flex-wrap gap-2">
-                {data.statPriority.map((stat, i) => (
-                  <div key={i} className="bg-white/[0.05] rounded-xl px-5 py-3 text-sm font-black text-white border border-white/10 flex items-center gap-2">
-                    <span className="text-[10px] text-gray-500 font-black">{i + 1}.</span>
-                    {stat}
-                  </div>
-                ))}
+              <p className="text-xs text-gray-500 mb-6">Stat weights for {spec.role} {spec.classId.replace(/-/g, " ")} — higher bar = higher priority.</p>
+              <div className="space-y-3">
+                {data.statPriority.map((stat, i) => {
+                  const pct = 100 - i * 18;
+                  const barColor = i === 0 ? color : i === 1 ? `${color}bb` : i === 2 ? `${color}88` : `${color}55`;
+                  return (
+                    <div key={i} className="flex items-center gap-4">
+                      <span className="w-5 text-[10px] font-black text-gray-500 shrink-0 text-right">{i + 1}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-white">{stat}</span>
+                          <span className="text-[9px] font-black" style={{ color: barColor }}>{pct}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden" style={{ border: `1px solid ${color}15` }}>
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${barColor}, ${color}40)`, boxShadow: `0 0 8px ${color}30` }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { getClassColor, SPECS } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import { Swords, HeartHandshake, Shield, Trophy, AlertCircle, ExternalLink } from "lucide-react";
+import CharacterAvatar from "@/components/wow/CharacterAvatar";
 
 const ROLES = [
   { id: "all", label: "All", icon: Trophy },
@@ -149,12 +150,10 @@ export default function LeaderboardPageClient() {
                         {/* Player Name + Spec */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            {/* Spec icon */}
-                            {icon && (
-                              <Link href={`/wow/spec/${entry.specId}`}>
-                                <Image src={icon} alt="" width={36} height={36} className="rounded-lg shrink-0 hover:scale-105 transition-transform" style={{ backgroundColor: `${color}20` }} />
-                              </Link>
-                            )}
+                            {/* Character render + Spec */}
+                            <Link href={`/wow/spec/${entry.specId}`}>
+                              <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={icon} classColor={color} size={36} />
+                            </Link>
                             <div className="min-w-0">
                               {/* Player name - clickable to profile */}
                               <Link
