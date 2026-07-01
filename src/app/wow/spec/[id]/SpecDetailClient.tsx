@@ -58,8 +58,8 @@ export default function SpecDetailClient({ id }: { id: string }) {
     setPage(1);
   }, [id]);
 
-  const visibleEntries = leaderboardEntries.slice(0, page * PAGE_SIZE);
-  const hasMore = visibleEntries.length < leaderboardEntries.length;
+  const totalPages = Math.max(1, Math.ceil(leaderboardEntries.length / PAGE_SIZE));
+  const visibleEntries = leaderboardEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const classSpecs = SPECS.filter((s) => s.classId === spec.classId);
   const roleMeta = ROLE_META[spec.role] || ROLE_META.dps;
   const RoleIcon = roleMeta.icon;
@@ -150,7 +150,7 @@ export default function SpecDetailClient({ id }: { id: string }) {
                   {visibleEntries.map((entry) => {
                     const flag = REGION_FLAGS[entry.region?.toUpperCase()] || null;
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
-                    const renderUrl = `https://raider.io/render/v1/character/${entry.region?.toLowerCase()}/${entry.realm?.toLowerCase().replace(/\s+/g, "-")}/${entry.name?.toLowerCase()}.png`;
+                    const renderUrl = `https://render.raider.io/character/${entry.region?.toLowerCase()}/${entry.realm?.toLowerCase().replace(/\s+/g, "-")}/${entry.name?.toLowerCase()}.png`;
                     return (
                       <Link
                         key={entry.rank}
@@ -213,14 +213,21 @@ export default function SpecDetailClient({ id }: { id: string }) {
                     );
                   })}
                 </div>
-                {hasMore && (
-                  <div className="text-center pt-4">
-                    <button
-                      onClick={() => setPage((p) => p + 1)}
-                      className="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
-                    >
-                      Show More ({Math.min(PAGE_SIZE, leaderboardEntries.length - visibleEntries.length)} more)
-                    </button>
+                {leaderboardEntries.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-center gap-1.5 pt-4">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`w-9 h-9 rounded-xl text-[10px] font-black transition-all ${
+                          page === p
+                            ? "bg-gradient-to-br from-[#00ffff] to-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.3)]"
+                            : "bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
                   </div>
                 )}
               </>

@@ -102,7 +102,7 @@ export default function PlayerProfileClient({
                   {/* Character render */}
                   <div className="w-[80px] h-[80px] rounded-2xl overflow-hidden border border-white/10 bg-black/40 z-10" style={{ boxShadow: `0 0 30px ${color}20` }}>
                     <img
-                      src={`https://raider.io/render/v1/character/${player.region?.toLowerCase()}/${player.realm?.toLowerCase().replace(/\s+/g, "-")}/${player.name?.toLowerCase()}.png`}
+                      src={`https://render.raider.io/character/${player.region?.toLowerCase()}/${player.realm?.toLowerCase().replace(/\s+/g, "-")}/${player.name?.toLowerCase()}.png`}
                       alt=""
                       className="w-full h-full object-cover"
                       crossOrigin="anonymous"
