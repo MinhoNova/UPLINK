@@ -31,7 +31,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   if (!spec) return null;
 
   const color = getClassColor(spec.classId);
-  const data = getSpecData(id);
+  const data = getSpecData(id, ptr);
 
   const PAGE_SIZE = 5;
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
@@ -229,7 +229,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* ═══ RECOMMENDED BUILDS ═══ */}
           {data && data.builds.length > 0 && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-              <h2 className="text-lg font-black text-white mb-1">Recommended Builds</h2>
+              <h2 className="text-lg font-black text-white mb-1">Recommended Builds{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-4">Curated talent builds for {spec.classId.replace(/-/g, " ")}.</p>
               <div className="flex items-center gap-2 mb-6">
                 {(["mythic+", "raid"] as const).map((type) => {
@@ -273,7 +273,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* BIS Gear */}
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-              <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear</h2>
+              <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Best-in-slot gear for {spec.classId.replace(/-/g, " ")}.</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 {data.bis.map((item) => (
@@ -291,7 +291,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* Enchants & Gems */}
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-              <h2 className="text-lg font-black text-white mb-1">{spec.name} Enchants & Gems</h2>
+              <h2 className="text-lg font-black text-white mb-1">{spec.name} Enchants & Gems{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Recommended enchants and gems.</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 <div className="space-y-2">
@@ -317,7 +317,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* Stat Priority */}
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-              <h2 className="text-lg font-black text-white mb-1">{spec.name} Stat Priority</h2>
+              <h2 className="text-lg font-black text-white mb-1">{spec.name} Stat Priority{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Stat weights for {spec.role} {spec.classId.replace(/-/g, " ")}.</p>
               <div className="flex flex-wrap gap-2">
                 {data.statPriority.map((stat, i) => (

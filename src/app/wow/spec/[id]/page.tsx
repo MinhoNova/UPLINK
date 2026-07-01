@@ -10,24 +10,26 @@ export async function generateStaticParams() {
   return SPECS.map((spec) => ({ id: spec.id }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ ptr?: string }> }): Promise<Metadata> {
   const { id } = await params;
+  const ptr = searchParams ? (await searchParams).ptr === "1" : false;
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return { title: "Spec not found" };
-  const data = getSpecData(id);
+  const data = getSpecData(id, ptr);
   const className = spec.classId.replace(/-/g, " ");
   const roleLabel = spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS";
   const talentKeywords = spec.seo.join(", ");
   const ptrKeywords = `ptr ${spec.name.toLowerCase()} talents, ptr s2 ${spec.classId.toLowerCase()} ${roleLabel.toLowerCase()}, ${spec.name.toLowerCase()} ptr s2 build, wow ptr ${spec.classId.toLowerCase()} talents`;
+  const seasonTag = ptr ? " (PTR Season 2 Preview)" : "";
   return {
-    title: `${spec.name} Talents & ${roleLabel} Build — BIS Gear, Enchants | UPLINK`,
-    description: `Best ${spec.name} talents for Mythic+ and raid in Midnight. ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${className} players. PTR Season 2 preview available.`,
+    title: `${spec.name} Talents & ${roleLabel} Build — BIS Gear, Enchants${ptr ? " (PTR S2)" : ""} | UPLINK`,
+    description: `Best ${spec.name} talents for Mythic+ and raid in Midnight.${seasonTag} ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${className} players.${ptr ? " Projected Season 2 data." : ""}`,
     keywords: [talentKeywords, ptrKeywords].join(", "),
     openGraph: {
-      title: `${spec.name} Talents & ${roleLabel} Build — WoW Meta | UPLINK`,
-      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${className} players. PTR Season 2 preview.`,
+      title: `${spec.name} Talents & ${roleLabel} Build — WoW Meta${ptr ? " (PTR S2)" : ""} | UPLINK`,
+      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${className} players.${ptr ? " PTR Season 2 preview with projected data." : ""}`,
     },
-    alternates: { canonical: `${siteUrl}/wow/spec/${id}` },
+    alternates: { canonical: `${siteUrl}/wow/spec/${id}${ptr ? "?ptr=1" : ""}` },
   };
 }
 
@@ -36,7 +38,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
   const ptr = searchParams ? (await searchParams).ptr === "1" : false;
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) notFound();
-  const data = getSpecData(id);
+  const data = getSpecData(id, ptr);
 
   const faqItems = [
     {

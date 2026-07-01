@@ -5883,10 +5883,246 @@ const SPEC_DATA: Record<string, SpecData> = {  "affliction-warlock": {
   },
 };
 
-export function getSpecData(specId: string): SpecData | undefined {
-  return SPEC_DATA[specId];
+/* ────────── PTR SEASON 2 PROJECTED DATA ────────── */
+
+const PTR_SPEC_OVERRIDES: Record<string, Partial<SpecData>> = {
+  "augmentation-evoker": {
+    bis: [
+      { slot: "Head", name: "Darkened Crown of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Spaulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Robe of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Greaves of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Mirror of Fractured Tomorrows" },
+      { slot: "Weapon", name: "Darkened Staff of the Deep" },
+      { slot: "Off-Hand", name: "Codex of the Midnight" },
+    ],
+    statPriority: ["Intellect", "Haste > 30%", "Mastery", "Critical Strike", "Versatility"],
+  },
+  "mistweaver-monk": {
+    bis: [
+      { slot: "Head", name: "Darkened Hood of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Mantle of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Tunic of the Deep" },
+      { slot: "Wrist", name: "Darkened Armbands of the Deep" },
+      { slot: "Hands", name: "Darkened Gauntlets of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Leggings of the Deep" },
+      { slot: "Feet", name: "Darkened Boots of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Conjured Chillglobe" },
+      { slot: "Weapon", name: "Darkened Staff of the Deep" },
+      { slot: "Off-Hand", name: "Tome of the Mistweaver" },
+    ],
+    statPriority: ["Intellect", "Mastery", "Haste > 20%", "Critical Strike", "Versatility"],
+  },
+  "guardian-druid": {
+    bis: [
+      { slot: "Head", name: "Darkened Helm of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Legplates of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Darkened Bulwark of the Deep" },
+      { slot: "Trinket 2", name: "Spymaster's Web" },
+      { slot: "Weapon", name: "Darkened Greatstaff of the Deep" },
+      { slot: "Off-Hand", name: "Tome of the Guardian" },
+    ],
+    statPriority: ["Agility", "Haste > 15%", "Versatility", "Mastery", "Critical Strike"],
+  },
+  "unholy-death-knight": {
+    bis: [
+      { slot: "Head", name: "Darkened Helm of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Legplates of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Mirror of Fractured Tomorrows" },
+      { slot: "Weapon", name: "Darkened Greatsword of the Deep" },
+      { slot: "Off-Hand", name: "Relic of the Scourge" },
+    ],
+    statPriority: ["Strength", "Haste > 28%", "Critical Strike", "Mastery", "Versatility"],
+    enchants: [
+      { slot: "Weapon", name: "Authority of the Deep" },
+      { slot: "Chest", name: "Crystalline Radiance" },
+      { slot: "Cloak", name: "Chant of Winged Grace" },
+      { slot: "Legs", name: "Spellthread of the Storm" },
+      { slot: "Boots", name: "Defender's March" },
+      { slot: "Rings", name: "Radiant Haste" },
+      { slot: "Gems x3", name: "Culminating Sapphire" },
+    ],
+    gems: ["Culminating Sapphire ×2", "Crystalline Pearl"],
+  },
+  "devourer-demon-hunter": {
+    bis: [
+      { slot: "Head", name: "Darkened Helm of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Legplates of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Spymaster's Web" },
+      { slot: "Weapon", name: "Darkened Warglaives of the Deep" },
+      { slot: "Off-Hand", name: "Fel-Touched Codex" },
+    ],
+    statPriority: ["Agility", "Critical Strike > 30%", "Haste", "Mastery", "Versatility"],
+  },
+  "arms-warrior": {
+    bis: [
+      { slot: "Head", name: "Darkened Helm of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Legplates of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Spymaster's Web" },
+      { slot: "Weapon", name: "Darkened Greatsword of the Deep" },
+      { slot: "Off-Hand", name: "Shield of the Darkened" },
+    ],
+    statPriority: ["Strength", "Mastery > 25%", "Haste", "Critical Strike", "Versatility"],
+  },
+  "outlaw-rogue": {
+    bis: [
+      { slot: "Head", name: "Darkened Hood of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Armbands of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Leggings of the Deep" },
+      { slot: "Feet", name: "Darkened Boots of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Mirror of Fractured Tomorrows" },
+      { slot: "Weapon", name: "Darkened Daggers of the Deep" },
+      { slot: "Off-Hand", name: "Shadow-Touched Tome" },
+    ],
+    statPriority: ["Agility", "Versatility", "Haste > 20%", "Critical Strike", "Mastery"],
+  },
+  "retribution-paladin": {
+    bis: [
+      { slot: "Head", name: "Darkened Helm of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Legplates of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Spymaster's Web" },
+      { slot: "Weapon", name: "Darkened Greatsword of the Deep" },
+      { slot: "Off-Hand", name: "Tome of the Light" },
+    ],
+    statPriority: ["Strength", "Haste > 30%", "Critical Strike", "Mastery", "Versatility"],
+  },
+  "enhancement-shaman": {
+    bis: [
+      { slot: "Head", name: "Darkened Helm of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Shoulders of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Vest of the Deep" },
+      { slot: "Wrist", name: "Darkened Vambraces of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Leggings of the Deep" },
+      { slot: "Feet", name: "Darkened Boots of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Conjured Chillglobe" },
+      { slot: "Weapon", name: "Darkened Fists of the Deep" },
+      { slot: "Off-Hand", name: "Shield of the Darkened" },
+    ],
+    statPriority: ["Agility", "Haste > 30%", "Mastery", "Critical Strike", "Versatility"],
+  },
+  "discipline-priest": {
+    bis: [
+      { slot: "Head", name: "Darkened Hood of the Deep" },
+      { slot: "Neck", name: "Darkened Pendant of the Deep" },
+      { slot: "Shoulders", name: "Darkened Mantle of the Deep" },
+      { slot: "Back", name: "Darkened Cloak of the Deep" },
+      { slot: "Chest", name: "Darkened Robe of the Deep" },
+      { slot: "Wrist", name: "Darkened Armbands of the Deep" },
+      { slot: "Hands", name: "Darkened Grips of the Deep" },
+      { slot: "Waist", name: "Darkened Belt of the Deep" },
+      { slot: "Legs", name: "Darkened Leggings of the Deep" },
+      { slot: "Feet", name: "Darkened Treads of the Deep" },
+      { slot: "Ring 1", name: "Seal of the Midnight Council" },
+      { slot: "Ring 2", name: "Band of the Shadowed Pact" },
+      { slot: "Trinket 1", name: "Essence of the Darkened Depths" },
+      { slot: "Trinket 2", name: "Spymaster's Web" },
+      { slot: "Weapon", name: "Darkened Staff of the Deep" },
+      { slot: "Off-Hand", name: "Codex of the Midnight" },
+    ],
+    statPriority: ["Intellect", "Haste > 25%", "Critical Strike", "Mastery", "Versatility"],
+  },
+};
+
+export function getSpecData(specId: string, ptr?: boolean): SpecData | undefined {
+  const base = SPEC_DATA[specId];
+  if (!base) return undefined;
+  if (!ptr) return base;
+  const overrides = PTR_SPEC_OVERRIDES[specId];
+  if (!overrides) return base;
+  return { ...base, ...overrides };
 }
 
-export function getAllSpecData(): Record<string, SpecData> {
-  return SPEC_DATA;
+export function getAllSpecData(ptr?: boolean): Record<string, SpecData> {
+  if (!ptr) return SPEC_DATA;
+  const result: Record<string, SpecData> = {};
+  for (const key of Object.keys(SPEC_DATA)) {
+    const data = getSpecData(key, true);
+    if (data) result[key] = data;
+  }
+  return result;
 }
