@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SPECS, getClassColor } from "@/lib/wowData";
-import { Swords, HeartHandshake, Shield, AlertCircle } from "lucide-react";
+import { Swords, HeartHandshake, Shield, AlertCircle, ShieldCheck, WandSparkles, Diamond, TrendingUp } from "lucide-react";
+
+const ROLE_COLORS: Record<string, { color: string; bg: string; border: string; glow: string }> = {
+  dps: { color: "#ff4444", bg: "rgba(255,68,68,0.15)", border: "rgba(255,68,68,0.3)", glow: "rgba(255,68,68,0.25)" },
+  healer: { color: "#00cc66", bg: "rgba(0,204,102,0.15)", border: "rgba(0,204,102,0.3)", glow: "rgba(0,204,102,0.25)" },
+  tank: { color: "#4488ff", bg: "rgba(68,136,255,0.15)", border: "rgba(68,136,255,0.3)", glow: "rgba(68,136,255,0.25)" },
+};
 
 const ROLES = [
   { id: "dps", label: "DPS", icon: Swords },
@@ -14,13 +20,13 @@ const ROLES = [
 
 const TIERS = ["S", "A", "B", "C", "D", "F"] as const;
 
-const TIER_META: Record<string, { color: string; bg: string; pillarBg: string; label: string }> = {
-  S: { color: "#ff8c00", bg: "rgba(255,140,0,0.12)", pillarBg: "rgba(255,140,0,0.25)", label: "S" },
-  A: { color: "#9b59b6", bg: "rgba(155,89,182,0.12)", pillarBg: "rgba(155,89,182,0.25)", label: "A" },
-  B: { color: "#3498db", bg: "rgba(52,152,219,0.12)", pillarBg: "rgba(52,152,219,0.25)", label: "B" },
-  C: { color: "#2ecc71", bg: "rgba(46,204,113,0.12)", pillarBg: "rgba(46,204,113,0.25)", label: "C" },
-  D: { color: "#ffffff", bg: "rgba(255,255,255,0.06)", pillarBg: "rgba(255,255,255,0.12)", label: "D" },
-  F: { color: "#888888", bg: "rgba(136,136,136,0.12)", pillarBg: "rgba(136,136,136,0.25)", label: "F" },
+const TIER_META: Record<string, { color: string; bg: string; pillarBg: string; pillarFrom: string; pillarTo: string; label: string }> = {
+  S: { color: "#ff8c00", bg: "rgba(255,140,0,0.12)", pillarBg: "rgba(255,140,0,0.25)", pillarFrom: "#ff8c00", pillarTo: "#ff4400", label: "S" },
+  A: { color: "#9b59b6", bg: "rgba(155,89,182,0.12)", pillarBg: "rgba(155,89,182,0.25)", pillarFrom: "#9b59b6", pillarTo: "#6c3483", label: "A" },
+  B: { color: "#3498db", bg: "rgba(52,152,219,0.12)", pillarBg: "rgba(52,152,219,0.25)", pillarFrom: "#3498db", pillarTo: "#1a5276", label: "B" },
+  C: { color: "#2ecc71", bg: "rgba(46,204,113,0.12)", pillarBg: "rgba(46,204,113,0.25)", pillarFrom: "#2ecc71", pillarTo: "#1a6e3e", label: "C" },
+  D: { color: "#ffffff", bg: "rgba(255,255,255,0.06)", pillarBg: "rgba(255,255,255,0.12)", pillarFrom: "#ffffff", pillarTo: "#888888", label: "D" },
+  F: { color: "#888888", bg: "rgba(136,136,136,0.12)", pillarBg: "rgba(136,136,136,0.25)", pillarFrom: "#888888", pillarTo: "#444444", label: "F" },
 };
 
 interface MetaSpec {
@@ -156,12 +162,32 @@ export default function TierListClient() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/5 mb-8 w-fit">
+        <div className="flex items-center gap-2 mb-8">
           {ROLES.map((role) => {
             const Icon = role.icon;
+            const rc = ROLE_COLORS[role.id];
+            const active = activeRole === role.id;
             return (
-              <button key={role.id} onClick={() => setActiveRole(role.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-black text-[11px] uppercase tracking-widest transition-all ${activeRole === role.id ? "bg-white/10 text-white" : "text-gray-500 hover:text-white"}`}>
-                <Icon className="w-3.5 h-3.5" /> {role.label}
+              <button key={role.id} onClick={() => setActiveRole(role.id)}
+                className="relative flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all duration-200 overflow-hidden"
+                style={active ? {
+                  background: `linear-gradient(135deg, ${rc.bg} 0%, rgba(255,255,255,0.03) 100%)`,
+                  border: `1.5px solid ${rc.border}`,
+                  color: rc.color,
+                  boxShadow: `0 0 20px ${rc.glow}`,
+                } : {
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1.5px solid rgba(255,255,255,0.06)',
+                  color: 'rgba(255,255,255,0.35)',
+                }}
+                onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = `${rc.border}`; e.currentTarget.style.color = rc.color; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; } }}
+                onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; } }}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{role.label}</span>
+                {active && (
+                  <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full" style={{ backgroundColor: rc.color, boxShadow: `0 0 8px ${rc.glow}` }} />
+                )}
               </button>
             );
           })}
@@ -202,8 +228,9 @@ export default function TierListClient() {
               return (
                 <div key={tier} className="rounded-xl overflow-hidden border border-white/[0.06]">
                   <div className="flex items-stretch">
-                    <div className="w-20 flex items-center justify-center shrink-0" style={{ backgroundColor: meta.pillarBg }}>
-                      <span className="text-5xl font-black" style={{ color: meta.color, textShadow: `0 0 20px ${meta.color}60` }}>{meta.label}</span>
+                    <div className="w-20 flex items-center justify-center shrink-0 relative overflow-hidden" style={{ background: `linear-gradient(180deg, ${meta.pillarFrom}25 0%, ${meta.pillarTo}10 100%)` }}>
+                      <div className="absolute inset-0 opacity-30" style={{ background: `radial-gradient(80px at 50% 30%, ${meta.pillarFrom}30 0%, transparent 70%)` }} />
+                      <span className="text-5xl font-black relative z-10" style={{ color: meta.color, textShadow: `0 0 25px ${meta.color}80, 0 0 50px ${meta.color}30` }}>{meta.label}</span>
                     </div>
                     <div className="flex-1 bg-black/40 p-3.5">
                       <div className="flex flex-wrap gap-2.5">
@@ -246,10 +273,26 @@ export default function TierListClient() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-white/5 rounded-lg p-2.5 border border-white/5"><span className="text-gray-500">BIS Gear</span><br /><span className="text-white font-black">View →</span></div>
-                    <div className="bg-white/5 rounded-lg p-2.5 border border-white/5"><span className="text-gray-500">Enchants</span><br /><span className="text-white font-black">View →</span></div>
-                    <div className="bg-white/5 rounded-lg p-2.5 border border-white/5"><span className="text-gray-500">Gems</span><br /><span className="text-white font-black">View →</span></div>
-                    <div className="bg-white/5 rounded-lg p-2.5 border border-white/5"><span className="text-gray-500">Stats</span><br /><span className="text-white font-black">View →</span></div>
+                    <div className="rounded-lg p-2.5 transition-all group-hover:border-opacity-50" style={{ backgroundColor: `${color}10`, border: `1px solid ${color}25` }}>
+                      <ShieldCheck className="w-3.5 h-3.5 mb-1" style={{ color }} />
+                      <div className="text-gray-400" style={{ color: `${color}cc` }}>BIS Gear</div>
+                      <div className="text-white font-black text-[10px]">View →</div>
+                    </div>
+                    <div className="rounded-lg p-2.5 transition-all group-hover:border-opacity-50" style={{ backgroundColor: `${color}10`, border: `1px solid ${color}25` }}>
+                      <WandSparkles className="w-3.5 h-3.5 mb-1" style={{ color }} />
+                      <div className="text-gray-400" style={{ color: `${color}cc` }}>Enchants</div>
+                      <div className="text-white font-black text-[10px]">View →</div>
+                    </div>
+                    <div className="rounded-lg p-2.5 transition-all group-hover:border-opacity-50" style={{ backgroundColor: `${color}10`, border: `1px solid ${color}25` }}>
+                      <Diamond className="w-3.5 h-3.5 mb-1" style={{ color }} />
+                      <div className="text-gray-400" style={{ color: `${color}cc` }}>Gems</div>
+                      <div className="text-white font-black text-[10px]">View →</div>
+                    </div>
+                    <div className="rounded-lg p-2.5 transition-all group-hover:border-opacity-50" style={{ backgroundColor: `${color}10`, border: `1px solid ${color}25` }}>
+                      <TrendingUp className="w-3.5 h-3.5 mb-1" style={{ color }} />
+                      <div className="text-gray-400" style={{ color: `${color}cc` }}>Stats</div>
+                      <div className="text-white font-black text-[10px]">View →</div>
+                    </div>
                   </div>
                 </Link>
               );
