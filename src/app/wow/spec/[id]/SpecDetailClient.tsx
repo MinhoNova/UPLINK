@@ -35,6 +35,37 @@ function playerProfileUrl(name: string, realm: string, region: string): string {
   return `/wow/player/${slug}?${params.toString()}`;
 }
 
+function BisItemRow({ item, color, SlotIcon }: { item: { slot: string; name: string }; color: string; SlotIcon: any }) {
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(`/api/wow/blizzard/icon?type=item&name=${encodeURIComponent(item.name)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.available && d.url) setIconUrl(d.url);
+      })
+      .catch(() => {});
+  }, [item.name]);
+
+  return (
+    <div className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden">
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden" style={{ backgroundColor: `${color}12`, border: `1px solid ${color}25` }}>
+          {iconUrl ? (
+            <img src={iconUrl} alt={item.name} className="w-full h-full object-cover" />
+          ) : SlotIcon ? (
+            <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} />
+          ) : null}
+        </div>
+        <div>
+          <span className="text-[8px] font-black tracking-wider block" style={{ color: `${color}88` }}>{item.slot}</span>
+          <span className="text-sm font-black text-white leading-tight">{item.name}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolean }) {
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return null;
@@ -286,20 +317,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                 {data.bis.map((item) => {
                   const SlotIcon = GEAR_SLOT_ICONS[item.slot];
                   return (
-                    <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden">
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
-                      <div className="relative z-10 flex items-center gap-3">
-                        {SlotIcon && (
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}12`, border: `1px solid ${color}25` }}>
-                            <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} />
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-[8px] font-black tracking-wider block" style={{ color: `${color}88` }}>{item.slot}</span>
-                          <span className="text-sm font-black text-white leading-tight">{item.name}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <BisItemRow key={item.slot} item={item} color={color} SlotIcon={SlotIcon} />
                   );
                 })}
               </div>

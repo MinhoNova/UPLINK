@@ -15,6 +15,18 @@ function TalentNode({
     .slice(0, 3)
     .toUpperCase();
 
+  const [iconUrl, setIconUrl] = import("react").useState<string | null>(null);
+
+  import("react").useEffect(() => {
+    if (!selected) return;
+    fetch(`/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.available && d.url) setIconUrl(d.url);
+      })
+      .catch(() => {});
+  }, [name, selected]);
+
   return (
     <div className="flex flex-col items-center relative flex-1 max-w-[64px]">
       {row < maxRow && (
@@ -62,39 +74,44 @@ function TalentNode({
             />
           </>
         )}
-        {/* Inner icon circle: colored circle with shortName */}
-        <div
-          className="relative z-10 w-[75%] aspect-square rounded-full flex items-center justify-center"
-          style={{
-            background: selected
-              ? `linear-gradient(135deg, ${color}dd 0%, ${color}88 100%)`
-              : "rgba(255,255,255,0.04)",
-            boxShadow: selected
-              ? `inset 0 0 6px rgba(0,0,0,0.4), 0 0 8px ${color}30`
-              : "inset 0 0 3px rgba(0,0,0,0.3)",
-            border: selected
-              ? `1px solid ${color}aa`
-              : "1px solid rgba(255,255,255,0.06)",
-          }}
-        >
-          {/* WoW-style spell shine dot */}
-          {selected && (
-            <div
-              className="absolute w-[30%] h-[30%] rounded-full opacity-50"
-              style={{
-                top: "12%",
-                right: "12%",
-                background: `radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)`,
-              }}
-            />
-          )}
-          <span
-            className="text-[6px] font-black leading-tight text-center"
-            style={{ color: selected ? "#fff" : "rgba(255,255,255,0.2)" }}
+          {/* Inner icon circle: colored circle with shortName or icon */}
+          <div
+            className="relative z-10 w-[75%] aspect-square rounded-full flex items-center justify-center overflow-hidden"
+            style={{
+              background: selected
+                ? `linear-gradient(135deg, ${color}dd 0%, ${color}88 100%)`
+                : "rgba(255,255,255,0.04)",
+              boxShadow: selected
+                ? `inset 0 0 6px rgba(0,0,0,0.4), 0 0 8px ${color}30`
+                : "inset 0 0 3px rgba(0,0,0,0.3)",
+              border: selected
+                ? `1px solid ${color}aa`
+                : "1px solid rgba(255,255,255,0.06)",
+            }}
           >
-            {selected ? shortName : "?"}
-          </span>
-        </div>
+            {selected && iconUrl ? (
+              <img src={iconUrl} alt={name} className="w-full h-full object-cover" />
+            ) : (
+              <>
+                {selected && (
+                  <div
+                    className="absolute w-[30%] h-[30%] rounded-full opacity-50"
+                    style={{
+                      top: "12%",
+                      right: "12%",
+                      background: `radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)`,
+                    }}
+                  />
+                )}
+                <span
+                  className="text-[6px] font-black leading-tight text-center relative z-20"
+                  style={{ color: selected ? "#fff" : "rgba(255,255,255,0.2)" }}
+                >
+                  {selected ? shortName : "?"}
+                </span>
+              </>
+            )}
+          </div>
       </div>
       <span
         className="mt-1 text-[5px] font-bold text-center leading-tight truncate w-full px-0.5"
