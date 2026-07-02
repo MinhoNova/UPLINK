@@ -15,19 +15,26 @@ export async function GET(req: NextRequest) {
   const realmSlug = realm.toLowerCase().replace(/\s+/g, "-").replace(/['']/g, "");
   const nameLower = name.toLowerCase().replace(/'/g, "");
 
-  const patterns = [
-    { key: "main", url: `${CDN_BASE}/${region}/character/${realmSlug}/${nameLower}-main.jpg` },
-    { key: "inset", url: `${CDN_BASE}/${region}/character/${realmSlug}/${nameLower}-inset.jpg` },
-  ];
+  const variants = ["main", "inset"];
 
-  for (const { key, url } of patterns) {
+  for (const variant of variants) {
+    const url = `${CDN_BASE}/${region}/character/${realmSlug}/${nameLower}-${variant}.jpg`;
     try {
-      const res = await fetch(url, { method: "HEAD" });
-      if (res.ok || res.status === 200) {
-        return NextResponse.json({ available: true, url, variant: key });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(url, { method: "GET", signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const buffer = await res.arrayBuffer();
+        return new NextResponse(buffer, {
+          headers: {
+            "Content-Type": res.headers.get("Content-Type") || "image/jpeg",
+            "Cache-Control": "public, max-age=86400",
+          },
+        });
       }
     } catch {}
   }
 
-  return NextResponse.json({ available: false, reason: "cdn miss", patterns: patterns.map(p => p.url) });
+  return NextResponse.json({ available: false, reason: "cdn miss" }, { status: 404 });
 }
