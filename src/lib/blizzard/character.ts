@@ -32,10 +32,13 @@ export async function fetchCharacterRender(
   const realmSlug = realm.toLowerCase().replace(/\s+/g, "-").replace(/['']/g, "");
   const nameLower = name.toLowerCase().replace(/'/g, "");
 
-  const url = `${host}/profile/wow/character/${realmSlug}/${nameLower}/character-media?namespace=profile-${region.toLowerCase()}&locale=en_US&access_token=${token}`;
+  const url = `${host}/profile/wow/character/${realmSlug}/${nameLower}/character-media?namespace=profile-${region.toLowerCase()}&locale=en_US`;
 
   try {
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 3600 },
+    });
 
     if (!res.ok) return null;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 export default function CharacterAvatar({
@@ -10,10 +10,8 @@ export default function CharacterAvatar({
 }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ok" | "failed">("loading");
-  const mountedRef = useRef(true);
 
   useEffect(() => {
-    mountedRef.current = true;
     if (!realm) { setStatus("failed"); return; }
 
     let cancelled = false;
@@ -21,48 +19,21 @@ export default function CharacterAvatar({
     setImgUrl(null);
 
     async function load() {
-      // 1. Try official Blizzard API first (most reliable)
       try {
         const res = await fetch(
           `/api/wow/blizzard/character?name=${encodeURIComponent(name)}&realm=${encodeURIComponent(realm)}&region=${region}`
         );
         if (!cancelled && res.ok) {
           const data = await res.json();
-          if (data.available && data.render?.main) {
-            setImgUrl(data.render.main);
-            setStatus("ok");
-            return;
+          if (data.available && data.render) {
+            const r = data.render;
+            const url = size <= 36 ? (r.inset || r.avatar || r.main || r.mainRaw)
+                       : size <= 64 ? (r.main || r.mainRaw || r.inset || r.avatar)
+                       : (r.mainRaw || r.main || r.inset || r.avatar);
+            if (url) { setImgUrl(url); setStatus("ok"); return; }
           }
         }
       } catch {}
-
-      // 2. Fallback: CDN direct URLs
-      if (!cancelled) {
-        const realmSlug = realm.toLowerCase().replace(/\s+/g, "-").replace(/['']/g, "");
-        const n = name.toLowerCase().replace(/'/g, "");
-        const r = region.toLowerCase();
-        const cdnUrls = [
-          `https://render.worldofwarcraft.com/${r}/character/${realmSlug}/${n}-main.jpg`,
-          `https://render.worldofwarcraft.com/${r}/character/${realmSlug}/${n}-inset.jpg`,
-        ];
-
-        // Try each CDN URL by loading into an image
-        for (const url of cdnUrls) {
-          try {
-            const ok = await new Promise<boolean>((resolve) => {
-              const img = new Image();
-              img.onload = () => resolve(true);
-              img.onerror = () => resolve(false);
-              img.src = url;
-            });
-            if (!cancelled && ok) {
-              setImgUrl(url);
-              setStatus("ok");
-              return;
-            }
-          } catch {}
-        }
-      }
 
       if (!cancelled) setStatus("failed");
     }
@@ -71,7 +42,7 @@ export default function CharacterAvatar({
     return () => { cancelled = true; };
   }, [name, realm, region]);
 
-  if (status === "loading" && !imgUrl) {
+  if (status === "loading") {
     return (
       <div className="relative shrink-0 rounded-lg overflow-hidden animate-pulse" style={{ width: size, height: size, backgroundColor: `${classColor}15` }} />
     );
@@ -88,7 +59,7 @@ export default function CharacterAvatar({
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size, backgroundColor: `${classColor}10` }}>
-      <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full h-full" style={{ minWidth: size, minHeight: size }} onError={() => !mountedRef.current && setStatus("failed")} />
+      <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full h-full" style={{ minWidth: size, minHeight: size }} onError={() => setStatus("failed")} />
       <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30`, boxShadow: `inset 0 0 6px ${classColor}20` }} />
     </div>
   );
