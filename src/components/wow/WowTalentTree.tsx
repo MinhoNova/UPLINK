@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import type { TalentTree } from "@/lib/wowData";
 
 function TalentNode({
@@ -15,16 +16,18 @@ function TalentNode({
     .slice(0, 3)
     .toUpperCase();
 
-  const [iconUrl, setIconUrl] = import("react").useState<string | null>(null);
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
 
-  import("react").useEffect(() => {
+  useEffect(() => {
     if (!selected) return;
+    let cancelled = false;
     fetch(`/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`)
       .then(r => r.json())
       .then(d => {
-        if (d.available && d.url) setIconUrl(d.url);
+        if (!cancelled && d.available && d.url) setIconUrl(d.url);
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [name, selected]);
 
   return (
