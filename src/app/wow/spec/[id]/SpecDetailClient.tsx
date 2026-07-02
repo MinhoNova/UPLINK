@@ -7,6 +7,7 @@ import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight } from
 import { SPECS, getClassColor, getSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
+import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -38,6 +39,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [buildFilter, setBuildFilter] = useState<"all" | "mythic+" | "raid">("all");
 
   useEffect(() => {
     async function fetchData() {
@@ -233,38 +235,35 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <h2 className="text-lg font-black text-white mb-1">Recommended Builds{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-4">Curated talent builds for {spec.classId.replace(/-/g, " ")}.</p>
               <div className="flex items-center gap-2 mb-6">
-                {(["mythic+", "raid"] as const).map((type) => {
-                  const count = data.builds.filter((b) => b.type === type).length;
+                {(["all", "mythic+", "raid"] as const).map((type) => {
+                  const count = type === "all" ? data.builds.length : data.builds.filter((b) => b.type === type).length;
+                  const active = buildFilter === type;
                   return (
-                    <Link key={type} href={`/wow/player/${data.builds.find((b) => b.type === type)?.player?.toLowerCase().replace(/\s+/g, "-") || ""}?realm=&region=`} className="px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent">
-                      {type === "mythic+" ? "Mythic+" : "Raid"} ({count})
-                    </Link>
+                    <button key={type} onClick={() => setBuildFilter(type)} className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border ${active ? "bg-white/10 text-white border-white/10" : "bg-white/5 text-gray-400 hover:bg-white/10 border-transparent"}`}>
+                      {type === "all" ? "All" : type === "mythic+" ? "Mythic+" : "Raid"} ({count})
+                    </button>
                   );
                 })}
               </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {data.builds.map((build, i) => (
+              <div className="space-y-3">
+                {data.builds.filter((b) => buildFilter === "all" || b.type === buildFilter).map((build, i) => (
                   <Link
                     key={i}
                     href={playerProfileUrl(build.player, "", build.region)}
-                    className="group bg-white/[0.03] rounded-2xl p-4 border border-white/5 hover:border-white/10 transition"
+                    className="block group bg-white/[0.03] rounded-2xl p-5 border border-white/5 hover:border-white/10 hover:bg-white/[0.05] transition-all"
                   >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black text-white shrink-0" style={{ backgroundColor: `${color}20` }}>{build.player.charAt(0)}</div>
-                      <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <Image src={spec.icon} alt="" width={36} height={36} className="rounded-lg shrink-0" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 12px ${color}15` }} />
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black text-white group-hover:text-[#00ffff] transition-colors">{build.player}</span>
                           <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${build.type === "raid" ? "bg-yellow-500/10 text-yellow-400" : "bg-[#ff007f]/10 text-[#ff007f]"}`}>{build.type === "raid" ? "Raid" : "Mythic+"}</span>
                         </div>
                         <span className="text-[9px] text-gray-500">{build.class} · Score: {build.score.toLocaleString()}</span>
                       </div>
+                      <span className="text-[8px] font-black text-[#00ffff] border border-[#00ffff]/20 px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all">View Full Profile →</span>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {build.trees.flatMap((t) => t.nodes.filter((n) => n.selected).slice(0, 4)).map((node, ni) => (
-                        <span key={ni} className="px-1.5 py-0.5 rounded text-[6px] font-bold border border-white/5 bg-white/[0.03] text-gray-400">{node.name}</span>
-                      ))}
-                      <span className="px-1.5 py-0.5 rounded text-[6px] font-black text-[#00ffff] border border-[#00ffff]/20">View →</span>
-                    </div>
+                    <WowTalentTreeDisplay trees={build.trees} color={color} />
                   </Link>
                 ))}
               </div>
