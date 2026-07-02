@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight } from "lucide-react";
+import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkIcon, WandSparkles } from "lucide-react";
 import { SPECS, getClassColor, getSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
@@ -20,6 +20,13 @@ const ROLE_META: Record<string, { label: string; icon: typeof Swords; color: str
 const REGION_FLAGS: Record<string, string> = {
   US: "/flags/us.svg",
   EU: "/flags/eu.svg",
+};
+
+const GEAR_SLOT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Head: Crown, Neck: CircleDot, Shoulders: Shirt, Back: SquareStack, Chest: Shield,
+  Wrist: CircleDot, Hands: HandMetal, Waist: LinkIcon, Legs: Rows3, Feet: Footprints,
+  "Ring 1": Gem, "Ring 2": Gem, "Trinket 1": Sparkles, "Trinket 2": Sparkles,
+  Weapon: Swords, "Off-Hand": BookOpen,
 };
 
 function playerProfileUrl(name: string, realm: string, region: string): string {
@@ -276,14 +283,25 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Best-in-slot gear for {spec.classId.replace(/-/g, " ")}.</p>
               <div className="grid sm:grid-cols-2 gap-2">
-                {data.bis.map((item) => (
-                  <div key={item.slot} className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-white/[0.05] transition">
-                    <div>
-                      <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider block">{item.slot}</span>
-                      <span className="text-sm font-black text-white">{item.name}</span>
+                {data.bis.map((item) => {
+                  const SlotIcon = GEAR_SLOT_ICONS[item.slot];
+                  return (
+                    <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden">
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
+                      <div className="relative z-10 flex items-center gap-3">
+                        {SlotIcon && (
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}12`, border: `1px solid ${color}25` }}>
+                            <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} />
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-[8px] font-black tracking-wider block" style={{ color: `${color}88` }}>{item.slot}</span>
+                          <span className="text-sm font-black text-white leading-tight">{item.name}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}
@@ -296,17 +314,27 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <div className="grid sm:grid-cols-2 gap-2">
                 <div className="space-y-2">
                   {data.enchants.map((item) => (
-                    <div key={item.slot} className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between">
-                      <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider">{item.slot}</span>
+                    <div key={item.slot} className="group bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}10`, border: `1px solid ${color}20` }}>
+                          <WandSparkles className="w-4 h-4" style={{ color: `${color}99` }} />
+                        </div>
+                        <span className="text-[8px] font-black tracking-wider" style={{ color: `${color}88` }}>{item.slot}</span>
+                      </div>
                       <span className="text-xs font-black text-white">{item.name}</span>
                     </div>
                   ))}
                 </div>
                 <div className="space-y-2">
                   {data.gems.map((g, i) => (
-                    <div key={i} className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between">
-                      <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider">Gem {i + 1}</span>
-                      <span className="text-xs font-black text-white">{g}</span>
+                    <div key={i} className="group bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}10`, border: `1px solid ${color}20` }}>
+                          <Gem className="w-4 h-4" style={{ color: `${color}99` }} />
+                        </div>
+                        <span className="text-[8px] font-black tracking-wider" style={{ color: `${color}88` }}>Gem {i + 1}</span>
+                      </div>
+                      <span className="text-xs font-black text-white leading-tight text-right max-w-[200px]">{g}</span>
                     </div>
                   ))}
                 </div>

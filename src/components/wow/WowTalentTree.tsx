@@ -17,7 +17,6 @@ function TalentNode({
 
   return (
     <div className="flex flex-col items-center relative flex-1 max-w-[64px]">
-      {/* Connection line going down */}
       {row < maxRow && (
         <div
           className="absolute w-0.5"
@@ -38,27 +37,64 @@ function TalentNode({
           background: selected
             ? `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`
             : "linear-gradient(135deg, #1a1a2e 0%, #0d0d1a 100%)",
-          border: selected ? "none" : "1px solid rgba(255,255,255,0.06)",
+          border: selected ? `1px solid ${color}80` : "1px solid rgba(255,255,255,0.06)",
           boxShadow: selected
             ? `0 0 15px ${color}50, inset 0 0 10px ${color}30`
             : "none",
         }}
       >
         {selected && (
-          <div
-            className="absolute inset-0"
-            style={{
-              clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-              background: `radial-gradient(ellipse at 50% 30%, ${color}40 0%, transparent 70%)`,
-            }}
-          />
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                background: `radial-gradient(ellipse at 50% 30%, ${color}40 0%, transparent 70%)`,
+              }}
+            />
+            {/* WoW-style shine overlay */}
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                background: `linear-gradient(160deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 30%, transparent 50%)`,
+              }}
+            />
+          </>
         )}
-        <span
-          className="relative z-10 text-[7px] font-black leading-tight text-center px-0.5"
-          style={{ color: selected ? "#fff" : "rgba(255,255,255,0.25)" }}
+        {/* Inner icon circle: colored circle with shortName */}
+        <div
+          className="relative z-10 w-[75%] aspect-square rounded-full flex items-center justify-center"
+          style={{
+            background: selected
+              ? `linear-gradient(135deg, ${color}dd 0%, ${color}88 100%)`
+              : "rgba(255,255,255,0.04)",
+            boxShadow: selected
+              ? `inset 0 0 6px rgba(0,0,0,0.4), 0 0 8px ${color}30`
+              : "inset 0 0 3px rgba(0,0,0,0.3)",
+            border: selected
+              ? `1px solid ${color}aa`
+              : "1px solid rgba(255,255,255,0.06)",
+          }}
         >
-          {shortName}
-        </span>
+          {/* WoW-style spell shine dot */}
+          {selected && (
+            <div
+              className="absolute w-[30%] h-[30%] rounded-full opacity-50"
+              style={{
+                top: "12%",
+                right: "12%",
+                background: `radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)`,
+              }}
+            />
+          )}
+          <span
+            className="text-[6px] font-black leading-tight text-center"
+            style={{ color: selected ? "#fff" : "rgba(255,255,255,0.2)" }}
+          >
+            {selected ? shortName : "?"}
+          </span>
+        </div>
       </div>
       <span
         className="mt-1 text-[5px] font-bold text-center leading-tight truncate w-full px-0.5"
