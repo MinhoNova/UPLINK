@@ -10,6 +10,7 @@ import {
   getClassColor,
   getSpecData,
 } from "@/lib/wowData";
+import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const CLASS_BANNERS: Record<string, string> = {
   "death-knight": "/wow/banners/death-knight.png",
@@ -78,7 +79,8 @@ export default async function ClassPage({
           background: `radial-gradient(800px at 30% 15%, ${color}08 0%, transparent 60%)`,
         }}
       />
-      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
+      <ClassSidebar />
+      <div className="relative z-10 lg:ml-[200px] max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
         <Link
           href="/wow"
           className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors"
