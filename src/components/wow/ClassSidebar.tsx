@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { SPECS, getClassColor, CLASS_NAMES, getSpecsByClass } from "@/lib/wowData";
+import { Swords } from "lucide-react";
+import { getClassColor, CLASS_NAMES } from "@/lib/wowData";
 
 const CLASS_ORDER = [
   "death-knight", "demon-hunter", "druid", "evoker", "hunter",
@@ -19,107 +19,73 @@ for (const [id, name] of Object.entries(CLASS_NAMES)) {
 
 export default function ClassSidebar() {
   const pathname = usePathname();
-  const currentSpecId = pathname?.match(/\/wow\/spec\/([^/]+)/)?.[1] || "";
-  const currentSpec = SPECS.find((s) => s.id === currentSpecId);
-  const [expandedClass, setExpandedClass] = useState<string | null>(
-    currentSpec?.classId || null
-  );
 
   return (
-    <aside className="fixed left-0 top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)] w-[200px] z-30 hidden lg:flex flex-col bg-[#07070f]/95 backdrop-blur-xl border-r border-white/[0.04]">
-      {/* Header */}
-      <div className="shrink-0 px-3 py-4 border-b border-white/[0.04]">
-        <Link href="/wow/tier-list" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00ffff] to-[#ff007f] flex items-center justify-center">
-            <span className="text-[8px] font-black text-white">W</span>
+    <aside className="fixed left-0 top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)] w-[220px] z-30 hidden lg:flex flex-col bg-[#07070f]/95 backdrop-blur-xl border-r border-white/[0.04]">
+      {/* Logo */}
+      <div className="shrink-0 px-4 py-5 border-b border-white/[0.04]">
+        <Link href="/wow/tier-list" className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00ffff] to-[#ff007f] flex items-center justify-center shadow-lg shadow-[#ff007f]/20">
+            <span className="text-sm font-black text-white">W</span>
           </div>
-          <span className="text-[10px] font-black text-white/80 tracking-wide">SPECS</span>
+          <span className="text-xs font-black text-white/80 tracking-widest uppercase">Classes</span>
         </Link>
       </div>
 
-      {/* Class list */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 scrollbar-thin">
+      {/* All classes */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin">
         {CLASS_ORDER.map((classId) => {
           const color = getClassColor(classId);
-          const specs = getSpecsByClass(classId);
-          const isExpanded = expandedClass === classId;
-          const hasActive = currentSpec?.classId === classId;
+          const isOnClassPage = pathname === `/wow/class/${classId}`;
+          const isOnSpecOfClass = pathname.startsWith(`/wow/spec/`) && CLASS_ORDER.some(c => pathname.includes(c));
 
           return (
-            <div key={classId}>
-              <button
-                onClick={() => setExpandedClass(isExpanded ? null : classId)}
-                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all text-left ${
-                  hasActive
-                    ? "bg-white/[0.06]"
-                    : "hover:bg-white/[0.03]"
-                }`}
+            <Link
+              key={classId}
+              href={`/wow/class/${classId}`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                isOnClassPage
+                  ? "bg-white/[0.06] border border-white/[0.06]"
+                  : "hover:bg-white/[0.03] border border-transparent"
+              }`}
+            >
+              <Image
+                src={CLASS_THUMB[classId]}
+                alt={CLASS_NAMES[classId]}
+                width={36}
+                height={36}
+                className="rounded-lg shrink-0"
+              />
+              <span
+                className="text-xs font-bold leading-tight truncate flex-1"
+                style={{ color: isOnClassPage ? color : "rgba(255,255,255,0.6)" }}
               >
-                <Image
-                  src={CLASS_THUMB[classId]}
-                  alt={CLASS_NAMES[classId]}
-                  width={28}
-                  height={28}
-                  className="rounded-md shrink-0"
-                />
-                <span
-                  className="text-[10px] font-bold leading-tight truncate flex-1"
-                  style={{ color: hasActive ? color : "rgba(255,255,255,0.6)" }}
-                >
-                  {CLASS_NAMES[classId]}
-                </span>
-                <span
-                  className="text-[6px] font-black opacity-40 transition-transform"
-                  style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)", color }}
-                >
-                  ▸
-                </span>
-              </button>
-
-              {/* Specs dropdown */}
-              {isExpanded && (
-                <div className="ml-1 pl-5 border-l border-white/[0.04] space-y-0.5 mt-0.5 mb-1">
-                  {specs.map((spec) => {
-                    const isActive = spec.id === currentSpecId;
-                    return (
-                      <Link
-                        key={spec.id}
-                        href={`/wow/spec/${spec.id}`}
-                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all ${
-                          isActive
-                            ? "bg-white/[0.08]"
-                            : "hover:bg-white/[0.03]"
-                        }`}
-                      >
-                        <Image
-                          src={spec.icon}
-                          alt={spec.name}
-                          width={20}
-                          height={20}
-                          className="rounded shrink-0"
-                        />
-                        <span
-                          className={`text-[9px] font-bold truncate leading-tight ${
-                            isActive ? "text-white" : "text-gray-500"
-                          }`}
-                        >
-                          {spec.name}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                  <Link
-                    href={`/wow/class/${classId}`}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-gray-600 hover:text-white transition-colors"
-                  >
-                    All {CLASS_NAMES[classId]} Specs →
-                  </Link>
-                </div>
-              )}
-            </div>
+                {CLASS_NAMES[classId]}
+              </span>
+            </Link>
           );
         })}
       </nav>
+
+      {/* Meta button */}
+      <div className="shrink-0 px-3 pb-4 pt-3 border-t border-white/[0.04]">
+        <Link
+          href="/wow/tier-list"
+          className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all w-full ${
+            pathname === "/wow/tier-list" || pathname.startsWith("/wow/spec/") || pathname.startsWith("/wow/player/")
+              ? "bg-gradient-to-r from-[#ff007f]/10 to-[#00ffff]/10 border border-[#ff007f]/20"
+              : "hover:bg-white/[0.03] border border-transparent"
+          }`}
+        >
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#ff007f] to-[#00ffff] flex items-center justify-center">
+            <Swords className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-black text-white/80 tracking-widest uppercase leading-tight">Meta</div>
+            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">Tier List</div>
+          </div>
+        </Link>
+      </div>
     </aside>
   );
 }

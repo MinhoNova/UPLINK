@@ -80,7 +80,7 @@ export default async function ClassPage({
         }}
       />
       <ClassSidebar />
-      <div className="relative z-10 lg:ml-[200px] max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
+      <div className="relative z-10 lg:ml-[220px] max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
         <Link
           href="/wow"
           className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors"
