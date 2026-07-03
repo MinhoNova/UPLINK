@@ -7,17 +7,6 @@ import { Calendar, Shield, Swords, HeartHandshake, ChevronRight, ExternalLink, C
 
 const siteUrl = getSiteUrl();
 
-const S2_DUNGEONS = [
-  { name: "Altar of Fangs", slug: "altar-of-fangs", short: "AOF" },
-  { name: "Den of Nalorakk", slug: "den-of-nalorakk", short: "DON" },
-  { name: "Kings' Rest", slug: "kings-rest", short: "KR" },
-  { name: "Murder Row", slug: "murder-row", short: "MR" },
-  { name: "Ruby Life Pools", slug: "ruby-life-pools", short: "RLP" },
-  { name: "Temple of Sethraliss", slug: "temple-of-sethraliss", short: "TOS" },
-  { name: "The Blinding Vale", slug: "the-blinding-vale", short: "BV" },
-  { name: "Voidscar Arena", slug: "voidscar-arena", short: "VSA" },
-];
-
 const ROLE_ORDER = ["dps", "healer", "tank"] as const;
 const ROLE_META: Record<string, { label: string; icon: typeof Swords; color: string }> = {
   dps: { label: "DPS", icon: Swords, color: "#ff4444" },
@@ -37,14 +26,58 @@ export const metadata: Metadata = {
   alternates: { canonical: `${siteUrl}/wow/ptr` },
 };
 
-const S2_START = new Date("2026-12-16T15:00:00Z");
+interface S2Dungeon {
+  name: string;
+  slug: string;
+  short_name: string;
+  icon_url: string;
+  background_image_url: string;
+}
+
+async function getS2Dungeons(): Promise<S2Dungeon[]> {
+  try {
+    const res = await fetch("https://raider.io/api/v1/mythic-plus/static-data?expansion_id=11", {
+      cache: "force-cache",
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const s2 = data.seasons?.find((s: any) => s.slug === "season-mn-2");
+    if (!s2?.dungeons) return [];
+    return s2.dungeons.map((d: any) => ({
+      name: d.name,
+      slug: d.slug,
+      short_name: d.short_name,
+      icon_url: d.icon_url,
+      background_image_url: d.background_image_url,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 function daysUntil(date: Date): number {
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86400000));
 }
 
-export default function PTRPage() {
-  const daysLeft = daysUntil(S2_START);
+export const dynamic = "force-dynamic";
+
+export default async function PTRPage() {
+  const s2Dungeons = await getS2Dungeons();
+  const seasonInfo = s2Dungeons.length > 0 ? s2Dungeons : [
+    { name: "Altar of Fangs", slug: "altar-of-fangs", short_name: "AOF", icon_url: "", background_image_url: "" },
+    { name: "Den of Nalorakk", slug: "den-of-nalorakk", short_name: "DON", icon_url: "", background_image_url: "" },
+    { name: "Kings' Rest", slug: "kings-rest", short_name: "KR", icon_url: "", background_image_url: "" },
+    { name: "Murder Row", slug: "murder-row", short_name: "MR", icon_url: "", background_image_url: "" },
+    { name: "Ruby Life Pools", slug: "ruby-life-pools", short_name: "RLP", icon_url: "", background_image_url: "" },
+    { name: "Temple of Sethraliss", slug: "temple-of-sethraliss", short_name: "TOS", icon_url: "", background_image_url: "" },
+    { name: "The Blinding Vale", slug: "the-blinding-vale", short_name: "BV", icon_url: "", background_image_url: "" },
+    { name: "Voidscar Arena", slug: "voidscar-arena", short_name: "VSA", icon_url: "", background_image_url: "" },
+  ];
+
+  const s2Start = new Date("2026-12-16T15:00:00Z");
+  const daysLeft = daysUntil(s2Start);
+
   const roles = ROLE_ORDER.map((role) => {
     const roleSpecs = SPECS.filter((s) => s.role === role);
     const sorted = [...roleSpecs].sort(() => Math.random() - 0.5);
@@ -73,8 +106,8 @@ export default function PTRPage() {
             Midnight Season 2 — Mythic+ Preview & Spec Rankings
           </p>
           <p className="text-sm text-gray-500 max-w-2xl mx-auto">
-            Projected tier list, talent builds, and gear recommendations for the upcoming Mythic+ season.
-            Data is based on current Season 1 performance projected onto Season 2 — refresh once PTR goes live.
+            Real Raider.IO S2 season data — dungeon pool, projected tier list, talent builds, and gear recommendations.
+            Data refreshes as PTR rankings populate.
           </p>
         </div>
 
@@ -87,8 +120,8 @@ export default function PTRPage() {
           </div>
           <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
             <Shield className="w-5 h-5 text-fuchsia-400 mb-2" />
-            <div className="text-lg font-black text-white">8 Dungeons</div>
-            <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest">New M+ Pool</div>
+            <div className="text-lg font-black text-white">{s2Dungeons.length || 8} Dungeons</div>
+            <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest">S2 M+ Pool</div>
           </div>
           <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
             <ExternalLink className="w-5 h-5 text-amber-400 mb-2" />
@@ -97,15 +130,21 @@ export default function PTRPage() {
           </div>
         </div>
 
-        {/* Dungeon Pool */}
+        {/* Dungeon Pool — with real Raider.IO images */}
         <div className="p-6 sm:p-8 rounded-2xl bg-white/[0.03] border border-white/10 mb-10">
           <h2 className="text-base font-black uppercase tracking-[0.15em] mb-4 text-cyan-400">
             Season 2 Dungeon Pool
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
-            {S2_DUNGEONS.map((d) => (
-              <div key={d.slug} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5">
-                <span className="text-[8px] font-black text-fuchsia-500 uppercase tracking-widest bg-fuchsia-500/10 px-2 py-0.5 rounded shrink-0">{d.short}</span>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {seasonInfo.map((d) => (
+              <div key={d.slug} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all">
+                {d.icon_url ? (
+                  <img src={d.icon_url} alt={d.name} className="w-9 h-9 rounded-lg shrink-0 object-cover" />
+                ) : (
+                  <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[8px] font-black text-fuchsia-500 uppercase tracking-widest bg-fuchsia-500/10">
+                    {d.short_name}
+                  </span>
+                )}
                 <span className="text-xs font-bold text-gray-300">{d.name}</span>
               </div>
             ))}
@@ -147,31 +186,25 @@ export default function PTRPage() {
           );
         })}
 
-        {/* CTA - All Specs */}
+        {/* CTA */}
         <div className="p-8 rounded-2xl bg-gradient-to-br from-fuchsia-500/5 via-cyan-500/5 to-fuchsia-500/5 border border-white/10 text-center">
           <h2 className="text-lg font-black uppercase tracking-[0.15em] mb-3 text-fuchsia-400">
             Ready for Season 2?
           </h2>
           <p className="text-gray-400 text-sm mb-6 max-w-xl mx-auto">
-            Browse full talent builds, BIS gear, enchants, gems, and stat priorities for every spec in PTR Season 2. Plan your main before the season drops.
+            Browse full talent builds, BIS gear, enchants, gems, and stat priorities for every spec in PTR Season 2.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link
-              href="/wow/tier-list"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white text-xs font-black uppercase tracking-widest hover:from-fuchsia-400 hover:to-cyan-400 transition shadow-lg shadow-fuchsia-500/20"
-            >
+            <Link href="/wow/tier-list" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white text-xs font-black uppercase tracking-widest hover:from-fuchsia-400 hover:to-cyan-400 transition shadow-lg shadow-fuchsia-500/20">
               Live Tier List
             </Link>
-            <Link
-              href="/wow/leaderboard"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 text-gray-300 text-xs font-black uppercase tracking-widest border border-white/10 hover:bg-white/10 transition"
-            >
+            <Link href="/wow/leaderboard" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 text-gray-300 text-xs font-black uppercase tracking-widest border border-white/10 hover:bg-white/10 transition">
               Live Leaderboard
             </Link>
           </div>
         </div>
 
-        {/* Internal links */}
+        {/* Links */}
         <div className="mt-10 text-center">
           <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">PTR Season 2 Links</p>
           <div className="flex flex-wrap justify-center gap-2">

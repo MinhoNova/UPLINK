@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Shield, ArrowDownUp } from "lucide-react";
 
 const DUNGEONS = [
-  { id: "nexuspoint-xenas", name: "Nexus-Point Xenas", difficulty: "Very Hard", level: 22 },
-  { id: "skyreach", name: "Skyreach", difficulty: "Hard", level: 19 },
-  { id: "windrunner-spire", name: "Windrunner Spire", difficulty: "Hard", level: 18 },
-  { id: "maisara-caverns", name: "Maisara Caverns", difficulty: "Moderate", level: 16 },
-  { id: "algethar-academy", name: "Algeth'ar Academy", difficulty: "Moderate", level: 15 },
-  { id: "pit-of-saron", name: "Pit of Saron", difficulty: "Moderate", level: 14 },
-  { id: "seat-of-the-triumvirate", name: "Seat of the Triumvirate", difficulty: "Easy", level: 12 },
-  { id: "magisters-terrace", name: "Magisters' Terrace", difficulty: "Easy", level: 11 },
+  { id: "nexuspoint-xenas", name: "Nexus-Point Xenas", img: "/classes/Nexus-Point Xenas.webp", difficulty: "Very Hard", level: 22 },
+  { id: "skyreach", name: "Skyreach", img: "/classes/Skyreach.webp", difficulty: "Hard", level: 19 },
+  { id: "windrunner-spire", name: "Windrunner Spire", img: "/classes/Windrunner Spire.webp", difficulty: "Hard", level: 18 },
+  { id: "maisara-caverns", name: "Maisara Caverns", img: "/classes/Maisara Caverns.webp", difficulty: "Moderate", level: 16 },
+  { id: "algethar-academy", name: "Algeth'ar Academy", img: "/classes/Algeth'ar Academy.webp", difficulty: "Moderate", level: 15 },
+  { id: "pit-of-saron", name: "Pit of Saron", img: "/classes/Pit of Saron.webp", difficulty: "Moderate", level: 14 },
+  { id: "seat-of-the-triumvirate", name: "Seat of the Triumvirate", img: "/classes/Seat of the Triumvirate.webp", difficulty: "Easy", level: 12 },
+  { id: "magisters-terrace", name: "Magisters' Terrace", img: "/classes/Magisters Terrace.webp", difficulty: "Easy", level: 11 },
 ];
 
 const DIFFICULTY_ORDER = ["Very Hard", "Hard", "Moderate", "Easy"];
@@ -47,12 +48,21 @@ export default function DungeonsClient() {
         <div className="space-y-3">
           {sorted.map((d) => (
             <div key={d.id} className={`${DIFFICULTY_BG[d.difficulty]} border rounded-2xl p-4 transition hover:bg-white/[0.02]`}>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-black text-sm text-white">{d.name}</h3>
-                <span className={`text-xs font-black ${DIFFICULTY_COLORS[d.difficulty]}`}>{d.difficulty}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-gray-500">Recommended Key Level: <span className="text-white">{d.level}</span></span>
+              <div className="flex items-center gap-4">
+                {/* Dungeon icon */}
+                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-lg">
+                  <img src={encodeURI(d.img)} alt={d.name} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <h3 className="font-black text-sm text-white">{d.name}</h3>
+                    <span className={`text-xs font-black ${DIFFICULTY_COLORS[d.difficulty]}`}>{d.difficulty}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-3 h-3 text-gray-600" />
+                    <span className="text-[10px] font-black text-gray-500">Key Level: <span className="text-white">{d.level}</span></span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}

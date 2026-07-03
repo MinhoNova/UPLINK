@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import type { TalentTree } from "@/lib/wowData";
 
 function TalentNode({
-  name, selected, color, row, maxRow,
+  name, id, selected, color, row, maxRow,
 }: {
-  name: string; selected: boolean; color: string; row: number; maxRow: number;
+  name: string; id?: number; selected: boolean; color: string; row: number; maxRow: number;
 }) {
   const shortName = name
     .replace(/['']/g, "")
@@ -21,14 +21,21 @@ function TalentNode({
   useEffect(() => {
     if (!selected) return;
     let cancelled = false;
-    fetch(`/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`)
-      .then(r => r.json())
-      .then(d => {
-        if (!cancelled && d.available && d.url) setIconUrl(d.url);
-      })
-      .catch(() => {});
+
+    if (id) {
+      fetch(`/api/wow/blizzard/icon?type=spell&id=${id}`)
+        .then(r => r.json())
+        .then(d => { if (!cancelled && d.available && d.url) setIconUrl(d.url); })
+        .catch(() => {});
+    } else {
+      fetch(`/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`)
+        .then(r => r.json())
+        .then(d => { if (!cancelled && d.available && d.url) setIconUrl(d.url); })
+        .catch(() => {});
+    }
+
     return () => { cancelled = true; };
-  }, [name, selected]);
+  }, [name, id, selected]);
 
   return (
     <div className="flex flex-col items-center relative flex-1 max-w-[64px]">
@@ -167,6 +174,7 @@ export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTr
                     <TalentNode
                       key={node.name}
                       name={node.name}
+                      id={node.id}
                       selected={true}
                       color={color}
                       row={row}

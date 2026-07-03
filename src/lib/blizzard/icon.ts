@@ -33,3 +33,25 @@ export async function fetchBlizzardIcon(name: string, type: "item" | "spell"): P
     return null;
   }
 }
+
+export async function fetchSpellIconById(spellId: number): Promise<string | null> {
+  const token = await getBlizzardToken();
+  if (!token) return null;
+
+  try {
+    const mediaUrl = `https://us.api.blizzard.com/data/wow/media/spell/${spellId}?namespace=static-us&locale=en_US`;
+    const mediaRes = await fetch(mediaUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 86400 }
+    });
+
+    if (!mediaRes.ok) return null;
+    const mediaData = await mediaRes.json();
+    const assets = mediaData.assets || [];
+    const iconAsset = assets.find((a: any) => a.key === "icon");
+    
+    return iconAsset ? iconAsset.value : null;
+  } catch (e) {
+    return null;
+  }
+}

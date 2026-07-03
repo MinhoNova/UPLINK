@@ -96,17 +96,35 @@ export async function GET(req: Request) {
     let rankings: any[] = [];
 
     if (ptr) {
+      // Try rankings endpoint first (may return HTML SPA — dead)
       try {
         const res = await fetch(
           `https://raider.io/api/v1/mythic-plus/rankings?season=season-mn-2&region=world&dungeon=all`,
           { cache: "no-store", signal: AbortSignal.timeout(10000) }
         );
         if (res.ok) {
-          const data = await res.json();
-          rankings = data.rankings || [];
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("json")) {
+            const data = await res.json();
+            rankings = data.rankings || [];
+          }
         }
-      } catch {
-        // PTR API unavailable — use projected data
+      } catch { /* fall through */ }
+
+      // If rankings empty, try runs endpoint for PTR players
+      if (rankings.length === 0) {
+        try {
+          const pages = await Promise.all(
+            Array.from({ length: 5 }, (_, i) =>
+              fetch(`https://raider.io/api/v1/mythic-plus/runs?season=season-mn-2&region=world&page=${i}`, {
+                cache: "no-store", signal: AbortSignal.timeout(6000),
+              }).then(r => r.ok ? r.json() : null)
+            )
+          );
+          for (const page of pages) {
+            if (page?.rankings) rankings.push(...page.rankings);
+          }
+        } catch { /* fall through */ }
       }
     } else {
       try {

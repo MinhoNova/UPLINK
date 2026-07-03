@@ -4,7 +4,11 @@ import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const CACHE_KEY = "wow:leaderboard3";
+const CACHE_KEY_PTR = "wow:leaderboard-ptr";
 const RUNS_PAGES = 12;
+
+const PTR_SEASON_SLUG = "season-mn-2";
+const PTR_SEASON_DISPLAY = "Midnight — Season 2 (PTR Preview)";
 
 function formatSeasonName(slug: string): string {
   const parts = slug.split("-");
@@ -62,6 +66,12 @@ const FALLBACK_SCORE_MAP: Record<string, number> = {
   "protection-paladin": 3090, "devastation-evoker": 3085,
 };
 
+// PTR fallback — slightly boosted projected scores
+const PTR_FALLBACK_SCORE_MAP: Record<string, number> = {};
+for (const [k, v] of Object.entries(FALLBACK_SCORE_MAP)) {
+  PTR_FALLBACK_SCORE_MAP[k] = v + 150;
+}
+
 const ALL_SPEC_FALLBACK: { specId: string; classId: string; name: string; score: number }[] =
   Object.entries(FALLBACK_SCORE_MAP).map(([specId, score]) => {
     const [specSlug, ...classParts] = specId.split("-");
@@ -74,13 +84,14 @@ const ALL_SPEC_FALLBACK: { specId: string; classId: string; name: string; score:
     };
   });
 
-function buildFallback(): LeaderboardEntry[] {
-  return ALL_SPEC_FALLBACK.map((s, i) => ({
+function buildFallback(ptr?: boolean): LeaderboardEntry[] {
+  const map = ptr ? PTR_FALLBACK_SCORE_MAP : FALLBACK_SCORE_MAP;
+  return Object.entries(map).map(([specId, score], i) => ({
     rank: i + 1,
-    name: s.name,
-    classId: s.classId,
-    specId: s.specId,
-    score: s.score,
+    name: specId.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" "),
+    classId: specId.split("-").slice(1).join("-"),
+    specId,
+    score,
     region: i % 2 === 0 ? "US" : "EU",
     realm: i % 2 === 0 ? "Area 52" : "Silvermoon",
     faction: i % 2 === 0 ? "horde" : "alliance",
@@ -102,9 +113,11 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const forceRefresh = url.searchParams.get("refresh") === "1";
+    const ptr = url.searchParams.get("ptr") === "1";
+    const cacheKey = ptr ? CACHE_KEY_PTR : CACHE_KEY;
 
     if (!forceRefresh) {
-      const cached = await getKV(CACHE_KEY);
+      const cached = await getKV(cacheKey);
       if (cached && typeof cached === "object" && "entries" in cached && "timestamp" in cached) {
         const age = Date.now() - (cached as any).timestamp;
         if (age < CACHE_TTL_MS) {
@@ -113,49 +126,90 @@ export async function GET(request: Request) {
       }
     }
 
-    let seasonSlug = "";
+    let seasonSlug = ptr ? PTR_SEASON_SLUG : "";
+    let seasonDisplay = ptr ? PTR_SEASON_DISPLAY : "";
     const charMap = new Map<string, { entry: LeaderboardEntry; runScore: number; runLevel: number }>();
     let runsFailed = false;
 
     try {
-      const season = await getCurrentMythicPlusSeason();
-      seasonSlug = season.slug;
+      if (ptr) {
+        // PTR mode: try Raider.IO PTR season
+        const pages = await Promise.all(
+          Array.from({ length: RUNS_PAGES }, (_, i) =>
+            fetch(`https://raider.io/api/v1/mythic-plus/runs?season=${PTR_SEASON_SLUG}&region=world&page=${i}`, {
+              cache: "no-store",
+              headers: { "User-Agent": "Uplink/1.0" },
+              signal: AbortSignal.timeout(6000),
+            }).then((r) => (r.ok ? r.json() : null))
+          )
+        );
 
-      const pages = await Promise.all(
-        Array.from({ length: RUNS_PAGES }, (_, i) =>
-          fetch(`https://raider.io/api/v1/mythic-plus/runs?season=${season.slug}&region=world&page=${i}`, {
-            cache: "no-store",
-            headers: { "User-Agent": "Uplink/1.0" },
-            signal: AbortSignal.timeout(6000),
-          }).then((r) => (r.ok ? r.json() : null))
-        )
-      );
+        for (const page of pages) {
+          if (!page?.rankings) continue;
+          for (const ranking of page.rankings) {
+            const runScore = ranking.score || 0;
+            const runLevel = ranking.run?.mythic_level || 0;
+            for (const member of ranking.run?.roster || []) {
+              const c = member.character;
+              if (!c) continue;
+              const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
+              const charKey = `${c.name}|${c.realm?.slug || ""}|${c.region?.slug || ""}`;
+              const existing = charMap.get(charKey);
+              if (existing && runScore <= existing.runScore) continue;
+              const entry: LeaderboardEntry = {
+                rank: 0,
+                name: c.name || "Unknown",
+                realm: c.realm?.name || c.realm?.slug || "Unknown",
+                region: (c.region?.slug || "us").toUpperCase(),
+                specId: specKey,
+                classId: (c.class?.slug || "").toLowerCase(),
+                score: estimateTotalScore(runScore, runLevel),
+                faction: (c.faction || "horde").toLowerCase(),
+              };
+              charMap.set(charKey, { entry, runScore, runLevel });
+            }
+          }
+        }
+      } else {
+        // Live mode: detect season and fetch
+        const season = await getCurrentMythicPlusSeason();
+        seasonSlug = season.slug;
+        seasonDisplay = formatSeasonName(season.slug);
 
-      for (const page of pages) {
-        if (!page?.rankings) continue;
-        for (const ranking of page.rankings) {
-          const runScore = ranking.score || 0;
-          const runLevel = ranking.run?.mythic_level || 0;
-          for (const member of ranking.run?.roster || []) {
-            const c = member.character;
-            if (!c) continue;
-            const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
-            const charKey = `${c.name}|${c.realm?.slug || ""}|${c.region?.slug || ""}`;
+        const pages = await Promise.all(
+          Array.from({ length: RUNS_PAGES }, (_, i) =>
+            fetch(`https://raider.io/api/v1/mythic-plus/runs?season=${season.slug}&region=world&page=${i}`, {
+              cache: "no-store",
+              headers: { "User-Agent": "Uplink/1.0" },
+              signal: AbortSignal.timeout(6000),
+            }).then((r) => (r.ok ? r.json() : null))
+          )
+        );
 
-            const existing = charMap.get(charKey);
-            if (existing && runScore <= existing.runScore) continue;
-
-            const entry: LeaderboardEntry = {
-              rank: 0,
-              name: c.name || "Unknown",
-              realm: c.realm?.name || c.realm?.slug || "Unknown",
-              region: (c.region?.slug || "us").toUpperCase(),
-              specId: specKey,
-              classId: (c.class?.slug || "").toLowerCase(),
-              score: estimateTotalScore(runScore, runLevel),
-              faction: (c.faction || "horde").toLowerCase(),
-            };
-            charMap.set(charKey, { entry, runScore, runLevel });
+        for (const page of pages) {
+          if (!page?.rankings) continue;
+          for (const ranking of page.rankings) {
+            const runScore = ranking.score || 0;
+            const runLevel = ranking.run?.mythic_level || 0;
+            for (const member of ranking.run?.roster || []) {
+              const c = member.character;
+              if (!c) continue;
+              const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
+              const charKey = `${c.name}|${c.realm?.slug || ""}|${c.region?.slug || ""}`;
+              const existing = charMap.get(charKey);
+              if (existing && runScore <= existing.runScore) continue;
+              const entry: LeaderboardEntry = {
+                rank: 0,
+                name: c.name || "Unknown",
+                realm: c.realm?.name || c.realm?.slug || "Unknown",
+                region: (c.region?.slug || "us").toUpperCase(),
+                specId: specKey,
+                classId: (c.class?.slug || "").toLowerCase(),
+                score: estimateTotalScore(runScore, runLevel),
+                faction: (c.faction || "horde").toLowerCase(),
+              };
+              charMap.set(charKey, { entry, runScore, runLevel });
+            }
           }
         }
       }
@@ -166,18 +220,22 @@ export async function GET(request: Request) {
     const rawEntries = Array.from(charMap.values())
       .map((c) => c.entry);
 
+    const fallbackAll = buildFallback(ptr);
+
     if (rawEntries.length === 0 && runsFailed) {
-      rawEntries.push(...buildFallback());
+      rawEntries.push(...fallbackAll);
     } else {
-      for (const spec of ALL_SPEC_FALLBACK) {
-        const has = rawEntries.some((e) => e.specId === spec.specId);
+      const fallbackMap = ptr ? PTR_FALLBACK_SCORE_MAP : FALLBACK_SCORE_MAP;
+      for (const [specId, score] of Object.entries(fallbackMap)) {
+        const has = rawEntries.some((e) => e.specId === specId);
         if (!has) {
+          const [specSlug, ...classParts] = specId.split("-");
           rawEntries.push({
             rank: 0,
-            name: spec.name,
-            classId: spec.classId,
-            specId: spec.specId,
-            score: spec.score,
+            name: specId.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" "),
+            classId: classParts.join("-"),
+            specId,
+            score,
             region: rawEntries.length % 2 === 0 ? "US" : "EU",
             realm: rawEntries.length % 2 === 0 ? "Area 52" : "Silvermoon",
             faction: rawEntries.length % 2 === 0 ? "horde" : "alliance",
@@ -208,8 +266,7 @@ export async function GET(request: Request) {
 
     entries = entries.map((e, i) => ({ ...e, rank: i + 1 }));
 
-    const seasonDisplay = formatSeasonName(seasonSlug);
-    await setKV(CACHE_KEY, { entries, season: seasonSlug, seasonDisplay, timestamp: Date.now() });
+    await setKV(cacheKey, { entries, season: seasonSlug, seasonDisplay, timestamp: Date.now() });
 
     return NextResponse.json({ entries, season: seasonSlug, seasonDisplay, cached: false });
   } catch (err) {
