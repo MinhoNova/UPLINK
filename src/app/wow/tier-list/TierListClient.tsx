@@ -40,7 +40,7 @@ function SpecCard({ spec, score, highestKey, tier }: { spec: { id: string; name:
   const color = getClassColor(spec.classId);
   return (
     <Link
-      href={`/wow/spec/${spec.id}`}
+      href={`/wow/class/${spec.classId}`}
       className="group relative flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 min-w-[260px] flex-1 sm:flex-none overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${color}12 0%, ${color}06 40%, #0c0c18 70%)`,
@@ -281,7 +281,7 @@ export default function TierListClient({ ptr: initialPtr = false }: { ptr?: bool
               if (!spec) return null;
               const color = getClassColor(spec.classId);
               return (
-                <Link key={id} href={`/wow/spec/${id}`} className="group relative bg-gradient-to-br from-[#0c0c18] to-black rounded-[1.5rem] p-6 transition-all duration-200" style={{ border: `1.5px solid ${color}25` }}
+                <Link key={id} href={`/wow/class/${spec.classId}`} className="group relative bg-gradient-to-br from-[#0c0c18] to-black rounded-[1.5rem] p-6 transition-all duration-200" style={{ border: `1.5px solid ${color}25` }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${color}60`; e.currentTarget.style.boxShadow = `0 0 40px ${color}15`; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${color}25`; e.currentTarget.style.boxShadow = `none`; }}
                 >
