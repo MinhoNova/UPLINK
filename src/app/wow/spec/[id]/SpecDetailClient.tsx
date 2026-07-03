@@ -117,7 +117,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         </div>
 
         {/* Spec Banner */}
-        <div className="relative w-full h-[220px] sm:h-[300px] rounded-[2rem] overflow-hidden mb-8">
+        <div className="relative w-full h-[160px] sm:h-[200px] rounded-[2rem] overflow-hidden mb-8">
           <Image
             src={`/wow/banners/${spec.name.replace(/ /g, "_")}.webp`}
             alt={spec.name}
@@ -126,27 +126,6 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             priority
             sizes="(max-width: 640px) 100vw, 900px"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/20 to-transparent" />
-          <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-7 right-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest drop-shadow-lg" style={{ backgroundColor: roleMeta.bg, color: roleMeta.color }}>
-                <RoleIcon className="w-2.5 h-2.5" /> {roleMeta.label}
-              </span>
-              <span className="text-[8px] font-black uppercase tracking-widest drop-shadow-lg text-white/60">{spec.classId.replace(/-/g, " ")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-black text-white drop-shadow-2xl">{spec.name}</h1>
-              {ptr && (
-                <span className="px-2 py-0.5 rounded-md bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-400 text-[8px] font-black uppercase tracking-widest">PTR S2</span>
-              )}
-            </div>
-            <p className="text-xs text-white/70 mt-1 max-w-xl drop-shadow-lg">Top players, BIS Gear, Enchants, Gems & Stat Priority — {spec.classId.replace(/-/g, " ")} Mythic+ Guide{ptr ? " (PTR Season 2 Preview)" : ""}</p>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {spec.seo.slice(0, 4).map((kw) => (
-                <span key={kw} className="px-2 py-0.5 rounded-full bg-black/40 text-[7px] font-black uppercase tracking-widest text-white/50">{kw}</span>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="grid gap-8">

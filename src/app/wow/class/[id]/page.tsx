@@ -92,7 +92,7 @@ export default async function ClassPage({
 
         <div className="mt-8 mb-12">
           {CLASS_BANNERS[id] ? (
-            <div className="relative w-full h-[220px] sm:h-[320px] rounded-2xl overflow-hidden mb-6">
+            <div className="relative w-full h-[160px] sm:h-[200px] rounded-2xl overflow-hidden mb-6">
               <Image
                 src={CLASS_BANNERS[id]}
                 alt={className}
@@ -101,33 +101,6 @@ export default async function ClassPage({
                 priority
                 sizes="(max-width: 640px) 100vw, 800px"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/30 to-transparent" />
-              <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4">
-                <h1
-                  className="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 tracking-tight drop-shadow-2xl"
-                  style={{ color }}
-                >
-                  {className}
-                </h1>
-                <p className="text-xs sm:text-sm text-white/80 max-w-xl drop-shadow-lg">
-                  All {className} specs for Mythic+ and Raid. BIS gear, enchants, gems, stat priorities, and talent builds for every {className} specialization.
-                </p>
-                <div className="flex items-center gap-2 mt-3">
-                  {roles.map((role) => (
-                    <span
-                      key={role}
-                      className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border drop-shadow-lg"
-                      style={{
-                        borderColor: `${color}60`,
-                        backgroundColor: `${color}30`,
-                        color: '#fff',
-                      }}
-                    >
-                      {role === "tank" ? "Tank" : role === "healer" ? "Healer" : "DPS"}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
           ) : (
             <>
