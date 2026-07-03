@@ -94,6 +94,7 @@ export async function GET(req: Request) {
     let seasonSlug = ptr ? "season-mn-2" : "";
     let seasonDisplay = ptr ? "Midnight — Season 2 (PTR Preview)" : "";
     let rankings: any[] = [];
+    const bestBySpec: Record<string, number> = {};
 
     if (ptr) {
       // Try rankings endpoint first (may return HTML SPA — dead)
@@ -126,6 +127,19 @@ export async function GET(req: Request) {
           }
         } catch { /* fall through */ }
       }
+
+      // If still empty, try Blizzard PTR API directly
+      if (rankings.length === 0) {
+        try {
+          const { fetchPtrMythicPlusData } = await import("@/lib/blizzard/ptr");
+          const ptrData = await fetchPtrMythicPlusData();
+          for (const entry of ptrData.entries) {
+            if (!bestBySpec[entry.specId] || entry.score > bestBySpec[entry.specId]) {
+              bestBySpec[entry.specId] = entry.score;
+            }
+          }
+        } catch { /* fall through */ }
+      }
     } else {
       try {
         const { getCurrentMythicPlusSeason } = await import("@/lib/mythicSeason");
@@ -148,7 +162,6 @@ export async function GET(req: Request) {
     const { SPECS } = await import("@/lib/wowData");
     const roles = ["dps", "healer", "tank"] as const;
 
-    const bestBySpec: Record<string, number> = {};
     for (const r of rankings) {
       const specName = (r.character?.spec || "").toLowerCase().replace(/\s+/g, "-");
       const className = (r.character?.class || "").toLowerCase().replace(/\s+/g, "-");

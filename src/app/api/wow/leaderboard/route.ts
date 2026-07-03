@@ -170,6 +170,24 @@ export async function GET(request: Request) {
             }
           }
         }
+
+        // If Raider.IO empty, try Blizzard PTR API
+        if (charMap.size === 0) {
+          try {
+            const { fetchPtrMythicPlusData } = await import("@/lib/blizzard/ptr");
+            const ptrData = await fetchPtrMythicPlusData();
+            for (const entry of ptrData.entries) {
+              const charKey = `${entry.name}|${entry.realm}|US`;
+              if (!charMap.has(charKey)) {
+                charMap.set(charKey, {
+                  entry: { rank: 0, name: entry.name, realm: entry.realm, region: "US", specId: entry.specId, classId: entry.classId, score: entry.score, faction: entry.faction },
+                  runScore: entry.score,
+                  runLevel: 10,
+                });
+              }
+            }
+          } catch { /* fall through */ }
+        }
       } else {
         // Live mode: detect season and fetch
         const season = await getCurrentMythicPlusSeason();
