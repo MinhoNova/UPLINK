@@ -90,7 +90,7 @@ export default async function PTRPage() {
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-fuchsia-500/5 blur-[150px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/5 blur-[120px] rounded-full" />
       </div>
-      <div className="relative z-10 max-w-5xl mx-auto px-4 py-12">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
 
         {/* PTR Header */}
         <div className="text-center mb-12">

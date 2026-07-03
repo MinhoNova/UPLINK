@@ -31,7 +31,7 @@ export default function DungeonsClient() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#ff007f]/5 blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-12">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
         <Link href="/wow" className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-[#00ffff] transition-colors">← Back to WoW</Link>
         <h1 className="text-3xl sm:text-4xl font-black text-white mt-3 mb-2 tracking-tight">
           Mythic+ <span className="text-[#ff007f]">Dungeons</span>

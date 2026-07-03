@@ -86,7 +86,7 @@ export default function PlayerProfileClient({
       <ClassSidebar />
       <div className="fixed inset-0 pointer-events-none" style={{ background: `radial-gradient(800px at 30% 15%, ${color}06 0%, transparent 60%), radial-gradient(500px at 70% 60%, ${color}04 0%, transparent 50%)` }} />
 
-      <div className="relative z-10 lg:ml-[200px] max-w-4xl mx-auto px-4 py-12">
+      <div className="relative z-10 lg:ml-[200px] max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
         {/* Back + Breadcrumb */}
         <Link href="/wow/leaderboard" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors mb-8">
           <ChevronLeft className="w-3 h-3" /> Back to Leaderboard

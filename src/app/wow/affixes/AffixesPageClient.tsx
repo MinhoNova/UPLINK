@@ -84,7 +84,7 @@ function AffixesShell({ seasonName, weeks, offset, setOffset, loading }: {
         <div className="absolute bottom-[-10%] right-1/4 w-[500px] h-[500px] bg-[#3498db]/[0.03] blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-12">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
         <div className="mb-10 pt-8">
           <Link href="/wow" className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors">← Back to WoW</Link>
           <h1 className="text-4xl sm:text-5xl font-black text-white mt-4 mb-2 tracking-tight">

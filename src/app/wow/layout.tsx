@@ -20,7 +20,7 @@ export default function WowLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#05050a] text-white flex">
       {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-white/5 bg-black/20 p-4 gap-0.5 sticky top-0 h-screen">
+      <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-white/5 bg-black/20 p-4 gap-0.5 sticky top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)]">
         <Link href="/wow" className="flex items-center gap-2 px-3 py-3 rounded-xl hover:bg-white/5 transition mb-3">
           <span className="text-lg font-black">
             WoW <span className="text-[#00ffff]">Tools</span>

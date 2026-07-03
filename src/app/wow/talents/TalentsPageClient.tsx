@@ -100,7 +100,7 @@ export default function TalentsPageClient() {
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[#ff007f]/5 blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-12">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
