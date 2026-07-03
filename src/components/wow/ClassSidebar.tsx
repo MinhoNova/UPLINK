@@ -108,6 +108,12 @@ export default function ClassSidebar() {
                       </Link>
                     );
                   })}
+                  <Link
+                    href={`/wow/class/${classId}`}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-gray-600 hover:text-white transition-colors"
+                  >
+                    All {CLASS_NAMES[classId]} Specs →
+                  </Link>
                 </div>
               )}
             </div>
