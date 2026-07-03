@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "opennextjs-cloudflare build",
+    "build:cf": "WRANGLER_BUILD_CONDITIONS= WRANGLER_BUILD_PLATFORM=node opennextjs-cloudflare build",
     "build:next": "next build --webpack",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
