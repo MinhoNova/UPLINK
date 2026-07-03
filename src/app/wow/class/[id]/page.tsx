@@ -13,7 +13,9 @@ import {
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const CLASS_BANNERS: Record<string, string> = {
-  "death-knight": "/wow/banners/death-knight.png",
+  "druid": "/wow/banners/druid.webp",
+  "evoker": "/wow/banners/evoker.webp",
+  "mage": "/wow/banners/mage.webp",
 };
 
 const siteUrl = getSiteUrl();
