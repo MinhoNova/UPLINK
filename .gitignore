@@ -58,3 +58,9 @@ META CLASS/
 
 # Large banner PNGs (WebP used instead)
 public/wow/banners/*.png
+
+# Source meta class banners (PNG)
+META*
+DRUID*
+EVOKER*
+MAGE*
