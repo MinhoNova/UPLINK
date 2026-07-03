@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Swords } from "lucide-react";
 import { getClassColor, CLASS_NAMES } from "@/lib/wowData";
 
 const CLASS_ORDER = [
@@ -83,9 +82,9 @@ export default function ClassSidebar() {
       <div className="shrink-0 px-2 pb-3 pt-2 border-t border-white/[0.04]">
         <Link
           href="/wow/tier-list"
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-200 group"
+          className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all duration-200 group"
           style={{
-            background: pathname === "/wow/tier-list" ? "rgba(255,0,127,0.08)" : "transparent",
+            background: pathname === "/wow/tier-list" ? "rgba(255,255,255,0.05)" : "transparent",
           }}
           onMouseEnter={(e) => {
             if (pathname !== "/wow/tier-list") e.currentTarget.style.background = "rgba(255,255,255,0.03)";
@@ -94,13 +93,10 @@ export default function ClassSidebar() {
             if (pathname !== "/wow/tier-list") e.currentTarget.style.background = "transparent";
           }}
         >
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#ff007f] to-[#00ffff] flex items-center justify-center">
-            <Swords className="w-3.5 h-3.5 text-white" />
+          <div className="w-6 h-6 rounded border border-white/10 flex items-center justify-center">
+            <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest">M</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[9px] font-black text-white/60 uppercase tracking-[0.15em] leading-tight">Meta</div>
-            <div className="text-[7px] font-bold text-gray-600 uppercase tracking-wider">Tier List</div>
-          </div>
+          <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest group-hover:text-white transition-colors">Meta Tier List</span>
         </Link>
       </div>
     </aside>

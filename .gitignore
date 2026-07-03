@@ -55,3 +55,6 @@ src/data/uplink.db-wal
 
 # wow meta assets
 META CLASS/
+
+# Large banner PNGs (WebP used instead)
+public/wow/banners/*.png
