@@ -50,13 +50,14 @@ export async function aggregateBySpec(
     const total = profiles.length;
     if (total === 0) continue;
 
-    // Aggregate gear by slot
-    const gearBySlot = new Map<string, Map<string, number>>();
+    // Aggregate gear by slot — track name → { count, itemId }
+    const gearBySlot = new Map<string, Map<string, { count: number; itemId: number }>>();
     for (const p of profiles) {
       for (const item of p.gear) {
         if (!gearBySlot.has(item.slot)) gearBySlot.set(item.slot, new Map());
         const slotMap = gearBySlot.get(item.slot)!;
-        slotMap.set(item.name, (slotMap.get(item.name) || 0) + 1);
+        const existing = slotMap.get(item.name) || { count: 0, itemId: item.itemId };
+        slotMap.set(item.name, { count: existing.count + 1, itemId: existing.itemId || item.itemId });
       }
     }
 
@@ -65,8 +66,9 @@ export async function aggregateBySpec(
       .map(([slot, items]) => ({
         slot,
         names: Array.from(items.entries())
-          .sort((a, b) => b[1] - a[1])
-          .map(([name, count]) => ({ name, count, pct: pct(count, total) })),
+          .sort((a, b) => b[1].count - a[1].count)
+          .reverse()
+          .map(([name, data]) => ({ name, count: data.count, pct: pct(data.count, total), itemId: data.itemId })),
       }))
       .sort((a, b) => {
         const order = ["Head", "Neck", "Shoulders", "Back", "Chest", "Wrist", "Hands", "Waist", "Legs", "Feet", "Ring 1", "Ring 2", "Trinket 1", "Trinket 2", "Weapon", "Off-Hand"];

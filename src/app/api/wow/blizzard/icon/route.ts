@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchBlizzardIcon, fetchSpellIconById } from "@/lib/blizzard/icon";
+import { fetchBlizzardIcon, fetchSpellIconById, fetchItemIconById } from "@/lib/blizzard/icon";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const name = searchParams.get("name");
   const type = searchParams.get("type") as "item" | "spell" | null;
   const id = searchParams.get("id");
+
+  if (type === "item" && id) {
+    const itemId = parseInt(id, 10);
+    if (!isNaN(itemId)) {
+      const iconUrl = await fetchItemIconById(itemId);
+      if (iconUrl) {
+        return NextResponse.json({ available: true, url: iconUrl });
+      }
+      return NextResponse.json({ available: false });
+    }
+  }
 
   if (type === "spell" && id) {
     const spellId = parseInt(id, 10);

@@ -107,6 +107,7 @@ export const CLASS_NAMES: Record<string, string> = {
 export interface BISItem {
   slot: string;
   name: string;
+  itemId?: number;
 }
 
 export interface EnchantItem {
@@ -6130,7 +6131,7 @@ export function getAllSpecData(ptr?: boolean): Record<string, SpecData> {
 
 export interface AggregatedSpecData {
   totalPlayers: number;
-  bis: { slot: string; names: { name: string; count: number; pct: string }[] }[];
+  bis: { slot: string; names: { name: string; count: number; pct: string; itemId?: number }[] }[];
   enchants: { slot: string; names: { name: string; count: number; pct: string }[] }[];
   gems: { name: string; count: number; pct: string }[];
   statPriority: string[];
@@ -6151,6 +6152,7 @@ export function mergeAggregatedData(
   const bis = aggregated.bis.map((s) => ({
     slot: s.slot,
     name: s.names[0]?.name || hardcoded.bis.find((h) => h.slot === s.slot)?.name || "Unknown",
+    itemId: s.names[0]?.itemId || hardcoded.bis.find((h) => h.slot === s.slot)?.itemId,
   }));
 
   const enchants = aggregated.enchants.map((s) => ({

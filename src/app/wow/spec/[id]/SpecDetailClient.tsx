@@ -31,11 +31,26 @@ const GEAR_SLOT_ICONS: Record<string, any> = {
   Weapon: Swords, "Off-Hand": BookOpen,
 };
 
-function BisItemIcon({ slot, color }: { slot: string; color: string }) {
+function BisItemIcon({ slot, color, itemId }: { slot: string; color: string; itemId?: number }) {
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!itemId) return;
+    fetch(`/api/wow/blizzard/icon?type=item&id=${itemId}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.available) setIconUrl(d.url); })
+      .catch(() => {});
+  }, [itemId]);
+
   const SlotIcon = GEAR_SLOT_ICONS[slot];
   return (
-    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}12`, border: `1px solid ${color}25` }}>
-      {SlotIcon ? <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} /> : <Gem className="w-4 h-4" style={{ color: `${color}bb` }} />}
+    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden" style={{ backgroundColor: `${color}12`, border: `1px solid ${color}25` }}>
+      {iconUrl ? (
+        <Image src={iconUrl} alt="" width={36} height={36} className="w-full h-full object-cover" unoptimized />
+      ) : SlotIcon ? (
+        <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} />
+      ) : (
+        <Gem className="w-4 h-4" style={{ color: `${color}bb` }} />
+      )}
     </div>
   );
 }
@@ -292,7 +307,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden">
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
                     <div className="relative z-10 flex items-center gap-3">
-                      <BisItemIcon slot={item.slot} color={color} />
+                      <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} />
                       <div>
                         <span className="text-[8px] font-black tracking-wider block" style={{ color: `${color}88` }}>{item.slot}</span>
                         <span className="text-sm font-black text-white leading-tight">{item.name}</span>
