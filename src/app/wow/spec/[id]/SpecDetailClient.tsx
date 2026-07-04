@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
-import { SPECS, getClassColor, getSpecData } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData } from "@/lib/wowData";
+import type { AggregatedSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
@@ -50,33 +51,44 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   if (!spec) return null;
 
   const color = getClassColor(spec.classId);
-  const data = getSpecData(id, ptr);
 
   const PAGE_SIZE = 5;
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [buildFilter, setBuildFilter] = useState<"all" | "mythic+" | "raid">("all");
+  const [aggData, setAggData] = useState<AggregatedSpecData | null>(null);
+
+  const data = mergeAggregatedData(id, aggData, ptr);
 
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/wow/leaderboard");
-        if (!res.ok) return;
-        const json = await res.json();
-        const entries: LeaderboardEntry[] = json.entries || [];
-        const filtered = entries
-          .filter((e) => e.specId === id)
-          .sort((a, b) => b.score - a.score)
-          .map((e, i) => ({ ...e, rank: i + 1 }));
-        setLeaderboardEntries(filtered);
+        const [lbRes, metaRes] = await Promise.all([
+          fetch("/api/wow/leaderboard"),
+          fetch(`/api/wow/blizzard-meta?spec=${id}&ptr=${ptr ? 1 : 0}`),
+        ]);
+        if (lbRes.ok) {
+          const json = await lbRes.json();
+          const entries: LeaderboardEntry[] = json.entries || [];
+          const filtered = entries
+            .filter((e) => e.specId === id)
+            .sort((a, b) => b.score - a.score)
+            .map((e, i) => ({ ...e, rank: i + 1 }));
+          setLeaderboardEntries(filtered);
+        }
+        if (metaRes.ok) {
+          const json = await metaRes.json();
+          if (json.spec) setAggData(json.spec);
+        }
       } catch { /* ignore */ } finally {
         setLoading(false);
       }
     }
     fetchData();
     setPage(1);
-  }, [id]);
+  }, [id, ptr]);
 
   const totalPages = Math.max(1, Math.ceil(leaderboardEntries.length / PAGE_SIZE));
   const visibleEntries = leaderboardEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

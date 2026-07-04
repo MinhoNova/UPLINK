@@ -6127,3 +6127,56 @@ export function getAllSpecData(ptr?: boolean): Record<string, SpecData> {
   }
   return result;
 }
+
+export interface AggregatedSpecData {
+  totalPlayers: number;
+  bis: { slot: string; names: { name: string; count: number; pct: string }[] }[];
+  enchants: { slot: string; names: { name: string; count: number; pct: string }[] }[];
+  gems: { name: string; count: number; pct: string }[];
+  statPriority: string[];
+  topPlayers: { name: string; realm: string; region: string; specId: string; classId: string; score: number }[];
+  lastUpdated: number;
+}
+
+export function mergeAggregatedData(
+  specId: string,
+  aggregated: AggregatedSpecData | undefined | null,
+  ptr?: boolean
+): SpecData {
+  const hardcoded = getSpecData(specId, ptr) || {
+    bis: [], enchants: [], gems: [], builds: [], statPriority: ["Intellect", "Haste", "Mastery", "Critical Strike", "Versatility"],
+  };
+  if (!aggregated || aggregated.totalPlayers === 0) return hardcoded;
+
+  const bis = aggregated.bis.map((s) => ({
+    slot: s.slot,
+    name: s.names[0]?.name || hardcoded.bis.find((h) => h.slot === s.slot)?.name || "Unknown",
+  }));
+
+  const enchants = aggregated.enchants.map((s) => ({
+    slot: s.slot,
+    name: s.names[0]?.name || hardcoded.enchants.find((h) => h.slot === s.slot)?.name || "Unknown",
+  }));
+
+  const gems = aggregated.gems.length > 0
+    ? aggregated.gems.slice(0, 3).map((g) => `${g.name} ×${Math.ceil((parseInt(g.pct) / 100) * aggregated.totalPlayers)}`)
+    : hardcoded.gems;
+
+  const statPriority = aggregated.statPriority.length >= 5
+    ? aggregated.statPriority
+    : hardcoded.statPriority;
+
+  const builds = aggregated.topPlayers.length > 0
+    ? aggregated.topPlayers.slice(0, 5).map((p) => ({
+        player: p.name,
+        class: hardcoded.builds[0]?.class || "",
+        region: p.region,
+        score: p.score,
+        type: "mythic+" as const,
+        talentString: "",
+        trees: hardcoded.builds[0]?.trees || [],
+      }))
+    : hardcoded.builds;
+
+  return { bis, enchants, gems, builds, statPriority };
+}
