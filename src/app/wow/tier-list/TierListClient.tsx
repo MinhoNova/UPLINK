@@ -87,18 +87,18 @@ export default function TierListClient() {
                 {/* Class Banner */}
                 <Link
                   href={`/wow/class/${classId}`}
-                  className="group relative block w-full h-[90px] sm:h-[110px] overflow-hidden"
+                  className="group relative block w-full h-[90px] sm:h-[110px] overflow-hidden bg-black/40"
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/10 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-transparent to-transparent" />
                   <div className="absolute bottom-2 sm:bottom-3 left-3 sm:left-4">
-                    <h2 className="text-sm sm:text-base font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 15px ${color}60` }}>
+                    <h2 className="text-sm sm:text-base font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 15px ${color}80, 0 0 10px #000` }}>
                       {className}
                     </h2>
                     <div className="flex items-center gap-1.5 mt-0.5">

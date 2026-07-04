@@ -101,16 +101,16 @@ export default async function ClassPage({
         </Link>
 
         <div className="mt-8 mb-12">
-          <div className="relative w-full h-[180px] sm:h-[240px] rounded-2xl overflow-hidden mb-6">
+          <div className="relative w-full h-[180px] sm:h-[240px] rounded-2xl overflow-hidden mb-6 bg-black/40">
             <Image
               src={CLASS_BANNERS[id]}
               alt={className}
               fill
-              className="object-cover"
+              className="object-contain"
               priority
               sizes="(max-width: 640px) 100vw, 800px"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/10 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-transparent to-transparent" />
             <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4">
               <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 20px ${color}80, 0 2px 8px #000` }}>
                 {className}

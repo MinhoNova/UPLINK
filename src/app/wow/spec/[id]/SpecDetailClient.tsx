@@ -144,12 +144,12 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         </div>
 
         {/* Spec Banner */}
-        <div className="relative w-full h-[160px] sm:h-[200px] rounded-[2rem] overflow-hidden mb-8">
+        <div className="relative w-full h-[160px] sm:h-[200px] rounded-[2rem] overflow-hidden mb-8 bg-black/40">
           <Image
             src={`/wow/banners/${spec.name.replace(/ /g, "_")}.webp`}
             alt={spec.name}
             fill
-            className="object-cover"
+            className="object-contain"
             priority
             sizes="(max-width: 640px) 100vw, 900px"
           />
