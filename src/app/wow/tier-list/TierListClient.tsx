@@ -71,8 +71,8 @@ export default function TierListClient() {
           <div className="absolute bottom-0 left-1/3 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-[#ff007f]/5 to-transparent blur-3xl pointer-events-none" />
         </div>
 
-        {/* ─── Class Grid ─── */}
-        <div className="grid gap-6 sm:gap-8">
+        {/* ─── Class Grid 3-col ─── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {CLASS_ORDER.map((classId) => {
             const specs = SPECS.filter((s) => s.classId === classId);
             const color = getClassColor(classId);
@@ -82,32 +82,32 @@ export default function TierListClient() {
             return (
               <section
                 key={classId}
-                className="rounded-[1.5rem] overflow-hidden border border-white/[0.04] bg-[#0a0a14]/80 backdrop-blur-sm"
+                className="rounded-xl overflow-hidden border border-white/[0.04] bg-[#0a0a14]/80 backdrop-blur-sm"
               >
                 {/* Class Banner */}
                 <Link
                   href={`/wow/class/${classId}`}
-                  className="group relative block w-full h-[120px] sm:h-[160px] overflow-hidden"
+                  className="group relative block w-full h-[90px] sm:h-[110px] overflow-hidden"
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, 800px"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/10 to-transparent" />
-                  <div className="absolute bottom-3 sm:bottom-4 left-4 sm:left-5">
-                    <h2 className="text-xl sm:text-2xl font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 15px ${color}60` }}>
+                  <div className="absolute bottom-2 sm:bottom-3 left-3 sm:left-4">
+                    <h2 className="text-sm sm:text-base font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 15px ${color}60` }}>
                       {className}
                     </h2>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-1.5 mt-0.5">
                       {[...new Set(specs.map((s) => s.role))].map((role) => {
                         const rm = ROLE_META[role];
                         return (
                           <span
                             key={role}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[6px] font-black uppercase tracking-widest"
                             style={{ backgroundColor: rm.bg, color: rm.color }}
                           >
                             {rm.label}
@@ -116,14 +116,10 @@ export default function TierListClient() {
                       })}
                     </div>
                   </div>
-                  {/* Arrow indicator */}
-                  <div className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                    <span className="text-white text-xs font-black">→</span>
-                  </div>
                 </Link>
 
-                {/* Specs Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 sm:p-4">
+                {/* Specs Column */}
+                <div className="grid grid-cols-1 gap-1 p-2">
                   {specs.map((spec) => {
                     const roleMeta = ROLE_META[spec.role];
                     const RoleIcon = ROLE_ICONS[spec.role];
@@ -131,29 +127,28 @@ export default function TierListClient() {
                       <Link
                         key={spec.id}
                         href={`/wow/spec/${spec.id}`}
-                        className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 border border-transparent hover:border-white/10"
-                        style={{ background: `${color}06`, hover: { background: `${color}10` } }}
+                        className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200 border border-transparent hover:border-white/10"
+                        style={{ background: `${color}06` }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = `${color}12`; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = `${color}06`; }}
                       >
                         <Image
                           src={spec.icon}
                           alt={spec.name}
-                          width={36}
-                          height={36}
-                          className="rounded-lg shrink-0"
+                          width={28}
+                          height={28}
+                          className="rounded-md shrink-0"
                           style={{ backgroundColor: `${color}20` }}
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="text-[12px] font-bold text-white group-hover:text-[#00ffff] transition-colors truncate leading-tight">
+                          <div className="text-[11px] font-bold text-white group-hover:text-[#00ffff] transition-colors truncate leading-tight">
                             {spec.name}
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
-                            <RoleIcon className="w-2.5 h-2.5" style={{ color: roleMeta.color }} />
-                            <span className="text-[7px] font-black uppercase tracking-widest" style={{ color: roleMeta.color }}>{roleMeta.label}</span>
+                            <RoleIcon className="w-2 h-2" style={{ color: roleMeta.color }} />
+                            <span className="text-[6px] font-black uppercase tracking-widest" style={{ color: roleMeta.color }}>{roleMeta.label}</span>
                           </div>
                         </div>
-                        <span className="text-[9px] text-gray-600 group-hover:text-gray-400 transition-colors shrink-0">→</span>
                       </Link>
                     );
                   })}
