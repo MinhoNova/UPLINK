@@ -13,19 +13,19 @@ import {
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const CLASS_BANNERS: Record<string, string> = {
-  "death-knight": "/wow/banners/Blood_Death_Knight.webp",
-  "demon-hunter": "/wow/banners/Havoc_Demon_Hunter.webp",
+  "death-knight": "/wow/banners/death-knight.webp",
+  "demon-hunter": "/wow/banners/demon-hunter.webp",
   druid: "/wow/banners/druid.webp",
   evoker: "/wow/banners/evoker.webp",
-  hunter: "/wow/banners/Beast_Mastery_Hunter.webp",
+  hunter: "/wow/banners/hunter.webp",
   mage: "/wow/banners/mage.webp",
-  monk: "/wow/banners/Windwalker_Monk.webp",
-  paladin: "/wow/banners/Retribution_Paladin.webp",
-  priest: "/wow/banners/Shadow_Priest.webp",
-  rogue: "/wow/banners/Outlaw_Rogue.webp",
-  shaman: "/wow/banners/Elemental_Shaman.webp",
-  warlock: "/wow/banners/Affliction_Warlock.webp",
-  warrior: "/wow/banners/Arms_Warrior.webp",
+  monk: "/wow/banners/monk.webp",
+  paladin: "/wow/banners/paladin.webp",
+  priest: "/wow/banners/priest.webp",
+  rogue: "/wow/banners/rogue.webp",
+  shaman: "/wow/banners/shaman.webp",
+  warlock: "/wow/banners/warlock.webp",
+  warrior: "/wow/banners/warrior.webp",
 };
 
 const siteUrl = getSiteUrl();
