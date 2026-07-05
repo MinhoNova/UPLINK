@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { getClassColor, CLASS_NAMES } from "@/lib/wowData";
+import { SPECS, getClassColor, CLASS_NAMES } from "@/lib/wowData";
 
 const CLASS_ORDER = [
   "death-knight", "demon-hunter", "druid", "evoker", "hunter",
@@ -51,6 +51,31 @@ export default function ClassSidebar() {
               >
                 {CLASS_NAMES[classId]}
               </span>
+
+              {/* ── Spec popup on hover ── */}
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                <div className="bg-[#0c0c18]/95 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-3 min-w-[180px] shadow-2xl">
+                  <div className="text-[8px] font-black uppercase tracking-[0.15em] text-white/30 mb-2 px-1">{CLASS_NAMES[classId]} Specs</div>
+                  <div className="space-y-1">
+                    {SPECS.filter((s) => s.classId === classId).map((spec) => {
+                      const roleColors = { dps: "#ff4444", healer: "#00cc66", tank: "#4488ff" };
+                      return (
+                        <Link
+                          key={spec.id}
+                          href={`/wow/spec/${spec.id}`}
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-white/[0.04] transition-colors"
+                        >
+                          <Image src={spec.icon} alt={spec.name} width={28} height={28} className="rounded-md shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] font-bold text-white/80 leading-tight truncate">{spec.name}</div>
+                            <span className="text-[7px] font-black uppercase tracking-widest" style={{ color: roleColors[spec.role] }}>{spec.role === "dps" ? "DPS" : spec.role === "healer" ? "Healer" : "Tank"}</span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </Link>
           );
         })}

@@ -105,7 +105,7 @@ export default function TierListClient() {
                     {specs.map((spec) => (
                       <div
                         key={spec.id}
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border border-white/[0.06]"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border border-white/[0.06] opacity-60 hover:opacity-100 transition-all duration-200 hover:scale-110 hover:border-white/[0.2] cursor-pointer"
                         style={{ backgroundColor: `${color}25` }}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/wow/spec/${spec.id}`; }}
                         title={spec.name}
