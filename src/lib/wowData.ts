@@ -6151,13 +6151,13 @@ export function mergeAggregatedData(
 
   const bis = aggregated.bis.map((s) => ({
     slot: s.slot,
-    name: s.names[0]?.name || hardcoded.bis.find((h) => h.slot === s.slot)?.name || "Unknown",
+    name: s.names[0]?.name && s.names[0].name !== "Unknown" ? s.names[0].name : hardcoded.bis.find((h) => h.slot === s.slot)?.name || `${s.slot} Item`,
     itemId: s.names[0]?.itemId || hardcoded.bis.find((h) => h.slot === s.slot)?.itemId,
   }));
 
   const enchants = aggregated.enchants.map((s) => ({
     slot: s.slot,
-    name: s.names[0]?.name || hardcoded.enchants.find((h) => h.slot === s.slot)?.name || "Unknown",
+    name: s.names[0]?.name || hardcoded.enchants.find((h) => h.slot === s.slot)?.name || `${s.slot} Enchant`,
   }));
 
   const gems = aggregated.gems.length > 0
