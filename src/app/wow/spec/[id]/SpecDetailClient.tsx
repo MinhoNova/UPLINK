@@ -318,24 +318,70 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             </section>
           )}
 
-          {/* BIS Gear — Murlok-style */}
+          {/* BIS Gear — ranked by top 50 players */}
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-6">Best-in-slot gear for {spec.classId.replace(/-/g, " ")}.</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                {data.bis.map((item) => (
-                  <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-3 py-3 border border-white/5 hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden flex flex-col items-center text-center gap-2">
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
-                    <div className="relative z-10">
-                      <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} itemName={item.name} />
+              <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, purple = alternative.</p>
+              <div className="space-y-6">
+                {data.bis.map((slot) => {
+                  const primary = slot.options?.[0];
+                  const secondary = slot.options?.[1];
+                  const allUsePrimary = primary && primary.pct >= 100;
+                  return (
+                    <div key={slot.slot} className="space-y-2">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15`, border: `1px solid ${color}25` }}>
+                          {(() => {
+                            const SlotIcon = GEAR_SLOT_ICONS[slot.slot];
+                            return SlotIcon ? <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} /> : null;
+                          })()}
+                        </div>
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em]">{slot.slot}</span>
+                        <div className="flex-1 h-px bg-gradient-to-r from-white/10 via-transparent to-transparent" />
+                      </div>
+                      {primary && (
+                        <div className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border transition-all overflow-hidden" style={{ borderColor: "#f9731660" }}>
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.08) 0%, transparent 50%)" }} />
+                          <div className="relative z-10 flex items-center gap-4">
+                            <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold truncate" style={{ color: "#f97316" }}>{primary.name}</span>
+                                {slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs" ? (
+                                  <span className="shrink-0 text-[7px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                  <div className="h-full rounded-full transition-all" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)", boxShadow: "0 0 8px rgba(249,115,22,0.3)" }} />
+                                </div>
+                                <span className="text-[10px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count} players ({primary.pct.toFixed(0)}%)</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {secondary && !allUsePrimary && (
+                        <div className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border transition-all overflow-hidden" style={{ borderColor: "#a855f740" }}>
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.08) 0%, transparent 50%)" }} />
+                          <div className="relative z-10 flex items-center gap-4">
+                            <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-bold truncate block" style={{ color: "#a855f7" }}>{secondary.name}</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                  <div className="h-full rounded-full transition-all" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #a855f7, #c084fc)", boxShadow: "0 0 8px rgba(168,85,247,0.3)" }} />
+                                </div>
+                                <span className="text-[10px] font-black shrink-0" style={{ color: "#a855f7" }}>{secondary.count} players ({secondary.pct.toFixed(0)}%)</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="relative z-10 min-w-0">
-                      <span className="text-[7px] font-black tracking-wider block" style={{ color: `${color}77` }}>{item.slot}</span>
-                      <span className="text-[11px] font-bold text-white leading-tight block truncate max-w-full">{item.name}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}
@@ -384,7 +430,9 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <div className="space-y-3">
                 {data.statPriority.map((stat, i) => {
                   const pct = 100 - i * 18;
-                  const barColor = i === 0 ? color : i === 1 ? `${color}bb` : i === 2 ? `${color}88` : `${color}55`;
+                  const statColors = ["#f97316", "#a855f7", "#ffffff", "#9ca3af", "#6b7280"];
+                  const barColor = statColors[i] || "#6b7280";
+                  const barGrad = i === 0 ? "linear-gradient(90deg, #f97316, #fb923c)" : i === 1 ? "linear-gradient(90deg, #a855f7, #c084fc)" : `linear-gradient(90deg, ${color}88, ${color}40)`;
                   return (
                     <div key={i} className="flex items-center gap-4">
                       <span className="w-5 text-[10px] font-black text-gray-500 shrink-0 text-right">{i + 1}</span>

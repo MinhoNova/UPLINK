@@ -104,10 +104,19 @@ export const CLASS_NAMES: Record<string, string> = {
 
 /* ───── BIS Gear, Enchants, Gems, Talents ───── */
 
+export interface BISItemOption {
+  name: string;
+  itemId?: number;
+  count: number;
+  pct: number;
+  isTier?: boolean;
+}
+
 export interface BISItem {
   slot: string;
   name: string;
   itemId?: number;
+  options?: BISItemOption[];
 }
 
 export interface EnchantItem {
@@ -6139,6 +6148,15 @@ export interface AggregatedSpecData {
   lastUpdated: number;
 }
 
+function hardcodedBisToOptions(items: { slot: string; name: string; itemId?: number }[]): BISItem[] {
+  return items.map((i) => ({
+    slot: i.slot,
+    name: i.name,
+    itemId: i.itemId,
+    options: [{ name: i.name, itemId: i.itemId, count: 50, pct: 100 }],
+  }));
+}
+
 export function mergeAggregatedData(
   specId: string,
   aggregated: AggregatedSpecData | undefined | null,
@@ -6147,13 +6165,31 @@ export function mergeAggregatedData(
   const hardcoded = getSpecData(specId, ptr) || {
     bis: [], enchants: [], gems: [], builds: [], statPriority: ["Intellect", "Haste", "Mastery", "Critical Strike", "Versatility"],
   };
-  if (!aggregated || aggregated.totalPlayers === 0) return hardcoded;
+  if (!aggregated || aggregated.totalPlayers === 0) {
+    return {
+      ...hardcoded,
+      bis: hardcodedBisToOptions(hardcoded.bis),
+    };
+  }
 
-  const bis = aggregated.bis.map((s) => ({
-    slot: s.slot,
-    name: s.names[0]?.name && s.names[0].name !== "Unknown" ? s.names[0].name : hardcoded.bis.find((h) => h.slot === s.slot)?.name || `${s.slot} Item`,
-    itemId: s.names[0]?.itemId || hardcoded.bis.find((h) => h.slot === s.slot)?.itemId,
-  }));
+  const bis = aggregated.bis.map((s) => {
+    const hcItem = hardcoded.bis.find((h) => h.slot === s.slot);
+    const options = s.names
+      .map((n) => ({
+        name: n.name && n.name !== "Unknown" ? n.name : hcItem?.name || `${s.slot} Item`,
+        itemId: n.itemId || hcItem?.itemId,
+        count: n.count,
+        pct: parseFloat(n.pct) || 0,
+      }))
+      .filter((o) => o.count > 0);
+    const primary = options[0] || { name: hcItem?.name || `${s.slot} Item`, itemId: hcItem?.itemId, count: 0, pct: 0 };
+    return {
+      slot: s.slot,
+      name: primary.name,
+      itemId: primary.itemId,
+      options,
+    };
+  });
 
   const enchants = aggregated.enchants.map((s) => ({
     slot: s.slot,
@@ -6170,7 +6206,6 @@ export function mergeAggregatedData(
 
   const builds = aggregated.topPlayers.length > 0
     ? aggregated.topPlayers.slice(0, 5).map((p) => {
-        // Convert pipeline talents to TalentTree format
         let trees: TalentTree[];
         if (p.talents && p.talents.length > 0) {
           const treeMap = new Map<string, TalentTree>();
