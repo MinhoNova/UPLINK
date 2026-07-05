@@ -85,7 +85,7 @@ export default function TierListClient() {
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
-                    className="object-contain transition-all duration-700 group-hover:scale-105"
+                    className="object-cover transition-all duration-700 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
 
