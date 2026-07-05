@@ -33,21 +33,30 @@ export default function TierListClient() {
       <ClassSidebar />
       <div className="relative z-10 lg:ml-[424px] pt-16 sm:pt-24 pb-16">
 
-        {/* ─── Hero Banner — full image, no text ─── */}
-        <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[520px] mb-12 bg-black/40">
+        {/* ─── Hero Banner ─── */}
+        <div className="relative w-full h-[280px] sm:h-[380px] lg:h-[460px] bg-black/40">
           <Image
             src="/wow/banners/silvermoon.webp"
-            alt="World of Warcraft"
+            alt="Midnight Season 1"
             fill
             className="object-contain"
             priority
             sizes="100vw"
           />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,5,10,0.1) 0%, rgba(5,5,10,0.85) 100%)" }} />
+          <div className="absolute inset-0 flex flex-col justify-center items-center p-6 sm:p-10">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white drop-shadow-2xl tracking-tight text-center" style={{ textShadow: "0 4px 40px #000" }}>
+              Midnight <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00ffff] to-[#ff007f]">Season 1</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-white/50 max-w-xl text-center mt-3 drop-shadow-lg font-medium tracking-wide" style={{ textShadow: "0 2px 10px #000" }}>
+              13 classes · 40 specializations · Mythic+ meta
+            </p>
+          </div>
         </div>
 
-        {/* ─── Class Grid — 3-col, image-only banners ─── */}
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* ─── Class Grid — 3-col, banner cards with painted names ─── */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 mt-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {CLASS_ORDER.map((classId) => {
               const className = CLASS_NAMES[classId];
               const specs = SPECS.filter((s) => s.classId === classId);
@@ -63,7 +72,7 @@ export default function TierListClient() {
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
-                    className="object-contain transition-all duration-700 group-hover:scale-105"
+                    className="object-contain"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </Link>
