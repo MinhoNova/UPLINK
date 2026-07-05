@@ -34,7 +34,7 @@ export default function TierListClient() {
       <div className="relative z-10 lg:ml-[424px] pt-16 sm:pt-24 pb-16">
 
         {/* ─── Hero Banner ─── */}
-        <div className="relative w-full h-[280px] sm:h-[380px] lg:h-[460px] bg-black/40">
+        <div className="relative w-full h-[280px] sm:h-[380px] lg:h-[460px] mt-8 bg-black/40">
           <Image
             src="/wow/banners/silvermoon.webp"
             alt="Midnight Season 1"
@@ -66,13 +66,13 @@ export default function TierListClient() {
                 <Link
                   key={classId}
                   href={`/wow/class/${classId}`}
-                  className="group relative block w-full aspect-[3/1] rounded-2xl overflow-hidden bg-black/40 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-300"
+                  className="group relative block w-full aspect-[5/2] rounded-2xl overflow-hidden bg-black/40 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-300"
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
-                    className="object-contain"
+                    className="object-cover"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </Link>
