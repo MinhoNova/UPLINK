@@ -75,13 +75,13 @@ export default function TierListClient() {
               const specs = SPECS.filter((s) => s.classId === classId);
               if (specs.length === 0) return null;
 
-              const isPortrait = classId === "hunter";
+              const cardAspect = classId === "hunter" ? "aspect-[437/250]" : "aspect-[2/1]";
 
               return (
                 <Link
                   key={classId}
                   href={`/wow/class/${classId}`}
-                  className={`group relative block w-full rounded-xl overflow-hidden bg-black/60 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-500 ${isPortrait ? "aspect-[3/4]" : "aspect-[2/1]"}`}
+                  className={`group relative block w-full rounded-xl overflow-hidden bg-black/60 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-500 ${cardAspect}`}
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
@@ -93,13 +93,11 @@ export default function TierListClient() {
 
                   {/* Overlay gradient */}
                   <div className="absolute inset-0" style={{
-                    background: isPortrait
-                      ? "linear-gradient(0deg, rgba(5,5,10,0.9) 0%, rgba(5,5,10,0.2) 40%, rgba(5,5,10,0.1) 100%)"
-                      : "linear-gradient(180deg, rgba(5,5,10,0.15) 0%, rgba(5,5,10,0.85) 100%)",
+                    background: "linear-gradient(180deg, rgba(5,5,10,0.15) 0%, rgba(5,5,10,0.85) 100%)",
                   }} />
 
-                  {/* Class icon + name at top-left for portrait, bottom-left for landscape */}
-                  <div className={`absolute flex items-center gap-3 ${isPortrait ? "top-4 left-4" : "bottom-3 left-3 sm:bottom-4 sm:left-4"}`}>
+                  {/* Class icon + name at bottom-left */}
+                  <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 ring-2 ring-white/10 transition-all duration-300 group-hover:ring-white/20" style={{ backgroundColor: `${color}30` }}>
                       <Image
                         src={specs[0].icon}
@@ -119,35 +117,19 @@ export default function TierListClient() {
                     </div>
                   </div>
 
-                  {/* Spec icons - portrait: bottom-center pills, landscape: bottom-right icons */}
-                  {isPortrait ? (
-                    <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3">
-                      {specs.map((spec) => (
-                        <div
-                          key={spec.id}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/wow/spec/${spec.id}`; }}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.12] transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95"
-                        >
-                          <Image src={spec.icon} alt={spec.name} width={22} height={22} className="rounded-md shrink-0" />
-                          <span className="text-[9px] sm:text-[10px] font-bold text-white/90 leading-tight truncate max-w-[70px]">{spec.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-1.5">
-                      {specs.map((spec) => (
-                        <div
-                          key={spec.id}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden opacity-60 group-hover:opacity-100 transition-all duration-300 -mr-1 group-hover:mr-0 border border-white/[0.06] group-hover:border-white/[0.15] hover:!scale-110"
-                          style={{ backgroundColor: `${color}25` }}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/wow/spec/${spec.id}`; }}
-                          title={spec.name}
-                        >
-                          <Image src={spec.icon} alt={spec.name} width={32} height={32} className="w-full h-full" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-1.5">
+                    {specs.map((spec) => (
+                      <div
+                        key={spec.id}
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden opacity-60 group-hover:opacity-100 transition-all duration-300 -mr-1 group-hover:mr-0 border border-white/[0.06] group-hover:border-white/[0.15] hover:!scale-110"
+                        style={{ backgroundColor: `${color}25` }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/wow/spec/${spec.id}`; }}
+                        title={spec.name}
+                      >
+                        <Image src={spec.icon} alt={spec.name} width={32} height={32} className="w-full h-full" />
+                      </div>
+                    ))}
+                  </div>
 
                   {/* Glass ring on hover */}
                   <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/0 group-hover:ring-white/[0.06] transition-all duration-500 pointer-events-none" />
