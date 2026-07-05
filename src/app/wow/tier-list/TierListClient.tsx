@@ -96,27 +96,6 @@ export default function TierListClient() {
                     background: "linear-gradient(180deg, rgba(5,5,10,0.15) 0%, rgba(5,5,10,0.85) 100%)",
                   }} />
 
-                  {/* Class icon + name at bottom-left */}
-                  <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 ring-2 ring-white/10 transition-all duration-300 group-hover:ring-white/20" style={{ backgroundColor: `${color}30` }}>
-                      <Image
-                        src={specs[0].icon}
-                        alt={className}
-                        width={36}
-                        height={36}
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div>
-                      <div className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-xl">{className}</div>
-                      <div className="flex items-center gap-1 text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-white/30 mt-0.5">
-                        {specs.map((s) => s.role).filter((v, i, a) => a.indexOf(v) === i).map((role) => (
-                          <span key={role}>{role === "dps" ? "DPS" : role === "healer" ? "Healer" : "Tank"}</span>
-                        )).reduce((acc: any, curr: any, i: number, arr: any[]) => i < arr.length - 1 ? [...acc, curr, <span key={`dot-${i}`} className="mx-1">·</span>] : [...acc, curr], [])}
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-1.5">
                     {specs.map((spec) => (
                       <div
