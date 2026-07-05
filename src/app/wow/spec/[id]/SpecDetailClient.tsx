@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
-import { SPECS, getClassColor, getSpecData, mergeAggregatedData } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
@@ -150,11 +150,11 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           })}
         </div>
 
-        {/* Spec Banner */}
+        {/* Class Banner */}
         <div className="relative w-full h-[160px] sm:h-[200px] rounded-[2rem] overflow-hidden mb-8 bg-black/40">
           <Image
-            src={`/wow/banners/${spec.name.replace(/ /g, "_")}.webp`}
-            alt={spec.name}
+            src={`/wow/banners/${spec.classId}.webp`}
+            alt={CLASS_NAMES[spec.classId] || spec.classId}
             fill
             className="object-contain"
             priority
