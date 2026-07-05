@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { ChevronLeft } from "lucide-react";
 import { getSiteUrl } from "@/lib/siteUrl";
 import {
   SPECS,
@@ -92,44 +93,30 @@ export default async function ClassPage({
         }}
       />
       <ClassSidebar />
-      <div className="relative z-10 lg:ml-[220px] max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
-        <Link
-          href="/wow"
-          className="text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors"
-        >
-          ← Back to WoW
-        </Link>
+      <div className="relative z-10 lg:ml-[424px] pt-16 sm:pt-24 pb-16">
 
-        <div className="mt-8 mb-12">
-          <div className="relative w-full h-[180px] sm:h-[240px] rounded-2xl overflow-hidden mb-6 bg-black/40">
+        {/* ─── Class Hero Banner ─── */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-14 mt-6">
+          <div className="relative w-full h-[200px] sm:h-[260px] lg:h-[320px] rounded-3xl overflow-hidden bg-black/40">
             <Image
               src={CLASS_BANNERS[id]}
               alt={className}
               fill
-              className="object-contain"
+              className="object-cover"
               priority
-              sizes="(max-width: 640px) 100vw, 800px"
+              sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-transparent to-transparent" />
-            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4">
-              <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 20px ${color}80, 0 2px 8px #000` }}>
+            <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(5,5,10,0.7) 0%, rgba(5,5,10,0.3) 50%, rgba(5,5,10,0.7) 100%)" }} />
+            <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-10 lg:px-14">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-none tracking-tight" style={{ textShadow: `0 2px 30px ${color}80, 0 4px 40px #000` }}>
                 {className}
               </h1>
-              <p className="text-xs sm:text-sm text-white/90 max-w-xl drop-shadow-lg mt-1" style={{ textShadow: "0 1px 8px #000" }}>
+              <p className="text-xs sm:text-sm text-white/70 max-w-xl mt-3 font-medium tracking-wide drop-shadow-lg">
                 All {className} specs — BIS gear, enchants, gems, stat priorities, and talent builds.
               </p>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-3">
                 {roles.map((role) => (
-                  <span
-                    key={role}
-                    className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border"
-                    style={{
-                      borderColor: `${color}80`,
-                      backgroundColor: `${color}40`,
-                      color: '#fff',
-                      textShadow: "0 1px 4px #000",
-                    }}
-                  >
+                  <span key={role} className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border" style={{ borderColor: `${color}80`, backgroundColor: `${color}40`, color: "#fff" }}>
                     {role === "tank" ? "Tank" : role === "healer" ? "Healer" : "DPS"}
                   </span>
                 ))}
@@ -138,7 +125,10 @@ export default async function ClassPage({
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        {/* ─── Spec Grid ─── */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-14 mt-8">
+          <Link href="/wow/tier-list" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors mb-6"><ChevronLeft className="w-3 h-3" /> Back to Tier List</Link>
+          <div className="grid sm:grid-cols-2 gap-4">
           {specs.map((spec) => {
             const data = getSpecData(spec.id);
             const statPreview = data?.statPriority?.slice(0, 3).join(" → ");
@@ -205,5 +195,6 @@ export default async function ClassPage({
         </div>
       </div>
     </div>
+  </div>
   );
 }

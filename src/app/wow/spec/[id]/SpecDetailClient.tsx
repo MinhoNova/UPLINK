@@ -176,18 +176,6 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           })}
         </div>
 
-        {/* Spec Banner */}
-        <div className="relative w-full h-[300px] sm:h-[400px] rounded-[2rem] overflow-hidden mb-8 bg-black/40">
-          <Image
-            src={`/wow/banners/${specBanner(spec.id)}.webp`}
-            alt={spec.name}
-            fill
-            className="object-cover"
-            priority
-            sizes="(max-width: 640px) 100vw, 900px"
-          />
-        </div>
-
         <div className="grid gap-8">
           {/* ═══ TOP PLAYERS ═══ */}
           <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
