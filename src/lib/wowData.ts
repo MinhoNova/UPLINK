@@ -6169,15 +6169,37 @@ export function mergeAggregatedData(
     : hardcoded.statPriority;
 
   const builds = aggregated.topPlayers.length > 0
-    ? aggregated.topPlayers.slice(0, 5).map((p) => ({
-        player: p.name,
-        class: hardcoded.builds[0]?.class || "",
-        region: p.region,
-        score: p.score,
-        type: "mythic+" as const,
-        talentString: "",
-        trees: hardcoded.builds[0]?.trees || [],
-      }))
+    ? aggregated.topPlayers.slice(0, 5).map((p) => {
+        // Convert pipeline talents to TalentTree format
+        let trees: TalentTree[];
+        if (p.talents && p.talents.length > 0) {
+          const treeMap = new Map<string, TalentTree>();
+          for (const t of p.talents) {
+            const treeName = t.treeName || "Talents";
+            if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
+            treeMap.get(treeName)!.nodes.push({
+              name: t.name,
+              id: t.spellId || t.nodeId,
+              row: t.row || Math.ceil((treeMap.get(treeName)!.nodes.length + 1) / 2),
+              col: t.col || ((treeMap.get(treeName)!.nodes.length % 2) + 1),
+              selected: t.selected,
+            });
+          }
+          trees = Array.from(treeMap.values());
+        } else {
+          trees = hardcoded.builds[0]?.trees || [];
+        }
+
+        return {
+          player: p.name,
+          class: hardcoded.builds[0]?.class || "",
+          region: p.region,
+          score: p.score,
+          type: "mythic+" as const,
+          talentString: "",
+          trees,
+        };
+      })
     : hardcoded.builds;
 
   return { bis, enchants, gems, builds, statPriority };

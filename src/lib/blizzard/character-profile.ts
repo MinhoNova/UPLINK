@@ -18,6 +18,10 @@ export interface CharacterProfile {
     nodeId: number;
     name: string;
     selected: boolean;
+    spellId?: number;
+    row?: number;
+    col?: number;
+    treeName?: string;
   }[];
   gear: {
     slot: string;
@@ -111,25 +115,52 @@ export async function fetchCharacterProfile(
       const talentsData = await talentsRes.json();
       const seenNodeIds = new Set<number>();
 
-      // Blizzard talents API returns object, not array
-      const traverseTree = (node: any) => {
-        if (!node) return;
-        const nodeId = node.id || node.node_id || 0;
-        if (nodeId && !seenNodeIds.has(nodeId)) {
+      const extractNodes = (treeObj: any, treeName: string) => {
+        if (!treeObj) return;
+        const nodes = treeObj.nodes || [];
+        const selectedIds = new Set(treeObj.selected_node_ids || []);
+        for (const node of nodes) {
+          const nodeId = node.node_id || node.id || 0;
+          if (!nodeId || seenNodeIds.has(nodeId)) continue;
           seenNodeIds.add(nodeId);
+          const rank = node.rank || (selectedIds.has(nodeId) ? 1 : 0);
           profile.talents.push({
             nodeId,
             name: node.talent?.name || node.name || "Unknown",
-            selected: (node.rank || 0) > 0,
+            spellId: node.talent?.id,
+            selected: rank > 0,
+            row: node.display_row || node.position?.row,
+            col: node.display_col || node.position?.col,
+            treeName,
           });
         }
-        if (node.entries) node.entries.forEach(traverseTree);
-        if (node.nodes) node.nodes.forEach(traverseTree);
-        if (Array.isArray(node)) node.forEach(traverseTree);
       };
 
-      if (talentsData.talent_tree) traverseTree(talentsData.talent_tree);
-      if (talentsData.hero_talents) talentsData.hero_talents.forEach(traverseTree);
+      if (talentsData.talent_tree) extractNodes(talentsData.talent_tree, talentsData.talent_tree.name || "Class Talents");
+      if (talentsData.hero_talents) {
+        for (const ht of (Array.isArray(talentsData.hero_talents) ? talentsData.hero_talents : [talentsData.hero_talents])) {
+          extractNodes(ht, ht.name || "Hero Talents");
+        }
+      }
+
+      // Assign computed row/col for nodes missing position data
+      const talentsByTree = new Map<string, typeof profile.talents>();
+      for (const t of profile.talents) {
+        const key = t.treeName || "Class Talents";
+        if (!talentsByTree.has(key)) talentsByTree.set(key, []);
+        talentsByTree.get(key)!.push(t);
+      }
+      for (const [, talents] of talentsByTree) {
+        let curRow = 1, curCol = 1;
+        for (const t of talents) {
+          if (t.row === undefined || t.col === undefined) {
+            t.row = curRow;
+            t.col = curCol;
+            curCol = curCol === 1 ? 2 : 1;
+            if (curCol === 1) curRow++;
+          }
+        }
+      }
     }
 
     return profile;

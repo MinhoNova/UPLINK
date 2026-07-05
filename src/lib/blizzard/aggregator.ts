@@ -35,7 +35,7 @@ export async function aggregateBySpec(
   );
 
   // Group profiles by spec
-  const profilesBySpec = new Map<string, { player: TopPlayer; talents: { nodeId: number; name: string; selected: boolean }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
+  const profilesBySpec = new Map<string, { player: TopPlayer; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
 
   let idx = 0;
   for (const { specId, player } of allFetches) {
