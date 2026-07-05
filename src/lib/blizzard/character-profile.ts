@@ -109,21 +109,27 @@ export async function fetchCharacterProfile(
     // Parse talents
     if (talentsRes.ok) {
       const talentsData = await talentsRes.json();
-      const allTrees = talentsData.talent_tree || talentsData.hero_tree || [];
       const seenNodeIds = new Set<number>();
-      for (const tree of allTrees) {
-        for (const node of tree.entries || tree.nodes || []) {
-          const nodeId = node.node_id || node.id || 0;
-          if (nodeId && !seenNodeIds.has(nodeId)) {
-            seenNodeIds.add(nodeId);
-            profile.talents.push({
-              nodeId,
-              name: node.talent?.name || node.name || "Unknown",
-              selected: node.rank > 0,
-            });
-          }
+
+      // Blizzard talents API returns object, not array
+      const traverseTree = (node: any) => {
+        if (!node) return;
+        const nodeId = node.id || node.node_id || 0;
+        if (nodeId && !seenNodeIds.has(nodeId)) {
+          seenNodeIds.add(nodeId);
+          profile.talents.push({
+            nodeId,
+            name: node.talent?.name || node.name || "Unknown",
+            selected: (node.rank || 0) > 0,
+          });
         }
-      }
+        if (node.entries) node.entries.forEach(traverseTree);
+        if (node.nodes) node.nodes.forEach(traverseTree);
+        if (Array.isArray(node)) node.forEach(traverseTree);
+      };
+
+      if (talentsData.talent_tree) traverseTree(talentsData.talent_tree);
+      if (talentsData.hero_talents) talentsData.hero_talents.forEach(traverseTree);
     }
 
     return profile;
