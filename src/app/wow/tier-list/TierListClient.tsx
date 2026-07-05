@@ -85,7 +85,7 @@ export default function TierListClient() {
               const specs = SPECS.filter((s) => s.classId === classId);
               if (specs.length === 0) return null;
 
-              const cardAspect = classId === "hunter" ? "aspect-[437/250]" : "aspect-[2/1]";
+              const cardAspect = "aspect-[437/250]";
 
               return (
                 <Link
