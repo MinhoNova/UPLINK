@@ -31,15 +31,22 @@ const GEAR_SLOT_ICONS: Record<string, any> = {
   Weapon: Swords, "Off-Hand": BookOpen,
 };
 
-function BisItemIcon({ slot, color, itemId }: { slot: string; color: string; itemId?: number }) {
+function BisItemIcon({ slot, color, itemId, itemName }: { slot: string; color: string; itemId?: number; itemName?: string }) {
   const [iconUrl, setIconUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (!itemId) return;
-    fetch(`/api/wow/blizzard/icon?type=item&id=${itemId}`)
+    let cancelled = false;
+    const query = itemId
+      ? `type=item&id=${itemId}`
+      : itemName
+        ? `type=item&name=${encodeURIComponent(itemName)}`
+        : null;
+    if (!query) return;
+    fetch(`/api/wow/blizzard/icon?${query}`)
       .then((r) => r.json())
-      .then((d) => { if (d.available) setIconUrl(d.url); })
+      .then((d) => { if (!cancelled && d.available) setIconUrl(d.url); })
       .catch(() => {});
-  }, [itemId]);
+    return () => { cancelled = true; };
+  }, [itemId, itemName]);
 
   const SlotIcon = GEAR_SLOT_ICONS[slot];
   return (
@@ -307,7 +314,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-3 py-3 border border-white/5 hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden flex flex-col items-center text-center gap-2">
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
                     <div className="relative z-10">
-                      <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} />
+                      <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} itemName={item.name} />
                     </div>
                     <div className="relative z-10 min-w-0">
                       <span className="text-[7px] font-black tracking-wider block" style={{ color: `${color}77` }}>{item.slot}</span>
