@@ -23,7 +23,7 @@ export default function ClassSidebar() {
   const currentSpecId = pathname?.match(/\/wow\/spec\/([^/]+)/)?.[1] || "";
 
   return (
-    <aside className="fixed left-0 top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)] w-[200px] z-30 hidden lg:flex flex-col bg-[#07070f]/95 backdrop-blur-xl border-r border-white/[0.04]">
+    <aside className="fixed left-56 top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)] w-[200px] z-30 hidden lg:flex flex-col bg-[#07070f]/95 backdrop-blur-xl border-r border-white/[0.04]">
       {/* Logo */}
       <div className="shrink-0 px-4 py-5 border-b border-white/[0.04]">
         <Link href="/wow/tier-list" className="flex items-center gap-3">
