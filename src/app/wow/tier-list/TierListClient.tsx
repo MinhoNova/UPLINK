@@ -81,7 +81,7 @@ export default function TierListClient() {
                 {/* Class Banner — landscape, full image visible */}
                 <Link
                   href={`/wow/class/${classId}`}
-                  className="group relative block w-full h-[90px] sm:h-[110px] overflow-hidden bg-black/40"
+                  className="group relative block w-full aspect-[3/1] overflow-hidden bg-black/40"
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
