@@ -45,12 +45,12 @@ export default function TierListClient() {
       <div className="relative z-10 lg:ml-[220px] max-w-5xl mx-auto px-4 pt-16 sm:pt-24 pb-16">
 
         {/* ─── Hero Banner (Murlok-style) ─── */}
-        <div className="relative w-full h-[200px] sm:h-[280px] rounded-[2rem] overflow-hidden mb-10 bg-black/60">
+        <div className="relative w-full h-[200px] sm:h-[280px] rounded-[2rem] overflow-hidden mb-10 bg-black/40">
           <Image
             src="/wow/banners/silvermoon.webp"
             alt="World of Warcraft Meta Classes"
             fill
-            className="object-cover"
+            className="object-contain"
             priority
             sizes="100vw"
           />
@@ -84,7 +84,7 @@ export default function TierListClient() {
                     src={CLASS_BANNERS[classId]}
                     alt=""
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="object-contain transition-transform duration-700 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
