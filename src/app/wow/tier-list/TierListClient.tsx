@@ -79,13 +79,13 @@ export default function TierListClient() {
                 <Link
                   key={classId}
                   href={`/wow/class/${classId}`}
-                  className="group relative block w-full aspect-[2/1] rounded-xl overflow-hidden bg-black/60 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-500"
+                  className="group relative block w-full aspect-[3/1] rounded-xl overflow-hidden bg-black/60 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-500"
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
-                    className="object-cover transition-all duration-700 group-hover:scale-105"
+                    className="object-contain"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
 
