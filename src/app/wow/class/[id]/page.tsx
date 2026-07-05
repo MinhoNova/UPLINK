@@ -29,6 +29,22 @@ const CLASS_BANNERS: Record<string, string> = {
   warrior: "/wow/banners/warrior.webp",
 };
 
+const CLASS_HERO_BANNERS: Record<string, string> = {
+  "death-knight": "/wow/banners/death-knight-meta.webp",
+  "demon-hunter": "/wow/banners/demon-hunter-meta.webp",
+  druid: "/wow/banners/druid-meta.webp",
+  evoker: "/wow/banners/evoker-meta.webp",
+  hunter: "/wow/banners/hunter-meta.webp",
+  mage: "/wow/banners/mage-meta.webp",
+  monk: "/wow/banners/monk-meta.webp",
+  paladin: "/wow/banners/paladin-meta.webp",
+  priest: "/wow/banners/priest-meta.webp",
+  rogue: "/wow/banners/rogue-meta.webp",
+  shaman: "/wow/banners/shaman-meta.webp",
+  warlock: "/wow/banners/warlock-meta.webp",
+  warrior: "/wow/banners/warrior-meta.webp",
+};
+
 const siteUrl = getSiteUrl();
 
 const CLASS_IDS = Object.keys(CLASS_COLORS);
@@ -97,9 +113,9 @@ export default async function ClassPage({
 
         {/* ─── Class Hero Banner ─── */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-14 mt-6">
-          <div className="relative w-full h-[200px] sm:h-[260px] lg:h-[320px] rounded-3xl overflow-hidden bg-black/40">
+          <div className="relative w-full h-[240px] sm:h-[300px] lg:h-[380px] rounded-3xl overflow-hidden bg-black/40">
             <Image
-              src={CLASS_BANNERS[id]}
+              src={CLASS_HERO_BANNERS[id]}
               alt={className}
               fill
               className="object-cover"
