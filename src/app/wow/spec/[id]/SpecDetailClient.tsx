@@ -43,13 +43,13 @@ function BisItemIcon({ slot, color, itemId }: { slot: string; color: string; ite
 
   const SlotIcon = GEAR_SLOT_ICONS[slot];
   return (
-    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden" style={{ backgroundColor: `${color}12`, border: `1px solid ${color}25` }}>
+    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg" style={{ backgroundColor: `${color}15`, border: `1px solid ${color}25`, boxShadow: `0 0 12px ${color}10` }}>
       {iconUrl ? (
-        <Image src={iconUrl} alt="" width={36} height={36} className="w-full h-full object-cover" unoptimized />
+        <Image src={iconUrl} alt="" width={48} height={48} className="w-full h-full object-cover" unoptimized />
       ) : SlotIcon ? (
-        <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} />
+        <SlotIcon className="w-5 h-5" style={{ color: `${color}bb` }} />
       ) : (
-        <Gem className="w-4 h-4" style={{ color: `${color}bb` }} />
+        <Gem className="w-5 h-5" style={{ color: `${color}bb` }} />
       )}
     </div>
   );
@@ -297,21 +297,21 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             </section>
           )}
 
-          {/* BIS Gear */}
+          {/* BIS Gear — Murlok-style */}
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Best-in-slot gear for {spec.classId.replace(/-/g, " ")}.</p>
-              <div className="grid sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {data.bis.map((item) => (
-                  <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden">
+                  <div key={item.slot} className="group relative bg-[#0c0c18]/80 rounded-xl px-3 py-3 border border-white/5 hover:bg-[#0c0c18] hover:border-white/10 transition-all overflow-hidden flex flex-col items-center text-center gap-2">
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 50%)` }} />
-                    <div className="relative z-10 flex items-center gap-3">
+                    <div className="relative z-10">
                       <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} />
-                      <div>
-                        <span className="text-[8px] font-black tracking-wider block" style={{ color: `${color}88` }}>{item.slot}</span>
-                        <span className="text-sm font-black text-white leading-tight">{item.name}</span>
-                      </div>
+                    </div>
+                    <div className="relative z-10 min-w-0">
+                      <span className="text-[7px] font-black tracking-wider block" style={{ color: `${color}77` }}>{item.slot}</span>
+                      <span className="text-[11px] font-bold text-white leading-tight block truncate max-w-full">{item.name}</span>
                     </div>
                   </div>
                 ))}
