@@ -122,8 +122,30 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
     <div className="min-h-screen bg-[#05050a] text-white">
       <ClassSidebar />
       <div className="fixed inset-0 pointer-events-none" style={{ background: `radial-gradient(800px at 30% 15%, ${color}06 0%, transparent 60%), radial-gradient(500px at 70% 60%, ${color}04 0%, transparent 50%)` }} />
-      <div className="relative z-10 lg:ml-[220px] max-w-4xl mx-auto px-4 pt-16 sm:pt-24 pb-12">
-        <Link href="/wow/tier-list" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors mb-8"><ChevronLeft className="w-3 h-3" /> Back to Tier List</Link>
+
+      {/* Full-width Class Hero Banner */}
+      <div className="relative w-full h-[180px] sm:h-[260px] lg:h-[320px] overflow-hidden bg-black/40 lg:ml-[200px]" style={{ width: "calc(100% - 200px)" }}>
+        <Image
+          src={`/wow/banners/${spec.classId}.webp`}
+          alt={CLASS_NAMES[spec.classId] || spec.classId}
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/10 to-transparent" />
+        <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-8 right-4">
+          <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 20px ${color}80, 0 2px 8px #000` }}>
+            {CLASS_NAMES[spec.classId] || spec.classId}
+          </h1>
+          <p className="text-xs sm:text-sm text-white/80 max-w-xl drop-shadow-lg mt-1" style={{ textShadow: "0 1px 8px #000" }}>
+            {spec.name} — Mythic+ guide, BIS gear, talents, enchants & gems
+          </p>
+        </div>
+      </div>
+
+      <div className="relative z-10 lg:ml-[220px] max-w-4xl mx-auto px-4 pt-6 sm:pt-8 pb-12">
+        <Link href="/wow/tier-list" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors mb-8 mt-4"><ChevronLeft className="w-3 h-3" /> Back to Tier List</Link>
 
         {/* Spec Switcher */}
         <div className="flex flex-wrap items-center gap-2 mb-10 p-2 rounded-2xl border border-white/5 bg-white/[0.02]">
@@ -150,13 +172,13 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           })}
         </div>
 
-        {/* Class Banner */}
-        <div className="relative w-full h-[160px] sm:h-[200px] rounded-[2rem] overflow-hidden mb-8 bg-black/40">
+        {/* Class Banner — full hero */}
+        <div className="relative w-full h-[300px] sm:h-[400px] rounded-[2rem] overflow-hidden mb-8 bg-black/40">
           <Image
             src={`/wow/banners/${spec.classId}.webp`}
             alt={CLASS_NAMES[spec.classId] || spec.classId}
             fill
-            className="object-contain"
+            className="object-cover"
             priority
             sizes="(max-width: 640px) 100vw, 900px"
           />
