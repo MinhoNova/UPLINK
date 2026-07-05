@@ -91,26 +91,21 @@ export default function TierListClient() {
                 <Link
                   key={classId}
                   href={`/wow/class/${classId}`}
-                  className={`group relative block w-full rounded-xl overflow-hidden bg-black/60 border border-white/[0.04] hover:border-white/[0.12] transition-all duration-500 ${cardAspect}`}
+                  className={`group relative block w-full rounded-xl overflow-hidden ${cardAspect}`}
                 >
                   <Image
                     src={CLASS_BANNERS[classId]}
                     alt={className}
                     fill
-                    className="object-cover transition-all duration-700 group-hover:scale-105"
+                    className="object-cover"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
-
-                  {/* Overlay gradient */}
-                  <div className="absolute inset-0" style={{
-                    background: "linear-gradient(180deg, rgba(5,5,10,0.15) 0%, rgba(5,5,10,0.85) 100%)",
-                  }} />
 
                   <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-1.5">
                     {specs.map((spec) => (
                       <div
                         key={spec.id}
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden opacity-60 group-hover:opacity-100 transition-all duration-300 -mr-1 group-hover:mr-0 border border-white/[0.06] group-hover:border-white/[0.15] hover:!scale-110"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border border-white/[0.06]"
                         style={{ backgroundColor: `${color}25` }}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/wow/spec/${spec.id}`; }}
                         title={spec.name}
@@ -119,9 +114,6 @@ export default function TierListClient() {
                       </div>
                     ))}
                   </div>
-
-                  {/* Glass ring on hover */}
-                  <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/0 group-hover:ring-white/[0.06] transition-all duration-500 pointer-events-none" />
                 </Link>
               );
             })}
