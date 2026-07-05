@@ -65,7 +65,7 @@ export default function TierListClient() {
           </div>
         </div>
 
-        {/* ─── Class Grid 3-col (Murlok-style) ─── */}
+        {/* ─── Class Grid 3-col ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {CLASS_ORDER.map((classId) => {
             const specs = SPECS.filter((s) => s.classId === classId);
@@ -76,35 +76,38 @@ export default function TierListClient() {
             return (
               <section
                 key={classId}
-                className="group relative rounded-xl overflow-hidden border border-white/[0.06] min-h-[220px] sm:min-h-[240px] flex flex-col"
+                className="rounded-xl overflow-hidden border border-white/[0.04] bg-[#0a0a14]/80 backdrop-blur-sm"
               >
-                {/* Full-card background image */}
-                <div className="absolute inset-0 bg-black/60">
+                {/* Class Banner — landscape, full image visible */}
+                <Link
+                  href={`/wow/class/${classId}`}
+                  className="group relative block w-full h-[90px] sm:h-[110px] overflow-hidden bg-black/40"
+                >
                   <Image
                     src={CLASS_BANNERS[classId]}
-                    alt=""
+                    alt={className}
                     fill
-                    className="object-contain transition-transform duration-700 group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
-                </div>
-                {/* Gradient overlay for readability */}
-                <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${color}15 0%, #05050a 70%, #05050a 100%)` }} />
+                </Link>
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-col flex-1 p-4 sm:p-5">
-                  {/* Header: icon + name */}
-                  <Link href={`/wow/class/${classId}`} className="flex items-center gap-3 mb-3">
+                {/* Content: icon + name + specs */}
+                <div className="p-3 sm:p-4">
+                  {/* Header */}
+                  <div className="flex items-center gap-3 mb-3">
                     <Image
                       src={specs[0].icon}
                       alt={className}
-                      width={36}
-                      height={36}
+                      width={32}
+                      height={32}
                       className="rounded-lg shrink-0"
-                      style={{ backgroundColor: `${color}30`, boxShadow: `0 0 12px ${color}20` }}
+                      style={{ backgroundColor: `${color}20` }}
                     />
                     <div>
-                      <h2 className="text-sm font-black text-white leading-tight">{className}</h2>
+                      <Link href={`/wow/class/${classId}`}>
+                        <h2 className="text-sm font-black text-white leading-tight hover:text-[#00ffff] transition-colors">{className}</h2>
+                      </Link>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {[...new Set(specs.map((s) => s.role))].map((role) => {
                           const rm = ROLE_META[role];
@@ -118,13 +121,12 @@ export default function TierListClient() {
                             </span>
                           );
                         })}
-                        <span className="text-[6px] font-bold text-gray-500 uppercase tracking-wider ml-auto">→</span>
                       </div>
                     </div>
-                  </Link>
+                  </div>
 
                   {/* Specs */}
-                  <div className="flex-1 flex flex-col justify-end gap-1">
+                  <div className="flex flex-col gap-1">
                     {specs.map((spec) => {
                       const roleMeta = ROLE_META[spec.role];
                       const RoleIcon = ROLE_ICONS[spec.role];
@@ -133,9 +135,9 @@ export default function TierListClient() {
                           key={spec.id}
                           href={`/wow/spec/${spec.id}`}
                           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200 border border-transparent hover:border-white/10"
-                          style={{ background: `${color}08` }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = `${color}18`; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = `${color}08`; }}
+                          style={{ background: `${color}06` }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = `${color}12`; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = `${color}06`; }}
                         >
                           <Image
                             src={spec.icon}
