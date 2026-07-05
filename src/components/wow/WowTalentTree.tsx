@@ -74,13 +74,11 @@ export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTr
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {trees.map((tree) => {
-        const selected = tree.nodes.filter((n) => n.selected);
-        const rowsByRow: Record<number, typeof selected> = {};
-        for (const node of selected) {
-          if (!rowsByRow[node.row]) rowsByRow[node.row] = [];
-          rowsByRow[node.row].push(node);
+        const maxRow = Math.max(...tree.nodes.map((n) => n.row || 0), 0);
+        const nodesByRowCol = new Map<string, typeof tree.nodes[0]>();
+        for (const node of tree.nodes) {
+          nodesByRowCol.set(`${node.row || 0}-${node.col || 0}`, node);
         }
-        const maxRow = Math.max(...Object.keys(rowsByRow).map(Number), 0);
 
         return (
           <div key={tree.name} className="bg-gradient-to-b from-[#0c0c18] to-black rounded-2xl p-5 border border-white/5">
@@ -91,18 +89,27 @@ export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTr
             </div>
             <div className="flex flex-col items-center gap-3">
               {Array.from({ length: maxRow + 1 }, (_, row) => {
-                const nodesInRow = rowsByRow[row] || [];
+                const hasNodes = tree.nodes.some((n) => (n.row || 0) === row);
+                if (!hasNodes) return null;
+                const colsInRow = tree.nodes.filter((n) => (n.row || 0) === row);
+                const maxCol = Math.max(...colsInRow.map((n) => n.col || 0), 0);
                 return (
                   <div key={row} className="flex items-center justify-center gap-2.5 w-full">
-                    {nodesInRow.map((node) => (
-                      <TalentNode
-                        key={node.name}
-                        name={node.name}
-                        id={node.id}
-                        selected={true}
-                        color={color}
-                      />
-                    ))}
+                    {Array.from({ length: maxCol + 1 }, (_, col) => {
+                      const node = nodesByRowCol.get(`${row}-${col}`);
+                      if (!node) {
+                        return <div key={`${row}-${col}`} className="w-10 h-10" />;
+                      }
+                      return (
+                        <TalentNode
+                          key={node.name || `${row}-${col}`}
+                          name={node.name}
+                          id={node.id}
+                          selected={node.selected}
+                          color={color}
+                        />
+                      );
+                    })}
                   </div>
                 );
               })}

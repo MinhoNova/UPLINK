@@ -13,6 +13,27 @@ function sanitizeName(name: string): string {
   return name.toLowerCase().replace(/'/g, "");
 }
 
+const itemNameCache = new Map<number, string>();
+
+async function fetchItemName(itemId: number): Promise<string | null> {
+  if (itemNameCache.has(itemId)) return itemNameCache.get(itemId)!;
+  const token = await getBlizzardToken();
+  if (!token) return null;
+  try {
+    const res = await fetch(
+      `https://us.api.blizzard.com/data/wow/item/${itemId}?namespace=static-us&locale=en_US`,
+      { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const name: string | undefined = data.name;
+    if (name) itemNameCache.set(itemId, name);
+    return name || null;
+  } catch {
+    return null;
+  }
+}
+
 export interface CharacterProfile {
   talents: {
     nodeId: number;
@@ -92,11 +113,22 @@ export async function fetchCharacterProfile(
     // Parse equipment
     if (equipRes.ok) {
       const equipData = await equipRes.json();
-      for (const item of equipData.equipped_items || []) {
+      const items = equipData.equipped_items || [];
+
+      // Batch resolve item names for items missing names
+      const unknownItems = items.filter((i: any) => !i.item?.name || i.item?.name === "Unknown");
+      const unknownIds = [...new Set(unknownItems.map((i: any) => i.item?.id).filter(Boolean))];
+      const freshIds = unknownIds.filter((id: number) => !itemNameCache.has(id));
+      if (freshIds.length > 0) {
+        await Promise.all(freshIds.map((id: number) => fetchItemName(id)));
+      }
+
+      for (const item of items) {
         const slot = GEAR_SLOT_MAP[item.slot?.type?.toUpperCase()] || item.slot?.type || "Unknown";
+        const itemName = item.item?.name || itemNameCache.get(item.item?.id) || `${slot} Item`;
         profile.gear.push({
           slot,
-          name: item.item?.name || "Unknown",
+          name: itemName,
           itemId: item.item?.id || 0,
           enchant: item.enchant?.display_string || undefined,
         });
