@@ -128,12 +128,12 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
       <div className="fixed inset-0 pointer-events-none" style={{ background: `radial-gradient(800px at 30% 15%, ${color}06 0%, transparent 60%), radial-gradient(500px at 70% 60%, ${color}04 0%, transparent 50%)` }} />
 
       {/* Full-width Spec Hero Banner */}
-      <div className="relative w-full h-[180px] sm:h-[260px] lg:h-[320px] overflow-hidden bg-black/40 lg:ml-[200px]" style={{ width: "calc(100% - 200px)" }}>
+      <div className="relative w-full h-[220px] sm:h-[320px] lg:h-[400px] overflow-hidden bg-black/60 lg:ml-[200px]" style={{ width: "calc(100% - 200px)" }}>
         <Image
           src={`/wow/banners/${specBanner(spec.id)}.webp`}
           alt={spec.name}
           fill
-          className="object-cover"
+          className="object-contain"
           priority
           sizes="100vw"
         />

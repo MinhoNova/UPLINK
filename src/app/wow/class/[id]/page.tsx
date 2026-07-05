@@ -113,12 +113,12 @@ export default async function ClassPage({
 
         {/* ─── Class Hero Banner ─── */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-14 mt-6">
-          <div className="relative w-full h-[240px] sm:h-[300px] lg:h-[380px] rounded-3xl overflow-hidden bg-black/40">
+          <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[500px] rounded-3xl overflow-hidden bg-black/60">
             <Image
               src={CLASS_HERO_BANNERS[id]}
               alt={className}
               fill
-              className="object-cover"
+              className="object-contain"
               priority
               sizes="100vw"
             />
