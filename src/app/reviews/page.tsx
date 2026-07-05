@@ -29,9 +29,11 @@ export default function ReviewsPage() {
         ],
       },
       {
-        "@type": "Review",
-        "@id": `${siteUrl}/reviews#review`,
-        itemReviewed: {
+        "@type": "WebPage",
+        "@id": `${siteUrl}/reviews`,
+        name: "WoWLFG Reviews — UPLINK",
+        description: "Read reviews and ratings from the UPLINK boosting community.",
+        about: {
           "@type": "Service",
           name: "UPLINK",
           description: "World of Warcraft Mythic+ group finder and boosting marketplace.",
