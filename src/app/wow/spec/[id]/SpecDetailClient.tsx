@@ -68,6 +68,10 @@ function playerProfileUrl(name: string, realm: string, region: string): string {
   return `/wow/player/${slug}?${params.toString()}`;
 }
 
+function specBanner(id: string): string {
+  return id.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join("_");
+}
+
 export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolean }) {
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return null;
@@ -123,11 +127,11 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
       <ClassSidebar />
       <div className="fixed inset-0 pointer-events-none" style={{ background: `radial-gradient(800px at 30% 15%, ${color}06 0%, transparent 60%), radial-gradient(500px at 70% 60%, ${color}04 0%, transparent 50%)` }} />
 
-      {/* Full-width Class Hero Banner */}
+      {/* Full-width Spec Hero Banner */}
       <div className="relative w-full h-[180px] sm:h-[260px] lg:h-[320px] overflow-hidden bg-black/40 lg:ml-[200px]" style={{ width: "calc(100% - 200px)" }}>
         <Image
-          src={`/wow/banners/${spec.classId}.webp`}
-          alt={CLASS_NAMES[spec.classId] || spec.classId}
+          src={`/wow/banners/${specBanner(spec.id)}.webp`}
+          alt={spec.name}
           fill
           className="object-cover"
           priority
@@ -136,10 +140,10 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/10 to-transparent" />
         <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-8 right-4">
           <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-2xl" style={{ textShadow: `0 2px 20px ${color}80, 0 2px 8px #000` }}>
-            {CLASS_NAMES[spec.classId] || spec.classId}
+            {spec.name}
           </h1>
           <p className="text-xs sm:text-sm text-white/80 max-w-xl drop-shadow-lg mt-1" style={{ textShadow: "0 1px 8px #000" }}>
-            {spec.name} — Mythic+ guide, BIS gear, talents, enchants & gems
+            Mythic+ guide, BIS gear, talents, enchants & gems
           </p>
         </div>
       </div>
@@ -172,11 +176,11 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           })}
         </div>
 
-        {/* Class Banner — full hero */}
+        {/* Spec Banner */}
         <div className="relative w-full h-[300px] sm:h-[400px] rounded-[2rem] overflow-hidden mb-8 bg-black/40">
           <Image
-            src={`/wow/banners/${spec.classId}.webp`}
-            alt={CLASS_NAMES[spec.classId] || spec.classId}
+            src={`/wow/banners/${specBanner(spec.id)}.webp`}
+            alt={spec.name}
             fill
             className="object-cover"
             priority
