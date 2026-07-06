@@ -6172,39 +6172,38 @@ export function mergeAggregatedData(
     };
   }
 
-  const bis = aggregated.bis.map((s) => {
-    const hcItem = hardcoded.bis.find((h) => h.slot === s.slot);
-    const options = s.names
-      .map((n) => ({
-        name: n.name && n.name !== "Unknown" ? n.name : hcItem?.name || `${s.slot} Item`,
-        itemId: n.itemId || hcItem?.itemId,
-        count: n.count,
-        pct: parseFloat(n.pct) || 0,
+  const bis = aggregated.bis
+    ? aggregated.bis.map((s) => {
+        const hcItem = hardcoded.bis.find((h) => h.slot === s.slot);
+        const options = (s.names || [])
+          .map((n) => ({
+            name: n.name && n.name !== "Unknown" ? n.name : hcItem?.name || `${s.slot} Item`,
+            itemId: n.itemId || hcItem?.itemId,
+            count: n.count,
+            pct: parseFloat(n.pct) || 0,
+          }))
+          .filter((o) => o.count > 0);
+        const primary = options[0] || { name: hcItem?.name || `${s.slot} Item`, itemId: hcItem?.itemId, count: 0, pct: 0 };
+        return { slot: s.slot, name: primary.name, itemId: primary.itemId, options };
+      })
+    : hardcodedBisToOptions(hardcoded.bis);
+
+  const enchants = aggregated.enchants
+    ? aggregated.enchants.map((s) => ({
+        slot: s.slot,
+        name: s.names?.[0]?.name || hardcoded.enchants.find((h) => h.slot === s.slot)?.name || `${s.slot} Enchant`,
       }))
-      .filter((o) => o.count > 0);
-    const primary = options[0] || { name: hcItem?.name || `${s.slot} Item`, itemId: hcItem?.itemId, count: 0, pct: 0 };
-    return {
-      slot: s.slot,
-      name: primary.name,
-      itemId: primary.itemId,
-      options,
-    };
-  });
+    : hardcoded.enchants;
 
-  const enchants = aggregated.enchants.map((s) => ({
-    slot: s.slot,
-    name: s.names[0]?.name || hardcoded.enchants.find((h) => h.slot === s.slot)?.name || `${s.slot} Enchant`,
-  }));
-
-  const gems = aggregated.gems.length > 0
+  const gems = aggregated.gems && aggregated.gems.length > 0
     ? aggregated.gems.slice(0, 3).map((g) => `${g.name} ×${Math.ceil((parseInt(g.pct) / 100) * aggregated.totalPlayers)}`)
     : hardcoded.gems;
 
-  const statPriority = aggregated.statPriority.length >= 5
+  const statPriority = aggregated.statPriority && aggregated.statPriority.length >= 5
     ? aggregated.statPriority
     : hardcoded.statPriority;
 
-  const builds = aggregated.topPlayers.length > 0
+  const builds = aggregated.topPlayers && aggregated.topPlayers.length > 0
     ? aggregated.topPlayers.slice(0, 5).map((p) => {
         let trees: TalentTree[];
         if (p.talents && p.talents.length > 0) {
