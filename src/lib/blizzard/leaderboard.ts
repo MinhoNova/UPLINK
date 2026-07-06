@@ -30,62 +30,53 @@ const REGION_HOSTS: Record<string, string> = {
   eu: "https://eu.api.blizzard.com",
 };
 
-const RUNS_PAGES = 12;
-
-function estimateTotalScore(runScore: number, mythicLevel: number): number {
-  const ALL_TIMED_SCORES: Record<number, number> = {
-    29: 4960, 28: 4840, 27: 4720, 26: 4600, 25: 4480,
-    24: 4360, 23: 4240, 22: 4120, 21: 4000, 20: 3880,
-    19: 3760, 18: 3640, 17: 3520, 16: 3400, 15: 3280,
-    14: 3160, 13: 3040, 12: 2920, 11: 2680, 10: 2560,
-    9: 2320, 8: 2200, 7: 2080, 6: 1840, 5: 1720, 4: 1480,
-    3: 1360, 2: 1240,
-  };
-  const allTimed = ALL_TIMED_SCORES[mythicLevel];
-  if (allTimed) return Math.round(allTimed * 0.75);
-  return Math.round(runScore * 6);
-}
-
 export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<LeaderboardChar[]> {
-  const charMap = new Map<string, LeaderboardChar & { runScore: number }>();
+  try {
+    const res = await fetch(
+      `https://raider.io/api/v1/mythic-plus/rankings?season=${seasonSlug}&region=world&dungeon=all`,
+      { cache: "no-store", headers: { "User-Agent": "Uplink/1.0" }, signal: AbortSignal.timeout(10000) }
+    );
+    if (!res.ok) return [];
 
-  const pages = await Promise.all(
-    Array.from({ length: RUNS_PAGES }, (_, i) =>
-      fetch(`https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=world&page=${i}`, {
-        cache: "no-store",
-        headers: { "User-Agent": "Uplink/1.0" },
-        signal: AbortSignal.timeout(6000),
-      }).then((r) => (r.ok ? r.json() : null))
-    )
-  );
+    const data = await res.json();
+    const rankings = data.rankings || [];
+    if (!Array.isArray(rankings) || rankings.length === 0) return [];
 
-  for (const page of pages) {
-    if (!page?.rankings) continue;
-    for (const ranking of page.rankings) {
-      const runScore = ranking.score || 0;
-      const runLevel = ranking.run?.mythic_level || 0;
-      for (const member of ranking.run?.roster || []) {
-        const c = member.character;
-        if (!c) continue;
-        const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
-        const charKey = `${c.name}|${c.realm?.slug || ""}|${c.region?.slug || ""}`;
-        const existing = charMap.get(charKey);
-        if (existing && runScore <= existing.runScore) continue;
-        charMap.set(charKey, {
-          name: c.name || "Unknown",
-          realm: c.realm?.name || c.realm?.slug || "Unknown",
-          region: (c.region?.slug || "us").toUpperCase(),
-          specId: specKey,
-          classId: (c.class?.slug || "").toLowerCase(),
-          faction: (c.faction || "horde").toLowerCase(),
-          score: estimateTotalScore(runScore, runLevel),
-          runScore,
-        });
-      }
+    const charMap = new Map<string, LeaderboardChar>();
+
+    for (const r of rankings) {
+      if (!r.character) continue;
+      const c = r.character;
+      const specName = (c.spec || "").toLowerCase().replace(/\s+/g, "-");
+      const className = (c.class || "").toLowerCase().replace(/\s+/g, "-");
+      const specId = specName ? `${specName}-${className}` : "";
+      if (!specId) continue;
+
+      const name = c.name || "Unknown";
+      const realm = c.realm || "Unknown";
+      const region = (c.region || "us").toUpperCase();
+      const score = Math.round(r.score || r.mythic_plus_score || 0);
+      if (score === 0) continue;
+
+      const charKey = `${name}|${realm}|${region}`;
+      const existing = charMap.get(charKey);
+      if (existing && score <= existing.score) continue;
+
+      charMap.set(charKey, {
+        name,
+        realm,
+        region,
+        specId,
+        classId: className,
+        faction: (c.faction || "horde").toLowerCase(),
+        score,
+      });
     }
-  }
 
-  return Array.from(charMap.values());
+    return Array.from(charMap.values());
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchTopPlayersFromBlizzard(seasonSlug: string): Promise<LeaderboardChar[]> {
