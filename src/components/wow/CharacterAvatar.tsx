@@ -43,8 +43,7 @@ export default function CharacterAvatar({
           if (data.available && data.render) {
             const r = data.render;
             const url = free ? (r.mainRaw || r.main || r.inset || r.avatar)
-                       : size <= 36 ? (r.inset || r.avatar || r.main || r.mainRaw)
-                       : size <= 64 ? (r.main || r.mainRaw || r.inset || r.avatar)
+                       : size <= 48 ? (r.inset || r.main || r.mainRaw || r.avatar)
                        : (r.mainRaw || r.main || r.inset || r.avatar);
             if (url) {
               avatarCache.set(cacheKey, { url, ts: Date.now() });
@@ -69,10 +68,11 @@ export default function CharacterAvatar({
   }
 
   if (free) {
+    const h = Math.round(size * 1.25);
     return (
-      <div className="relative shrink-0 leading-none" style={{ width: size }}>
+      <div className="relative shrink-0 overflow-hidden" style={{ width: size, height: h }}>
         {imgUrl ? (
-          <img src={imgUrl} alt="" width={size} height={size * 1.5} className="object-contain w-full" style={{ imageRendering: "auto" }} onError={() => setFailed(true)} />
+          <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ objectPosition: "center top" }} onError={() => setFailed(true)} />
         ) : (
           <Image src={specIcon} alt="" width={size} height={size} className="shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
         )}
