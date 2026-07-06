@@ -36,48 +36,49 @@ function sleep(ms: number): Promise<void> {
 
 export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<LeaderboardChar[]> {
   const charMap = new Map<string, LeaderboardChar & { runScore: number }>();
+  const regions = ["us", "eu", "kr", "tw"];
 
-  // Sequential pages to avoid Raider.IO rate limiting
-  for (let page = 0; page < 25; page++) {
-    try {
-      const res = await fetch(
-        `https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=world&page=${page}`,
-        { cache: "no-store", headers: { "User-Agent": "Uplink/1.0" }, signal: AbortSignal.timeout(8000) }
-      );
-      if (!res.ok) break;
+  for (const region of regions) {
+    for (let page = 0; page < 25; page++) {
+      try {
+        const res = await fetch(
+          `https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=${region}&page=${page}`,
+          { cache: "no-store", headers: { "User-Agent": "Uplink/1.0" }, signal: AbortSignal.timeout(8000) }
+        );
+        if (!res.ok) break;
 
-      const data = await res.json();
-      const rankings = data.rankings || [];
-      if (!Array.isArray(rankings) || rankings.length === 0) break;
+        const data = await res.json();
+        const rankings = data.rankings || [];
+        if (!Array.isArray(rankings) || rankings.length === 0) break;
 
-      for (const ranking of rankings) {
-        const runScore = ranking.score || 0;
-        if (!ranking.run?.roster) continue;
-        for (const member of ranking.run.roster) {
-          const c = member.character;
-          if (!c) continue;
-          const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
-          if (!specKey || specKey === "-") continue;
-          const charKey = `${c.name}|${c.realm?.slug || ""}|${c.region?.slug || ""}`;
-          const existing = charMap.get(charKey);
-          if (existing && runScore <= existing.runScore) continue;
-          charMap.set(charKey, {
-            name: c.name || "Unknown",
-            realm: c.realm?.name || c.realm?.slug || "Unknown",
-            region: (c.region?.slug || "us").toUpperCase(),
-            specId: specKey,
-            classId: (c.class?.slug || "").toLowerCase(),
-            faction: (c.faction || "horde").toLowerCase(),
-            score: runScore,
-            runScore,
-          });
+        for (const ranking of rankings) {
+          const runScore = ranking.score || 0;
+          if (!ranking.run?.roster) continue;
+          for (const member of ranking.run.roster) {
+            const c = member.character;
+            if (!c) continue;
+            const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
+            if (!specKey || specKey === "-") continue;
+            const charKey = `${c.name}|${c.realm?.slug || ""}|${region}`;
+            const existing = charMap.get(charKey);
+            if (existing && runScore <= existing.runScore) continue;
+            charMap.set(charKey, {
+              name: c.name || "Unknown",
+              realm: c.realm?.name || c.realm?.slug || "Unknown",
+              region: region.toUpperCase(),
+              specId: specKey,
+              classId: (c.class?.slug || "").toLowerCase(),
+              faction: (c.faction || "horde").toLowerCase(),
+              score: runScore,
+              runScore,
+            });
+          }
         }
-      }
 
-      // Small delay between pages to avoid rate limit
-      await sleep(300);
-    } catch {
-      break;
+        await sleep(300);
+      } catch {
+        break;
+      }
     }
   }
 
