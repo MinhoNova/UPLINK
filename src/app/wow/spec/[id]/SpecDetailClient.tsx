@@ -426,66 +426,60 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   const secondary = slot.options?.[1];
                   const allUsePrimary = primary && primary.pct >= 100;
                   return (
-                    <div key={slot.slot} className="bg-black/40 rounded-xl p-3.5 border border-white/5 hover:border-white/10 transition-all">
-                      <div className="text-[10px] font-black text-white uppercase tracking-wider mb-3 text-center">{slot.slot}</div>
+                    <div key={slot.slot} className="bg-black/60 rounded-2xl p-4 border border-white/[0.04] hover:border-white/10 transition-all">
+                      <div className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-4 text-center">{slot.slot}</div>
                       {primary && (
                         <div
-                          className="group relative rounded-lg p-2.5 border transition-all cursor-pointer mb-1.5"
-                          style={{ borderColor: "#f9731640", background: "linear-gradient(135deg, rgba(249,115,22,0.06) 0%, transparent 100%)" }}
+                          className="rounded-xl p-4 transition-all cursor-pointer mb-2"
+                          style={{ background: "#0a0a14", border: "1px solid rgba(249,115,22,0.15)" }}
                           onMouseEnter={(e) => handleItemHover(primary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <div className="flex items-center gap-2.5">
-                            <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={56} />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-bold truncate" style={{ color: "#f97316" }}>{primary.name}</span>
-                                {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
-                                  <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1 py-0.5 rounded tracking-widest uppercase">Tier</span>
-                                )}
+                          <div className="flex flex-col items-center gap-2">
+                            <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={64} />
+                            <span className="text-[11px] font-bold text-center leading-tight truncate max-w-full" style={{ color: "#f97316" }}>{primary.name}</span>
+                            {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
+                              <span className="text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
+                            )}
+                            <div className="w-full flex items-center gap-2 mt-0.5">
+                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
                               </div>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[80px]">
-                                  <div className="h-full rounded-full" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
-                                </div>
-                                <span className="text-[8px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
-                              </div>
+                              <span className="text-[9px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
                       {secondary && !allUsePrimary && (
                         <div
-                          className="group relative rounded-lg p-2.5 border transition-all cursor-pointer"
-                          style={{ borderColor: "#c084fc40", background: "linear-gradient(135deg, rgba(192,132,252,0.06) 0%, transparent 100%)" }}
+                          className="rounded-xl p-4 transition-all cursor-pointer"
+                          style={{ background: "#0a0a14", border: "1px solid rgba(192,132,252,0.15)" }}
                           onMouseEnter={(e) => handleItemHover(secondary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <div className="flex items-center gap-2.5">
-                            <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={56} />
-                            <div className="min-w-0 flex-1">
-                              <span className="text-[11px] font-bold truncate block" style={{ color: "#c084fc" }}>{secondary.name}</span>
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[80px]">
-                                  <div className="h-full rounded-full" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
-                                </div>
-                                <span className="text-[8px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
+                          <div className="flex flex-col items-center gap-2">
+                            <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={64} />
+                            <span className="text-[11px] font-bold text-center leading-tight truncate max-w-full" style={{ color: "#c084fc" }}>{secondary.name}</span>
+                            <div className="w-full flex items-center gap-2 mt-0.5">
+                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
                               </div>
+                              <span className="text-[9px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
-                      <div className="mt-2 pt-2 border-t border-white/5">
-                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mb-1">Top 5</div>
-                        <div className="space-y-0.5">
+                      <div className="mt-3 pt-3 border-t border-white/5">
+                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mb-1.5 text-center">Top 5</div>
+                        <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5">
                           {leaderboardEntries.slice(0, 5).map((entry, i) => (
                             <Link
                               key={entry.name}
                               href={playerProfileUrl(entry.name, entry.realm, entry.region)}
-                              className="flex items-center gap-1.5 text-[8px] text-gray-400 hover:text-white transition-colors"
+                              className="flex items-center gap-1 text-[8px] text-gray-500 hover:text-white transition-colors"
                             >
-                              <span className="w-3 text-right shrink-0 font-bold" style={{ color: i < 3 ? "#f97316" : "rgba(255,255,255,0.3)" }}>{i + 1}</span>
-                              <span className="truncate">{entry.name}</span>
+                              <span className="font-black" style={{ color: i < 3 ? "#f97316" : "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
+                              <span className="truncate max-w-[60px]">{entry.name}</span>
                             </Link>
                           ))}
                         </div>
