@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getSiteUrl } from "@/lib/siteUrl";
-import { SPECS, getSpecData } from "@/lib/wowData";
+import { SPECS, getSpecData, CLASS_NAMES } from "@/lib/wowData";
+import { generateMetaTitle, generateMetaDescription, generateKeywords, generateFAQItems, generateIntroContent, getRelatedSpecs } from "@/lib/wow-seo";
 import SpecDetailClient from "./SpecDetailClient";
 
 const siteUrl = getSiteUrl();
@@ -16,18 +18,13 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return { title: "Spec not found" };
   const data = getSpecData(id, ptr);
-  const className = spec.classId.replace(/-/g, " ");
-  const roleLabel = spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS";
-  const talentKeywords = spec.seo.join(", ");
-  const ptrKeywords = `ptr ${spec.name.toLowerCase()} talents, ptr s2 ${spec.classId.toLowerCase()} ${roleLabel.toLowerCase()}, ${spec.name.toLowerCase()} ptr s2 build, wow ptr ${spec.classId.toLowerCase()} talents`;
-  const seasonTag = ptr ? " (PTR Season 2 Preview)" : "";
   return {
-    title: `${spec.name} Talents & ${roleLabel} Build — BIS Gear, Enchants${ptr ? " (PTR S2)" : ""} | UPLINK`,
-    description: `Best ${spec.name} talents for Mythic+ and raid.${seasonTag} ${talentKeywords}. BIS gear: ${data ? data.bis.slice(0, 4).map((i) => i.name).join(", ") : `${spec.name} gear`}. Stat priority: ${data ? data.statPriority.join(", ") : "check the guide"}. Enchants, gems, and talent trees from top players.`,
-    keywords: [talentKeywords, ptrKeywords].join(", "),
+    title: generateMetaTitle(spec, ptr),
+    description: generateMetaDescription(spec, data, ptr),
+    keywords: generateKeywords(spec, data).join(", "),
     openGraph: {
-      title: `${spec.name} Talents & ${roleLabel} Build — WoW Meta${ptr ? " (PTR S2)" : ""} | UPLINK`,
-      description: `${spec.name} talent trees, BIS gear, enchants, gems from top ${className} players.${ptr ? " PTR Season 2 preview with projected data." : ""}`,
+      title: `${spec.name} Talents & Build — WoW Meta${ptr ? " (PTR S2)" : ""} | UPLINK`,
+      description: generateMetaDescription(spec, data, ptr).slice(0, 200),
     },
     alternates: { canonical: `${siteUrl}/wow/spec/${id}${ptr ? "?ptr=1" : ""}` },
   };
@@ -39,33 +36,10 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) notFound();
   const data = getSpecData(id, ptr);
-  const className = spec.classId.replace(/-/g, " ");
-  const roleLabel = spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS";
 
-  const faqItems = [
-    {
-      question: `What is the best talent build for ${spec.name} in Mythic+?`,
-      answer: `The best Mythic+ talent build for ${spec.name} uses the talent string from top-ranked players. Check the Mythic+ tab for the latest build optimized for dungeon content.`,
-    },
-    {
-      question: `What are the stat priorities for ${spec.name}?`,
-      answer: data
-        ? `The stat priority for ${spec.name} is: ${data.statPriority.join(", ")}.`
-        : `Stat priorities for ${spec.name} vary by build. Check the spec detail page for current recommendations.`,
-    },
-    {
-      question: `What is the best BIS gear for ${spec.name}?`,
-      answer: data
-        ? `Best-in-slot gear for ${spec.name} includes ${data.bis.slice(0, 4).map((i) => i.name).join(", ")} and more. Check the full BIS gear list for all slots.`
-        : `BIS gear for ${spec.name} changes each season. Check the spec detail page for the latest recommendations.`,
-    },
-    {
-      question: `What enchants and gems should I use for ${spec.name}?`,
-      answer: data
-        ? `Recommended enchants for ${spec.name} include ${data.enchants.slice(0, 3).map((e) => e.name).join(", ")}. Socket with ${data.gems.join(", ")}.`
-        : `Enchants and gems for ${spec.name} depend on your stat priority. Check the spec detail page for current recommendations.`,
-    },
-  ];
+  const faqItems = generateFAQItems(spec, data);
+  const intro = generateIntroContent(spec, data, ptr);
+  const related = getRelatedSpecs(spec);
 
   const faqSchema = {
     "@context": "https://schema.org",
@@ -73,38 +47,76 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
     mainEntity: faqItems.map((item) => ({
       "@type": "Question",
       name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
     })),
   };
 
-  const breadcrumb = {
+  const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "WoWLFG", item: siteUrl },
       { "@type": "ListItem", position: 2, name: "WoW", item: `${siteUrl}/wow` },
-      { "@type": "ListItem", position: 3, name: spec.name },
+      { "@type": "ListItem", position: 3, name: `${spec.name} Talents & BIS Gear`, item: `${siteUrl}/wow/spec/${id}` },
     ],
   };
+
+  const cnFull = CLASS_NAMES[spec.classId] || spec.classId.replace(/-/g, " ");
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <div className="lg:ml-[220px] max-w-4xl mx-auto px-4 pt-6 sm:pt-8">
-        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{roleLabel} {className}</p>
-        <h1 className="text-2xl sm:text-4xl font-black text-white mb-2">{spec.name} Talents & BIS Gear</h1>
-        {data && (
-          <p className="text-xs text-gray-400 max-w-2xl mb-2">
-            Stat Priority: {data.statPriority.join(", ")}.
-            BIS gear includes {data.bis.slice(0, 4).map((i) => i.name).join(", ")}.
-          </p>
+        <h1 className="text-2xl sm:text-4xl font-black text-white mb-1">{intro.heading}</h1>
+        <p className="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3">{intro.body}</p>
+        {intro.bullets && (
+          <ul className="text-[11px] text-gray-500 space-y-0.5 mb-2 list-disc list-inside">
+            {intro.bullets.map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
         )}
+        <p className="text-[10px] text-gray-600 mb-4">
+          Keywords: {generateKeywords(spec, data).slice(0, 8).join(", ")}.
+        </p>
+        <nav className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+          <span className="text-gray-500">Related:</span>
+          {related.sameRole.slice(0, 6).map((s) => (
+            <Link key={s.id} href={`/wow/spec/${s.id}`} className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{s.name}</Link>
+          ))}
+        </nav>
+        <nav className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+          <Link href={`/wow/class/${spec.classId}`} className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{cnFull} Class Page</Link>
+          <Link href={`/wow/tier-list`} className="text-blue-400 hover:text-blue-300 underline underline-offset-2">Meta Tier List</Link>
+          <Link href={`/wow/talents`} className="text-blue-400 hover:text-blue-300 underline underline-offset-2">All Talents</Link>
+          {ptr && <Link href={`/wow/spec/${id}`} className="text-yellow-500 hover:text-yellow-400 underline underline-offset-2">Live (Season 2)</Link>}
+          {!ptr && <Link href={`/wow/spec/${id}?ptr=1`} className="text-yellow-500 hover:text-yellow-400 underline underline-offset-2">PTR Preview</Link>}
+        </nav>
+        <div dir="rtl" className="text-[10px] text-gray-600 mb-6 leading-relaxed">
+          <p>دليل {spec.name} في World of Warcraft — افضل تالنتات، تجهيزات، و ترتيب الاحصائيات لـ {cnFull} تخصص {spec.role === "tank" ? "تانك" : spec.role === "healer" ? "هيلر" : "دمج"}.</p>
+        </div>
       </div>
       <SpecDetailClient id={id} ptr={ptr} />
+      <div className="lg:ml-[220px] max-w-4xl mx-auto px-4 pt-8 pb-12">
+        <hr className="border-gray-800 mb-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Same Role</h2>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {related.sameRole.length > 0 ? related.sameRole.slice(0, 10).map((s) => (
+                <Link key={s.id} href={`/wow/spec/${s.id}`} className="text-[11px] text-blue-400 hover:text-blue-300 underline underline-offset-2">{s.name}</Link>
+              )) : <span className="text-[11px] text-gray-600">No other specs in this role</span>}
+            </div>
+          </div>
+          <div>
+            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Same Class</h2>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {related.sameClass.length > 0 ? related.sameClass.slice(0, 6).map((s) => (
+                <Link key={s.id} href={`/wow/spec/${s.id}`} className="text-[11px] text-blue-400 hover:text-blue-300 underline underline-offset-2">{s.name}</Link>
+              )) : <span className="text-[11px] text-gray-600">No other specs in this class</span>}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
