@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
+import { Swords, HeartHandshake, Shield, ChevronLeft, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles, Trophy } from "lucide-react";
 import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
@@ -12,7 +12,7 @@ import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
-const MEDALS = ["🥇", "🥈", "🥉"];
+const RANK_COLORS = ["#f97316", "#c084fc", "#a0a0a0"];
 
 const QUALITY_COLORS: Record<number, string> = {
   1: "#9d9d9d", 2: "#1eff00", 3: "#0070dd", 4: "#a335ee", 5: "#ff8000", 6: "#e6cc80", 7: "#00ccff",
@@ -277,7 +277,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* ═══ TOP PLAYERS ═══ */}
           <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-1">
-              <Medal className="w-5 h-5" style={{ color }} />
+              <Trophy className="w-5 h-5" style={{ color }} />
               <h2 className="text-lg font-black text-white">Top {spec.name} Players</h2>
             </div>
             <p className="text-xs text-gray-500 mb-6">Top Mythic+ players worldwide — click any player to view their full profile with talents and gear. Auto-updates every minute.</p>
@@ -287,7 +287,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4 animate-pulse border border-white/5">
                     <div className="w-8 h-5 bg-white/10 rounded" />
-                    <div className="w-10 h-10 bg-white/10 rounded-lg" />
+                    <div className="w-12 h-12 bg-white/10 rounded-lg" />
                     <div className="flex-1"><div className="h-4 bg-white/10 rounded w-1/3 mb-1" /><div className="h-3 bg-white/10 rounded w-1/4" /></div>
                     <div className="w-14 h-4 bg-white/10 rounded" />
                   </div>
@@ -307,32 +307,50 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10 transition-all group"
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10 transition-all group relative overflow-hidden"
                       >
-                        {/* Rank badge */}
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black" style={{
-                          backgroundColor: entry.rank <= 3 ? `${color}25` : 'rgba(255,255,255,0.05)',
-                          color: entry.rank <= 3 ? color : 'rgba(255,255,255,0.3)',
-                          boxShadow: entry.rank <= 3 ? `0 0 12px ${color}20` : 'none',
-                        }}>
-                          {entry.rank <= 3 ? MEDALS[entry.rank - 1] : `#${entry.rank}`}
+                        {/* Rank badge — styled numbers replacing emoji medals */}
+                        <div className="w-8 shrink-0 text-center">
+                          {entry.rank <= 3 ? (
+                            <div className="relative inline-flex items-center justify-center">
+                              <span className="text-lg font-black" style={{ color: RANK_COLORS[entry.rank - 1], textShadow: `0 0 12px ${RANK_COLORS[entry.rank - 1]}40` }}>
+                                {entry.rank}
+                              </span>
+                              <span className="block text-[5px] font-black uppercase tracking-widest mt-[-2px]" style={{ color: `${RANK_COLORS[entry.rank - 1]}88` }}>
+                                {entry.rank === 1 ? "st" : entry.rank === 2 ? "nd" : "rd"}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-black text-gray-600">#{entry.rank}</span>
+                          )}
                         </div>
 
-                        {/* Character render */}
-                        <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={36} />
+                        {/* Character render with spec icon overlay */}
+                        <div className="relative shrink-0">
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={48} />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full overflow-hidden border-2 border-[#05050a] shadow-lg">
+                            <Image src={spec.icon} alt="" width={18} height={18} className="w-full h-full object-cover" />
+                          </div>
+                          {entry.rank === 1 && (
+                            <div className="absolute -inset-[2px] rounded-[10px] pointer-events-none animate-pulse" style={{ border: `1.5px solid ${RANK_COLORS[0]}`, boxShadow: `0 0 12px ${RANK_COLORS[0]}40` }} />
+                          )}
+                        </div>
 
                         {/* Player info */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-white group-hover:text-[#00ffff] transition-colors truncate">{entry.name}</span>
+                            <span className="text-sm font-bold text-white group-hover:text-[#00ffff] transition-colors truncate">{entry.name}</span>
                             {flag && (
-                              <Image src={flag} alt={entry.region} width={12} height={8} className="rounded-[1px] shrink-0" />
+                              <div className="flex items-center gap-1 bg-white/[0.04] rounded px-1.5 py-0.5 border border-white/5">
+                                <Image src={flag} alt={entry.region} width={10} height={7} className="rounded-[1px] shrink-0" />
+                                <span className="text-[6px] font-black text-gray-500 uppercase tracking-wider">{entry.region}</span>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[8px] text-gray-500 truncate">{entry.realm}</span>
+                            <span className="text-[9px] text-gray-500 truncate">{entry.realm}</span>
                             <span className="text-[5px] text-gray-600">·</span>
-                            <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color: `${color}99` }}>{spec.name}</span>
+                            <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color: `${color}aa` }}>{spec.name}</span>
                             {entry.faction === "alliance" ? (
                               <span className="text-[8px] text-yellow-500/60">A</span>
                             ) : (
@@ -478,7 +496,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                               href={playerProfileUrl(entry.name, entry.realm, entry.region)}
                               className="flex items-center gap-1 text-[8px] text-gray-500 hover:text-white transition-colors"
                             >
-                              <span className="font-black" style={{ color: i < 3 ? "#f97316" : "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
+                              <span className="font-black" style={{ color: ["#f97316", "#c084fc", "#a0a0a0"][i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
                               <span className="truncate max-w-[60px]">{entry.name}</span>
                             </Link>
                           ))}
