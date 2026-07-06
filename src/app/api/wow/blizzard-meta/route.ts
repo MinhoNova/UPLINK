@@ -27,22 +27,21 @@ export async function GET(request: Request) {
     const ptr = url.searchParams.get("ptr") === "1";
     const cacheKey = ptr ? PTR_CACHE_KEY : CACHE_KEY;
 
-    // Check cache
+    // Serve cached data always — never fetch on user requests
     if (!forceRefresh) {
       const cached = await getKV(cacheKey);
       if (cached && typeof cached === "object" && "timestamp" in cached) {
-        const age = Date.now() - (cached as any).timestamp;
-        if (age < CACHE_TTL_MS) {
-          const data = (cached as MetaPipelineResult);
-          if (specFilter) {
-            return NextResponse.json({ spec: data.specs[specFilter] || null, season: data.season, cached: true, timestamp: data.timestamp });
-          }
-          return NextResponse.json({ ...data, cached: true });
+        const data = cached as MetaPipelineResult;
+        if (specFilter) {
+          return NextResponse.json({ spec: data.specs[specFilter] || null, season: data.season, cached: true, timestamp: data.timestamp, stale: false });
         }
+        return NextResponse.json({ ...data, cached: true, stale: false });
       }
+      // First-ever deploy — serve empty rather than block
+      return NextResponse.json({ specs: {}, season: "", totalCharacters: 0, cached: false, stale: true });
     }
 
-    // Determine season
+    // Only cron / manual admin reaches here via ?refresh=1
     let seasonSlug: string;
     if (ptr) {
       seasonSlug = "season-mn-2";
@@ -51,29 +50,19 @@ export async function GET(request: Request) {
       seasonSlug = season.slug;
     }
 
-    // Step 1: Fetch from Raider.IO /runs (sequential, covers ~15-20 specs)
     const raiderPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
-
-    // Step 2: Also fetch from Blizzard API (covers ALL specs via official leaderboard)
     const blizzardPlayers = await fetchTopPlayersFromBlizzard(seasonSlug);
 
-    // Step 3: Merge both sources — dedup by character key, keep higher score
     const mergedMap = new Map<string, typeof raiderPlayers[0]>();
     for (const p of [...raiderPlayers, ...blizzardPlayers]) {
       const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
       const existing = mergedMap.get(key);
-      if (!existing || p.score > existing.score) {
-        mergedMap.set(key, p);
-      }
+      if (!existing || p.score > existing.score) mergedMap.set(key, p);
     }
 
-    // Step 4: Select top N per spec from merged pool
     const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), TOP_PLAYERS_PER_SPEC);
-
-    // Step 5: Fetch character profiles and aggregate
     const specs = await aggregateBySpec(playersBySpec);
 
-    // Step 6: Build result
     const result: MetaPipelineResult = {
       specs,
       timestamp: Date.now(),
@@ -81,10 +70,8 @@ export async function GET(request: Request) {
       totalCharacters: mergedMap.size,
     };
 
-    // Cache it
     await setKV(cacheKey, result);
 
-    // Return
     if (specFilter) {
       return NextResponse.json({ spec: specs[specFilter] || null, season: result.season, cached: false, timestamp: result.timestamp });
     }
