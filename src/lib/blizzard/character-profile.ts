@@ -97,13 +97,13 @@ export async function fetchCharacterProfile(
   const ns = `profile-${region.toLowerCase()}`;
 
   try {
-    const [equipRes, talentsRes] = await Promise.all([
+    const [equipRes, specRes] = await Promise.all([
       fetch(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/equipment?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
       ),
       fetch(
-        `${host}/profile/wow/character/${realmSlug}/${nameLower}/talents?namespace=${ns}&locale=en_US`,
+        `${host}/profile/wow/character/${realmSlug}/${nameLower}/specializations?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
       ),
     ]);
@@ -130,7 +130,7 @@ export async function fetchCharacterProfile(
           slot,
           name: itemName,
           itemId: item.item?.id || 0,
-          enchant: item.enchant?.display_string || undefined,
+          enchant: item.enchantments?.[0]?.display_string || item.enchant?.display_string || undefined,
         });
 
         // Extract gems
@@ -142,55 +142,59 @@ export async function fetchCharacterProfile(
       }
     }
 
-    // Parse talents
-    if (talentsRes.ok) {
-      const talentsData = await talentsRes.json();
-      const seenNodeIds = new Set<number>();
+    // Parse talents from /specializations endpoint (Midnight+)
+    if (specRes.ok) {
+      const specData = await specRes.json();
+      const specializations = specData.specializations || [];
+      const activeSpecName = specData.active_specialization?.name || "";
 
-      const extractNodes = (treeObj: any, treeName: string) => {
-        if (!treeObj) return;
-        const nodes = treeObj.nodes || [];
-        const selectedIds = new Set(treeObj.selected_node_ids || []);
-        for (const node of nodes) {
-          const nodeId = node.node_id || node.id || 0;
-          if (!nodeId || seenNodeIds.has(nodeId)) continue;
-          seenNodeIds.add(nodeId);
-          const rank = node.rank || (selectedIds.has(nodeId) ? 1 : 0);
+      // Find active spec or first one
+      let activeSpec = specializations.find((s: any) => s.specialization?.name === activeSpecName);
+      if (!activeSpec) activeSpec = specializations[0];
+      if (!activeSpec) return profile;
+
+      // Get the active loadout (first active, or first one)
+      const loadout = activeSpec.loadouts?.find((l: any) => l.is_active) || activeSpec.loadouts?.[0];
+      if (!loadout) return profile;
+
+      const allTalentEntries: { id: number; rank: number; treeName: string; treeKind: string }[] = [];
+
+      const classTreeName = loadout.selected_class_talent_tree?.name || "Class Talents";
+      for (const t of loadout.selected_class_talents || []) {
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, treeName: classTreeName, treeKind: "class" });
+      }
+
+      const specTreeName = loadout.selected_spec_talent_tree?.name || (activeSpec.specialization?.name || "Spec Talents");
+      for (const t of loadout.selected_spec_talents || []) {
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, treeName: specTreeName, treeKind: "spec" });
+      }
+
+      const heroTreeName = loadout.selected_hero_talent_tree?.name || "Hero Talents";
+      for (const t of loadout.selected_hero_talents || []) {
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, treeName: heroTreeName, treeKind: "hero" });
+      }
+
+      // Group by tree for row/col assignment
+      const byTree = new Map<string, typeof allTalentEntries>();
+      for (const entry of allTalentEntries) {
+        if (!byTree.has(entry.treeName)) byTree.set(entry.treeName, []);
+        byTree.get(entry.treeName)!.push(entry);
+      }
+
+      for (const [treeName, entries] of byTree) {
+        let curRow = 1, curCol = 1;
+        for (const entry of entries) {
           profile.talents.push({
-            nodeId,
-            name: node.talent?.name || node.name || "Unknown",
-            spellId: node.talent?.id,
-            selected: rank > 0,
-            row: node.display_row || node.position?.row,
-            col: node.display_col || node.position?.col,
+            nodeId: entry.id,
+            name: `Talent ${entry.id}`,
+            spellId: entry.id,
+            selected: entry.rank > 0,
+            row: curRow,
+            col: curCol,
             treeName,
           });
-        }
-      };
-
-      if (talentsData.talent_tree) extractNodes(talentsData.talent_tree, talentsData.talent_tree.name || "Class Talents");
-      if (talentsData.hero_talents) {
-        for (const ht of (Array.isArray(talentsData.hero_talents) ? talentsData.hero_talents : [talentsData.hero_talents])) {
-          extractNodes(ht, ht.name || "Hero Talents");
-        }
-      }
-
-      // Assign computed row/col for nodes missing position data
-      const talentsByTree = new Map<string, typeof profile.talents>();
-      for (const t of profile.talents) {
-        const key = t.treeName || "Class Talents";
-        if (!talentsByTree.has(key)) talentsByTree.set(key, []);
-        talentsByTree.get(key)!.push(t);
-      }
-      for (const [, talents] of talentsByTree) {
-        let curRow = 1, curCol = 1;
-        for (const t of talents) {
-          if (t.row === undefined || t.col === undefined) {
-            t.row = curRow;
-            t.col = curCol;
-            curCol = curCol === 1 ? 2 : 1;
-            if (curCol === 1) curRow++;
-          }
+          curCol = curCol === 1 ? 2 : 1;
+          if (curCol === 1) curRow++;
         }
       }
     }
