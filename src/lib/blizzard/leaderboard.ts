@@ -10,6 +10,7 @@ interface LeaderboardChar {
   classId: string;
   faction: string;
   score: number;
+  race?: string;
 }
 
 const BLIZZARD_SEASON_IDS: Record<string, number> = {
@@ -62,16 +63,17 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             const charKey = `${c.name}|${c.realm?.slug || ""}|${region}`;
             const existing = charMap.get(charKey);
             if (existing && runScore <= existing.runScore) continue;
-            charMap.set(charKey, {
-              name: c.name || "Unknown",
-              realm: c.realm?.name || c.realm?.slug || "Unknown",
-              region: region.toUpperCase(),
-              specId: specKey,
-              classId: (c.class?.slug || "").toLowerCase(),
-              faction: (c.faction || "horde").toLowerCase(),
-              score: runScore,
-              runScore,
-            });
+          charMap.set(charKey, {
+            name: c.name || "Unknown",
+            realm: c.realm?.name || c.realm?.slug || "Unknown",
+            region: region.toUpperCase(),
+            specId: specKey,
+            classId: (c.class?.slug || "").toLowerCase(),
+            faction: (c.faction || "horde").toLowerCase(),
+            score: runScore,
+            runScore,
+            race: c.race?.name || undefined,
+          });
           }
         }
 

@@ -3,10 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Swords, HeartHandshake, Shield, ChevronLeft, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles, Trophy } from "lucide-react";
+import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles, Trophy } from "lucide-react";
 import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
-import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
@@ -26,11 +25,6 @@ const ROLE_META: Record<string, { label: string; icon: typeof Swords; color: str
   dps: { label: "DPS", icon: Swords, color: "#ff4444", bg: "rgba(255,68,68,0.15)" },
   healer: { label: "Healer", icon: HeartHandshake, color: "#00cc66", bg: "rgba(0,204,102,0.15)" },
   tank: { label: "Tank", icon: Shield, color: "#4488ff", bg: "rgba(68,136,255,0.15)" },
-};
-
-const REGION_FLAGS: Record<string, string> = {
-  US: "/flags/us.svg",
-  EU: "/flags/eu.svg",
 };
 
 const GEAR_SLOT_ICONS: Record<string, any> = {
@@ -149,7 +143,6 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const color = getClassColor(spec.classId);
 
   const PAGE_SIZE = 5;
-  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [buildFilter, setBuildFilter] = useState<"all" | "mythic+" | "raid">("all");
@@ -166,19 +159,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
     async function fetchData() {
       setLoading(true);
       try {
-        const [lbRes, metaRes] = await Promise.all([
-          fetch("/api/wow/leaderboard"),
-          fetch(`/api/wow/blizzard-meta?spec=${id}&ptr=${ptr ? 1 : 0}`),
-        ]);
-        if (lbRes.ok) {
-          const json = await lbRes.json();
-          const entries: LeaderboardEntry[] = json.entries || [];
-          const filtered = entries
-            .filter((e) => e.specId === id)
-            .sort((a, b) => b.score - a.score)
-            .map((e, i) => ({ ...e, rank: i + 1 }));
-          setLeaderboardEntries(filtered);
-        }
+        const metaRes = await fetch(`/api/wow/blizzard-meta?spec=${id}&ptr=${ptr ? 1 : 0}`);
         if (metaRes.ok) {
           const json = await metaRes.json();
           if (json.spec) setAggData(json.spec);
@@ -191,8 +172,22 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
     setPage(1);
   }, [id, ptr]);
 
-  const totalPages = Math.max(1, Math.ceil(leaderboardEntries.length / PAGE_SIZE));
-  const visibleEntries = leaderboardEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const playerEntries: ({ name: string; realm: string; region: string; score: number; specId: string; classId: string; faction: string; race?: string; rank: number })[] =
+    (aggData?.topPlayers || [])
+      .sort((a, b) => b.score - a.score)
+      .map((p, i) => ({
+        name: p.name,
+        realm: p.realm,
+        region: p.region,
+        score: p.score,
+        specId: p.specId || id,
+        classId: p.classId,
+        faction: "horde",
+        race: p.race,
+        rank: i + 1,
+      }));
+  const totalPages = Math.max(1, Math.ceil(playerEntries.length / PAGE_SIZE));
+  const visibleEntries = playerEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const classSpecs = SPECS.filter((s) => s.classId === spec.classId);
   const roleMeta = ROLE_META[spec.role] || ROLE_META.dps;
   const RoleIcon = roleMeta.icon;
@@ -293,92 +288,56 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4 animate-pulse border border-white/5">
-                    <div className="w-8 h-5 bg-white/10 rounded" />
-                    <div className="w-12 h-12 bg-white/10 rounded-lg" />
-                    <div className="flex-1"><div className="h-4 bg-white/10 rounded w-1/3 mb-1" /><div className="h-3 bg-white/10 rounded w-1/4" /></div>
-                    <div className="w-14 h-4 bg-white/10 rounded" />
+                    <div className="w-20 h-20 bg-white/10 rounded" />
+                    <div className="flex-1"><div className="h-5 bg-white/10 rounded w-1/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/4 mb-2" /><div className="h-3 bg-white/10 rounded w-1/5" /></div>
                   </div>
                 ))}
               </div>
-            ) : leaderboardEntries.length === 0 ? (
+            ) : playerEntries.length === 0 ? (
               <div className="text-center py-10">
                 <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">No leaderboard data available for this spec yet.</p>
               </div>
             ) : (
               <>
-                <div className="space-y-1.5">
+                <div className="space-y-3">
                   {visibleEntries.map((entry) => {
-                    const flag = REGION_FLAGS[entry.region?.toUpperCase()] || null;
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
                     return (
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10 transition-all group relative overflow-hidden"
+                        className="flex items-start gap-5 px-4 py-4 hover:bg-white/[0.02] transition-all group relative"
                       >
-                        {/* Rank badge — styled numbers replacing emoji medals */}
-                        <div className="w-8 shrink-0 text-center">
-                          {entry.rank <= 3 ? (
-                            <div className="relative inline-flex items-center justify-center">
-                              <span className="text-lg font-black" style={{ color: RANK_COLORS[entry.rank - 1], textShadow: `0 0 12px ${RANK_COLORS[entry.rank - 1]}40` }}>
-                                {entry.rank}
-                              </span>
-                              <span className="block text-[5px] font-black uppercase tracking-widest mt-[-2px]" style={{ color: `${RANK_COLORS[entry.rank - 1]}88` }}>
-                                {entry.rank === 1 ? "st" : entry.rank === 2 ? "nd" : "rd"}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-[11px] font-black text-gray-600">#{entry.rank}</span>
-                          )}
+                        {/* Rank */}
+                        <div className="w-7 shrink-0 text-right pt-1">
+                          <span className={`font-black text-[11px] ${entry.rank <= 3 ? "" : "text-gray-600"}`}
+                            style={entry.rank <= 3 ? { color: RANK_COLORS[entry.rank - 1] } : {}}>
+                            #{entry.rank}
+                          </span>
                         </div>
 
-                        {/* Character render with spec icon overlay */}
-                        <div className="relative shrink-0">
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={48} />
-                          <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full overflow-hidden border-2 border-[#05050a] shadow-lg">
-                            <Image src={spec.icon} alt="" width={18} height={18} className="w-full h-full object-cover" />
-                          </div>
-                          {entry.rank === 1 && (
-                            <div className="absolute -inset-[2px] rounded-[10px] pointer-events-none animate-pulse" style={{ border: `1.5px solid ${RANK_COLORS[0]}`, boxShadow: `0 0 12px ${RANK_COLORS[0]}40` }} />
-                          )}
-                        </div>
+                        {/* Big free avatar */}
+                        <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={80} free />
 
                         {/* Player info */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-bold text-white group-hover:text-[#00ffff] transition-colors truncate">{entry.name}</span>
-                            {flag && (
-                              <div className="flex items-center gap-1 bg-white/[0.04] rounded px-1.5 py-0.5 border border-white/5">
-                                <Image src={flag} alt={entry.region} width={10} height={7} className="rounded-[1px] shrink-0" />
-                                <span className="text-[6px] font-black text-gray-500 uppercase tracking-wider">{entry.region}</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[9px] text-gray-500 truncate">{entry.realm}</span>
-                            <span className="text-[5px] text-gray-600">·</span>
-                            <span className="text-[7px] font-bold uppercase tracking-wider" style={{ color: `${color}aa` }}>{spec.name}</span>
-                            {entry.faction === "alliance" ? (
-                              <span className="text-[8px] text-yellow-500/60">A</span>
-                            ) : (
-                              <span className="text-[8px] text-red-400/60">H</span>
-                            )}
-                          </div>
+                        <div className="min-w-0 flex-1 pt-2">
+                          <div className="text-lg font-black truncate" style={{ color: "#f97316" }}>{entry.name}</div>
+                          <div className="text-[11px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
+                          {entry.race && (
+                            <div className="text-[11px] text-gray-400 mt-0.5">{entry.race}</div>
+                          )}
                         </div>
 
                         {/* Score */}
-                        <div className="text-right shrink-0 flex items-center gap-1.5">
-                          <div className="leading-tight">
-                            <div className="text-sm font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
-                            <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
-                          </div>
-                          <ChevronRight className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-all -mr-1" />
+                        <div className="text-right shrink-0 pt-2">
+                          <div className="text-base font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
+                          <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
                         </div>
                       </Link>
                     );
                   })}
                 </div>
-                {leaderboardEntries.length > PAGE_SIZE && (
+                {playerEntries.length > PAGE_SIZE && (
                   <div className="flex items-center justify-center gap-1.5 pt-4">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                       <button
@@ -495,7 +454,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                         </div>
                       )}
                       <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
-                        {leaderboardEntries.slice(0, 5).map((entry, i) => (
+                        {playerEntries.slice(0, 5).map((entry, i) => (
                           <Link
                             key={entry.name}
                             href={playerProfileUrl(entry.name, entry.realm, entry.region)}

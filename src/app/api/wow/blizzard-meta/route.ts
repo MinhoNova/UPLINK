@@ -8,7 +8,7 @@ import type { MetaPipelineResult, AggregatedSpecData } from "@/lib/blizzard/type
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const CACHE_KEY = "wow:blizzard-meta";
 const PTR_CACHE_KEY = "wow:blizzard-meta-ptr";
-const TOP_PLAYERS_PER_SPEC = 5;
+const TOP_PLAYERS_PER_SPEC = 50;
 
 function formatSeasonName(slug: string): string {
   const parts = slug.split("-");

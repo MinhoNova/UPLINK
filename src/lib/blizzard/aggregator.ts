@@ -8,6 +8,7 @@ interface TopPlayer {
   specId: string;
   classId: string;
   score: number;
+  race?: string;
 }
 
 function pct(part: number, total: number): string {
@@ -117,7 +118,7 @@ export async function aggregateBySpec(
       specId,
       classId: p.player.classId,
       score: p.player.score,
-      talents: p.talents,
+      race: p.player.race,
       gear: p.gear.map((g) => ({ slot: g.slot, name: g.name, itemId: g.itemId })),
       gems: p.gems,
       enchants: p.gear.filter((g) => g.enchant).map((g) => ({ slot: g.slot, name: g.enchant! })),

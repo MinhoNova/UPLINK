@@ -7,9 +7,9 @@ const avatarCache = new Map<string, { url: string; ts: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default function CharacterAvatar({
-  name, realm, region, specIcon, classColor, size = 36,
+  name, realm, region, specIcon, classColor, size = 36, free = false,
 }: {
-  name: string; realm: string; region: string; specIcon: string; classColor: string; size?: number;
+  name: string; realm: string; region: string; specIcon: string; classColor: string; size?: number; free?: boolean;
 }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -42,7 +42,8 @@ export default function CharacterAvatar({
           const data = await res.json();
           if (data.available && data.render) {
             const r = data.render;
-            const url = size <= 36 ? (r.inset || r.avatar || r.main || r.mainRaw)
+            const url = free ? (r.mainRaw || r.main || r.inset || r.avatar)
+                       : size <= 36 ? (r.inset || r.avatar || r.main || r.mainRaw)
                        : size <= 64 ? (r.main || r.mainRaw || r.inset || r.avatar)
                        : (r.mainRaw || r.main || r.inset || r.avatar);
             if (url) {
@@ -57,13 +58,24 @@ export default function CharacterAvatar({
 
     load();
     return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
-  }, [name, realm, region]);
+  }, [name, realm, region, free]);
 
   if (failed || !realm) {
     return (
       <div className="relative shrink-0" style={{ width: size, height: size }}>
-        <Image src={specIcon} alt="" width={size} height={size} className="rounded-lg shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30` }} />
+        <Image src={specIcon} alt="" width={size} height={size} className="shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
+      </div>
+    );
+  }
+
+  if (free) {
+    return (
+      <div className="relative shrink-0 leading-none" style={{ width: size }}>
+        {imgUrl ? (
+          <img src={imgUrl} alt="" width={size} height={size * 1.5} className="object-contain w-full" style={{ imageRendering: "auto" }} onError={() => setFailed(true)} />
+        ) : (
+          <Image src={specIcon} alt="" width={size} height={size} className="shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
+        )}
       </div>
     );
   }

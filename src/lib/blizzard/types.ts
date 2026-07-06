@@ -104,6 +104,7 @@ export interface AggregatedCharacter {
   specId: string;
   classId: string;
   score: number;
+  race?: string;
   talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[];
   gear: { slot: string; name: string; itemId: number }[];
   gems: string[];
