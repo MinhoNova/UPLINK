@@ -94,22 +94,29 @@ function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSP
   );
 }
 
+const itemIconCache = new Map<string, string>();
 function BisItemIcon({ slot, color, itemId, itemName, size = 64 }: { slot: string; color: string; itemId?: number; itemName?: string; size?: number }) {
-  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const cacheKey = itemId ? `item:${itemId}` : itemName ? `item:${itemName}` : "";
+  const cached = cacheKey ? itemIconCache.get(cacheKey) : undefined;
+  const [iconUrl, setIconUrl] = useState<string | null>(cached || null);
   useEffect(() => {
+    if (!cacheKey || cached) return;
     let cancelled = false;
-    const query = itemId
-      ? `type=item&id=${itemId}`
-      : itemName
-        ? `type=item&name=${encodeURIComponent(itemName)}`
-        : null;
-    if (!query) return;
-    fetch(`/api/wow/blizzard/icon?${query}`)
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const query = itemId ? `type=item&id=${itemId}` : `type=item&name=${encodeURIComponent(itemName!)}`;
+    fetch(`/api/wow/blizzard/icon?${query}`, { signal: controller.signal })
       .then((r) => r.json())
-      .then((d) => { if (!cancelled && d.available) setIconUrl(d.url); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [itemId, itemName]);
+      .then((d) => {
+        clearTimeout(timer);
+        if (!cancelled && d.available && d.url) {
+          itemIconCache.set(cacheKey, d.url);
+          setIconUrl(d.url);
+        }
+      })
+      .catch(() => { clearTimeout(timer); });
+    return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
+  }, [cacheKey, cached, itemId, itemName]);
 
   const SlotIcon = GEAR_SLOT_ICONS[slot];
   return (
