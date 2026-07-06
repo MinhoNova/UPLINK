@@ -1,0 +1,180 @@
+﻿
+> uplink-app@0.1.0 prebuild
+> node scripts/generate-og.cjs
+
+Wrote C:\Users\omars\Downloads\UPLINK\public\og.png (1200x630, 50001 bytes)
+
+> uplink-app@0.1.0 build
+> opennextjs-cloudflare build
+
+
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé OpenNext ΓÇö Cloudflare build Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+node.exe : WARN OpenNext is not fully compatible with Windows.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARN OpenNext i...e with Windows.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARN For optimal performance, it is recommended to use Windows Subsystem for Linux (WSL).
+WARN While OpenNext may function on Windows, it could encounter unpredictable failures during runtime.
+App directory: C:\Users\omars\Downloads\UPLINK
+Next.js version : 16.2.9
+@opennextjs/cloudflare version: 1.19.11
+@opennextjs/aws version: 4.0.2
+WARN workerd compatibility_date: 2025-03-01, consider updating your wrangler config to a more recent date to benefit 
+from the latest features and fixes.
+
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé OpenNext ΓÇö Building Next.js app Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+Using secrets defined in .dev.vars
+Γû▓ Next.js 16.2.9 (webpack)
+- Environments: .env.local
+
+ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: 
+https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 13.4s
+  Skipping validation of types
+  Finished TypeScript config validation in 12ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/142) ...
+  Generating static pages using 11 workers (35/142) 
+  Generating static pages using 11 workers (70/142) 
+Using secrets defined in .dev.vars
+  Generating static pages using 11 workers (106/142) 
+Γ£ô Generating static pages using 11 workers (142/142) in 4.7s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /about
+Γö£ Γùï /addon
+Γö£ ╞Æ /admin
+Γö£ ╞Æ /api/admin/audit
+Γö£ ╞Æ /api/admin/banned-ips
+Γö£ ╞Æ /api/admin/check-subscription
+Γö£ ╞Æ /api/admin/moderation/posts
+Γö£ ╞Æ /api/admin/moderation/reports
+Γö£ ╞Æ /api/admin/roles
+Γö£ ╞Æ /api/admin/subscription
+Γö£ ╞Æ /api/analytics/view
+Γö£ ╞Æ /api/auth/[...nextauth]
+Γö£ ╞Æ /api/boost-requests
+Γö£ ╞Æ /api/chat/lounge
+Γö£ ╞Æ /api/community/activity
+Γö£ ╞Æ /api/community/check-access
+Γö£ ╞Æ /api/community/comment-reactions
+Γö£ ╞Æ /api/community/comments
+Γö£ ╞Æ /api/community/posts
+Γö£ ╞Æ /api/community/posts/pin
+Γö£ ╞Æ /api/community/reactions
+Γö£ ╞Æ /api/community/reports
+Γö£ ╞Æ /api/community/video-upload
+Γö£ ╞Æ /api/cron/refresh-meta
+Γö£ ╞Æ /api/data
+Γö£ ╞Æ /api/discord/broadcast
+Γö£ ╞Æ /api/discord/interactions
+Γö£ ╞Æ /api/discord/notify-invite
+Γö£ ╞Æ /api/discord/setup-roles
+Γö£ ╞Æ /api/discord/sync-member
+Γö£ ╞Æ /api/dm
+Γö£ ╞Æ /api/friends
+Γö£ ╞Æ /api/health/auth
+Γö£ ╞Æ /api/health/auth/discord
+Γö£ ╞Æ /api/health/auth/session
+Γö£ ╞Æ /api/health/d1
+Γö£ ╞Æ /api/leaderboard/season
+Γö£ ╞Æ /api/livekit
+Γö£ ╞Æ /api/lobbies
+Γö£ ╞Æ /api/lobbies/apply
+Γö£ ╞Æ /api/lobbies/split-exit
+Γö£ ╞Æ /api/lobbies/sync-runs
+Γö£ ╞Æ /api/lobby-bg
+Γö£ ╞Æ /api/news
+Γö£ ╞Æ /api/notifications
+Γö£ ╞Æ /api/onboarding/verify
+Γö£ ╞Æ /api/reviews
+Γö£ ╞Æ /api/subscription/request
+Γö£ ╞Æ /api/subscription/welcome
+Γö£ ╞Æ /api/user/lobby-vfx
+Γö£ ╞Æ /api/user/media
+Γö£ ╞Æ /api/user/profile-gif-thumb
+Γö£ ╞Æ /api/user/upload
+Γö£ ╞Æ /api/users/me
+Γö£ ╞Æ /api/wow/blizzard-meta
+Γö£ ╞Æ /api/wow/blizzard/character
+Γö£ ╞Æ /api/wow/blizzard/icon
+Γö£ ╞Æ /api/wow/blizzard/item/detail
+Γö£ ╞Æ /api/wow/leaderboard
+Γö£ ╞Æ /api/wow/meta-classes
+Γö£ ╞Æ /api/wow/pipeline
+Γö£ Γùï /boosts
+Γö£ Γùï /citypunks
+Γö£ Γùï /community
+Γö£ ╞Æ /community/[handle]
+Γö£ ╞Æ /community/post/[id]
+Γö£ Γùï /contact
+Γö£ Γùï /gold-auction
+Γö£ Γùï /guides
+Γö£ Γùï /guides/mythic-plus-boosting
+Γö£ Γùï /icon
+Γö£ Γùï /leaderboard
+Γö£ Γùï /news
+Γö£ ╞Æ /news/[id]
+Γö£ ╞Æ /news/dungeons
+Γö£ ╞Æ /news/leveling
+Γö£ Γùï /privacy
+Γö£ Γùï /reviews
+Γö£ Γùï /robots.txt
+Γö£ Γùï /sitemap.xml
+Γö£ Γùï /terms
+Γö£ Γùï /wow
+Γö£ Γùï /wow-boosting
+Γö£ Γùï /wow/affixes
+Γö£ ΓùÅ /wow/class/[id]
+Γöé Γö£ /wow/class/death-knight
+Γöé Γö£ /wow/class/demon-hunter
+Γöé Γö£ /wow/class/druid
+Γöé Γöö [+10 more paths]
+Γö£ Γùï /wow/dungeons
+Γö£ Γùï /wow/leaderboard
+Γö£ Γùï /wow/pipeline
+Γö£ ╞Æ /wow/player/[slug]
+Γö£ ╞Æ /wow/ptr
+Γö£ Γùï /wow/s2
+Γö£ ╞Æ /wow/spec/[id]
+Γö£ Γùï /wow/talents
+Γö£ Γùï /wow/tier-list
+Γöö Γùï /wowlfg
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+ΓùÅ  (SSG)      prerendered as static HTML (uses generateStaticParams)
+╞Æ  (Dynamic)  server-rendered on demand
+
+
+ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+Γöé OpenNext ΓÇö Generating bundle Γöé
+ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ
+
+Bundling middleware function...
+Bundling static assets...
+Bundling cache assets...
+Building server function: default...
+Applying code patches: 9.060s
+# copyPackageTemplateFiles
+[35mΓÜÖ∩╕Å Bundling the OpenNext server...
+[0m
+[35mWorker saved in `.open-next\worker.js` ≡ƒÜÇ
+[0m
+OpenNext build complete.

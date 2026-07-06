@@ -420,58 +420,58 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {data.bis.map((slot) => {
                   const primary = slot.options?.[0];
                   const secondary = slot.options?.[1];
                   const allUsePrimary = primary && primary.pct >= 100;
                   return (
-                    <div key={slot.slot} className="bg-black/60 rounded-2xl p-4 border border-white/[0.04] hover:border-white/10 transition-all">
-                      <div className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-4 text-center">{slot.slot}</div>
+                    <div key={slot.slot} className="pt-1">
+                      <div className="text-sm font-black text-white/90 uppercase tracking-widest mb-3">{slot.slot}</div>
                       {primary && (
                         <div
-                          className="rounded-xl p-4 transition-all cursor-pointer mb-2"
-                          style={{ background: "#0a0a14", border: "1px solid rgba(249,115,22,0.15)" }}
+                          className="flex items-start gap-3 cursor-pointer mb-2.5"
                           onMouseEnter={(e) => handleItemHover(primary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <div className="flex flex-col items-center gap-2">
-                            <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={64} />
-                            <span className="text-[11px] font-bold text-center leading-tight truncate max-w-full" style={{ color: "#f97316" }}>{primary.name}</span>
-                            {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
-                              <span className="text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
-                            )}
-                            <div className="w-full flex items-center gap-2 mt-0.5">
-                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                          <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={64} />
+                          <div className="min-w-0 flex-1 pt-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold leading-tight truncate" style={{ color: "#f97316" }}>{primary.name}</span>
+                              {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
+                                <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[100px]">
                                 <div className="h-full rounded-full" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
                               </div>
-                              <span className="text-[9px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
+                              <span className="text-[10px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
                       {secondary && !allUsePrimary && (
                         <div
-                          className="rounded-xl p-4 transition-all cursor-pointer"
-                          style={{ background: "#0a0a14", border: "1px solid rgba(192,132,252,0.15)" }}
+                          className="flex items-start gap-3 cursor-pointer mb-2.5"
                           onMouseEnter={(e) => handleItemHover(secondary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <div className="flex flex-col items-center gap-2">
-                            <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={64} />
-                            <span className="text-[11px] font-bold text-center leading-tight truncate max-w-full" style={{ color: "#c084fc" }}>{secondary.name}</span>
-                            <div className="w-full flex items-center gap-2 mt-0.5">
-                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                          <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={64} />
+                          <div className="min-w-0 flex-1 pt-0.5">
+                            <span className="text-sm font-bold leading-tight truncate block" style={{ color: "#c084fc" }}>{secondary.name}</span>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[100px]">
                                 <div className="h-full rounded-full" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
                               </div>
-                              <span className="text-[9px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
+                              <span className="text-[10px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
-                      <div className="mt-3 pt-3 border-t border-white/5">
-                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mb-1.5 text-center">Top 5</div>
-                        <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5">
+                      <div className="mt-2.5 pt-2 border-t border-white/5">
+                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mb-1">Top 5</div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                           {leaderboardEntries.slice(0, 5).map((entry, i) => (
                             <Link
                               key={entry.name}
