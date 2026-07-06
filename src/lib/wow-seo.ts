@@ -44,7 +44,7 @@ export function generateKeywords(spec: WoWSpec, data?: SpecData): string[] {
     // Arabic
     `ختصاص ${sn}`, `build ${sn}`, `talents ${sn}`,
     `${sn} دليل`, `${sn} افضل تالنتات`,
-    `${cn} ${rl_AR}`, `${cn} talents`,
+    `${cn} ${ROLE_LABELS_AR[spec.role]}`, `${cn} talents`,
     `افضل تالنتات ${sn}`, `build ${sn} mythic+`,
     `احسن تالنتات ${sn}`, `تجهيزات ${sn}`,
     `دليل ${sn} كامل`,
