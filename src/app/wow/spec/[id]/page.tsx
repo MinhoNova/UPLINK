@@ -67,7 +67,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <div className="lg:ml-[220px] max-w-4xl mx-auto px-4 pt-6 sm:pt-8">
+      <div className="lg:ml-[220px] max-w-6xl mx-auto px-4 pt-6 sm:pt-8">
         <h1 className="text-2xl sm:text-4xl font-black text-white mb-1">{intro.heading}</h1>
         <p className="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3">{intro.body}</p>
         {intro.bullets && (
@@ -96,7 +96,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
         </div>
       </div>
       <SpecDetailClient id={id} ptr={ptr} />
-      <div className="lg:ml-[220px] max-w-4xl mx-auto px-4 pt-8 pb-12">
+      <div className="lg:ml-[220px] max-w-6xl mx-auto px-4 pt-8 pb-12">
         <hr className="border-gray-800 mb-6" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>

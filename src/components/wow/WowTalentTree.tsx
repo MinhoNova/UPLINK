@@ -3,31 +3,45 @@
 import { useState, useEffect } from "react";
 import type { TalentTree } from "@/lib/wowData";
 
+const iconCache = new Map<string, string>();
+const ICON_CACHE_TTL = 30 * 60 * 1000;
+
 function TalentNode({
   name, id, selected, color,
 }: {
   name: string; id?: number; selected: boolean; color: string;
 }) {
-  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [iconUrl, setIconUrl] = useState<string | null>(() => {
+    const cacheKey = id ? `spell:${id}` : `spell:${name}`;
+    const cached = iconCache.get(cacheKey);
+    return cached || null;
+  });
 
   useEffect(() => {
-    if (!selected) return;
     let cancelled = false;
+    const cacheKey = id ? `spell:${id}` : `spell:${name}`;
+    if (iconCache.has(cacheKey)) return;
 
-    if (id) {
-      fetch(`/api/wow/blizzard/icon?type=spell&id=${id}`)
-        .then(r => r.json())
-        .then(d => { if (!cancelled && d.available && d.url) setIconUrl(d.url); })
-        .catch(() => {});
-    } else {
-      fetch(`/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`)
-        .then(r => r.json())
-        .then(d => { if (!cancelled && d.available && d.url) setIconUrl(d.url); })
-        .catch(() => {});
-    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
 
-    return () => { cancelled = true; };
-  }, [name, id, selected]);
+    const url = id
+      ? `/api/wow/blizzard/icon?type=spell&id=${id}`
+      : `/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`;
+
+    fetch(url, { signal: controller.signal })
+      .then(r => r.json())
+      .then(d => {
+        clearTimeout(timer);
+        if (!cancelled && d.available && d.url) {
+          iconCache.set(cacheKey, d.url);
+          setIconUrl(d.url);
+        }
+      })
+      .catch(() => { clearTimeout(timer); });
+
+    return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
+  }, [name, id]);
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -43,19 +57,18 @@ function TalentNode({
           boxShadow: selected
             ? `0 0 12px ${color}20, inset 0 0 8px ${color}10`
             : "none",
+          opacity: selected ? 1 : 0.4,
         }}
       >
-        {selected && iconUrl ? (
-          <img src={iconUrl} alt={name} className="w-full h-full object-cover" />
-        ) : selected ? (
+        {iconUrl ? (
+          <img src={iconUrl} alt={name} className="w-full h-full object-cover" style={{ opacity: selected ? 1 : 0.55 }} />
+        ) : (
           <div
             className="w-full h-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${color}40 0%, ${color}20 100%)` }}
+            style={{ background: `linear-gradient(135deg, ${color}25 0%, ${color}10 100%)` }}
           >
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color, opacity: selected ? 1 : 0.3 }} />
           </div>
-        ) : (
-          <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
         )}
       </div>
       <span

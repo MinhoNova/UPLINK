@@ -245,7 +245,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         </div>
       </div>
 
-      <div className="relative z-10 lg:ml-[220px] max-w-4xl mx-auto px-4 pt-6 sm:pt-8 pb-12">
+      <div className="relative z-10 lg:ml-[220px] max-w-6xl mx-auto px-4 pt-6 sm:pt-8 pb-12">
         <Link href="/wow/tier-list" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors mb-8 mt-4"><ChevronLeft className="w-3 h-3" /> Back to Tier List</Link>
 
         {/* Spec Switcher */}
@@ -433,36 +433,36 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             </section>
           )}
 
-          {/* BIS Gear — ranked by top 50 players */}
+          {/* BIS Gear — banner style */}
           {data && (
-            <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
+            <section>
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
                 {data.bis.map((slot) => {
                   const primary = slot.options?.[0];
                   const secondary = slot.options?.[1];
                   const allUsePrimary = primary && primary.pct >= 100;
                   return (
-                    <div key={slot.slot} className="pt-1">
-                      <div className="text-sm font-black text-white/90 uppercase tracking-widest mb-3">{slot.slot}</div>
+                    <div key={slot.slot}>
+                      <div className="text-xs font-black text-white/90 uppercase tracking-[0.15em] mb-3">{slot.slot}</div>
                       {primary && (
                         <div
-                          className="flex items-start gap-3 cursor-pointer mb-2.5"
+                          className="flex items-start gap-3 cursor-pointer mb-2"
                           onMouseEnter={(e) => handleItemHover(primary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={64} />
-                          <div className="min-w-0 flex-1 pt-0.5">
-                            <div className="flex items-center gap-2">
+                          <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={52} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
                               <span className="text-sm font-bold leading-tight truncate" style={{ color: "#f97316" }}>{primary.name}</span>
                               {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
                                 <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[100px]">
-                                <div className="h-full rounded-full" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-md" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
                               </div>
                               <span className="text-[10px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
                             </div>
@@ -471,36 +471,33 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       )}
                       {secondary && !allUsePrimary && (
                         <div
-                          className="flex items-start gap-3 cursor-pointer mb-2.5"
+                          className="flex items-start gap-3 cursor-pointer mb-2"
                           onMouseEnter={(e) => handleItemHover(secondary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={64} />
-                          <div className="min-w-0 flex-1 pt-0.5">
-                            <span className="text-sm font-bold leading-tight truncate block" style={{ color: "#c084fc" }}>{secondary.name}</span>
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[100px]">
-                                <div className="h-full rounded-full" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
+                          <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={52} />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-bold leading-tight truncate block mb-1" style={{ color: "#c084fc" }}>{secondary.name}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-md" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
                               </div>
                               <span className="text-[10px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
-                      <div className="mt-2.5 pt-2 border-t border-white/5">
-                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mb-1">Top 5</div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                          {leaderboardEntries.slice(0, 5).map((entry, i) => (
-                            <Link
-                              key={entry.name}
-                              href={playerProfileUrl(entry.name, entry.realm, entry.region)}
-                              className="flex items-center gap-1 text-[8px] text-gray-500 hover:text-white transition-colors"
-                            >
-                              <span className="font-black" style={{ color: ["#f97316", "#c084fc", "#a0a0a0"][i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
-                              <span className="truncate max-w-[60px]">{entry.name}</span>
-                            </Link>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+                        {leaderboardEntries.slice(0, 5).map((entry, i) => (
+                          <Link
+                            key={entry.name}
+                            href={playerProfileUrl(entry.name, entry.realm, entry.region)}
+                            className="flex items-center gap-1 text-[9px] text-gray-500 hover:text-white transition-colors"
+                          >
+                            <span className="font-black" style={{ color: ["#f97316", "#c084fc", "#a0a0a0"][i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
+                            <span className="truncate max-w-[80px]">{entry.name}</span>
+                          </Link>
+                        ))}
                       </div>
                     </div>
                   );
