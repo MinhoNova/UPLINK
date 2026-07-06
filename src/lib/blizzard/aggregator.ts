@@ -83,7 +83,6 @@ export async function aggregateBySpec(
         slot,
         names: Array.from(items.entries())
           .sort((a, b) => b[1].count - a[1].count)
-          .reverse()
           .map(([name, data]) => ({ name, count: data.count, pct: pct(data.count, total), itemId: data.itemId })),
       }))
       .sort((a, b) => {

@@ -6173,7 +6173,7 @@ export function mergeAggregatedData(
     };
   }
 
-  const bis = aggregated.bis
+  const bis = aggregated.bis?.length
     ? aggregated.bis.map((s) => {
         const hcItem = hardcoded.bis.find((h) => h.slot === s.slot);
         const options = (s.names || [])
@@ -6189,7 +6189,7 @@ export function mergeAggregatedData(
       })
     : hardcodedBisToOptions(hardcoded.bis);
 
-  const enchants = aggregated.enchants
+  const enchants = aggregated.enchants?.length
     ? aggregated.enchants.map((s) => ({
         slot: s.slot,
         name: s.names?.[0]?.name || hardcoded.enchants.find((h) => h.slot === s.slot)?.name || `${s.slot} Enchant`,
