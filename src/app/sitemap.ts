@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/siteUrl";
-import { SPECS } from "@/lib/wowData";
+import { SPECS, CLASS_NAMES } from "@/lib/wowData";
 
 const siteUrl = getSiteUrl();
 
@@ -35,5 +35,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...specPages];
+  const classPages = Object.keys(CLASS_NAMES).map((classId) => ({
+    url: `${siteUrl}/wow/class/${classId}`,
+    changeFrequency: "daily" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...specPages, ...classPages];
 }

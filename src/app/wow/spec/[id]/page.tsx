@@ -23,7 +23,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   const seasonTag = ptr ? " (PTR Season 2 Preview)" : "";
   return {
     title: `${spec.name} Talents & ${roleLabel} Build — BIS Gear, Enchants${ptr ? " (PTR S2)" : ""} | UPLINK`,
-    description: `Best ${spec.name} talents for Mythic+ and raid in Midnight.${seasonTag} ${talentKeywords}. BIS gear, enchants, gems, stat priority, and talent builds from top ${className} players.${ptr ? " Projected Season 2 data." : ""}`,
+    description: `Best ${spec.name} talents for Mythic+ and raid.${seasonTag} ${talentKeywords}. BIS gear: ${data ? data.bis.slice(0, 4).map((i) => i.name).join(", ") : `${spec.name} gear`}. Stat priority: ${data ? data.statPriority.join(", ") : "check the guide"}. Enchants, gems, and talent trees from top players.`,
     keywords: [talentKeywords, ptrKeywords].join(", "),
     openGraph: {
       title: `${spec.name} Talents & ${roleLabel} Build — WoW Meta${ptr ? " (PTR S2)" : ""} | UPLINK`,
@@ -39,6 +39,8 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) notFound();
   const data = getSpecData(id, ptr);
+  const className = spec.classId.replace(/-/g, " ");
+  const roleLabel = spec.role === "tank" ? "Tank" : spec.role === "healer" ? "Healer" : "DPS";
 
   const faqItems = [
     {
@@ -92,6 +94,16 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <div className="lg:ml-[220px] max-w-4xl mx-auto px-4 pt-6 sm:pt-8">
+        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{roleLabel} {className}</p>
+        <h1 className="text-2xl sm:text-4xl font-black text-white mb-2">{spec.name} Talents & BIS Gear</h1>
+        {data && (
+          <p className="text-xs text-gray-400 max-w-2xl mb-2">
+            Stat Priority: {data.statPriority.join(", ")}.
+            BIS gear includes {data.bis.slice(0, 4).map((i) => i.name).join(", ")}.
+          </p>
+        )}
+      </div>
       <SpecDetailClient id={id} ptr={ptr} />
     </>
   );
