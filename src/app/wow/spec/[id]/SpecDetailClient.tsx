@@ -1,17 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Medal, ChevronRight, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
 import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
+import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
+
+const QUALITY_COLORS: Record<number, string> = {
+  1: "#9d9d9d", 2: "#1eff00", 3: "#0070dd", 4: "#a335ee", 5: "#ff8000", 6: "#e6cc80", 7: "#00ccff",
+};
+
+const QUALITY_BORDERS: Record<number, string> = {
+  1: "#9d9d9d60", 2: "#1eff0060", 3: "#0070dd60", 4: "#a335ee60", 5: "#ff800060", 6: "#e6cc8060", 7: "#00ccff60",
+};
 
 const ROLE_META: Record<string, { label: string; icon: typeof Swords; color: string; bg: string }> = {
   dps: { label: "DPS", icon: Swords, color: "#ff4444", bg: "rgba(255,68,68,0.15)" },
@@ -31,7 +40,61 @@ const GEAR_SLOT_ICONS: Record<string, any> = {
   Weapon: Swords, "Off-Hand": BookOpen,
 };
 
-function BisItemIcon({ slot, color, itemId, itemName }: { slot: string; color: string; itemId?: number; itemName?: string }) {
+function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSProperties }) {
+  const qualityColor = QUALITY_COLORS[detail.quality?.id || 0] || "#ffffff";
+  const qualityBorder = QUALITY_BORDERS[detail.quality?.id || 0] || "#ffffff30";
+
+  return (
+    <div className="absolute z-50 w-[280px] pointer-events-none" style={style}>
+      <div className="rounded-xl overflow-hidden" style={{ background: "#0f0f1a", border: `1.5px solid ${qualityBorder}`, boxShadow: `0 8px 40px rgba(0,0,0,0.6), 0 0 20px ${qualityColor}15` }}>
+        <div className="flex gap-3 px-3.5 pt-3.5 pb-2">
+          {detail.iconUrl && (
+            <div className="w-[52px] h-[52px] shrink-0 rounded-lg overflow-hidden" style={{ border: `2px solid ${qualityBorder}` }}>
+              <img src={detail.iconUrl} alt="" className="w-full h-full object-cover" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="text-[13px] font-bold leading-tight truncate" style={{ color: qualityColor }}>{detail.name}</div>
+            {detail.level > 0 && <div className="text-[11px] text-gray-400 mt-0.5">Item Level {detail.level}</div>}
+          </div>
+        </div>
+        {detail.stats.length > 0 && (
+          <>
+            <div className="h-px mx-3.5" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}20, transparent)` }} />
+            <div className="px-3.5 py-2 space-y-0.5">
+              {detail.stats.map((s, i) => (
+                <div key={i} className="flex justify-between text-[11px]">
+                  <span className="text-gray-300">{s.name}</span>
+                  <span className="font-bold text-white">+{s.value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {detail.set && detail.set.bonuses.length > 0 && (
+          <>
+            <div className="h-px mx-3.5" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}20, transparent)` }} />
+            <div className="px-3.5 py-2">
+              <div className="text-[10px] font-bold text-green-400 mb-1.5 tracking-wider uppercase">{detail.set.name}</div>
+              {detail.set.bonuses.map((b, i) => (
+                <div key={i} className="flex gap-1.5 mb-1">
+                  <span className="text-[10px] font-bold text-green-400 shrink-0">({(i + 1) * 2})</span>
+                  <span className="text-[10px] text-gray-300 leading-relaxed">{b.description}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <div className="px-3.5 py-2 bg-black/30">
+          <div className="text-[9px] text-gray-500">{detail.itemClass}{detail.itemSubclass ? ` — ${detail.itemSubclass}` : ""}{detail.inventoryType ? ` — ${detail.inventoryType}` : ""}</div>
+          {detail.requiredLevel > 0 && <div className="text-[9px] text-gray-600">Requires Level {detail.requiredLevel}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BisItemIcon({ slot, color, itemId, itemName, size = 64 }: { slot: string; color: string; itemId?: number; itemName?: string; size?: number }) {
   const [iconUrl, setIconUrl] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -50,13 +113,13 @@ function BisItemIcon({ slot, color, itemId, itemName }: { slot: string; color: s
 
   const SlotIcon = GEAR_SLOT_ICONS[slot];
   return (
-    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg" style={{ backgroundColor: `${color}15`, border: `1px solid ${color}25`, boxShadow: `0 0 12px ${color}10` }}>
+    <div className="rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg" style={{ width: size, height: size, backgroundColor: `${color}15`, border: `1px solid ${color}25`, boxShadow: `0 0 12px ${color}10` }}>
       {iconUrl ? (
-        <Image src={iconUrl} alt="" width={48} height={48} className="w-full h-full object-cover" unoptimized />
+        <Image src={iconUrl} alt="" width={size} height={size} className="w-full h-full object-cover" unoptimized />
       ) : SlotIcon ? (
-        <SlotIcon className="w-5 h-5" style={{ color: `${color}bb` }} />
+        <SlotIcon className="w-6 h-6" style={{ color: `${color}bb` }} />
       ) : (
-        <Gem className="w-5 h-5" style={{ color: `${color}bb` }} />
+        <Gem className="w-6 h-6" style={{ color: `${color}bb` }} />
       )}
     </div>
   );
@@ -84,6 +147,11 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const [page, setPage] = useState(1);
   const [buildFilter, setBuildFilter] = useState<"all" | "mythic+" | "raid">("all");
   const [aggData, setAggData] = useState<AggregatedSpecData | null>(null);
+  const [hoveredItemId, setHoveredItemId] = useState<number | null>(null);
+  const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const detailCache = useRef<Map<number, ItemDetail>>(new Map());
+  const fetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const data = mergeAggregatedData(id, aggData, ptr);
 
@@ -121,6 +189,35 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const classSpecs = SPECS.filter((s) => s.classId === spec.classId);
   const roleMeta = ROLE_META[spec.role] || ROLE_META.dps;
   const RoleIcon = roleMeta.icon;
+
+  const handleItemHover = useCallback((itemId: number | undefined, e: React.MouseEvent) => {
+    if (!itemId) return;
+    setHoveredItemId(itemId);
+    const cached = detailCache.current.get(itemId);
+    if (cached) {
+      setItemDetail(cached);
+    } else {
+      fetchTimer.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/wow/blizzard/item/detail?id=${itemId}`);
+          if (res.ok) {
+            const detail: ItemDetail = await res.json();
+            detailCache.current.set(itemId, detail);
+            setItemDetail(detail);
+          }
+        } catch {}
+      }, 300);
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setTooltipPos({ top: rect.top - 10, left: rect.right + 12 });
+  }, []);
+
+  const handleItemLeave = useCallback(() => {
+    setHoveredItemId(null);
+    setItemDetail(null);
+    setTooltipPos(null);
+    if (fetchTimer.current) clearTimeout(fetchTimer.current);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#05050a] text-white">
@@ -322,67 +419,86 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {data && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, purple = alternative.</p>
-              <div className="space-y-6">
+              <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {data.bis.map((slot) => {
                   const primary = slot.options?.[0];
                   const secondary = slot.options?.[1];
                   const allUsePrimary = primary && primary.pct >= 100;
                   return (
-                    <div key={slot.slot} className="space-y-2">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15`, border: `1px solid ${color}25` }}>
-                          {(() => {
-                            const SlotIcon = GEAR_SLOT_ICONS[slot.slot];
-                            return SlotIcon ? <SlotIcon className="w-4 h-4" style={{ color: `${color}bb` }} /> : null;
-                          })()}
-                        </div>
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em]">{slot.slot}</span>
-                        <div className="flex-1 h-px bg-gradient-to-r from-white/10 via-transparent to-transparent" />
-                      </div>
+                    <div key={slot.slot} className="bg-black/40 rounded-xl p-3.5 border border-white/5 hover:border-white/10 transition-all">
+                      <div className="text-[10px] font-black text-white uppercase tracking-wider mb-3 text-center">{slot.slot}</div>
                       {primary && (
-                        <div className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border transition-all overflow-hidden" style={{ borderColor: "#f9731660" }}>
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.08) 0%, transparent 50%)" }} />
-                          <div className="relative z-10 flex items-center gap-4">
-                            <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold truncate" style={{ color: "#f97316" }}>{primary.name}</span>
-                                {slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs" ? (
-                                  <span className="shrink-0 text-[7px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
-                                ) : null}
+                        <div
+                          className="group relative rounded-lg p-2.5 border transition-all cursor-pointer mb-1.5"
+                          style={{ borderColor: "#f9731640", background: "linear-gradient(135deg, rgba(249,115,22,0.06) 0%, transparent 100%)" }}
+                          onMouseEnter={(e) => handleItemHover(primary.itemId, e)}
+                          onMouseLeave={handleItemLeave}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={56} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-bold truncate" style={{ color: "#f97316" }}>{primary.name}</span>
+                                {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
+                                  <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1 py-0.5 rounded tracking-widest uppercase">Tier</span>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                  <div className="h-full rounded-full transition-all" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)", boxShadow: "0 0 8px rgba(249,115,22,0.3)" }} />
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[80px]">
+                                  <div className="h-full rounded-full" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
                                 </div>
-                                <span className="text-[10px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count} players ({primary.pct.toFixed(0)}%)</span>
+                                <span className="text-[8px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       )}
                       {secondary && !allUsePrimary && (
-                        <div className="group relative bg-[#0c0c18]/80 rounded-xl px-4 py-3 border transition-all overflow-hidden" style={{ borderColor: "#a855f740" }}>
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.08) 0%, transparent 50%)" }} />
-                          <div className="relative z-10 flex items-center gap-4">
-                            <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-sm font-bold truncate block" style={{ color: "#a855f7" }}>{secondary.name}</span>
-                              <div className="flex items-center gap-2 mt-1">
-                                <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                  <div className="h-full rounded-full transition-all" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #a855f7, #c084fc)", boxShadow: "0 0 8px rgba(168,85,247,0.3)" }} />
+                        <div
+                          className="group relative rounded-lg p-2.5 border transition-all cursor-pointer"
+                          style={{ borderColor: "#c084fc40", background: "linear-gradient(135deg, rgba(192,132,252,0.06) 0%, transparent 100%)" }}
+                          onMouseEnter={(e) => handleItemHover(secondary.itemId, e)}
+                          onMouseLeave={handleItemLeave}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={56} />
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[11px] font-bold truncate block" style={{ color: "#c084fc" }}>{secondary.name}</span>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden max-w-[80px]">
+                                  <div className="h-full rounded-full" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
                                 </div>
-                                <span className="text-[10px] font-black shrink-0" style={{ color: "#a855f7" }}>{secondary.count} players ({secondary.pct.toFixed(0)}%)</span>
+                                <span className="text-[8px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       )}
+                      <div className="mt-2 pt-2 border-t border-white/5">
+                        <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest mb-1">Top 5</div>
+                        <div className="space-y-0.5">
+                          {leaderboardEntries.slice(0, 5).map((entry, i) => (
+                            <Link
+                              key={entry.name}
+                              href={playerProfileUrl(entry.name, entry.realm, entry.region)}
+                              className="flex items-center gap-1.5 text-[8px] text-gray-400 hover:text-white transition-colors"
+                            >
+                              <span className="w-3 text-right shrink-0 font-bold" style={{ color: i < 3 ? "#f97316" : "rgba(255,255,255,0.3)" }}>{i + 1}</span>
+                              <span className="truncate">{entry.name}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
               </div>
+              {hoveredItemId && itemDetail && tooltipPos && (
+                <div style={{ position: "fixed", top: tooltipPos.top, left: tooltipPos.left, zIndex: 9999 }}>
+                  <ItemTooltip detail={itemDetail} />
+                </div>
+              )}
             </section>
           )}
 
@@ -430,9 +546,9 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <div className="space-y-3">
                 {data.statPriority.map((stat, i) => {
                   const pct = 100 - i * 18;
-                  const statColors = ["#f97316", "#a855f7", "#ffffff", "#9ca3af", "#6b7280"];
+                  const statColors = ["#f97316", "#c084fc", "#ffffff", "#9ca3af", "#6b7280"];
                   const barColor = statColors[i] || "#6b7280";
-                  const barGrad = i === 0 ? "linear-gradient(90deg, #f97316, #fb923c)" : i === 1 ? "linear-gradient(90deg, #a855f7, #c084fc)" : `linear-gradient(90deg, ${color}88, ${color}40)`;
+                  const barGrad = i === 0 ? "linear-gradient(90deg, #f97316, #fb923c)" : i === 1 ? "linear-gradient(90deg, #c084fc, #d8b4fe)" : `linear-gradient(90deg, ${color}88, ${color}40)`;
                   return (
                     <div key={i} className="flex items-center gap-4">
                       <span className="w-5 text-[10px] font-black text-gray-500 shrink-0 text-right">{i + 1}</span>
