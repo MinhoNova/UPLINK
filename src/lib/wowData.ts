@@ -6144,7 +6144,8 @@ export interface AggregatedSpecData {
   enchants: { slot: string; names: { name: string; count: number; pct: string }[] }[];
   gems: { name: string; count: number; pct: string }[];
   statPriority: string[];
-  topPlayers: { name: string; realm: string; region: string; specId: string; classId: string; score: number }[];
+  topPlayers: { name: string; realm: string; region: string; specId: string; classId: string; score: number; race?: string; talents?: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear?: { slot: string; name: string; itemId: number }[]; gems?: string[]; enchants?: { slot: string; name: string }[]; statPriority?: string[] }[];
+  players: { name: string; realm: string; region: string; score: number; specId: string; classId: string; race?: string }[];
   lastUpdated: number;
 }
 

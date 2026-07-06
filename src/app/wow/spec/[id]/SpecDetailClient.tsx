@@ -173,7 +173,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   }, [id, ptr]);
 
   const playerEntries: ({ name: string; realm: string; region: string; score: number; specId: string; classId: string; faction: string; race?: string; rank: number })[] =
-    (aggData?.topPlayers || [])
+    (aggData?.players || [])
       .sort((a, b) => b.score - a.score)
       .map((p, i) => ({
         name: p.name,

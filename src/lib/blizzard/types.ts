@@ -97,6 +97,16 @@ export interface BlizzardCharacterStats {
   speed?: number;
 }
 
+export interface PlayerListing {
+  name: string;
+  realm: string;
+  region: string;
+  score: number;
+  specId: string;
+  classId: string;
+  race?: string;
+}
+
 export interface AggregatedCharacter {
   name: string;
   realm: string;
@@ -119,6 +129,7 @@ export interface AggregatedSpecData {
   gems: { name: string; count: number; pct: string }[];
   statPriority: string[];
   topPlayers: AggregatedCharacter[];
+  players: PlayerListing[];
   lastUpdated: number;
 }
 

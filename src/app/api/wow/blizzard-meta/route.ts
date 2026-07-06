@@ -60,8 +60,10 @@ export async function GET(request: Request) {
       if (!existing || p.score > existing.score) mergedMap.set(key, p);
     }
 
-    const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), TOP_PLAYERS_PER_SPEC);
-    const specs = await aggregateBySpec(playersBySpec);
+    const displayLimit = 50;
+    const profileLimit = 10;
+    const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
+    const specs = await aggregateBySpec(playersBySpec, profileLimit);
 
     const result: MetaPipelineResult = {
       specs,

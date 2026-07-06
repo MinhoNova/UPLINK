@@ -1,4 +1,4 @@
-import type { AggregatedSpecData, AggregatedCharacter } from "./types";
+import type { AggregatedSpecData, AggregatedCharacter, PlayerListing } from "./types";
 import { fetchCharacterProfile } from "./character-profile";
 
 interface TopPlayer {
@@ -17,25 +17,40 @@ function pct(part: number, total: number): string {
 }
 
 export async function aggregateBySpec(
-  playersBySpec: Map<string, TopPlayer[]>
+  playersBySpec: Map<string, TopPlayer[]>,
+  profileLimit = 10,
 ): Promise<Record<string, AggregatedSpecData>> {
   const result: Record<string, AggregatedSpecData> = {};
 
+  // Build player listings from ALL top players (Raider.IO data, no Blizzard profile needed)
+  const playerLists = new Map<string, PlayerListing[]>();
+  for (const [specId, players] of playersBySpec) {
+    playerLists.set(specId, players.map((p) => ({
+      name: p.name,
+      realm: p.realm,
+      region: p.region,
+      score: p.score,
+      specId,
+      classId: p.classId,
+      race: p.race,
+    })));
+  }
+
+  // Only fetch Blizzard profiles for the top N per spec (to avoid overload)
   const allFetches: { specId: string; player: TopPlayer }[] = [];
   for (const [specId, players] of playersBySpec) {
-    for (const player of players) {
+    const limited = players.slice(0, profileLimit);
+    for (const player of limited) {
       allFetches.push({ specId, player });
     }
   }
 
-  // Fetch all profiles in parallel
   const profileResults = await Promise.allSettled(
     allFetches.map(({ player }) =>
       fetchCharacterProfile(player.name, player.realm, player.region)
     )
   );
 
-  // Group profiles by spec
   const profilesBySpec = new Map<string, { player: TopPlayer; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
 
   let idx = 0;
@@ -132,6 +147,7 @@ export async function aggregateBySpec(
       gems,
       statPriority,
       topPlayers,
+      players: playerLists.get(specId) || [],
       lastUpdated: Date.now(),
     };
   }
