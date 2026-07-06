@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getKV, setKV, initTables } from "@/lib/db";
-import { fetchTopPlayersFromRaiderIO, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
+import { fetchTopPlayersFromRaiderIO, fetchTopPlayersFromBlizzard, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
 import { aggregateBySpec } from "@/lib/blizzard/aggregator";
 import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 import type { MetaPipelineResult, AggregatedSpecData } from "@/lib/blizzard/types";
@@ -51,27 +51,34 @@ export async function GET(request: Request) {
       seasonSlug = season.slug;
     }
 
-    // Step 1: Fetch top players from Raider.IO
-    let allPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
+    // Step 1: Fetch from Raider.IO /runs (sequential, covers ~15-20 specs)
+    const raiderPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
 
-    // Step 2: If empty (PTR etc.), try Blizzard API directly
-    if (allPlayers.length === 0) {
-      const { fetchTopPlayersFromBlizzard } = await import("@/lib/blizzard/leaderboard");
-      allPlayers = await fetchTopPlayersFromBlizzard(seasonSlug);
+    // Step 2: Also fetch from Blizzard API (covers ALL specs via official leaderboard)
+    const blizzardPlayers = await fetchTopPlayersFromBlizzard(seasonSlug);
+
+    // Step 3: Merge both sources — dedup by character key, keep higher score
+    const mergedMap = new Map<string, typeof raiderPlayers[0]>();
+    for (const p of [...raiderPlayers, ...blizzardPlayers]) {
+      const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
+      const existing = mergedMap.get(key);
+      if (!existing || p.score > existing.score) {
+        mergedMap.set(key, p);
+      }
     }
 
-    // Step 3: Select top N per spec
-    const playersBySpec = selectTopPlayersBySpec(allPlayers, TOP_PLAYERS_PER_SPEC);
+    // Step 4: Select top N per spec from merged pool
+    const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), TOP_PLAYERS_PER_SPEC);
 
-    // Step 4: Fetch character profiles and aggregate
+    // Step 5: Fetch character profiles and aggregate
     const specs = await aggregateBySpec(playersBySpec);
 
-    // Step 5: Build result
+    // Step 6: Build result
     const result: MetaPipelineResult = {
       specs,
       timestamp: Date.now(),
       season: ptr ? "Midnight — Season 2 (PTR Preview)" : formatSeasonName(seasonSlug),
-      totalCharacters: allPlayers.length,
+      totalCharacters: mergedMap.size,
     };
 
     // Cache it
