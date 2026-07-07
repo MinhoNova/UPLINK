@@ -43,8 +43,7 @@ export default function CharacterAvatar({
           if (data.available && data.render) {
             const r = data.render;
             const url = free ? (r.mainRaw || r.main || r.inset || r.avatar)
-                       : size <= 48 ? (r.inset || r.main || r.mainRaw || r.avatar)
-                       : (r.mainRaw || r.main || r.inset || r.avatar);
+                       : (r.inset || r.main || r.mainRaw || r.avatar);
             if (url) {
               avatarCache.set(cacheKey, { url, ts: Date.now() });
               if (!cancelled) { setImgUrl(url); return; }
@@ -87,7 +86,11 @@ export default function CharacterAvatar({
       ) : (
         <Image src={specIcon} alt="" width={size} height={size} className="rounded-lg shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
       )}
-      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30`, boxShadow: `inset 0 0 6px ${classColor}20` }} />
+      {size >= 128 ? (
+        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: '2px solid #a335ee', boxShadow: 'inset 0 0 12px #a335ee40, 0 0 20px #a335ee30' }} />
+      ) : (
+        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30`, boxShadow: `inset 0 0 6px ${classColor}20` }} />
+      )}
     </div>
   );
 }

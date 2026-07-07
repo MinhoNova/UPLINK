@@ -11,7 +11,7 @@ import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
-const RANK_COLORS = ["#ff6d00", "#c084fc", "#a0a0a0"];
+const RANK_COLORS = ["#a335ee", "#c084fc", "#a0a0a0"];
 
 const QUALITY_COLORS: Record<number, string> = {
   1: "#9d9d9d", 2: "#1eff00", 3: "#0070dd", 4: "#a335ee", 5: "#ff8000", 6: "#e6cc80", 7: "#00ccff",
@@ -317,13 +317,13 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={192} free />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={192} />
 
                           {/* Info */}
                           <div className="min-w-0 flex-1 pt-1">
-                            <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center justify-between gap-2">
                               <span className="text-base font-black truncate text-white">{entry.name}</span>
-                              <span className="text-sm font-black shrink-0" style={{ color: rankColor }}>{entry.score.toLocaleString()}</span>
+                              <span className="text-lg font-black shrink-0 tracking-tight" style={{ color: rankColor }}>{entry.score.toLocaleString()}</span>
                             </div>
                             <div className="text-[10px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
                             {entry.race && (
