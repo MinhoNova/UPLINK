@@ -285,11 +285,14 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             <p className="text-xs text-gray-500 mb-6">Top Mythic+ players worldwide — click any player to view their full profile with talents and gear. Auto-updates every minute.</p>
 
             {loading ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4 animate-pulse border border-white/5">
-                    <div className="w-20 h-20 bg-white/10 rounded" />
-                    <div className="flex-1"><div className="h-5 bg-white/10 rounded w-1/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/4 mb-2" /><div className="h-3 bg-white/10 rounded w-1/5" /></div>
+                  <div key={i} className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-4 animate-pulse">
+                    <div className="flex items-start gap-4">
+                      <div className="w-7 h-4 bg-white/10 rounded shrink-0" />
+                      <div className="w-14 h-14 bg-white/10 rounded shrink-0" />
+                      <div className="flex-1"><div className="h-5 bg-white/10 rounded w-1/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/4 mb-2" /><div className="h-3 bg-white/10 rounded w-1/5" /></div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -306,32 +309,34 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="flex items-start gap-5 px-4 py-4 hover:bg-white/[0.02] transition-all group relative"
+                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-4 hover:border-white/10 transition-all block"
                       >
-                        {/* Rank */}
-                        <div className="w-7 shrink-0 text-right pt-1">
-                          <span className={`font-black text-[11px] ${entry.rank <= 3 ? "" : "text-gray-600"}`}
-                            style={entry.rank <= 3 ? { color: RANK_COLORS[entry.rank - 1] } : {}}>
-                            #{entry.rank}
-                          </span>
-                        </div>
+                        <div className="relative flex items-start gap-4">
+                          {/* Rank */}
+                          <div className="shrink-0 pt-1">
+                            <span className={`font-black text-[11px] ${entry.rank <= 3 ? "" : "text-gray-600"}`}
+                              style={entry.rank <= 3 ? { color: RANK_COLORS[entry.rank - 1] } : {}}>
+                              #{entry.rank}
+                            </span>
+                          </div>
 
-                        {/* Big free avatar */}
-                        <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={80} free />
+                          {/* Avatar */}
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={56} free />
 
-                        {/* Player info */}
-                        <div className="min-w-0 flex-1 pt-2">
-                          <div className="text-lg font-black truncate" style={{ color: "#f97316" }}>{entry.name}</div>
-                          <div className="text-[11px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
-                          {entry.race && (
-                            <div className="text-[11px] text-gray-400 mt-0.5">{entry.race}</div>
-                          )}
-                        </div>
+                          {/* Player info */}
+                          <div className="min-w-0 flex-1 pt-0.5">
+                            <div className="text-base font-black truncate" style={{ color: "#f97316" }}>{entry.name}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
+                            {entry.race && (
+                              <div className="text-[10px] text-gray-400 mt-0.5">{entry.race}</div>
+                            )}
+                          </div>
 
-                        {/* Score */}
-                        <div className="text-right shrink-0 pt-2">
-                          <div className="text-base font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
-                          <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
+                          {/* Score */}
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
+                            <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
+                          </div>
                         </div>
                       </Link>
                     );
