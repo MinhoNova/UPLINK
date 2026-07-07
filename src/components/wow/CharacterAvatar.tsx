@@ -80,13 +80,12 @@ export default function CharacterAvatar({
   }
 
   return (
-    <div className={`relative shrink-0 ${clippedHeight ? "rounded-lg" : ""}`} style={{ width: size, height: clippedHeight || size, backgroundColor: `${classColor}10`, overflow: clippedHeight ? "hidden" : undefined }}>
+    <div className={`relative shrink-0 ${clippedHeight ? "rounded-lg" : ""}`} style={{ width: size, height: clippedHeight || size, overflow: clippedHeight ? "hidden" : undefined }}>
       {imgUrl ? (
         <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full" style={{ minWidth: size, minHeight: size, objectPosition: "center top" }} onError={() => setFailed(true)} />
       ) : (
         <Image src={specIcon} alt="" width={size} height={size} className="rounded-lg shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
       )}
-      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30`, boxShadow: `inset 0 0 6px ${classColor}20` }} />
     </div>
   );
 }
