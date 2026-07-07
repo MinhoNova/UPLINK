@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles, Trophy } from "lucide-react";
+import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
 import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
@@ -11,7 +11,7 @@ import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
-const RANK_COLORS = ["#f97316", "#c084fc", "#a0a0a0"];
+const RANK_COLORS = ["#ff6d00", "#c084fc", "#a0a0a0"];
 
 const QUALITY_COLORS: Record<number, string> = {
   1: "#9d9d9d", 2: "#1eff00", 3: "#0070dd", 4: "#a335ee", 5: "#ff8000", 6: "#e6cc80", 7: "#00ccff",
@@ -277,21 +277,17 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
         <div className="grid gap-8">
           {/* ═══ TOP PLAYERS ═══ */}
-          <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-1">
-              <Trophy className="w-5 h-5" style={{ color }} />
-              <h2 className="text-lg font-black text-white">Top {spec.name} Players</h2>
-            </div>
-            <p className="text-xs text-gray-500 mb-6">Top Mythic+ players worldwide — click any player to view their full profile with talents and gear. Auto-updates every minute.</p>
+          <section>
+            <h2 className="text-2xl font-black text-white mb-3">Top {spec.name} Players</h2>
 
             {loading ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-4 animate-pulse">
-                    <div className="flex items-start gap-4">
-                      <div className="w-7 h-4 bg-white/10 rounded shrink-0" />
-                      <div className="w-14 h-14 bg-white/10 rounded shrink-0" />
-                      <div className="flex-1"><div className="h-5 bg-white/10 rounded w-1/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/4 mb-2" /><div className="h-3 bg-white/10 rounded w-1/5" /></div>
+                  <div key={i} className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-2 animate-pulse max-w-md">
+                    <div className="flex items-start gap-2">
+                      <div className="w-5 h-3 bg-white/10 rounded shrink-0" />
+                      <div className="w-24 h-[120px] bg-white/10 rounded shrink-0" />
+                      <div className="flex-1"><div className="h-5 bg-white/10 rounded w-2/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/4" /></div>
                     </div>
                   </div>
                 ))}
@@ -302,40 +298,37 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               </div>
             ) : (
               <>
-                <div className="space-y-3">
+                <div className="flex flex-col items-start gap-2">
                   {visibleEntries.map((entry) => {
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
+                    const rankColor = entry.rank <= 3 ? RANK_COLORS[entry.rank - 1] : "#6b7280";
                     return (
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-2.5 hover:border-white/10 transition-all block"
+                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-2 hover:border-white/10 transition-all max-w-md w-full"
                       >
-                        <div className="relative flex items-start gap-2">
+                        <div className="flex items-start gap-1.5">
                           {/* Rank */}
-                          <div className="shrink-0 pt-0.5">
-                            <span className={`font-black text-[9px] ${entry.rank <= 3 ? "" : "text-gray-600"}`}
-                              style={entry.rank <= 3 ? { color: RANK_COLORS[entry.rank - 1] } : {}}>
+                          <div className="shrink-0 pt-1">
+                            <span className="font-black text-[9px]" style={{ color: rankColor }}>
                               #{entry.rank}
                             </span>
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={96} free />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={192} free />
 
-                          {/* Player info */}
+                          {/* Info */}
                           <div className="min-w-0 flex-1 pt-1">
-                            <div className="text-base font-black truncate" style={{ color: "#f97316" }}>{entry.name}</div>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-base font-black truncate text-white">{entry.name}</span>
+                              <span className="text-sm font-black shrink-0" style={{ color: rankColor }}>{entry.score.toLocaleString()}</span>
+                            </div>
                             <div className="text-[10px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
                             {entry.race && (
                               <div className="text-[10px] text-gray-400 mt-0.5">{entry.race}</div>
                             )}
-                          </div>
-
-                          {/* Score */}
-                          <div className="text-right shrink-0 self-start pt-1">
-                            <div className="text-sm font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
-                            <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
                           </div>
                         </div>
                       </Link>
@@ -343,7 +336,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   })}
                 </div>
                 {playerEntries.length > PAGE_SIZE && (
-                  <div className="flex items-center justify-center gap-1.5 pt-4">
+                  <div className="flex items-center justify-center gap-1.5 pt-3">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                       <button
                         key={p}
@@ -465,7 +458,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                             href={playerProfileUrl(entry.name, entry.realm, entry.region)}
                             className="flex items-center gap-1 text-[9px] text-gray-500 hover:text-white transition-colors"
                           >
-                            <span className="font-black" style={{ color: ["#f97316", "#c084fc", "#a0a0a0"][i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
+                            <span className="font-black" style={{ color: RANK_COLORS[i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
                             <span className="truncate max-w-[80px]">{entry.name}</span>
                           </Link>
                         ))}
