@@ -7,9 +7,9 @@ const avatarCache = new Map<string, { url: string; ts: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default function CharacterAvatar({
-  name, realm, region, specIcon, classColor, size = 36, free = false,
+  name, realm, region, specIcon, classColor, size = 36, free = false, clippedHeight,
 }: {
-  name: string; realm: string; region: string; specIcon: string; classColor: string; size?: number; free?: boolean;
+  name: string; realm: string; region: string; specIcon: string; classColor: string; size?: number; free?: boolean; clippedHeight?: number;
 }) {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -80,9 +80,9 @@ export default function CharacterAvatar({
   }
 
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size, backgroundColor: `${classColor}10` }}>
+    <div className={`relative shrink-0 ${clippedHeight ? "rounded-lg" : ""}`} style={{ width: size, height: clippedHeight || size, backgroundColor: `${classColor}10`, overflow: clippedHeight ? "hidden" : undefined }}>
       {imgUrl ? (
-        <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full h-full" style={{ minWidth: size, minHeight: size, objectPosition: "center top" }} onError={() => setFailed(true)} />
+        <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full" style={{ minWidth: size, minHeight: size, objectPosition: "center top" }} onError={() => setFailed(true)} />
       ) : (
         <Image src={specIcon} alt="" width={size} height={size} className="rounded-lg shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
       )}
