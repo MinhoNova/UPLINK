@@ -279,16 +279,17 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         <div className="grid gap-8">
           {/* ═══ TOP PLAYERS ═══ */}
           <section>
-            <h2 className="text-2xl font-black text-white mb-3">Top {spec.name} Players</h2>
+            <h2 className="text-2xl font-black text-white mb-4">Top {spec.name} Players</h2>
 
             {loading ? (
               <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-2 animate-pulse max-w-md">
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-3 bg-white/10 rounded shrink-0" />
-                      <div className="w-24 h-[120px] bg-white/10 rounded shrink-0" />
-                      <div className="flex-1"><div className="h-5 bg-white/10 rounded w-2/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/3 mb-2" /><div className="h-3 bg-white/10 rounded w-1/4" /></div>
+                  <div key={i} className="rounded-2xl border border-white/[0.04] bg-[#0c0c18] p-3 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-4 bg-white/8 rounded shrink-0" />
+                      <div className="w-9 h-9 bg-white/8 rounded-lg shrink-0" />
+                      <div className="flex-1"><div className="h-4 bg-white/8 rounded w-1/3 mb-1.5" /><div className="h-3 bg-white/8 rounded w-1/5" /></div>
+                      <div className="w-14 h-4 bg-white/8 rounded shrink-0" />
                     </div>
                   </div>
                 ))}
@@ -299,40 +300,41 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               </div>
             ) : (
               <>
-                <div className="flex flex-col items-start gap-2">
+                <div className="flex flex-col gap-2">
                   {visibleEntries.map((entry) => {
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
-                    const rankColor = entry.rank <= 3 ? RANK_COLORS[entry.rank - 1] : "#6b7280";
+                    const rankColor = entry.rank <= 3 ? RANK_COLORS[entry.rank - 1] : "#3a3a3a";
                     return (
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-0.5 hover:border-white/10 transition-all max-w-md w-full"
+                        className="group rounded-2xl bg-[#0c0c18] border border-white/[0.04] px-4 py-3 hover:border-white/10 hover:bg-[#111120] transition-all"
                       >
-                        <div className="flex items-start gap-1">
+                        <div className="flex items-center gap-3">
                           {/* Rank */}
-                          <div className="shrink-0 pt-0.5">
-                            <span className="font-black text-[7px]" style={{ color: rankColor }}>
+                          <div className="w-6 shrink-0 text-center">
+                            <span className="font-black text-[10px]" style={{ color: rankColor }}>
                               #{entry.rank}
                             </span>
                           </div>
 
-                          {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={160} clippedHeight={125} />
+                          {/* Spec icon */}
+                          <Image src={spec.icon} alt="" width={36} height={36} className="rounded-lg shrink-0" style={{ backgroundColor: `${color}20`, boxShadow: `0 0 10px ${color}15` }} />
 
                           {/* Info */}
-                          <div className="min-w-0 flex-1 pt-0.5">
-                            <div className="text-sm font-black truncate text-white">{entry.name}</div>
-                            <div className="text-[9px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
-                            <div className="text-[9px] text-gray-400 mt-0.5">
-                              {entry.race}{entry.race && entry.itemLevel ? " · " : ""}{entry.itemLevel ? `${entry.itemLevel} ilvl` : ""}
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-bold truncate text-white">{entry.name}</div>
+                            <div className="flex items-center gap-1.5 text-[9px] text-gray-500 mt-0.5">
+                              <span>{entry.realm} ({entry.region.toUpperCase()})</span>
+                              {entry.race && <><span className="text-gray-600">·</span><span>{entry.race}</span></>}
+                              {entry.itemLevel && <><span className="text-gray-600">·</span><span>{entry.itemLevel} ilvl</span></>}
                             </div>
                           </div>
 
                           {/* Score */}
-                          <div className="shrink-0 pt-0.5">
-                            <div className="text-sm font-black tracking-tight text-right" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
-                            <div className="text-[6px] font-black text-right tracking-wider" style={{ color: `${rankColor}77` }}>M+</div>
+                          <div className="shrink-0 text-right">
+                            <div className="text-base font-black tracking-tight" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
+                            <div className="text-[7px] font-black tracking-widest" style={{ color: `${rankColor}60` }}>MYTHIC+</div>
                           </div>
                         </div>
                       </Link>
@@ -340,7 +342,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   })}
                 </div>
                 {playerEntries.length > PAGE_SIZE && (
-                  <div className="flex items-center justify-center gap-1.5 pt-3">
+                  <div className="flex items-center justify-center gap-1.5 pt-4">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                       <button
                         key={p}
