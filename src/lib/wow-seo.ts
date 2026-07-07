@@ -2,7 +2,6 @@ import type { WoWSpec, SpecData } from "./wowData";
 import { CLASS_NAMES, getSpecsByRole, getSpecsByClass, getClassColor } from "./wowData";
 
 const ROLE_LABELS: Record<string, string> = { tank: "Tank", healer: "Healer", dps: "DPS" };
-const ROLE_LABELS_AR: Record<string, string> = { tank: "تانك", healer: "هيلر", dps: "دي بي اس" };
 
 function shortName(spec: WoWSpec): string {
   return spec.name.replace(/ .+/, "");
@@ -41,13 +40,7 @@ export function generateKeywords(spec: WoWSpec, data?: SpecData): string[] {
     // Data-driven if available
     ...(bis ? [`${sn} ${bis.split(",")[0]?.trim()}`, `${sn} gear list`] : []),
     ...(topPlayers ? [`${sn} ${topPlayers.split(",")[0]?.trim()} build`] : []),
-    // Arabic
-    `ختصاص ${sn}`, `build ${sn}`, `talents ${sn}`,
-    `${sn} دليل`, `${sn} افضل تالنتات`,
-    `${cn} ${ROLE_LABELS_AR[spec.role]}`, `${cn} talents`,
-    `افضل تالنتات ${sn}`, `build ${sn} mythic+`,
-    `احسن تالنتات ${sn}`, `تجهيزات ${sn}`,
-    `دليل ${sn} كامل`,
+
     // Regional
     `${sn} talents german`, `${sn} talents french`,
     `talenti ${sn}`, `talents ${cn}`,

@@ -91,9 +91,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
           {ptr && <Link href={`/wow/spec/${id}`} className="text-yellow-500 hover:text-yellow-400 underline underline-offset-2">Live (Season 2)</Link>}
           {!ptr && <Link href={`/wow/spec/${id}?ptr=1`} className="text-yellow-500 hover:text-yellow-400 underline underline-offset-2">PTR Preview</Link>}
         </nav>
-        <div dir="rtl" className="text-[10px] text-gray-600 mb-6 leading-relaxed">
-          <p>دليل {spec.name} في World of Warcraft — افضل تالنتات، تجهيزات، و ترتيب الاحصائيات لـ {cnFull} تخصص {spec.role === "tank" ? "تانك" : spec.role === "healer" ? "هيلر" : "دمج"}.</p>
-        </div>
+
       </div>
       <SpecDetailClient id={id} ptr={ptr} />
       <div className="lg:ml-[220px] max-w-6xl mx-auto px-4 pt-8 pb-12">
