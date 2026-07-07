@@ -11,7 +11,7 @@ import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
-const RANK_COLORS = ["#a335ee", "#c084fc", "#a0a0a0"];
+const RANK_COLORS = ["#ff6d00", "#a335ee", "#a0a0a0"];
 
 const QUALITY_COLORS: Record<number, string> = {
   1: "#9d9d9d", 2: "#1eff00", 3: "#0070dd", 4: "#a335ee", 5: "#ff8000", 6: "#e6cc80", 7: "#00ccff",
@@ -306,28 +306,31 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-2 hover:border-white/10 transition-all max-w-md w-full"
+                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-1.5 hover:border-white/10 transition-all max-w-md w-full"
                       >
                         <div className="flex items-start gap-1.5">
                           {/* Rank */}
-                          <div className="shrink-0 pt-1">
-                            <span className="font-black text-[9px]" style={{ color: rankColor }}>
+                          <div className="shrink-0 pt-0.5">
+                            <span className="font-black text-[8px]" style={{ color: rankColor }}>
                               #{entry.rank}
                             </span>
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={192} />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={160} />
 
                           {/* Info */}
-                          <div className="min-w-0 flex-1 pt-1">
+                          <div className="min-w-0 flex-1 pt-0.5">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-base font-black truncate text-white">{entry.name}</span>
-                              <span className="text-lg font-black shrink-0 tracking-tight" style={{ color: rankColor }}>{entry.score.toLocaleString()}</span>
+                              <span className="text-sm font-black truncate text-white">{entry.name}</span>
+                              <span className="text-base font-black shrink-0 tracking-tight flex items-center gap-1" style={{ color: rankColor }}>
+                                {entry.score.toLocaleString()}
+                                <span className="text-[7px] font-black tracking-wider" style={{ color: `${rankColor}99` }}>M+</span>
+                              </span>
                             </div>
-                            <div className="text-[10px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
+                            <div className="text-[9px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
                             {entry.race && (
-                              <div className="text-[10px] text-gray-400 mt-0.5">{entry.race}</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">{entry.race}</div>
                             )}
                           </div>
                         </div>
