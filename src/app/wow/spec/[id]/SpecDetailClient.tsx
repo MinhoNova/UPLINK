@@ -321,7 +321,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={56} free />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={80} free />
 
                           {/* Player info */}
                           <div className="min-w-0 flex-1 pt-0.5">
