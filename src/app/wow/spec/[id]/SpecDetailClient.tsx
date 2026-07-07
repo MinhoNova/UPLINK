@@ -309,22 +309,22 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-4 hover:border-white/10 transition-all block"
+                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-2.5 hover:border-white/10 transition-all block"
                       >
-                        <div className="relative flex items-start gap-4">
+                        <div className="relative flex items-start gap-2">
                           {/* Rank */}
-                          <div className="shrink-0 pt-1">
-                            <span className={`font-black text-[11px] ${entry.rank <= 3 ? "" : "text-gray-600"}`}
+                          <div className="shrink-0 pt-0.5">
+                            <span className={`font-black text-[9px] ${entry.rank <= 3 ? "" : "text-gray-600"}`}
                               style={entry.rank <= 3 ? { color: RANK_COLORS[entry.rank - 1] } : {}}>
                               #{entry.rank}
                             </span>
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={80} free />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={96} free />
 
                           {/* Player info */}
-                          <div className="min-w-0 flex-1 pt-0.5">
+                          <div className="min-w-0 flex-1 pt-1">
                             <div className="text-base font-black truncate" style={{ color: "#f97316" }}>{entry.name}</div>
                             <div className="text-[10px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
                             {entry.race && (
@@ -333,7 +333,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           </div>
 
                           {/* Score */}
-                          <div className="text-right shrink-0">
+                          <div className="text-right shrink-0 self-start pt-1">
                             <div className="text-sm font-black tracking-tight" style={{ color }}>{entry.score.toLocaleString()}</div>
                             <div className="text-[6px] font-black text-gray-600 uppercase tracking-widest">rio</div>
                           </div>
