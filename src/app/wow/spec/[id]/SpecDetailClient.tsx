@@ -306,18 +306,18 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-1.5 hover:border-white/10 transition-all max-w-md w-full"
+                        className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-br from-[#0c0c18] via-[#0a0a14] to-black p-1 hover:border-white/10 transition-all max-w-md w-full"
                       >
-                        <div className="flex items-start gap-1.5">
+                        <div className="flex items-start gap-1">
                           {/* Rank */}
                           <div className="shrink-0 pt-0.5">
-                            <span className="font-black text-[8px]" style={{ color: rankColor }}>
+                            <span className="font-black text-[7px]" style={{ color: rankColor }}>
                               #{entry.rank}
                             </span>
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={128} />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={144} />
 
                           {/* Info */}
                           <div className="min-w-0 flex-1 pt-0.5">

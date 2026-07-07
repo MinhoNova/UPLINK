@@ -82,15 +82,11 @@ export default function CharacterAvatar({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size, backgroundColor: `${classColor}10` }}>
       {imgUrl ? (
-        <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full h-full" style={{ minWidth: size, minHeight: size }} onError={() => setFailed(true)} />
+        <img src={imgUrl} alt="" width={size} height={size} className="rounded-lg object-cover w-full h-full" style={{ minWidth: size, minHeight: size, objectPosition: "center top" }} onError={() => setFailed(true)} />
       ) : (
         <Image src={specIcon} alt="" width={size} height={size} className="rounded-lg shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
       )}
-      {size >= 128 ? (
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: '2px solid #a335ee', boxShadow: 'inset 0 0 12px #a335ee40, 0 0 20px #a335ee30' }} />
-      ) : (
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30`, boxShadow: `inset 0 0 6px ${classColor}20` }} />
-      )}
+      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{ border: `1px solid ${classColor}30`, boxShadow: `inset 0 0 6px ${classColor}20` }} />
     </div>
   );
 }
