@@ -43,7 +43,7 @@ export default function CharacterAvatar({
           if (data.available && data.render) {
             const r = data.render;
             const url = free ? (r.mainRaw || r.main || r.inset || r.avatar)
-                       : (r.inset || r.main || r.mainRaw || r.avatar);
+                       : (r.mainRaw || r.main || r.inset || r.avatar);
             if (url) {
               avatarCache.set(cacheKey, { url, ts: Date.now() });
               if (!cancelled) { setImgUrl(url); return; }

@@ -317,21 +317,21 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           </div>
 
                           {/* Avatar */}
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={160} />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={128} />
 
                           {/* Info */}
                           <div className="min-w-0 flex-1 pt-0.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-black truncate text-white">{entry.name}</span>
-                              <span className="text-base font-black shrink-0 tracking-tight flex items-center gap-1" style={{ color: rankColor }}>
-                                {entry.score.toLocaleString()}
-                                <span className="text-[7px] font-black tracking-wider" style={{ color: `${rankColor}99` }}>M+</span>
-                              </span>
-                            </div>
+                            <div className="text-sm font-black truncate text-white">{entry.name}</div>
                             <div className="text-[9px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
                             {entry.race && (
                               <div className="text-[9px] text-gray-400 mt-0.5">{entry.race}</div>
                             )}
+                          </div>
+
+                          {/* Score */}
+                          <div className="shrink-0 pt-0.5">
+                            <div className="text-sm font-black tracking-tight text-right" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
+                            <div className="text-[6px] font-black text-right tracking-wider" style={{ color: `${rankColor}77` }}>M+</div>
                           </div>
                         </div>
                       </Link>
