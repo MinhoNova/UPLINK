@@ -105,6 +105,7 @@ export interface PlayerListing {
   specId: string;
   classId: string;
   race?: string;
+  itemLevel?: number;
 }
 
 export interface AggregatedCharacter {

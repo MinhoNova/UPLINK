@@ -9,6 +9,7 @@ interface TopPlayer {
   classId: string;
   score: number;
   race?: string;
+  itemLevel?: number;
 }
 
 function pct(part: number, total: number): string {
@@ -33,6 +34,7 @@ export async function aggregateBySpec(
       specId,
       classId: p.classId,
       race: p.race,
+      itemLevel: p.itemLevel,
     })));
   }
 

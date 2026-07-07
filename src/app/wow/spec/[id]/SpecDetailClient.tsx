@@ -172,7 +172,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
     setPage(1);
   }, [id, ptr]);
 
-  const playerEntries: ({ name: string; realm: string; region: string; score: number; specId: string; classId: string; faction: string; race?: string; rank: number })[] =
+  const playerEntries: ({ name: string; realm: string; region: string; score: number; specId: string; classId: string; faction: string; race?: string; rank: number; itemLevel?: number })[] =
     (aggData?.players || [])
       .sort((a, b) => b.score - a.score)
       .map((p, i) => ({
@@ -185,6 +185,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         faction: "horde",
         race: p.race,
         rank: i + 1,
+        itemLevel: p.itemLevel,
       }));
   const totalPages = Math.max(1, Math.ceil(playerEntries.length / PAGE_SIZE));
   const visibleEntries = playerEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -323,9 +324,9 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           <div className="min-w-0 flex-1 pt-0.5">
                             <div className="text-sm font-black truncate text-white">{entry.name}</div>
                             <div className="text-[9px] text-gray-500 mt-0.5">{entry.realm} ({entry.region.toUpperCase()})</div>
-                            {entry.race && (
-                              <div className="text-[9px] text-gray-400 mt-0.5">{entry.race}</div>
-                            )}
+                            <div className="text-[9px] text-gray-400 mt-0.5">
+                              {entry.race}{entry.race && entry.itemLevel ? " · " : ""}{entry.itemLevel ? `${entry.itemLevel} ilvl` : ""}
+                            </div>
                           </div>
 
                           {/* Score */}

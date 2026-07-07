@@ -11,6 +11,7 @@ interface LeaderboardChar {
   faction: string;
   score: number;
   race?: string;
+  itemLevel?: number;
 }
 
 const BLIZZARD_SEASON_IDS: Record<string, number> = {
@@ -73,6 +74,7 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             score: runScore,
             runScore,
             race: c.race?.name || undefined,
+            itemLevel: c.item_level ? Math.round(c.item_level) : undefined,
           });
           }
         }
