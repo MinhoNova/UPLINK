@@ -45,11 +45,18 @@ export async function aggregateBySpec(
     }
   }
 
-  const profileResults = await Promise.allSettled(
-    allFetches.map(({ player }) =>
-      fetchCharacterProfile(player.name, player.realm, player.region)
-    )
-  );
+  // Fetch profiles in batches of 20 to avoid overwhelming Blizzard API
+  const BATCH_SIZE = 20;
+  const profileResults: PromiseSettledResult<any>[] = [];
+  for (let i = 0; i < allFetches.length; i += BATCH_SIZE) {
+    const batch = allFetches.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(({ player }) =>
+        fetchCharacterProfile(player.name, player.realm, player.region)
+      )
+    );
+    profileResults.push(...results);
+  }
 
   const profilesBySpec = new Map<string, { player: TopPlayer; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
 
