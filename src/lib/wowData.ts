@@ -6239,3 +6239,59 @@ export function mergeAggregatedData(
 
   return { bis, enchants, gems, builds, statPriority };
 }
+
+export interface AggregatedTalentNode {
+  name: string;
+  id?: number;
+  row: number;
+  col: number;
+  count: number;
+  total: number;
+}
+
+export interface AggregatedTalentTree {
+  name: string;
+  nodes: AggregatedTalentNode[];
+}
+
+export function aggregatePlayerTalents(
+  topPlayers: AggregatedSpecData['topPlayers'],
+  baseTrees: TalentTree[]
+): AggregatedTalentTree[] {
+  if (!topPlayers || topPlayers.length === 0 || !baseTrees || baseTrees.length === 0) return [];
+
+  const total = topPlayers.length;
+  const nodeMap = new Map<string, { name: string; id?: number; row: number; col: number; count: number; treeName: string }>();
+
+  for (const tree of baseTrees) {
+    for (const node of tree.nodes) {
+      const key = `${tree.name}:${node.row || 0}-${node.col || 0}`;
+      if (!nodeMap.has(key)) {
+        nodeMap.set(key, { name: node.name, id: node.id, row: node.row || 0, col: node.col || 0, count: 0, treeName: tree.name });
+      }
+    }
+  }
+
+  for (const player of topPlayers) {
+    if (!player.talents) continue;
+    for (const talent of player.talents) {
+      if (!talent.selected) continue;
+      const treeName = talent.treeName || "Talents";
+      const posKey = `${treeName}:${talent.row || 0}-${talent.col || 0}`;
+      if (nodeMap.has(posKey)) {
+        nodeMap.get(posKey)!.count++;
+        continue;
+      }
+      for (const [, v] of nodeMap) {
+        if (v.name === talent.name && v.treeName === treeName) { v.count++; break; }
+      }
+    }
+  }
+
+  const treeMap = new Map<string, AggregatedTalentNode[]>();
+  for (const [, data] of nodeMap) {
+    if (!treeMap.has(data.treeName)) treeMap.set(data.treeName, []);
+    treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, row: data.row, col: data.col, count: data.count, total });
+  }
+  return Array.from(treeMap.entries()).map(([name, nodes]) => ({ name, nodes }));
+}

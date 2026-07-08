@@ -24,7 +24,7 @@ export default function ClassSidebar() {
   return (
     <aside className="fixed left-56 top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)] w-[200px] z-30 hidden lg:flex flex-col">
       {/* Classes */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5 scrollbar-thin">
+      <nav className="px-3 py-3 space-y-0.5">
         {CLASS_ORDER.map((classId) => {
           const color = getClassColor(classId);
           const active = currentClassId === classId || currentSpecId.startsWith(classId);
@@ -33,7 +33,7 @@ export default function ClassSidebar() {
             <Link
               key={classId}
               href={`/wow/class/${classId}`}
-              className="group relative flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 hover:bg-white/[0.04] active:scale-[0.97]"
+              className="group relative flex items-center gap-3 px-3 py-1 rounded-xl transition-all duration-200 hover:bg-white/[0.04] active:scale-[0.97]"
             >
               {active && (
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
@@ -41,34 +41,34 @@ export default function ClassSidebar() {
               <Image
                 src={CLASS_THUMB[classId]}
                 alt={CLASS_NAMES[classId]}
-                width={44}
-                height={44}
+                width={32}
+                height={32}
                 className="rounded-xl shrink-0 transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
               />
               <span
-                className="text-[13px] font-extrabold leading-tight truncate flex-1 transition-colors"
+                className="text-[10px] font-extrabold leading-tight truncate flex-1 transition-colors"
                 style={{ color: active ? color : "rgba(255,255,255,0.6)" }}
               >
                 {CLASS_NAMES[classId]}
               </span>
 
               {/* ── Spec popup on hover ── */}
-              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
-                <div className="bg-[#0c0c18]/95 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-3 min-w-[180px] shadow-2xl">
-                  <div className="text-[8px] font-black uppercase tracking-[0.15em] text-white/30 mb-2 px-1">{CLASS_NAMES[classId]} Specs</div>
-                  <div className="space-y-1">
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                <div className="bg-[#0c0c18]/95 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-2.5 min-w-[160px] shadow-2xl">
+                  <div className="text-[7px] font-black uppercase tracking-[0.15em] text-white/30 mb-1.5 px-1">{CLASS_NAMES[classId]} Specs</div>
+                  <div className="space-y-0.5">
                     {SPECS.filter((s) => s.classId === classId).map((spec) => {
                       const roleColors = { dps: "#ff4444", healer: "#00cc66", tank: "#4488ff" };
                       return (
                         <Link
                           key={spec.id}
                           href={`/wow/spec/${spec.id}`}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-white/[0.04] transition-colors"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors"
                         >
-                          <Image src={spec.icon} alt={spec.name} width={28} height={28} className="rounded-md shrink-0" />
+                          <Image src={spec.icon} alt={spec.name} width={22} height={22} className="rounded-md shrink-0" />
                           <div className="min-w-0 flex-1">
-                            <div className="text-[11px] font-bold text-white/80 leading-tight truncate">{spec.name}</div>
-                            <span className="text-[7px] font-black uppercase tracking-widest" style={{ color: roleColors[spec.role] }}>{spec.role === "dps" ? "DPS" : spec.role === "healer" ? "Healer" : "Tank"}</span>
+                            <div className="text-[10px] font-bold text-white/80 leading-tight truncate">{spec.name}</div>
+                            <span className="text-[6px] font-black uppercase tracking-widest" style={{ color: roleColors[spec.role] }}>{spec.role === "dps" ? "DPS" : spec.role === "healer" ? "Healer" : "Tank"}</span>
                           </div>
                         </Link>
                       );

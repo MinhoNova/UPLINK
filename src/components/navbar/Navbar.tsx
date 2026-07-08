@@ -197,6 +197,7 @@ export default function Navbar() {
     <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-16 sm:h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 w-full flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            {!pathname.startsWith('/wow') && (
             <a
               href={pathname === "/community" ? "/community" : "/"}
               className="flex items-center gap-2.5 shrink-0 rounded-xl transition-opacity hover:opacity-90"
@@ -213,6 +214,7 @@ export default function Navbar() {
 
             </div>
             </a>
+            )}
 
           <div className="flex items-center bg-black/5 dark:bg-black/20 px-1 sm:px-1.5 py-1 rounded-2xl gap-1 sm:gap-2 ml-1 sm:ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner overflow-x-auto max-w-[min(58vw,420px)] sm:max-w-none scrollbar-none">
             <motion.a

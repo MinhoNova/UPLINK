@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
-import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
-import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
+import WowAggregatedTalentTree from "@/components/wow/WowAggregatedTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const RANK_COLORS = ["#ff6d00", "#a335ee", "#a0a0a0"];
@@ -145,7 +145,6 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const PAGE_SIZE = 5;
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [buildFilter, setBuildFilter] = useState<"all" | "mythic+" | "raid">("all");
   const [aggData, setAggData] = useState<AggregatedSpecData | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<number | null>(null);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
@@ -362,46 +361,22 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             )}
           </section>
 
-          {/* ═══ RECOMMENDED BUILDS ═══ */}
-          {data && data.builds.length > 0 && (
+          {/* ═══ POPULAR TALENTS ═══ */}
+          {data && data.builds.length > 0 && (() => {
+            const baseTrees = data.builds[0]?.trees || [];
+            const aggregatedTrees = aggData?.topPlayers?.length
+              ? aggregatePlayerTalents(aggData.topPlayers, baseTrees)
+              : [];
+            if (aggregatedTrees.length === 0) return null;
+            const totalPlayers = aggData?.topPlayers?.length || 0;
+            return (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-              <h2 className="text-lg font-black text-white mb-1">Recommended Builds{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-4">Curated talent builds for {spec.classId.replace(/-/g, " ")}.</p>
-              <div className="flex items-center gap-2 mb-6">
-                {(["all", "mythic+", "raid"] as const).map((type) => {
-                  const count = type === "all" ? data.builds.length : data.builds.filter((b) => b.type === type).length;
-                  const active = buildFilter === type;
-                  return (
-                    <button key={type} onClick={() => setBuildFilter(type)} className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border ${active ? "bg-white/10 text-white border-white/10" : "bg-white/5 text-gray-400 hover:bg-white/10 border-transparent"}`}>
-                      {type === "all" ? "All" : type === "mythic+" ? "Mythic+" : "Raid"} ({count})
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="space-y-3">
-                {data.builds.filter((b) => buildFilter === "all" || b.type === buildFilter).map((build, i) => (
-                  <Link
-                    key={i}
-                    href={playerProfileUrl(build.player, "", build.region)}
-                    className="block group bg-white/[0.03] rounded-2xl p-5 border border-white/5 hover:border-white/10 hover:bg-white/[0.05] transition-all"
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <Image src={spec.icon} alt="" width={36} height={36} className="rounded-lg shrink-0" style={{ backgroundColor: `${color}25`, boxShadow: `0 0 12px ${color}15` }} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-black text-white group-hover:text-[#00ffff] transition-colors">{build.player}</span>
-                          <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${build.type === "raid" ? "bg-yellow-500/10 text-yellow-400" : "bg-[#ff007f]/10 text-[#ff007f]"}`}>{build.type === "raid" ? "Raid" : "Mythic+"}</span>
-                        </div>
-                        <span className="text-[9px] text-gray-500">{build.class} · Score: {build.score.toLocaleString()}</span>
-                      </div>
-                      <span className="text-[8px] font-black text-[#00ffff] border border-[#00ffff]/20 px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all">View Full Profile →</span>
-                    </div>
-                    <WowTalentTreeDisplay trees={build.trees} color={color} />
-                  </Link>
-                ))}
-              </div>
+              <h2 className="text-lg font-black text-white mb-1">Popular Talents{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
+              <p className="text-xs text-gray-500 mb-4">Talent popularity from top {totalPlayers} {spec.name} players — orange = most selected, dim = rarely used.</p>
+              <WowAggregatedTalentTree trees={aggregatedTrees} color={color} />
             </section>
-          )}
+            );
+          })()}
 
           {/* BIS Gear — banner style */}
           {data && (
