@@ -39,15 +39,37 @@ function sleep(ms: number): Promise<void> {
 export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<LeaderboardChar[]> {
   const charMap = new Map<string, LeaderboardChar & { runScore: number }>();
   const regions = ["us", "eu", "kr", "tw"];
+  const MIN_PLAYERS_PER_SPEC = 50;
+  const MAX_PAGES = 150;
+  const EXPECTED_SPECS = [
+    "affliction-warlock","arcane-mage","arms-warrior","assassination-rogue",
+    "augmentation-evoker","balance-druid","beast-mastery-hunter","blood-death-knight",
+    "brewmaster-monk","demonology-warlock","destruction-warlock","devastation-evoker",
+    "discipline-priest","elemental-shaman","enhancement-shaman","feral-druid",
+    "fire-mage","frost-death-knight","frost-mage","fury-warrior","guardian-druid",
+    "havoc-demon-hunter","holy-paladin","holy-priest","marksmanship-hunter",
+    "mistweaver-monk","outlaw-rogue","preservation-evoker","protection-paladin",
+    "protection-warrior","restoration-druid","restoration-shaman","retribution-paladin",
+    "shadow-priest","subtlety-rogue","survival-hunter","unholy-death-knight",
+    "vengeance-demon-hunter","windwalker-monk",
+  ];
 
   for (const region of regions) {
-    for (let page = 0; page < 40; page++) {
+    for (let page = 0; page < MAX_PAGES; page++) {
+      // Check if all expected specs have enough players
+      const specCounts = new Map<string, number>();
+      for (const [, v] of charMap) {
+        specCounts.set(v.specId, (specCounts.get(v.specId) || 0) + 1);
+      }
+      const allCovered = EXPECTED_SPECS.every((s) => (specCounts.get(s) || 0) >= MIN_PLAYERS_PER_SPEC);
+      if (allCovered) break;
+
       try {
         const res = await fetch(
           `https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=${region}&page=${page}`,
           { cache: "no-store", headers: { "User-Agent": "Uplink/1.0" }, signal: AbortSignal.timeout(8000) }
         );
-        if (!res.ok) break;
+        if (!res.ok) continue;
 
         const data = await res.json();
         const rankings = data.rankings || [];
@@ -81,7 +103,7 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
 
         await sleep(300);
       } catch {
-        break;
+        continue;
       }
     }
   }
