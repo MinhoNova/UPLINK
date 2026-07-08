@@ -39,25 +39,25 @@ function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSP
   const qualityBorder = QUALITY_BORDERS[detail.quality?.id || 0] || "#ffffff30";
 
   return (
-    <div className="absolute z-50 w-[280px] pointer-events-none" style={style}>
-      <div className="rounded-xl overflow-hidden" style={{ background: "#0f0f1a", border: `1.5px solid ${qualityBorder}`, boxShadow: `0 8px 40px rgba(0,0,0,0.6), 0 0 20px ${qualityColor}15` }}>
-        <div className="flex gap-3 px-3.5 pt-3.5 pb-2">
+    <div className="absolute z-50 w-[340px] pointer-events-none" style={style}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#0f0f1a", border: `2px solid ${qualityBorder}`, boxShadow: `0 12px 48px rgba(0,0,0,0.8), 0 0 30px ${qualityColor}20` }}>
+        <div className="flex gap-4 px-4 pt-4 pb-3">
           {detail.iconUrl && (
-            <div className="w-[52px] h-[52px] shrink-0 rounded-lg overflow-hidden" style={{ border: `2px solid ${qualityBorder}` }}>
+            <div className="w-[64px] h-[64px] shrink-0 rounded-xl overflow-hidden" style={{ border: `2px solid ${qualityBorder}`, boxShadow: `0 0 16px ${qualityColor}20` }}>
               <img src={detail.iconUrl} alt="" className="w-full h-full object-cover" />
             </div>
           )}
-          <div className="min-w-0 flex-1 pt-0.5">
-            <div className="text-[13px] font-bold leading-tight truncate" style={{ color: qualityColor }}>{detail.name}</div>
-            {detail.level > 0 && <div className="text-[11px] text-gray-400 mt-0.5">Item Level {detail.level}</div>}
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="text-[15px] font-bold leading-tight truncate" style={{ color: qualityColor }}>{detail.name}</div>
+            {detail.level > 0 && <div className="text-[13px] text-gray-400 mt-1">Item Level {detail.level}</div>}
           </div>
         </div>
         {detail.stats.length > 0 && (
           <>
-            <div className="h-px mx-3.5" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}20, transparent)` }} />
-            <div className="px-3.5 py-2 space-y-0.5">
+            <div className="h-px mx-4" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}25, transparent)` }} />
+            <div className="px-4 py-3 space-y-1">
               {detail.stats.map((s, i) => (
-                <div key={i} className="flex justify-between text-[11px]">
+                <div key={i} className="flex justify-between text-[13px]">
                   <span className="text-gray-300">{s.name}</span>
                   <span className="font-bold text-white">+{s.value.toLocaleString()}</span>
                 </div>
@@ -67,21 +67,21 @@ function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSP
         )}
         {detail.set && detail.set.bonuses.length > 0 && (
           <>
-            <div className="h-px mx-3.5" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}20, transparent)` }} />
-            <div className="px-3.5 py-2">
-              <div className="text-[10px] font-bold text-green-400 mb-1.5 tracking-wider uppercase">{detail.set.name}</div>
+            <div className="h-px mx-4" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}25, transparent)` }} />
+            <div className="px-4 py-3">
+              <div className="text-[11px] font-bold text-green-400 mb-2 tracking-wider uppercase">{detail.set.name}</div>
               {detail.set.bonuses.map((b, i) => (
-                <div key={i} className="flex gap-1.5 mb-1">
-                  <span className="text-[10px] font-bold text-green-400 shrink-0">({(i + 1) * 2})</span>
-                  <span className="text-[10px] text-gray-300 leading-relaxed">{b.description}</span>
+                <div key={i} className="flex gap-2 mb-1.5">
+                  <span className="text-[11px] font-bold text-green-400 shrink-0">({(i + 1) * 2})</span>
+                  <span className="text-[11px] text-gray-300 leading-relaxed">{b.description}</span>
                 </div>
               ))}
             </div>
           </>
         )}
-        <div className="px-3.5 py-2 bg-black/30">
-          <div className="text-[9px] text-gray-500">{detail.itemClass}{detail.itemSubclass ? ` — ${detail.itemSubclass}` : ""}{detail.inventoryType ? ` — ${detail.inventoryType}` : ""}</div>
-          {detail.requiredLevel > 0 && <div className="text-[9px] text-gray-600">Requires Level {detail.requiredLevel}</div>}
+        <div className="px-4 py-3 bg-black/40">
+          <div className="text-[10px] text-gray-500">{detail.itemClass}{detail.itemSubclass ? ` — ${detail.itemSubclass}` : ""}{detail.inventoryType ? ` — ${detail.inventoryType}` : ""}</div>
+          {detail.requiredLevel > 0 && <div className="text-[10px] text-gray-600">Requires Level {detail.requiredLevel}</div>}
         </div>
       </div>
     </div>
@@ -89,7 +89,7 @@ function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSP
 }
 
 const itemIconCache = new Map<string, string>();
-function BisItemIcon({ slot, color, itemId, itemName, size = 64 }: { slot: string; color: string; itemId?: number; itemName?: string; size?: number }) {
+function BisItemIcon({ slot, color, itemId, itemName, size = 80 }: { slot: string; color: string; itemId?: number; itemName?: string; size?: number }) {
   const cacheKey = itemId ? `item:${itemId}` : itemName ? `item:${itemName}` : "";
   const cached = cacheKey ? itemIconCache.get(cacheKey) : undefined;
   const [iconUrl, setIconUrl] = useState<string | null>(cached || null);
@@ -114,13 +114,21 @@ function BisItemIcon({ slot, color, itemId, itemName, size = 64 }: { slot: strin
 
   const SlotIcon = GEAR_SLOT_ICONS[slot];
   return (
-    <div className="rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg" style={{ width: size, height: size, backgroundColor: `${color}15`, border: `1px solid ${color}25`, boxShadow: `0 0 12px ${color}10` }}>
+    <div
+      className="rounded-2xl flex items-center justify-center shrink-0 overflow-hidden"
+      style={{
+        width: size, height: size,
+        backgroundColor: `${color}10`,
+        border: `2px solid ${color}30`,
+        boxShadow: `0 0 20px ${color}15, 0 4px 12px rgba(0,0,0,0.3)`,
+      }}
+    >
       {iconUrl ? (
-        <Image src={iconUrl} alt="" width={size} height={size} className="w-full h-full object-cover" unoptimized />
+        <img src={iconUrl} alt="" className="w-full h-full object-cover" />
       ) : SlotIcon ? (
-        <SlotIcon className="w-6 h-6" style={{ color: `${color}bb` }} />
+        <SlotIcon className="w-8 h-8" style={{ color: `${color}bb` }} />
       ) : (
-        <Gem className="w-6 h-6" style={{ color: `${color}bb` }} />
+        <Gem className="w-8 h-8" style={{ color: `${color}bb` }} />
       )}
     </div>
   );
@@ -383,64 +391,64 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             <section>
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-8">
                 {data.bis.map((slot) => {
                   const primary = slot.options?.[0];
                   const secondary = slot.options?.[1];
                   const allUsePrimary = primary && primary.pct >= 100;
                   return (
                     <div key={slot.slot}>
-                      <div className="text-xs font-black text-white/90 uppercase tracking-[0.15em] mb-3">{slot.slot}</div>
+                      <div className="text-sm font-black text-white/90 uppercase tracking-[0.15em] mb-4">{slot.slot}</div>
                       {primary && (
                         <div
-                          className="flex items-start gap-3 cursor-pointer mb-2"
+                          className="flex items-start gap-4 cursor-pointer mb-3"
                           onMouseEnter={(e) => handleItemHover(primary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={52} />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold leading-tight truncate" style={{ color: "#f97316" }}>{primary.name}</span>
+                          <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={80} />
+                          <div className="min-w-0 flex-1 pt-1">
+                            <div className="flex items-start gap-2 mb-2">
+                              <span className="text-base font-bold leading-tight truncate" style={{ color: "#f97316" }}>{primary.name}</span>
                               {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
-                                <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
+                                <span className="shrink-0 text-[7px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase mt-0.5">Tier</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
-                                <div className="h-full rounded-md" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
+                              <div className="flex-1 h-4 rounded-lg bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-lg" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
                               </div>
-                              <span className="text-[10px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
+                              <span className="text-xs font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
                       {secondary && !allUsePrimary && (
                         <div
-                          className="flex items-start gap-3 cursor-pointer mb-2"
+                          className="flex items-start gap-4 cursor-pointer mb-3"
                           onMouseEnter={(e) => handleItemHover(secondary.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={52} />
-                          <div className="min-w-0 flex-1">
-                            <span className="text-sm font-bold leading-tight truncate block mb-1" style={{ color: "#c084fc" }}>{secondary.name}</span>
+                          <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={80} />
+                          <div className="min-w-0 flex-1 pt-1">
+                            <span className="text-base font-bold leading-tight truncate block mb-2" style={{ color: "#c084fc" }}>{secondary.name}</span>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
-                                <div className="h-full rounded-md" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
+                              <div className="flex-1 h-4 rounded-lg bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-lg" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
                               </div>
-                              <span className="text-[10px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
+                              <span className="text-xs font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
                             </div>
                           </div>
                         </div>
                       )}
-                      <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
                         {playerEntries.slice(0, 5).map((entry, i) => (
                           <Link
                             key={entry.name}
                             href={playerProfileUrl(entry.name, entry.realm, entry.region)}
-                            className="flex items-center gap-1 text-[9px] text-gray-500 hover:text-white transition-colors"
+                            className="flex items-center gap-1.5 text-[10px] text-gray-500 hover:text-white transition-colors"
                           >
                             <span className="font-black" style={{ color: RANK_COLORS[i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
-                            <span className="truncate max-w-[80px]">{entry.name}</span>
+                            <span className="truncate max-w-[100px]">{entry.name}</span>
                           </Link>
                         ))}
                       </div>
