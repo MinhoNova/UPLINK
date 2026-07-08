@@ -3,6 +3,8 @@ import { getBlizzardToken } from "./auth";
 const REGION_HOSTS: Record<string, string> = {
   US: "https://us.api.blizzard.com",
   EU: "https://eu.api.blizzard.com",
+  KR: "https://kr.api.blizzard.com",
+  TW: "https://tw.api.blizzard.com",
 };
 
 function sanitizeRealm(realm: string): string {

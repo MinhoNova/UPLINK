@@ -41,7 +41,7 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
   const regions = ["us", "eu", "kr", "tw"];
 
   for (const region of regions) {
-    for (let page = 0; page < 25; page++) {
+    for (let page = 0; page < 40; page++) {
       try {
         const res = await fetch(
           `https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=${region}&page=${page}`,

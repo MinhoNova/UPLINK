@@ -61,9 +61,14 @@ export async function GET(request: Request) {
     }
 
     const displayLimit = 50;
-    const profileLimit = 10;
+    const profileLimit = 15;
     const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
     const specs = await aggregateBySpec(playersBySpec, profileLimit);
+
+    // Alias hero talent specs to their parent spec data
+    if (specs["havoc-demon-hunter"]) {
+      specs["devourer-demon-hunter"] = specs["havoc-demon-hunter"];
+    }
 
     const result: MetaPipelineResult = {
       specs,
