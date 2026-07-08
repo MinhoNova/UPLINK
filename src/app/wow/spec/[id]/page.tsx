@@ -67,7 +67,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <div className="lg:ml-[220px] max-w-6xl mx-auto px-4 pt-6 sm:pt-8">
+      <div className="lg:ml-[220px] max-w-6xl mx-auto px-4 pt-20 lg:pt-28">
         <h1 className="text-2xl sm:text-4xl font-black text-white mb-1">{intro.heading}</h1>
         <p className="text-xs sm:text-sm text-gray-400 leading-relaxed mb-3">{intro.body}</p>
         {intro.bullets && (

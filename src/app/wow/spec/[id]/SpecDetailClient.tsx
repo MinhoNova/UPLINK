@@ -248,7 +248,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
         </div>
       </div>
 
-      <div className="relative z-10 lg:ml-[220px] max-w-6xl mx-auto px-4 pt-6 sm:pt-8 pb-12">
+      <div className="relative z-10 lg:ml-[220px] max-w-6xl mx-auto px-4 pt-20 lg:pt-28 pb-12">
         <Link href="/wow/tier-list" className="inline-flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors mb-8 mt-4"><ChevronLeft className="w-3 h-3" /> Back to Tier List</Link>
 
         {/* Spec Switcher */}
