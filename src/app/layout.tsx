@@ -95,7 +95,7 @@ export default function RootLayout({
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/png" />
         <meta name="twitter:image" content={`${siteUrl}/og.png`} />
-        <meta name="google-site-verification" content="YOUR_GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE" />
+        <meta name="google-site-verification" content="RDFdGzVrRsCvu61dCKSkp6dHj8yKvMCKDN7sCGDU02I" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
