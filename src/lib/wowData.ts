@@ -6258,9 +6258,10 @@ export function aggregatePlayerTalents(
   topPlayers: AggregatedSpecData['topPlayers'],
   baseTrees: TalentTree[]
 ): AggregatedTalentTree[] {
-  if (!topPlayers || topPlayers.length === 0 || !baseTrees || baseTrees.length === 0) return [];
+  if (!baseTrees || baseTrees.length === 0) return [];
 
-  const total = topPlayers.length;
+  const total = topPlayers?.length || 0;
+  const isFallback = total < 3;
   const nodeMap = new Map<string, { name: string; id?: number; row: number; col: number; count: number; treeName: string }>();
 
   for (const tree of baseTrees) {
@@ -6269,21 +6270,27 @@ export function aggregatePlayerTalents(
       if (!nodeMap.has(key)) {
         nodeMap.set(key, { name: node.name, id: node.id, row: node.row || 0, col: node.col || 0, count: 0, treeName: tree.name });
       }
+      // For fallback, mark all base tree nodes as selected (recommended build)
+      if (isFallback) {
+        nodeMap.get(key)!.count = 1;
+      }
     }
   }
 
-  for (const player of topPlayers) {
-    if (!player.talents) continue;
-    for (const talent of player.talents) {
-      if (!talent.selected) continue;
-      const treeName = talent.treeName || "Talents";
-      const posKey = `${treeName}:${talent.row || 0}-${talent.col || 0}`;
-      if (nodeMap.has(posKey)) {
-        nodeMap.get(posKey)!.count++;
-        continue;
-      }
-      for (const [, v] of nodeMap) {
-        if (v.name === talent.name && v.treeName === treeName) { v.count++; break; }
+  if (!isFallback) {
+    for (const player of topPlayers) {
+      if (!player.talents) continue;
+      for (const talent of player.talents) {
+        if (!talent.selected) continue;
+        const treeName = talent.treeName || "Talents";
+        const posKey = `${treeName}:${talent.row || 0}-${talent.col || 0}`;
+        if (nodeMap.has(posKey)) {
+          nodeMap.get(posKey)!.count++;
+          continue;
+        }
+        for (const [, v] of nodeMap) {
+          if (v.name === talent.name && v.treeName === treeName) { v.count++; break; }
+        }
       }
     }
   }
@@ -6291,7 +6298,8 @@ export function aggregatePlayerTalents(
   const treeMap = new Map<string, AggregatedTalentNode[]>();
   for (const [, data] of nodeMap) {
     if (!treeMap.has(data.treeName)) treeMap.set(data.treeName, []);
-    treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, row: data.row, col: data.col, count: data.count, total });
+    const displayTotal = isFallback ? 1 : total;
+    treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, row: data.row, col: data.col, count: data.count, total: displayTotal });
   }
   return Array.from(treeMap.entries()).map(([name, nodes]) => ({ name, nodes }));
 }

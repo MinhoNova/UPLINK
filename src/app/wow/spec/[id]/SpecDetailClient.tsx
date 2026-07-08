@@ -372,15 +372,18 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* ═══ POPULAR TALENTS ═══ */}
           {data && data.builds.length > 0 && (() => {
             const baseTrees = data.builds[0]?.trees || [];
-            const aggregatedTrees = aggData?.topPlayers?.length
-              ? aggregatePlayerTalents(aggData.topPlayers, baseTrees)
-              : [];
+            const aggregatedTrees = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
             if (aggregatedTrees.length === 0) return null;
             const totalPlayers = aggData?.topPlayers?.length || 0;
+            const isFallback = totalPlayers < 3;
             return (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">Popular Talents{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-4">Talent popularity from top {totalPlayers} {spec.name} players — orange = most selected, dim = rarely used.</p>
+              <p className="text-xs text-gray-500 mb-4">
+                {isFallback
+                  ? `Recommended build for ${spec.name} — based on talent guide data.`
+                  : `Talent popularity from top ${totalPlayers} ${spec.name} players — orange = most selected, dim = rarely used.`}
+              </p>
               <WowAggregatedTalentTree trees={aggregatedTrees} color={color} />
             </section>
             );
