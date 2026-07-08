@@ -57,6 +57,16 @@ export default {
         if (minute % 15 === 0) {
           try {
             await runBlizzardPipeline(env);
+
+            // Auto-generate daily M+ meta report (safe to call every time — API skips if already posted today)
+            if (env.CRON_SECRET) {
+              const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
+              await fetch(`${baseUrl}/api/news/auto-generate`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+                signal: AbortSignal.timeout(30000),
+              });
+            }
           } catch (e) {
             console.error("[pipeline] error:", e);
           }

@@ -4,7 +4,7 @@ import { SPECS, CLASS_NAMES } from "@/lib/wowData";
 
 const siteUrl = getSiteUrl();
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     { url: siteUrl, changeFrequency: "weekly" as const, priority: 1 },
     { url: `${siteUrl}/wowlfg`, changeFrequency: "weekly" as const, priority: 0.9 },
@@ -41,5 +41,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...specPages, ...classPages];
+  // Include news articles in sitemap
+  let newsPages: MetadataRoute.Sitemap = [];
+  try {
+    const { getDb } = await import("@/db");
+    const { news } = await import("@/db/schema");
+    const { desc } = await import("drizzle-orm");
+    const db = await getDb();
+    const articles = await db
+      .select({ id: news.id, updatedAt: news.updatedAt })
+      .from(news)
+      .orderBy(desc(news.updatedAt))
+      .limit(50);
+    newsPages = articles.map((a: any) => ({
+      url: `${siteUrl}/news/${a.id}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+      lastModified: new Date(a.updatedAt),
+    }));
+  } catch {
+    // DB not available during build — skip news
+  }
+
+  return [...staticPages, ...specPages, ...classPages, ...newsPages];
 }
