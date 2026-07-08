@@ -21,10 +21,18 @@ export default function WowLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#05050a] text-white flex">
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-white/5 bg-black/20 p-4 gap-0.5 sticky top-16 lg:top-24 h-[calc(100vh-64px)] lg:h-[calc(100vh-96px)]">
-        <Link href="/wow" className="flex items-center gap-2 px-3 py-3 rounded-xl hover:bg-white/5 transition mb-3">
-          <span className="text-lg font-black">
-            WoW <span className="text-[#00ffff]">Tools</span>
-          </span>
+        <Link href="/wow" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/5 transition mb-2 group">
+          <div className="w-8 h-8 shrink-0 overflow-hidden rounded-lg flex items-center justify-center bg-black/30 border border-white/10 group-hover:border-[#00ffff]/40 transition-all" style={{ boxShadow: '0 0 12px rgba(0,255,255,0.15)' }}>
+            <svg viewBox="0 0 100 100" className="w-6 h-6">
+              <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="none" stroke="#00ffff" strokeWidth="4" strokeLinejoin="round" />
+              <circle cx="50" cy="50" r="18" fill="none" stroke="#ff007f" strokeWidth="4" />
+              <line x1="50" y1="5" x2="50" y2="95" stroke="#00ffff" strokeWidth="2" opacity="0.4" />
+            </svg>
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">UPLINK</span>
+            <span className="text-base font-black">WoW <span className="text-[#00ffff]">Tools</span></span>
+          </div>
         </Link>
         {SIDEBAR_LINKS.map((link) => {
           const Icon = link.icon;
