@@ -2,9 +2,9 @@ const TOKEN_URL = "https://oauth.battle.net/token";
 
 let cachedToken: { access_token: string; expires_at: number } | null = null;
 
-export async function getBlizzardToken(): Promise<string | null> {
-  const id = process.env.BATTLENET_CLIENT_ID;
-  const secret = process.env.BATTLENET_CLIENT_SECRET;
+export async function getBlizzardToken(env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }): Promise<string | null> {
+  const id = env?.BATTLENET_CLIENT_ID || process.env.BATTLENET_CLIENT_ID;
+  const secret = env?.BATTLENET_CLIENT_SECRET || process.env.BATTLENET_CLIENT_SECRET;
 
   if (!id || !secret) return null;
 

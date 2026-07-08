@@ -17,9 +17,9 @@ function sanitizeName(name: string): string {
 
 const itemNameCache = new Map<number, string>();
 
-async function fetchItemName(itemId: number): Promise<string | null> {
+async function fetchItemName(itemId: number, env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }): Promise<string | null> {
   if (itemNameCache.has(itemId)) return itemNameCache.get(itemId)!;
-  const token = await getBlizzardToken();
+  const token = await getBlizzardToken(env);
   if (!token) return null;
   try {
     const res = await fetch(
@@ -88,9 +88,10 @@ const GEAR_SLOT_MAP: Record<string, string> = {
 export async function fetchCharacterProfile(
   name: string,
   realm: string,
-  region: string
+  region: string,
+  env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }
 ): Promise<CharacterProfile | null> {
-  const token = await getBlizzardToken();
+  const token = await getBlizzardToken(env);
   if (!token) return null;
 
   const host = REGION_HOSTS[region.toUpperCase()] || REGION_HOSTS.US;
@@ -122,7 +123,7 @@ export async function fetchCharacterProfile(
       const unknownIds = [...new Set(unknownItems.map((i: any) => i.item?.id).filter(Boolean))];
       const freshIds = unknownIds.filter((id: number) => !itemNameCache.has(id));
       if (freshIds.length > 0) {
-        await Promise.all(freshIds.map((id: number) => fetchItemName(id)));
+        await Promise.all(freshIds.map((id: number) => fetchItemName(id, env)));
       }
 
       for (const item of items) {

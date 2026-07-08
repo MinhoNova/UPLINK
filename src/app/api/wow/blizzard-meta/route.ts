@@ -3,18 +3,47 @@ import { getKV, setKV, initTables } from "@/lib/db";
 import { fetchTopPlayersFromRaiderIO, fetchTopPlayersFromBlizzard, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
 import { aggregateBySpec } from "@/lib/blizzard/aggregator";
 import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
-import type { MetaPipelineResult, AggregatedSpecData } from "@/lib/blizzard/types";
+import type { MetaPipelineResult } from "@/lib/blizzard/types";
 
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const CACHE_KEY = "wow:blizzard-meta";
 const PTR_CACHE_KEY = "wow:blizzard-meta-ptr";
 const TOP_PLAYERS_PER_SPEC = 50;
+
+async function getKvBinding(): Promise<any | null> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    let env: any;
+    try {
+      ({ env } = getCloudflareContext());
+    } catch {
+      ({ env } = await getCloudflareContext({ async: true }));
+    }
+    return env?.KV_BINDING ?? null;
+  } catch { return null; }
+}
 
 function formatSeasonName(slug: string): string {
   const parts = slug.split("-");
   if (parts.length < 2) return slug;
   const expMap: Record<string, string> = { tww: "The War Within", mn: "Midnight", df: "Dragonflight", sl: "Shadowlands" };
   return `${expMap[parts[1]] || parts[1]} — Season ${parts[2]}`;
+}
+
+async function readCached(cacheKey: string): Promise<MetaPipelineResult | null> {
+  // Try Workers KV first (written by custom-worker pipeline), then D1
+  const kv = await getKvBinding();
+  if (kv) {
+    try {
+      const raw = await kv.get(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && "timestamp" in parsed) return parsed as MetaPipelineResult;
+      }
+    } catch { /* fall through */ }
+  }
+  const d1 = await getKV(cacheKey);
+  if (d1 && typeof d1 === "object" && "timestamp" in d1) return d1 as MetaPipelineResult;
+  return null;
 }
 
 export async function GET(request: Request) {
@@ -29,19 +58,17 @@ export async function GET(request: Request) {
 
     // Serve cached data always — never fetch on user requests
     if (!forceRefresh) {
-      const cached = await getKV(cacheKey);
-      if (cached && typeof cached === "object" && "timestamp" in cached) {
-        const data = cached as MetaPipelineResult;
+      const cached = await readCached(cacheKey);
+      if (cached) {
         if (specFilter) {
-          return NextResponse.json({ spec: data.specs[specFilter] || null, season: data.season, cached: true, timestamp: data.timestamp, stale: false });
+          return NextResponse.json({ spec: cached.specs[specFilter] || null, season: cached.season, cached: true, timestamp: cached.timestamp, stale: false });
         }
-        return NextResponse.json({ ...data, cached: true, stale: false });
+        return NextResponse.json({ ...cached, cached: true, stale: false });
       }
-      // First-ever deploy — serve empty rather than block
       return NextResponse.json({ specs: {}, season: "", totalCharacters: 0, cached: false, stale: true });
     }
 
-    // Only cron / manual admin reaches here via ?refresh=1
+    // Manual refresh via ?refresh=1 (legacy path — runs pipeline synchronously)
     let seasonSlug: string;
     if (ptr) {
       seasonSlug = "season-mn-2";
@@ -65,7 +92,6 @@ export async function GET(request: Request) {
     const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
     const specs = await aggregateBySpec(playersBySpec, profileLimit);
 
-    // Alias hero talent specs to their parent spec data
     if (specs["havoc-demon-hunter"]) {
       specs["devourer-demon-hunter"] = specs["havoc-demon-hunter"];
     }
@@ -77,7 +103,10 @@ export async function GET(request: Request) {
       totalCharacters: mergedMap.size,
     };
 
+    // Write to both KV backends for compatibility
     await setKV(cacheKey, result);
+    const kv = await getKvBinding();
+    if (kv) await kv.put(cacheKey, JSON.stringify(result));
 
     if (specFilter) {
       return NextResponse.json({ spec: specs[specFilter] || null, season: result.season, cached: false, timestamp: result.timestamp });

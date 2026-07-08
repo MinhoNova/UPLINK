@@ -20,6 +20,7 @@ function pct(part: number, total: number): string {
 export async function aggregateBySpec(
   playersBySpec: Map<string, TopPlayer[]>,
   profileLimit = 10,
+  env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }
 ): Promise<Record<string, AggregatedSpecData>> {
   const result: Record<string, AggregatedSpecData> = {};
 
@@ -54,7 +55,7 @@ export async function aggregateBySpec(
     const batch = allFetches.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(({ player }) =>
-        fetchCharacterProfile(player.name, player.realm, player.region)
+        fetchCharacterProfile(player.name, player.realm, player.region, env)
       )
     );
     profileResults.push(...results);
