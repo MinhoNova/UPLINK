@@ -901,7 +901,11 @@ export default function HomePage() {
    }, [inviteToReview]);
 
    useEffect(() => {
-      if (status !== "authenticated" || !session?.user || !globalDataReady) return;
+      if (status !== "authenticated" || !session?.user) {
+         setIsOnboardingModalOpen(false);
+         return;
+      }
+      if (!globalDataReady) return;
       const isRegistered = registeredUsers.some(
          (u: any) => u.id === currentUserId || u.username === currentUserDiscordHandle
       );
