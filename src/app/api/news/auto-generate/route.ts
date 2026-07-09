@@ -39,24 +39,29 @@ export async function POST(request: Request) {
   }
 
   try {
+    const url = new URL(request.url);
+    const ptr = url.searchParams.get("ptr") === "1";
+
     const kv = await getKvBinding();
     if (!kv) return NextResponse.json({ error: "No KV binding" }, { status: 500 });
 
-    const raw = await kv.get("wow:blizzard-meta");
+    const cacheKey = ptr ? "wow:blizzard-meta-ptr" : "wow:blizzard-meta";
+    const raw = await kv.get(cacheKey);
     if (!raw) return NextResponse.json({ error: "No pipeline data yet" }, { status: 503 });
 
     const data = JSON.parse(raw);
     const specs = data.specs || {};
     const season = data.season || "Unknown Season";
     const today = todayStr();
-    const title = `Mythic+ Meta Report — ${today}`;
+    const label = ptr ? "PTR" : "Live";
+    const title = `Mythic+ Meta Report — ${label} — ${today}`;
 
-    // Check if already posted today
+    // Check if already posted today (separate check for PTR vs Live)
     const db = await getDb();
     const existing = await db
       .select({ id: news.id })
       .from(news)
-      .where(and(eq(news.section, "dungeons"), like(news.title, `%${today}%`)))
+      .where(and(eq(news.section, "dungeons"), like(news.title, `%${label}%${today}%`)))
       .limit(1);
     if (existing.length > 0) {
       return NextResponse.json({ skipped: true, reason: "Already posted today", id: existing[0].id });
@@ -82,11 +87,13 @@ export async function POST(request: Request) {
     // Get current affixes
     const affixLine = getAffixLine();
 
+    const ptrWarning = ptr ? `\n\n*⚡ Projected data from PTR — values may change before live patch.*\n` : "";
     const content = [
       `**Season:** ${season}`,
       `**Date:** ${today}`,
       ``,
       `---`,
+      ptrWarning,
       `**Top DPS Specs**`,
       formatTop(topByScore(dpsSpecs), "DPS"),
       ``,
@@ -99,7 +106,7 @@ export async function POST(request: Request) {
       `---`,
       affixLine,
       ``,
-      `*Auto-generated from raid leaderboard data. Updates daily.*`,
+      `*Auto-generated from${ptr ? " PTR " : " "}raid leaderboard data. Updates daily.*`,
     ].join("\n");
 
     const now = Date.now();

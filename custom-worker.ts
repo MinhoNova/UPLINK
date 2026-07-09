@@ -1,7 +1,7 @@
 // @ts-ignore `.open-next/worker.js` is generated at build time
 import { default as handler } from "./.open-next/worker.js";
 import { syncGuildAutoRoles } from "./src/lib/discordGuild";
-import { fetchTopPlayersFromRaiderIO, selectTopPlayersBySpec } from "./src/lib/blizzard/leaderboard";
+import { fetchTopPlayersFromRaiderIO, fetchTopPlayersFromBlizzard, selectTopPlayersBySpec } from "./src/lib/blizzard/leaderboard";
 import { aggregateBySpec } from "./src/lib/blizzard/aggregator";
 import { getCurrentMythicPlusSeason } from "./src/lib/mythicSeason";
 
@@ -12,11 +12,14 @@ function formatSeasonName(slug: string): string {
   return `${expMap[parts[1]] || parts[1]} — Season ${parts[2]}`;
 }
 
-async function runBlizzardPipeline(env: CloudflareEnv) {
-  const season = await getCurrentMythicPlusSeason();
-  const raiderPlayers = await fetchTopPlayersFromRaiderIO(season.slug);
+const PTR_SEASON_SLUG = "season-mn-2";
+
+async function runBlizzardPipeline(env: CloudflareEnv, ptr?: boolean) {
+  const seasonSlug = ptr ? PTR_SEASON_SLUG : (await getCurrentMythicPlusSeason()).slug;
+  const raiderPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
+  const blizzardPlayers = ptr ? [] : await fetchTopPlayersFromBlizzard(seasonSlug);
   const mergedMap = new Map<string, typeof raiderPlayers[0]>();
-  for (const p of raiderPlayers) {
+  for (const p of [...raiderPlayers, ...blizzardPlayers]) {
     const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
     const existing = mergedMap.get(key);
     if (!existing || p.score > existing.score) mergedMap.set(key, p);
@@ -31,15 +34,16 @@ async function runBlizzardPipeline(env: CloudflareEnv) {
     specs["devourer-demon-hunter"] = specs["havoc-demon-hunter"];
   }
 
+  const cacheKey = ptr ? "wow:blizzard-meta-ptr" : "wow:blizzard-meta";
   const result = {
     specs,
     timestamp: Date.now(),
-    season: formatSeasonName(season.slug),
+    season: ptr ? "Midnight — Season 2 (PTR Preview)" : formatSeasonName(seasonSlug),
     totalCharacters: mergedMap.size,
   };
 
-  await env.KV_BINDING.put("wow:blizzard-meta", JSON.stringify(result));
-  console.log(`[pipeline] ok season=${season.slug} chars=${mergedMap.size}`);
+  await env.KV_BINDING.put(cacheKey, JSON.stringify(result));
+  console.log(`[pipeline] ${ptr ? "ptr" : "live"} ok season=${seasonSlug} chars=${mergedMap.size}`);
 }
 
 export default {
@@ -56,9 +60,8 @@ export default {
         const minute = new Date().getUTCMinutes();
         if (minute % 15 === 0) {
           try {
-            await runBlizzardPipeline(env);
-
-            // Auto-generate daily M+ meta report (safe to call every time — API skips if already posted today)
+            // Live pipeline
+            await runBlizzardPipeline(env, false);
             if (env.CRON_SECRET) {
               const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
               await fetch(`${baseUrl}/api/news/auto-generate`, {
@@ -68,7 +71,22 @@ export default {
               });
             }
           } catch (e) {
-            console.error("[pipeline] error:", e);
+            console.error("[pipeline/live] error:", e);
+          }
+
+          try {
+            // PTR pipeline — runs every 15 min alongside live
+            await runBlizzardPipeline(env, true);
+            if (env.CRON_SECRET) {
+              const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
+              await fetch(`${baseUrl}/api/news/auto-generate?ptr=1`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+                signal: AbortSignal.timeout(30000),
+              });
+            }
+          } catch (e) {
+            console.error("[pipeline/ptr] error:", e);
           }
         }
       })()
