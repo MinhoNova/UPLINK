@@ -53,6 +53,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const forceRefresh = url.searchParams.get("refresh") === "1";
     const specFilter = url.searchParams.get("spec");
+    const playerLookup = url.searchParams.get("player");
     const ptr = url.searchParams.get("ptr") === "1";
     const cacheKey = ptr ? PTR_CACHE_KEY : CACHE_KEY;
 
@@ -60,6 +61,20 @@ export async function GET(request: Request) {
     if (!forceRefresh) {
       const cached = await readCached(cacheKey);
       if (cached) {
+        if (playerLookup) {
+          const realm = url.searchParams.get("realm") || "";
+          const region = url.searchParams.get("region") || "";
+          for (const [specId, specData] of Object.entries(cached.specs)) {
+            for (const p of (specData as any).topPlayers || []) {
+              if (p.name?.toLowerCase() === playerLookup.toLowerCase() &&
+                  (!realm || p.realm?.toLowerCase() === realm.toLowerCase()) &&
+                  (!region || p.region?.toLowerCase() === region.toLowerCase())) {
+                return NextResponse.json({ player: p, specId, season: cached.season, cached: true });
+              }
+            }
+          }
+          return NextResponse.json({ player: null, cached: true });
+        }
         if (specFilter) {
           return NextResponse.json({ spec: cached.specs[specFilter] || null, season: cached.season, cached: true, timestamp: cached.timestamp, stale: false });
         }

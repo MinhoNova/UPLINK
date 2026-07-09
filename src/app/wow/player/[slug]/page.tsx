@@ -31,29 +31,32 @@ export default async function PlayerProfilePage({ params, searchParams }: PagePr
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || siteUrl;
-    const res = await fetch(`${baseUrl}/api/wow/leaderboard`, { cache: "no-store" });
+    const params = new URLSearchParams({ player: playerName });
+    if (playerRealm) params.set("realm", playerRealm);
+    if (playerRegion) params.set("region", playerRegion);
+    const res = await fetch(`${baseUrl}/api/wow/blizzard-meta?${params}`, { cache: "no-store" });
     if (!res.ok) notFound();
     const data = await res.json();
-    const entries = data.entries || [];
 
-    const player = entries.find(
-      (e: any) =>
-        e.name?.toLowerCase() === playerName.toLowerCase() &&
-        (!playerRealm || e.realm?.toLowerCase() === playerRealm.toLowerCase()) &&
-        (!playerRegion || e.region?.toLowerCase() === playerRegion.toLowerCase())
-    ) || entries.find((e: any) => e.name?.toLowerCase() === playerName.toLowerCase());
-
+    const player = data?.player;
     if (!player) notFound();
 
-    const spec = SPECS.find((s) => s.id === player.specId);
-    const specData = getSpecData(player.specId);
+    const spec = SPECS.find((s) => s.id === data.specId);
+    const specData = getSpecData(data.specId);
+
+    // Map from AggregatedCharacter to LeaderboardEntry-compatible shape
+    const playerMapped = {
+      ...player,
+      rank: player.rank ?? 0,
+      faction: player.faction ?? "unknown",
+    };
 
     return (
       <PlayerProfileClient
-        player={player}
+        player={playerMapped}
         spec={spec || null}
         specData={specData || null}
-        seasonDisplay={data.seasonDisplay || ""}
+        seasonDisplay={data.season || ""}
       />
     );
   } catch {
