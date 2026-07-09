@@ -2,11 +2,40 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSiteUrl } from "@/lib/siteUrl";
-import { SPECS, getSpecData, CLASS_NAMES } from "@/lib/wowData";
+import { SPECS, getSpecData, mergeAggregatedData, CLASS_NAMES } from "@/lib/wowData";
 import { generateMetaTitle, generateMetaDescription, generateKeywords, generateFAQItems, generateIntroContent, getRelatedSpecs } from "@/lib/wow-seo";
 import SpecDetailClient from "./SpecDetailClient";
 
 const siteUrl = getSiteUrl();
+
+async function getKvBinding(): Promise<any | null> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    let env: any;
+    try {
+      ({ env } = getCloudflareContext());
+    } catch {
+      ({ env } = await getCloudflareContext({ async: true }));
+    }
+    return env?.KV_BINDING ?? null;
+  } catch { return null; }
+}
+
+async function getLiveSpecData(id: string, ptr?: boolean) {
+  try {
+    const kv = await getKvBinding();
+    if (!kv) return getSpecData(id, ptr);
+    const cacheKey = ptr ? "wow:blizzard-meta-ptr" : "wow:blizzard-meta";
+    const raw = await kv.get(cacheKey);
+    if (!raw) return getSpecData(id, ptr);
+    const pipeline = JSON.parse(raw);
+    const specData = pipeline.specs?.[id];
+    if (!specData || specData.totalPlayers === 0) return undefined;
+    return mergeAggregatedData(id, specData, ptr);
+  } catch {
+    return getSpecData(id, ptr);
+  }
+}
 
 export async function generateStaticParams() {
   return SPECS.map((spec) => ({ id: spec.id }));
@@ -17,14 +46,14 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   const ptr = searchParams ? (await searchParams).ptr === "1" : false;
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) return { title: "Spec not found" };
-  const data = getSpecData(id, ptr);
+  const pipelineData = await getLiveSpecData(id, ptr);
   return {
     title: generateMetaTitle(spec, ptr),
-    description: generateMetaDescription(spec, data, ptr),
-    keywords: generateKeywords(spec, data).join(", "),
+    description: generateMetaDescription(spec, pipelineData, ptr),
+    keywords: generateKeywords(spec, pipelineData).join(", "),
     openGraph: {
       title: `${spec.name} Talents & Build — WoW Meta${ptr ? " (PTR S2)" : ""} | UPLINK`,
-      description: generateMetaDescription(spec, data, ptr).slice(0, 200),
+      description: generateMetaDescription(spec, pipelineData, ptr).slice(0, 200),
     },
     alternates: { canonical: `${siteUrl}/wow/spec/${id}${ptr ? "?ptr=1" : ""}` },
   };
@@ -35,10 +64,10 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
   const ptr = searchParams ? (await searchParams).ptr === "1" : false;
   const spec = SPECS.find((s) => s.id === id);
   if (!spec) notFound();
-  const data = getSpecData(id, ptr);
+  const pipelineData = await getLiveSpecData(id, ptr);
 
-  const faqItems = generateFAQItems(spec, data);
-  const intro = generateIntroContent(spec, data, ptr);
+  const faqItems = generateFAQItems(spec, pipelineData);
+  const intro = generateIntroContent(spec, pipelineData, ptr);
   const related = getRelatedSpecs(spec);
 
   const faqSchema = {
@@ -76,7 +105,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
           </ul>
         )}
         <p className="text-[10px] text-gray-600 mb-4">
-          Keywords: {generateKeywords(spec, data).slice(0, 8).join(", ")}.
+          Keywords: {generateKeywords(spec, pipelineData).slice(0, 8).join(", ")}.
         </p>
         <nav className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
           <span className="text-gray-500">Related:</span>
