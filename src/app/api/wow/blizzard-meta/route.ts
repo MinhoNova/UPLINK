@@ -77,7 +77,12 @@ export async function GET(request: Request) {
           return NextResponse.json({ player: null, cached: true });
         }
         if (specFilter) {
-          return NextResponse.json({ spec: cached.specs[specFilter] || null, season: cached.season, cached: true, timestamp: cached.timestamp, stale: false });
+          // Hero talent specs: alias to parent spec
+          const HERO_SPEC_PARENT: Record<string, string> = {
+            "devourer-demon-hunter": "havoc-demon-hunter",
+          };
+          const realSpecId = HERO_SPEC_PARENT[specFilter] || specFilter;
+          return NextResponse.json({ spec: cached.specs[realSpecId] || null, specId: realSpecId, season: cached.season, cached: true, timestamp: cached.timestamp, stale: false });
         }
         return NextResponse.json({ ...cached, cached: true, stale: false });
       }
