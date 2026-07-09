@@ -24,6 +24,21 @@ export async function aggregateBySpec(
 ): Promise<Record<string, AggregatedSpecData>> {
   const result: Record<string, AggregatedSpecData> = {};
 
+  // Build player listings from ALL top players (Raider.IO data, no Blizzard profile needed)
+  const playerLists = new Map<string, PlayerListing[]>();
+  for (const [specId, players] of playersBySpec) {
+    playerLists.set(specId, players.map((p) => ({
+      name: p.name,
+      realm: p.realm,
+      region: p.region,
+      score: p.score,
+      specId,
+      classId: p.classId,
+      race: p.race,
+      itemLevel: p.itemLevel,
+    })));
+  }
+
   // Only fetch Blizzard profiles for the top N per spec (to avoid overload)
   const allFetches: { specId: string; player: TopPlayer }[] = [];
   for (const [specId, players] of playersBySpec) {
@@ -46,7 +61,7 @@ export async function aggregateBySpec(
     profileResults.push(...results);
   }
 
-  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
+  const profilesBySpec = new Map<string, { player: TopPlayer; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
 
   let idx = 0;
   for (const { specId, player } of allFetches) {
@@ -54,25 +69,6 @@ export async function aggregateBySpec(
     if (profResult.status !== "fulfilled" || !profResult.value) continue;
     if (!profilesBySpec.has(specId)) profilesBySpec.set(specId, []);
     profilesBySpec.get(specId)!.push({ player, ...profResult.value });
-    // Update player score with actual M+ rating from Blizzard
-    if (profResult.value.mythicPlusRating) {
-      player.score = profResult.value.mythicPlusRating;
-    }
-  }
-
-  // Build player listings from ALL top players (Raider.IO data, no Blizzard profile needed)
-  const playerLists = new Map<string, PlayerListing[]>();
-  for (const [specId, players] of playersBySpec) {
-    playerLists.set(specId, players.map((p) => ({
-      name: p.name,
-      realm: p.realm,
-      region: p.region,
-      score: p.score,
-      specId,
-      classId: p.classId,
-      race: p.race,
-      itemLevel: p.itemLevel,
-    })));
   }
 
   // Aggregate each spec
