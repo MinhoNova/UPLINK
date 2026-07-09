@@ -62,6 +62,7 @@ export interface CharacterProfile {
     mastery?: number;
     versatility?: number;
   };
+  mythicPlusRating?: number;
 }
 
 const GEAR_SLOT_MAP: Record<string, string> = {
@@ -100,7 +101,7 @@ export async function fetchCharacterProfile(
   const ns = `profile-${region.toLowerCase()}`;
 
   try {
-    const [equipRes, specRes] = await Promise.all([
+    const [equipRes, specRes, mplusRes] = await Promise.all([
       fetch(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/equipment?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
@@ -109,9 +110,21 @@ export async function fetchCharacterProfile(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/specializations?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
       ),
+      fetch(
+        `${host}/profile/wow/character/${realmSlug}/${nameLower}/mythic-keystone-profile?namespace=${ns}&locale=en_US`,
+        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
+      ),
     ]);
 
-    const profile: CharacterProfile = { talents: [], gear: [], gems: [], stats: {} };
+    let mythicPlusRating: number | undefined;
+    if (mplusRes.ok) {
+      try {
+        const mplusData = await mplusRes.json();
+        mythicPlusRating = Math.round(mplusData.current_mythic_rating?.rating);
+      } catch {}
+    }
+
+    const profile: CharacterProfile = { talents: [], gear: [], gems: [], stats: {}, mythicPlusRating };
 
     // Parse equipment
     if (equipRes.ok) {
