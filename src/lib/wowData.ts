@@ -6258,7 +6258,7 @@ export function aggregatePlayerTalents(
   topPlayers: AggregatedSpecData['topPlayers'],
   baseTrees: TalentTree[]
 ): AggregatedTalentTree[] {
-  if (!baseTrees || baseTrees.length === 0) return [];
+  if (!topPlayers || topPlayers.length === 0 || !baseTrees || baseTrees.length === 0) return [];
 
   const total = topPlayers?.length || 0;
   const nodeMap = new Map<string, { name: string; id?: number; row: number; col: number; count: number; treeName: string }>();

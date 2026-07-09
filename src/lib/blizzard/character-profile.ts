@@ -62,6 +62,7 @@ export interface CharacterProfile {
     mastery?: number;
     versatility?: number;
   };
+  mythicPlusRating?: number;
 }
 
 const GEAR_SLOT_MAP: Record<string, string> = {
@@ -100,7 +101,7 @@ export async function fetchCharacterProfile(
   const ns = `profile-${region.toLowerCase()}`;
 
   try {
-    const [equipRes, specRes] = await Promise.all([
+    const [equipRes, specRes, mythicRes] = await Promise.all([
       fetch(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/equipment?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
@@ -109,6 +110,10 @@ export async function fetchCharacterProfile(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/specializations?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
       ),
+      fetch(
+        `${host}/profile/wow/character/${realmSlug}/${nameLower}/mythic-keystone-profile?namespace=${ns}&locale=en_US`,
+        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
+      ).catch(() => new Response(null, { status: 404 })),
     ]);
 
     const profile: CharacterProfile = { talents: [], gear: [], gems: [], stats: {} };
@@ -199,6 +204,16 @@ export async function fetchCharacterProfile(
           curCol = curCol === 1 ? 2 : 1;
           if (curCol === 1) curRow++;
         }
+      }
+    }
+
+    // Parse M+ rating
+    if (mythicRes?.ok) {
+      const mythicData = await mythicRes.json();
+      const seasons = mythicData.seasons || mythicData.mything_keystone_seasons || [];
+      const currentSeason = seasons[0];
+      if (currentSeason?.best_runs || currentSeason?.mythic_rating) {
+        profile.mythicPlusRating = currentSeason.mythic_rating?.rating || 0;
       }
     }
 
