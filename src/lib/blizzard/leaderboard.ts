@@ -86,6 +86,9 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             const charKey = `${c.name}|${c.realm?.slug || ""}|${region}`;
             const existing = charMap.get(charKey);
             if (existing && runScore <= existing.runScore) continue;
+          // Estimate total M+ score from run score + mythic level (single run ~500, total ~3000)
+          const ALL_TIMED: Record<number, number> = {2:1240,3:1360,4:1480,5:1720,6:1840,7:2080,8:2200,9:2320,10:2560,11:2680,12:2920,13:3040,14:3160,15:3280,16:3400,17:3520,18:3640,19:3760,20:3880,21:4000,22:4120,23:4240,24:4360,25:4480,26:4600,27:4720,28:4840,29:4960};
+          const estimatedTotal = runLevel >= 2 ? Math.round((ALL_TIMED[runLevel] || runScore * 8) * 0.75) : Math.round(runScore * 6);
           charMap.set(charKey, {
             name: c.name || "Unknown",
             realm: c.realm?.name || c.realm?.slug || "Unknown",
@@ -93,7 +96,7 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             specId: specKey,
             classId: (c.class?.slug || "").toLowerCase(),
             faction: (c.faction || "horde").toLowerCase(),
-            score: runScore,
+            score: Math.max(runScore, estimatedTotal),
             runScore,
             race: c.race?.name || undefined,
             itemLevel: c.item_level ? Math.round(c.item_level) : undefined,
