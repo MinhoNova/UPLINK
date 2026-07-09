@@ -150,7 +150,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
   const color = getClassColor(spec.classId);
 
-  const PAGE_SIZE = 5;
+  const PAGE_SIZE = 10;
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [aggData, setAggData] = useState<AggregatedSpecData | null>(null);
