@@ -54,10 +54,6 @@ export async function aggregateBySpec(
     if (profResult.status !== "fulfilled" || !profResult.value) continue;
     if (!profilesBySpec.has(specId)) profilesBySpec.set(specId, []);
     profilesBySpec.get(specId)!.push({ player, ...profResult.value });
-    // Update player score with actual M+ rating from Blizzard
-    if (profResult.value.mythicPlusRating) {
-      player.score = profResult.value.mythicPlusRating;
-    }
   }
 
   // Build player listings from ALL top players (Raider.IO data, no Blizzard profile needed)

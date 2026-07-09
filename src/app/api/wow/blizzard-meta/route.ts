@@ -64,13 +64,14 @@ export async function GET(request: Request) {
         if (playerLookup) {
           const realm = url.searchParams.get("realm") || "";
           const region = url.searchParams.get("region") || "";
+          const match = (p: any) =>
+            p.name?.toLowerCase() === playerLookup.toLowerCase() &&
+            (!realm || p.realm?.toLowerCase() === realm.toLowerCase()) &&
+            (!region || p.region?.toLowerCase() === region.toLowerCase());
           for (const [specId, specData] of Object.entries(cached.specs)) {
-            for (const p of (specData as any).topPlayers || []) {
-              if (p.name?.toLowerCase() === playerLookup.toLowerCase() &&
-                  (!realm || p.realm?.toLowerCase() === realm.toLowerCase()) &&
-                  (!region || p.region?.toLowerCase() === region.toLowerCase())) {
-                return NextResponse.json({ player: p, specId, season: cached.season, cached: true });
-              }
+            const found = (specData as any).topPlayers?.find(match) || (specData as any).players?.find(match);
+            if (found) {
+              return NextResponse.json({ player: found, specId, season: cached.season, cached: true });
             }
           }
           return NextResponse.json({ player: null, cached: true });
