@@ -391,7 +391,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           })()}
 
           {/* BIS Gear — banner style */}
-          {data && (
+          {data && data.bis.length > 0 && (
             <section>
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
@@ -469,7 +469,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           )}
 
           {/* Enchants & Gems */}
-          {data && (
+          {data && (data.enchants.length > 0 || data.gems.length > 0) && (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">{spec.name} Enchants & Gems{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-6">Recommended enchants and gems.</p>
