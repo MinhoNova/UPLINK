@@ -307,7 +307,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               </div>
             ) : (
               <>
-                 <div className="flex flex-col gap-3">
+                 <div className="flex flex-col gap-3 w-full lg:w-1/3 mx-auto">
                   {visibleEntries.map((entry) => {
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
                     const rankColor = entry.rank <= 3 ? RANK_COLORS[entry.rank - 1] : "#a0a0a0";
