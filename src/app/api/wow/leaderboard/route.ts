@@ -39,7 +39,7 @@ const ALL_TIMED_SCORES: Record<number, number> = {
 
 function estimateTotalScore(runScore: number, mythicLevel: number): number {
   const allTimed = ALL_TIMED_SCORES[mythicLevel];
-  if (allTimed) return Math.round(allTimed * 0.75);
+  if (allTimed) return Math.round(allTimed * 0.88);
   return Math.round(runScore * 6);
 }
 
