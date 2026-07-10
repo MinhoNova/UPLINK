@@ -307,7 +307,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               </div>
             ) : (
               <>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
+                 <div className="flex flex-col gap-3">
                   {visibleEntries.map((entry) => {
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
                     const rankColor = entry.rank <= 3 ? RANK_COLORS[entry.rank - 1] : "#a0a0a0";
@@ -329,7 +329,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                               {entry.itemLevel ? <span> | {entry.itemLevel} ilvl</span> : null}
                             </div>
                           </div>
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={72} clippedHeight={42} />
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={72} free />
                           <div className="shrink-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
                             <div className="text-sm font-black leading-none" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
                             <div className="text-[7px] font-black text-gray-600 uppercase tracking-wider mt-0.5">Rating</div>
