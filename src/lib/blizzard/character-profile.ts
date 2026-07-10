@@ -165,21 +165,25 @@ export async function fetchCharacterProfile(
       const loadout = activeSpec.loadouts?.find((l: any) => l.is_active) || activeSpec.loadouts?.[0];
       if (!loadout) return profile;
 
-      const allTalentEntries: { id: number; rank: number; treeName: string; treeKind: string }[] = [];
+      const allTalentEntries: { id: number; rank: number; name: string; treeName: string; treeKind: string }[] = [];
+
+      function getName(t: any, fallbackId: number): string {
+        return t.tooltip?.talent?.name || t.tooltip?.spell_tooltip?.spell?.name || `Talent ${fallbackId}`;
+      }
 
       const classTreeName = loadout.selected_class_talent_tree?.name || "Class Talents";
       for (const t of loadout.selected_class_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, treeName: classTreeName, treeKind: "class" });
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), treeName: classTreeName, treeKind: "class" });
       }
 
       const specTreeName = loadout.selected_spec_talent_tree?.name || (activeSpec.specialization?.name || "Spec Talents");
       for (const t of loadout.selected_spec_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, treeName: specTreeName, treeKind: "spec" });
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), treeName: specTreeName, treeKind: "spec" });
       }
 
       const heroTreeName = loadout.selected_hero_talent_tree?.name || "Hero Talents";
       for (const t of loadout.selected_hero_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, treeName: heroTreeName, treeKind: "hero" });
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), treeName: heroTreeName, treeKind: "hero" });
       }
 
       // Group by tree for row/col assignment
@@ -194,7 +198,7 @@ export async function fetchCharacterProfile(
         for (const entry of entries) {
           profile.talents.push({
             nodeId: entry.id,
-            name: `Talent ${entry.id}`,
+            name: entry.name,
             spellId: entry.id,
             selected: entry.rank > 0,
             row: curRow,

@@ -6254,12 +6254,15 @@ export function aggregatePlayerTalents(
 
   const total = topPlayers?.length || 0;
   const nodeMap = new Map<string, { name: string; id?: number; row: number; col: number; count: number; treeName: string }>();
+  const nameToKey = new Map<string, string>();
 
   for (const tree of baseTrees) {
     for (const node of tree.nodes) {
       const key = `${tree.name}:${node.row || 0}-${node.col || 0}`;
       if (!nodeMap.has(key)) {
         nodeMap.set(key, { name: node.name, id: node.id, row: node.row || 0, col: node.col || 0, count: 0, treeName: tree.name });
+        const nk = `${tree.name}:${node.name}`;
+        if (!nameToKey.has(nk)) nameToKey.set(nk, key);
       }
     }
   }
@@ -6274,8 +6277,24 @@ export function aggregatePlayerTalents(
         nodeMap.get(posKey)!.count++;
         continue;
       }
+      const nameKey = `${treeName}:${talent.name}`;
+      const mappedKey = nameToKey.get(nameKey);
+      if (mappedKey && nodeMap.has(mappedKey)) {
+        nodeMap.get(mappedKey)!.count++;
+        continue;
+      }
+      // Try matching by id across all nodes
+      let matched = false;
       for (const [, v] of nodeMap) {
-        if (v.name === talent.name && v.treeName === treeName) { v.count++; break; }
+        if (v.id && v.id === talent.nodeId && v.treeName === treeName) { v.count++; matched = true; break; }
+      }
+      if (matched) continue;
+      // Add as new node (player has a talent not in hardcoded tree)
+      const newKey = `${treeName}:${talent.name}`;
+      if (!nodeMap.has(newKey)) {
+        nodeMap.set(newKey, { name: talent.name, id: talent.nodeId, row: talent.row || 0, col: talent.col || 0, count: 1, treeName });
+      } else {
+        nodeMap.get(newKey)!.count++;
       }
     }
   }
@@ -6284,6 +6303,9 @@ export function aggregatePlayerTalents(
   for (const [, data] of nodeMap) {
     if (!treeMap.has(data.treeName)) treeMap.set(data.treeName, []);
     treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, row: data.row, col: data.col, count: data.count, total });
+  }
+  for (const [, nodes] of treeMap) {
+    nodes.sort((a, b) => (a.row * 10 + a.col) - (b.row * 10 + b.col));
   }
   return Array.from(treeMap.entries()).map(([name, nodes]) => ({ name, nodes }));
 }

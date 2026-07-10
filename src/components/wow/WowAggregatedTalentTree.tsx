@@ -69,14 +69,6 @@ function AggregatedNode({
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: hot ? "#f97316" : color, opacity: hot ? 1 : 0.3 }} />
           </div>
         )}
-        {hot && (
-          <div
-            className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-white text-[7px] font-black px-1 leading-none shadow-lg"
-            style={{ background: count >= total * 0.9 ? "#f97316" : count >= total * 0.5 ? "#e07b3a" : "#666" }}
-          >
-            {count}
-          </div>
-        )}
       </div>
       <span
         className="text-[6px] font-bold text-center leading-tight max-w-[60px] truncate px-0.5"
@@ -84,6 +76,17 @@ function AggregatedNode({
       >
         {name}
       </span>
+      {hot && (
+        <div
+          className="min-w-[18px] h-[14px] rounded flex items-center justify-center text-white text-[7px] font-black px-1 leading-none"
+          style={{ background: count >= total * 0.9 ? "#f97316" : count >= total * 0.5 ? "#e07b3a" : "#444" }}
+        >
+          /{count}
+        </div>
+      )}
+      {!hot && (
+        <div className="min-w-[18px] h-[14px]" />
+      )}
     </div>
   );
 }
