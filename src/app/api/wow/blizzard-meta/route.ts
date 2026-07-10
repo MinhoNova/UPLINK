@@ -113,10 +113,6 @@ export async function GET(request: Request) {
     const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
     const specs = await aggregateBySpec(playersBySpec, profileLimit);
 
-    if (specs["havoc-demon-hunter"]) {
-      specs["devourer-demon-hunter"] = specs["havoc-demon-hunter"];
-    }
-
     const result: MetaPipelineResult = {
       specs,
       timestamp: Date.now(),

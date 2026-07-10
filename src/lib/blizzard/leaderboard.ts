@@ -32,6 +32,11 @@ const REGION_HOSTS: Record<string, string> = {
   eu: "https://eu.api.blizzard.com",
 };
 
+/** Maps hero talent spec keys to their parent spec for data collection purposes. */
+const HERO_TO_PARENT: Record<string, string> = {
+  "devourer-demon-hunter": "havoc-demon-hunter",
+};
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -83,6 +88,8 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             if (!c) continue;
             const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
             if (!specKey || specKey === "-") continue;
+            const resolvedKey = HERO_TO_PARENT[specKey] || specKey;
+            if (!EXPECTED_SPECS.includes(resolvedKey)) continue;
             const charKey = `${c.name}|${c.realm?.slug || ""}|${region}`;
             const existing = charMap.get(charKey);
             if (existing && runScore <= existing.runScore) continue;
@@ -94,7 +101,7 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             name: c.name || "Unknown",
             realm: c.realm?.name || c.realm?.slug || "Unknown",
             region: region.toUpperCase(),
-            specId: specKey,
+            specId: resolvedKey,
             classId: (c.class?.slug || "").toLowerCase(),
             faction: (c.faction || "horde").toLowerCase(),
             score: Math.max(runScore, estimatedTotal),

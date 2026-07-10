@@ -29,11 +29,6 @@ async function runBlizzardPipeline(env: CloudflareEnv, ptr?: boolean) {
   const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
   const specs = await aggregateBySpec(playersBySpec, profileLimit, env);
 
-  // Alias hero talent specs to their parent spec data
-  if (specs["havoc-demon-hunter"]) {
-    specs["devourer-demon-hunter"] = specs["havoc-demon-hunter"];
-  }
-
   const cacheKey = ptr ? "wow:blizzard-meta-ptr" : "wow:blizzard-meta";
   const result = {
     specs,

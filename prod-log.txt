@@ -1,0 +1,11 @@
+▲ Next.js 16.2.9
+- Local:         http://localhost:3001
+- Network:       http://192.168.1.4:3001
+✓ Ready in 575ms
+Using secrets defined in .dev.vars
+⨯ TypeError: a is not iterable
+    at l (C:\Users\omars\Downloads\UPLINK\.next\server\chunks\105.js:1:249270)
+    at <unknown> (C:\Users\omars\Downloads\UPLINK\.next\server\app\wow\spec\[id]\page.js:1:26714)
+    at O (C:\Users\omars\Downloads\UPLINK\.next\server\app\wow\spec\[id]\page.js:1:27477) {
+  digest: '719994972'
+}
