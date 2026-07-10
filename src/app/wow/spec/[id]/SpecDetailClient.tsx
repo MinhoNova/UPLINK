@@ -317,21 +317,22 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                         href={profileUrl}
                         className="group block bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.06] transition-colors"
                       >
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black shrink-0" style={{ color: rankColor }}>#{entry.rank}</span>
-                            <span className="text-sm font-bold leading-tight truncate" style={{ color: "#fff" }}>{entry.name}</span>
-                            <div className="ml-auto shrink-0 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-right">
-                              <div className="text-xs font-black leading-none" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
+                        <div className="flex items-center gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-sm font-black shrink-0" style={{ color: rankColor }}>#{entry.rank}</span>
+                              <span className="text-sm font-bold leading-tight truncate" style={{ color: "#fff" }}>{entry.name}</span>
+                            </div>
+                            <div className="text-[10px] text-gray-500 truncate">
+                              {entry.realm} ({entry.region})
+                              {entry.race ? <span> · {entry.race}</span> : null}
+                              {entry.itemLevel ? <span> | {entry.itemLevel} ilvl</span> : null}
                             </div>
                           </div>
-                          <div className="flex justify-center">
-                            <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={72} clippedHeight={42} />
-                          </div>
-                          <div className="text-[10px] text-gray-500 text-center truncate">
-                            {entry.realm} ({entry.region})
-                            {entry.race ? <span> · {entry.race}</span> : null}
-                            {entry.itemLevel ? <span> | {entry.itemLevel} ilvl</span> : null}
+                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={72} clippedHeight={42} />
+                          <div className="shrink-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
+                            <div className="text-sm font-black leading-none" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
+                            <div className="text-[7px] font-black text-gray-600 uppercase tracking-wider mt-0.5">Rating</div>
                           </div>
                         </div>
                       </Link>
