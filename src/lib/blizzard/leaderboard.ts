@@ -41,59 +41,36 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<LeaderboardChar[]> {
+async function fetchRaiderIORegion(seasonSlug: string, region: string, expectedSpecs: string[], minPlayers: number, maxPages: number): Promise<(LeaderboardChar & { runScore: number })[]> {
   const charMap = new Map<string, LeaderboardChar & { runScore: number }>();
-  const regions = ["us", "eu", "kr", "tw"];
-  const MIN_PLAYERS_PER_SPEC = 50;
-  const MAX_PAGES = 150;
-  const EXPECTED_SPECS = [
-    "affliction-warlock","arcane-mage","arms-warrior","assassination-rogue",
-    "augmentation-evoker","balance-druid","beast-mastery-hunter","blood-death-knight",
-    "brewmaster-monk","demonology-warlock","destruction-warlock","devastation-evoker",
-    "discipline-priest","elemental-shaman","enhancement-shaman","feral-druid",
-    "fire-mage","frost-death-knight","frost-mage","fury-warrior","guardian-druid",
-    "havoc-demon-hunter","holy-paladin","holy-priest","marksmanship-hunter",
-    "mistweaver-monk","outlaw-rogue","preservation-evoker","protection-paladin",
-    "protection-warrior","restoration-druid","restoration-shaman","retribution-paladin",
-    "shadow-priest","subtlety-rogue","survival-hunter","unholy-death-knight",
-    "vengeance-demon-hunter","windwalker-monk",
-  ];
-
-  for (const region of regions) {
-    for (let page = 0; page < MAX_PAGES; page++) {
-      // Check if all expected specs have enough players
-      const specCounts = new Map<string, number>();
-      for (const [, v] of charMap) {
-        specCounts.set(v.specId, (specCounts.get(v.specId) || 0) + 1);
-      }
-      const allCovered = EXPECTED_SPECS.every((s) => (specCounts.get(s) || 0) >= MIN_PLAYERS_PER_SPEC);
-      if (allCovered) break;
-
-      try {
-        const res = await fetch(
-          `https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=${region}&page=${page}`,
-          { cache: "no-store", headers: { "User-Agent": "Uplink/1.0" }, signal: AbortSignal.timeout(8000) }
-        );
-        if (!res.ok) continue;
-
-        const data = await res.json();
-        const rankings = data.rankings || [];
-        if (!Array.isArray(rankings) || rankings.length === 0) break;
-
-        for (const ranking of rankings) {
-          const runScore = ranking.score || 0;
-          if (!ranking.run?.roster) continue;
-          for (const member of ranking.run.roster) {
-            const c = member.character;
-            if (!c) continue;
-            const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
-            if (!specKey || specKey === "-") continue;
-            const resolvedKey = HERO_TO_PARENT[specKey] || specKey;
-            if (!EXPECTED_SPECS.includes(resolvedKey)) continue;
-            const charKey = `${c.name}|${c.realm?.slug || ""}|${region}`;
-            const existing = charMap.get(charKey);
-            if (existing && runScore <= existing.runScore) continue;
-          // Estimate total M+ score from mythic level
+  for (let page = 0; page < maxPages; page++) {
+    const specCounts = new Map<string, number>();
+    for (const [, v] of charMap) {
+      specCounts.set(v.specId, (specCounts.get(v.specId) || 0) + 1);
+    }
+    if (expectedSpecs.every((s) => (specCounts.get(s) || 0) >= minPlayers)) break;
+    try {
+      const res = await fetch(
+        `https://raider.io/api/v1/mythic-plus/runs?season=${seasonSlug}&region=${region}&page=${page}`,
+        { cache: "no-store", headers: { "User-Agent": "Uplink/1.0" }, signal: AbortSignal.timeout(8000) }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rankings = data.rankings || [];
+      if (!Array.isArray(rankings) || rankings.length === 0) break;
+      for (const ranking of rankings) {
+        const runScore = ranking.score || 0;
+        if (!ranking.run?.roster) continue;
+        for (const member of ranking.run.roster) {
+          const c = member.character;
+          if (!c) continue;
+          const specKey = `${(c.spec?.slug || "").toLowerCase()}-${(c.class?.slug || "").toLowerCase()}`;
+          if (!specKey || specKey === "-") continue;
+          const resolvedKey = HERO_TO_PARENT[specKey] || specKey;
+          if (!expectedSpecs.includes(resolvedKey)) continue;
+          const charKey = `${c.name}|${c.realm?.slug || ""}|${region}`;
+          const existing = charMap.get(charKey);
+          if (existing && runScore <= existing.runScore) continue;
           const runLevel = ranking.run.mythic_level || 0;
           const ALL_TIMED: Record<number, number> = {2:1240,3:1360,4:1480,5:1720,6:1840,7:2080,8:2200,9:2320,10:2560,11:2680,12:2920,13:3040,14:3160,15:3280,16:3400,17:3520,18:3640,19:3760,20:3880,21:4000,22:4120,23:4240,24:4360,25:4480,26:4600,27:4720,28:4840,29:4960};
           const estimatedTotal = runLevel >= 2 ? Math.round((ALL_TIMED[runLevel] || runScore * 8) * 0.88) : Math.round(runScore * 6);
@@ -109,17 +86,44 @@ export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<L
             race: c.race?.name || undefined,
             itemLevel: c.item_level ? Math.round(c.item_level) : undefined,
           });
-          }
         }
-
-        await sleep(300);
-      } catch {
-        continue;
       }
+      await sleep(100);
+    } catch { continue; }
+  }
+  return Array.from(charMap.values());
+}
+
+export async function fetchTopPlayersFromRaiderIO(seasonSlug: string): Promise<LeaderboardChar[]> {
+  const regions = ["us", "eu", "kr", "tw"];
+  const MIN_PLAYERS_PER_SPEC = 50;
+  const MAX_PAGES = 50;
+  const EXPECTED_SPECS = [
+    "affliction-warlock","arcane-mage","arms-warrior","assassination-rogue",
+    "augmentation-evoker","balance-druid","beast-mastery-hunter","blood-death-knight",
+    "brewmaster-monk","demonology-warlock","destruction-warlock","devastation-evoker",
+    "discipline-priest","elemental-shaman","enhancement-shaman","feral-druid",
+    "fire-mage","frost-death-knight","frost-mage","fury-warrior","guardian-druid",
+    "havoc-demon-hunter","holy-paladin","holy-priest","marksmanship-hunter",
+    "mistweaver-monk","outlaw-rogue","preservation-evoker","protection-paladin",
+    "protection-warrior","restoration-druid","restoration-shaman","retribution-paladin",
+    "shadow-priest","subtlety-rogue","survival-hunter","unholy-death-knight",
+    "vengeance-demon-hunter","windwalker-monk",
+  ];
+
+  const results = await Promise.all(
+    regions.map((r) => fetchRaiderIORegion(seasonSlug, r, EXPECTED_SPECS, MIN_PLAYERS_PER_SPEC, MAX_PAGES))
+  );
+
+  const mergedMap = new Map<string, LeaderboardChar & { runScore: number }>();
+  for (const chars of results) {
+    for (const c of chars) {
+      const key = `${c.name}|${c.realm}|${c.region}|${c.specId}`;
+      const existing = mergedMap.get(key);
+      if (!existing || c.score > existing.score) mergedMap.set(key, c);
     }
   }
-
-  return Array.from(charMap.values());
+  return Array.from(mergedMap.values());
 }
 
 export async function fetchTopPlayersFromBlizzard(seasonSlug: string): Promise<LeaderboardChar[]> {
