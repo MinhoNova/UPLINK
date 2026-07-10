@@ -150,7 +150,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
   const color = getClassColor(spec.classId);
 
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5;
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [aggData, setAggData] = useState<AggregatedSpecData | null>(null);
@@ -307,7 +307,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               </div>
             ) : (
               <>
-                 <div className="flex flex-col gap-3">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
                   {visibleEntries.map((entry) => {
                     const profileUrl = playerProfileUrl(entry.name, entry.realm, entry.region);
                     const rankColor = entry.rank <= 3 ? RANK_COLORS[entry.rank - 1] : "#a0a0a0";
@@ -315,25 +315,23 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                       <Link
                         key={entry.rank}
                         href={profileUrl}
-                        className="group block rounded-xl bg-[#0c0c18] border border-white/[0.04] p-3 hover:bg-[#111120] hover:border-white/10 transition-all"
+                        className="group block bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.06] transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-black w-6 text-center shrink-0" style={{ color: rankColor }}>{entry.rank}</span>
-                          <div className="relative shrink-0">
-                            <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={44} clippedHeight={22} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-bold leading-tight truncate" style={{ color: "#fff" }}>{entry.name}</div>
-                            <div className="text-[10px] text-gray-500 truncate">
-                              {entry.realm} ({entry.region})
-                              {entry.race ? <span> · {entry.race}</span> : null}
-                              {entry.race ? <span> | {spec.name}</span> : null}
-                              {entry.itemLevel ? <span> | {entry.itemLevel} ilvl</span> : null}
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black shrink-0" style={{ color: rankColor }}>#{entry.rank}</span>
+                            <span className="text-sm font-bold leading-tight truncate" style={{ color: "#fff" }}>{entry.name}</span>
+                            <div className="ml-auto shrink-0 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-right">
+                              <div className="text-xs font-black leading-none" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
                             </div>
                           </div>
-                          <div className="shrink-0 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-right">
-                            <div className="text-sm font-black" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
-                            <div className="text-[7px] font-black text-gray-600 uppercase tracking-wider">Rating</div>
+                          <div className="flex justify-center">
+                            <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={72} clippedHeight={42} />
+                          </div>
+                          <div className="text-[10px] text-gray-500 text-center truncate">
+                            {entry.realm} ({entry.region})
+                            {entry.race ? <span> · {entry.race}</span> : null}
+                            {entry.itemLevel ? <span> | {entry.itemLevel} ilvl</span> : null}
                           </div>
                         </div>
                       </Link>
