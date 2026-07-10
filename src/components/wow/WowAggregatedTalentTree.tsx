@@ -81,7 +81,7 @@ function AggregatedNode({
           className="min-w-[18px] h-[14px] rounded flex items-center justify-center text-white text-[7px] font-black px-1 leading-none"
           style={{ background: count >= total * 0.9 ? "#f97316" : count >= total * 0.5 ? "#e07b3a" : "#444" }}
         >
-          /{count}
+          {count}
         </div>
       )}
       {!hot && (

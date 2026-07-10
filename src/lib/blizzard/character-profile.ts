@@ -105,11 +105,11 @@ export async function fetchCharacterProfile(
       fetch(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/equipment?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
-      ),
+      ).catch(() => new Response(null, { status: 404 })),
       fetch(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/specializations?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }
-      ),
+      ).catch(() => new Response(null, { status: 404 })),
       fetch(
         `${host}/profile/wow/character/${realmSlug}/${nameLower}/mythic-keystone-profile?namespace=${ns}&locale=en_US`,
         { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(8000) }

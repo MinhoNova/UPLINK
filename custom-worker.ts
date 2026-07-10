@@ -25,7 +25,7 @@ async function runBlizzardPipeline(env: CloudflareEnv, ptr?: boolean) {
     if (!existing || p.score > existing.score) mergedMap.set(key, p);
   }
   const displayLimit = 50;
-  const profileLimit = 15;
+  const profileLimit = 50;
   const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
   const specs = await aggregateBySpec(playersBySpec, profileLimit, env);
 
@@ -54,35 +54,38 @@ export default {
         // Refresh Blizzard meta data — run directly to avoid HTTP/CPU timeouts
         const minute = new Date().getUTCMinutes();
         if (minute % 15 === 0) {
-          try {
-            // Live pipeline
-            await runBlizzardPipeline(env, false);
-            if (env.CRON_SECRET) {
-              const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
-              await fetch(`${baseUrl}/api/news/auto-generate`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
-                signal: AbortSignal.timeout(30000),
-              });
-            }
-          } catch (e) {
-            console.error("[pipeline/live] error:", e);
-          }
-
-          try {
-            // PTR pipeline — runs every 15 min alongside live
-            await runBlizzardPipeline(env, true);
-            if (env.CRON_SECRET) {
-              const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
-              await fetch(`${baseUrl}/api/news/auto-generate?ptr=1`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
-                signal: AbortSignal.timeout(30000),
-              });
-            }
-          } catch (e) {
-            console.error("[pipeline/ptr] error:", e);
-          }
+          await Promise.all([
+            (async () => {
+              try {
+                await runBlizzardPipeline(env, false);
+                if (env.CRON_SECRET) {
+                  const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
+                  await fetch(`${baseUrl}/api/news/auto-generate`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+                    signal: AbortSignal.timeout(30000),
+                  });
+                }
+              } catch (e) {
+                console.error("[pipeline/live] error:", e);
+              }
+            })(),
+            (async () => {
+              try {
+                await runBlizzardPipeline(env, true);
+                if (env.CRON_SECRET) {
+                  const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
+                  await fetch(`${baseUrl}/api/news/auto-generate?ptr=1`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+                    signal: AbortSignal.timeout(30000),
+                  });
+                }
+              } catch (e) {
+                console.error("[pipeline/ptr] error:", e);
+              }
+            })(),
+          ]);
         }
       })()
     );

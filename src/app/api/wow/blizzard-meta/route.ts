@@ -109,7 +109,7 @@ export async function GET(request: Request) {
     }
 
     const displayLimit = 50;
-    const profileLimit = 15;
+    const profileLimit = 50;
     const playersBySpec = selectTopPlayersBySpec(Array.from(mergedMap.values()), displayLimit);
     const specs = await aggregateBySpec(playersBySpec, profileLimit);
 
