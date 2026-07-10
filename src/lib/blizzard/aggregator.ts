@@ -71,6 +71,18 @@ export async function aggregateBySpec(
     })));
   }
 
+  // Override player scores with real M+ rating from Blizzard profiles
+  for (const [specId, profiles] of profilesBySpec) {
+    const listingMap = playerLists.get(specId);
+    if (listingMap) {
+      for (const p of profiles) {
+        if (!p.mythicPlusRating) continue;
+        const match = listingMap.find((l) => l.name === p.player.name && l.realm === p.player.realm && l.region === p.player.region);
+        if (match) match.score = p.mythicPlusRating;
+      }
+    }
+  }
+
   // Aggregate each spec
   for (const [specId, profiles] of profilesBySpec) {
     const total = profiles.length;
