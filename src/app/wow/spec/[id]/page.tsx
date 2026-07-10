@@ -66,7 +66,7 @@ export default async function SpecDetail({ params, searchParams }: { params: Pro
   if (!spec) notFound();
   const pipelineData = await getLiveSpecData(id, ptr);
 
-  const faqItems = generateFAQItems(spec, pipelineData);
+  const faqItems = generateFAQItems(spec, pipelineData, ptr);
   const intro = generateIntroContent(spec, pipelineData, ptr);
   const related = getRelatedSpecs(spec);
 

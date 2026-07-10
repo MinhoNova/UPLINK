@@ -64,7 +64,7 @@ function generateSpecDescription(spec: WoWSpec, data?: SpecData, ptr?: boolean):
   const bisList = data ? data.bis.slice(0, 5).map((i) => i.name).join(", ") : "";
   const stats = data ? data.statPriority.join(", ") : "";
   const topPlayer = data && data.builds.length > 0 ? data.builds[0].player : "";
-  const season = ptr ? "Midnight PTR Season 2" : "Midnight Season 2";
+  const season = ptr ? "Midnight S2 (PTR Preview)" : "Midnight S1 (Live)";
 
   let desc = `Looking for the best ${spec.name} talents and build for Mythic+ and Raid in World of Warcraft ${season}? This ${sn} `;
   desc += `${rl.toLowerCase()} guide covers everything you need: `;
@@ -89,7 +89,7 @@ export function generateMetaDescription(spec: WoWSpec, data?: SpecData, ptr?: bo
   const cn = spec.classId.replace(/-/g, " ");
   const sn = shortName(spec);
   const stats = data ? data.statPriority.slice(0, 3).join(", ") : "";
-  const season = ptr ? "PTR Season 2" : "Season 2";
+  const season = ptr ? "Midnight S2 (PTR Preview)" : "Midnight S1 (Live)";
   const ptrTag = ptr ? " (projected)" : "";
 
   let desc = `${spec.name} ${rl.toLowerCase()} guide for Mythic+ and Raid — ${season}. ${sn} talents, best-in-slot gear`;
@@ -101,16 +101,17 @@ export function generateMetaDescription(spec: WoWSpec, data?: SpecData, ptr?: bo
 export function generateMetaTitle(spec: WoWSpec, ptr?: boolean): string {
   const rl = ROLE_LABELS[spec.role];
   const cn = spec.classId.replace(/-/g, " ");
-  const ptrSuffix = ptr ? " (PTR S2 Preview)" : "";
-  return `${spec.name} Talents & ${rl} Build — BIS Gear, Enchants${ptrSuffix} | UPLINK`;
+  const seasonLabel = ptr ? " (PTR S2 Preview)" : " — Midnight S1 (Live)";
+  return `${spec.name} Talents & ${rl} Build — BIS Gear, Enchants${seasonLabel} | UPLINK`;
 }
 
-export function generateFAQItems(spec: WoWSpec, data?: SpecData): Array<{ question: string; answer: string }> {
+export function generateFAQItems(spec: WoWSpec, data?: SpecData, ptr?: boolean): Array<{ question: string; answer: string }> {
   const sn = shortName(spec);
   const cn = spec.classId.replace(/-/g, " ");
   const cnFull = CLASS_NAMES[spec.classId] || cn;
   const rl = ROLE_LABELS[spec.role];
   const rlLower = rl.toLowerCase();
+  const season = ptr ? "Midnight S2 (PTR Preview)" : "Midnight S1 (Live)";
   const stats = data ? data.statPriority.join(", ") : "";
   const bisList = data ? data.bis.slice(0, 5).map((i) => i.name).join(", ") : "";
   const gems = data ? data.gems.join(", ") : "";
@@ -121,25 +122,25 @@ export function generateFAQItems(spec: WoWSpec, data?: SpecData): Array<{ questi
   return [
     {
       question: `What are the best talents for ${spec.name} in Mythic+?`,
-      answer: `The best Mythic+ talents for ${spec.name} in Midnight Season 2 focus on maximizing ${sn}'s strengths in dungeon content. ` +
+      answer: `The best Mythic+ talents for ${spec.name} in ${season} focus on maximizing ${sn}'s strengths in dungeon content. ` +
         (talentString ? `Top ${cnFull} ${rlLower} players like ${topPlayer} use the talent string: ${talentString}. ` : "") +
         `The ${sn} talent tree prioritizes talents that improve burst damage, survivability, and utility for ${rlLower} in Mythic+ dungeons. Check the Mythic+ tab for the full talent tree visualization and node-by-node breakdown.`,
     },
     {
-      question: `What is the ${spec.name} stat priority for ${rlLower === "dps" ? "damage" : rlLower} in Midnight Season 2?`,
+      question: `What is the ${spec.name} stat priority for ${rlLower === "dps" ? "damage" : rlLower} in ${season}?`,
       answer: `The ${spec.name} stat priority for ${rlLower} is: ${stats || "varies by build and content type"}. ` +
         `For ${sn}, the primary stat is ${sn === "Guardian" || sn === "Vengeance" || sn === "Protection" || sn === "Brewmaster" || sn === "Blood" ? "Agility" : sn === "Holy" || sn === "Discipline" || sn === "Restoration" || sn === "Mistweaver" || sn === "Preservation" ? "Intellect" : sn === "Vengeance" ? "Agility" : "Intellect"} depending on the ${cnFull} ${rlLower} specialization. ` +
         `Secondary stat weights change based on your current gear and talent build — sim your character for exact stat weights.`,
     },
     {
       question: `What is the best-in-slot gear for ${spec.name}?`,
-      answer: `Best-in-slot gear for ${spec.name} in Midnight Season 2 includes: ${bisList || "varies per patch and dungeon pool"}. ` +
+      answer: `Best-in-slot gear for ${spec.name} in ${season} includes: ${bisList || "varies per patch and dungeon pool"}. ` +
         `The ${sn} BIS list is compiled from equipment used by top ${cnFull} ${rlLower} players on the Mythic+ leaderboard. Each gear slot shows the most popular item with usage percentage, plus an alternative option. ` +
         `Tier set bonuses are prioritized — check the BIS section for which ${cn} tier pieces to equip.`,
     },
     {
       question: `What enchants and gems should ${spec.name} use?`,
-      answer: `For ${spec.name} in Midnight Season 2, recommended enchants are: ${enchants || "check the enchants section on this page"}. ` +
+      answer: `For ${spec.name} in ${season}, recommended enchants are: ${enchants || "check the enchants section on this page"}. ` +
         `Recommended gems: ${gems || "check the gems section on this page"}. ` +
         `Enchant and gem choices depend on your ${sn} stat priority — socket with the stats that sim highest for your ${cn} ${rlLower} build. Weapon enchants and chest enchants are especially impactful for ${sn} ${rlLower} performance.`,
     },
@@ -158,14 +159,14 @@ export function generateFAQItems(spec: WoWSpec, data?: SpecData): Array<{ questi
         `For ${cnFull}, popular race choices include those that benefit ${rlLower} performance. Check the leaderboard to see which races top ${sn} players are using in the current season.`,
     },
     {
-      question: `Is ${spec.name} good in Mythic+ for Midnight Season 2?`,
-      answer: `${spec.name} is ${getMetaRank(spec.role)} in the current ${rlLower} meta for Mythic+ in Midnight Season 2. ` +
+      question: `Is ${spec.name} good in Mythic+ for ${season}?`,
+      answer: `${spec.name} is ${getMetaRank(spec.role)} in the current ${rlLower} meta for ${season}. ` +
         `${sn}'s ${rlLower} performance depends on dungeon pool, seasonal affixes, and tier set bonuses. ` +
         `Check the Meta Classes page for the latest tier list ranking all ${rlLower} specs and see where ${spec.name} sits in the current patch.`,
     },
     {
       question: `What consumables should ${spec.name} use for Mythic+?`,
-      answer: `For ${spec.name} Mythic+ in Midnight Season 2, use the best ${rlLower} potions, flasks, and food appropriate for your level. ` +
+      answer: `For ${spec.name} Mythic+ in ${season}, use the best ${rlLower} potions, flasks, and food appropriate for your level. ` +
         `Always use a flask matching your ${sn} stat priority, the best weapon oil/temp enchant available, and stat-specific food. ` +
         `Combat potions should be used on cooldown during key moments. Check the enchants and gems section for specific consumable recommendations.`,
     },
@@ -198,7 +199,7 @@ export function generateIntroContent(spec: WoWSpec, data?: SpecData, ptr?: boole
   const bisList = data ? data.bis.slice(0, 4).map((i) => i.name).join(", ") : "";
   const stats = data ? data.statPriority.join(", ") : "";
   const topPlayer = data && data.builds.length > 0 ? data.builds[0].player : "";
-  const season = ptr ? "Midnight PTR Season 2" : "Midnight Season 2";
+  const season = ptr ? "Midnight S2 (PTR Preview)" : "Midnight S1 (Live)";
 
   const body = `Welcome to the complete ${sn} ${rlLower} guide for World of Warcraft ${season}. ` +
     `This page covers the best ${spec.name} talents for both Mythic+ and Raid, based on data from top ${cn} ${rlLower} players on the leaderboard. ` +
@@ -207,7 +208,7 @@ export function generateIntroContent(spec: WoWSpec, data?: SpecData, ptr?: boole
     (data ? ` ${sn} stat priority is ${stats}. ` : " ") +
     (data ? `Key BIS items include ${bisList}. ` : " ") +
     (topPlayer ? `Learn from top ${cn} ${rlLower} player ${topPlayer} and others. ` : " ") +
-    (ptr ? `Note: PTR Season 2 data is projected and subject to change before the live patch on December 16, 2026.` : "");
+    (ptr ? `Note: PTR data is projected and subject to change before the live patch.` : "");
 
   return {
     heading: `${spec.name} ${rl} Guide — ${season}`,
