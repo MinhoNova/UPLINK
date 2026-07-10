@@ -329,7 +329,9 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                               {entry.itemLevel ? <span> | {entry.itemLevel} ilvl</span> : null}
                             </div>
                           </div>
-                          <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={56} />
+                          <div className="shrink-0 rounded-2xl overflow-hidden" style={{ width: 64, height: 64, backgroundColor: `${color}10`, border: `2px solid ${color}30`, boxShadow: `0 0 20px ${color}15` }}>
+                            <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={60} />
+                          </div>
                           <div className="shrink-0 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
                             <div className="text-sm font-black leading-none" style={{ color: rankColor }}>{entry.score.toLocaleString()}</div>
                             <div className="text-[7px] font-black text-gray-600 uppercase tracking-wider mt-0.5">Rating</div>
