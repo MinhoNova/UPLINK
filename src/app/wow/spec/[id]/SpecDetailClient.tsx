@@ -397,62 +397,47 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
                 {data.bis.map((slot) => {
-                  const primary = slot.options?.[0];
-                  const secondary = slot.options?.[1];
-                  const allUsePrimary = primary && primary.pct >= 100;
                   return (
                     <div key={slot.slot}>
                       <div className="text-xs font-black text-white/90 uppercase tracking-[0.15em] mb-3">{slot.slot}</div>
-                      {primary && (
+                      {(slot.options || []).map((opt, idx) => (
                         <div
-                          className="flex items-start gap-3 cursor-pointer mb-2"
-                          onMouseEnter={(e) => handleItemHover(primary.itemId, e)}
+                          key={opt.itemId || idx}
+                          className="flex items-start gap-3 cursor-pointer mb-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.06] transition-colors"
+                          onMouseEnter={(e) => handleItemHover(opt.itemId, e)}
                           onMouseLeave={handleItemLeave}
                         >
-                          <BisItemIcon slot={slot.slot} color={color} itemId={primary.itemId} itemName={primary.name} size={56} />
+                          <BisItemIcon slot={slot.slot} color={color} itemId={opt.itemId} itemName={opt.name} size={56} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold leading-tight truncate" style={{ color: "#f97316" }}>{primary.name}</span>
+                              <span className="text-sm font-bold leading-tight truncate" style={{ color: idx === 0 ? "#f97316" : "#c084fc" }}>{opt.name}</span>
                               {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
                                 <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
-                                <div className="h-full rounded-md" style={{ width: `${primary.pct}%`, background: "linear-gradient(90deg, #f97316, #fb923c)" }} />
+                                <div className="h-full rounded-md" style={{ width: `${opt.pct}%`, background: idx === 0 ? "linear-gradient(90deg, #f97316, #fb923c)" : "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
                               </div>
-                              <span className="text-[10px] font-black shrink-0" style={{ color: "#f97316" }}>{primary.count}</span>
+                              <span className="text-[10px] font-black shrink-0" style={{ color: idx === 0 ? "#f97316" : "#c084fc" }}>{opt.count}</span>
                             </div>
                           </div>
                         </div>
-                      )}
-                      {secondary && !allUsePrimary && (
-                        <div
-                          className="flex items-start gap-3 cursor-pointer mb-2"
-                          onMouseEnter={(e) => handleItemHover(secondary.itemId, e)}
-                          onMouseLeave={handleItemLeave}
-                        >
-                          <BisItemIcon slot={slot.slot} color={color} itemId={secondary.itemId} itemName={secondary.name} size={56} />
-                          <div className="min-w-0 flex-1">
-                            <span className="text-sm font-bold leading-tight truncate block mb-1" style={{ color: "#c084fc" }}>{secondary.name}</span>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
-                                <div className="h-full rounded-md" style={{ width: `${secondary.pct}%`, background: "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
-                              </div>
-                              <span className="text-[10px] font-black shrink-0" style={{ color: "#c084fc" }}>{secondary.count}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+                      ))}
+                      <div className="space-y-2 mt-3 pt-3 border-t border-white/[0.06]">
+                        <div className="text-[9px] font-black text-gray-600 uppercase tracking-wider">Top Players</div>
                         {playerEntries.slice(0, 5).map((entry, i) => (
                           <Link
                             key={entry.name}
                             href={playerProfileUrl(entry.name, entry.realm, entry.region)}
-                            className="flex items-center gap-1 text-[9px] text-gray-500 hover:text-white transition-colors"
+                            className="flex items-center gap-3 cursor-pointer bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.06] transition-colors"
                           >
-                            <span className="font-black" style={{ color: RANK_COLORS[i] || "rgba(255,255,255,0.2)" }}>{i + 1}.</span>
-                            <span className="truncate max-w-[80px]">{entry.name}</span>
+                            <span className="text-sm font-black shrink-0 w-5 text-center" style={{ color: RANK_COLORS[i] || "rgba(255,255,255,0.2)" }}>{i + 1}</span>
+                            <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={40} clippedHeight={20} />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-bold truncate" style={{ color: RANK_COLORS[i] || "#fff" }}>{entry.name}</div>
+                              <div className="text-[9px] text-gray-500 truncate">{entry.realm} · {entry.region}{entry.score ? ` · ${entry.score.toLocaleString()}` : ''}</div>
+                            </div>
                           </Link>
                         ))}
                       </div>
