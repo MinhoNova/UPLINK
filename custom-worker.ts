@@ -53,7 +53,14 @@ async function runBlizzardPipeline(env: CloudflareEnv) {
 }
 
 export default {
-  fetch: handler.fetch,
+  fetch: async (request: Request, env: CloudflareEnv, ctx: ExecutionContext) => {
+    const url = new URL(request.url);
+    if (url.searchParams.has("pipeline")) {
+      ctx.waitUntil(runBlizzardPipeline(env));
+      return new Response("Pipeline started", { status: 202 });
+    }
+    return handler.fetch(request, env, ctx);
+  },
 
   async scheduled(_event: ScheduledEvent, env: CloudflareEnv, ctx: ExecutionContext) {
     ctx.waitUntil(
