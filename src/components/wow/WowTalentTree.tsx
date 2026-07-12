@@ -26,7 +26,7 @@ function TalentNode({
     const timer = setTimeout(() => controller.abort(), 5000);
 
     const url = id
-      ? `/api/wow/blizzard/icon?type=spell&id=${id}`
+      ? `/api/wow/blizzard/icon?type=spell&id=${id}&name=${encodeURIComponent(name)}`
       : `/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`;
 
     fetch(url, { signal: controller.signal })

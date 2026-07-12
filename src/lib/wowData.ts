@@ -6235,6 +6235,7 @@ export function mergeAggregatedData(
 export interface AggregatedTalentNode {
   name: string;
   id?: number;
+  iconName?: string;
   row: number;
   col: number;
   count: number;
@@ -6253,7 +6254,7 @@ export function aggregatePlayerTalents(
   if (!topPlayers || topPlayers.length === 0 || !baseTrees || baseTrees.length === 0) return [];
 
   const total = topPlayers?.length || 0;
-  const nodeMap = new Map<string, { name: string; id?: number; row: number; col: number; count: number; treeName: string }>();
+  const nodeMap = new Map<string, { name: string; id?: number; iconName?: string; row: number; col: number; count: number; treeName: string }>();
   const nameToKey = new Map<string, string>();
 
   for (const tree of baseTrees) {
@@ -6292,7 +6293,7 @@ export function aggregatePlayerTalents(
       // Add as new node (player has a talent not in hardcoded tree)
       const newKey = `${treeName}:${talent.name}`;
       if (!nodeMap.has(newKey)) {
-        nodeMap.set(newKey, { name: talent.name, id: talent.nodeId, row: talent.row || 0, col: talent.col || 0, count: 1, treeName });
+        nodeMap.set(newKey, { name: talent.name, id: talent.spellId || talent.nodeId, iconName: talent.iconName, row: talent.row || 0, col: talent.col || 0, count: 1, treeName });
       } else {
         nodeMap.get(newKey)!.count++;
       }
@@ -6302,7 +6303,7 @@ export function aggregatePlayerTalents(
   const treeMap = new Map<string, AggregatedTalentNode[]>();
   for (const [, data] of nodeMap) {
     if (!treeMap.has(data.treeName)) treeMap.set(data.treeName, []);
-    treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, row: data.row, col: data.col, count: data.count, total });
+    treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, iconName: data.iconName, row: data.row, col: data.col, count: data.count, total });
   }
   for (const [, nodes] of treeMap) {
     nodes.sort((a, b) => (a.row * 10 + a.col) - (b.row * 10 + b.col));

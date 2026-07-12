@@ -34,7 +34,7 @@ const GEAR_SLOT_ICONS: Record<string, any> = {
   Weapon: Swords, "Off-Hand": BookOpen,
 };
 
-function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSProperties }) {
+function ItemTooltip({ detail, users, style }: { detail: ItemDetail; users?: string[]; style?: React.CSSProperties }) {
   const qualityColor = QUALITY_COLORS[detail.quality?.id || 0] || "#ffffff";
   const qualityBorder = QUALITY_BORDERS[detail.quality?.id || 0] || "#ffffff30";
 
@@ -50,8 +50,20 @@ function ItemTooltip({ detail, style }: { detail: ItemDetail; style?: React.CSSP
           <div className="min-w-0 flex-1 pt-0.5">
             <div className="text-[13px] font-bold leading-tight truncate" style={{ color: qualityColor }}>{detail.name}</div>
             {detail.level > 0 && <div className="text-[11px] text-gray-400 mt-0.5">Item Level {detail.level}</div>}
+      </div>
+      {users && users.length > 0 && (
+        <div className="mt-1 rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-3 py-2">
+            <div className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Top Players Using This Item</div>
+            <div className="flex flex-wrap gap-1">
+              {users.map((name, i) => (
+                <span key={name} className="text-[11px] font-bold text-white/80 bg-white/5 px-1.5 py-0.5 rounded">{name}</span>
+              ))}
+            </div>
           </div>
         </div>
+      )}
+    </div>
         {detail.stats.length > 0 && (
           <>
             <div className="h-px mx-3.5" style={{ background: `linear-gradient(90deg, transparent, ${qualityColor}20, transparent)` }} />
@@ -155,6 +167,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const [page, setPage] = useState(1);
   const [aggData, setAggData] = useState<AggregatedSpecData | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<number | null>(null);
+  const [hoveredItemUsers, setHoveredItemUsers] = useState<string[]>([]);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
   const detailCache = useRef<Map<number, ItemDetail>>(new Map());
@@ -203,6 +216,11 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
   const handleItemHover = useCallback((itemId: number | undefined, e: React.MouseEvent) => {
     if (!itemId) return;
     setHoveredItemId(itemId);
+    const users = (aggData?.topPlayers || [])
+      .filter((p) => p.gear?.some((g) => g.itemId === itemId))
+      .map((p) => p.name)
+      .slice(0, 8);
+    setHoveredItemUsers(users);
     const cached = detailCache.current.get(itemId);
     if (cached) {
       setItemDetail(cached);
@@ -224,6 +242,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
   const handleItemLeave = useCallback(() => {
     setHoveredItemId(null);
+    setHoveredItemUsers([]);
     setItemDetail(null);
     setTooltipPos(null);
     if (fetchTimer.current) clearTimeout(fetchTimer.current);
@@ -413,30 +432,13 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           </div>
                         </div>
                       ))}
-                      <div className="space-y-2 mt-3 pt-3 border-t border-white/[0.06]">
-                        <div className="text-[9px] font-black text-gray-600 uppercase tracking-wider">Top Players</div>
-                        {playerEntries.slice(0, 5).map((entry, i) => (
-                          <Link
-                            key={entry.name}
-                            href={playerProfileUrl(entry.name, entry.realm, entry.region)}
-                            className="flex items-center gap-3 cursor-pointer bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.06] transition-colors"
-                          >
-                            <span className="text-sm font-black shrink-0 w-5 text-center" style={{ color: RANK_COLORS[i] || "rgba(255,255,255,0.2)" }}>{i + 1}</span>
-                            <CharacterAvatar name={entry.name} realm={entry.realm} region={entry.region} specIcon={spec.icon} classColor={color} size={40} clippedHeight={20} />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs font-bold truncate" style={{ color: RANK_COLORS[i] || "#fff" }}>{entry.name}</div>
-                              <div className="text-[9px] text-gray-500 truncate">{entry.realm} · {entry.region}{entry.score ? ` · ${entry.score.toLocaleString()}` : ''}</div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
                     </div>
                   );
                 })}
               </div>
               {hoveredItemId && itemDetail && tooltipPos && (
                 <div style={{ position: "fixed", top: tooltipPos.top, left: tooltipPos.left, zIndex: 9999 }}>
-                  <ItemTooltip detail={itemDetail} />
+                  <ItemTooltip detail={itemDetail} users={hoveredItemUsers} />
                 </div>
               )}
             </section>

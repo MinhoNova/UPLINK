@@ -4,39 +4,40 @@ import { useState, useEffect } from "react";
 import type { AggregatedTalentTree } from "@/lib/wowData";
 
 const iconCache = new Map<string, string>();
-const ICON_CACHE_TTL = 30 * 60 * 1000;
 
-function AggregatedNode({
-  name, id, count, total, color,
+function spellIconUrl(spellId: number): string | null {
+  const cached = iconCache.get(`spell:${spellId}`);
+  if (cached) return cached;
+  return null;
+}
+
+function AggregateNode({
+  name, id, iconName, count, total, color,
 }: {
-  name: string; id?: number; count: number; total: number; color: string;
+  name: string; id?: number; iconName?: string; count: number; total: number; color: string;
 }) {
   const [iconUrl, setIconUrl] = useState<string | null>(() => {
-    const cacheKey = id ? `spell:${id}` : `spell:${name}`;
-    return iconCache.get(cacheKey) || null;
+    if (iconName) return `https://render.worldofwarcraft.com/icons/56/${iconName}.jpg`;
+    if (id) return spellIconUrl(id);
+    return null;
   });
 
   useEffect(() => {
-    let cancelled = false;
-    const cacheKey = id ? `spell:${id}` : `spell:${name}`;
+    if (iconUrl || !id || iconName) return;
+    const cacheKey = `spell:${id}`;
     if (iconCache.has(cacheKey)) return;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    const url = id
-      ? `/api/wow/blizzard/icon?type=spell&id=${id}`
-      : `/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`;
-    fetch(url, { signal: controller.signal })
+    fetch(`/api/wow/blizzard/icon?type=spell&id=${id}&name=${encodeURIComponent(name)}`, { signal: controller.signal })
       .then(r => r.json())
       .then(d => {
-        clearTimeout(timer);
-        if (!cancelled && d.available && d.url) {
+        if (!controller.signal.aborted && d.available && d.url) {
           iconCache.set(cacheKey, d.url);
           setIconUrl(d.url);
         }
       })
-      .catch(() => { clearTimeout(timer); });
-    return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
-  }, [name, id]);
+      .catch(() => {});
+    return () => controller.abort();
+  }, [name, id, iconName, iconUrl]);
 
   const hot = count > 0;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -76,17 +77,15 @@ function AggregatedNode({
       >
         {name}
       </span>
-      {hot && (
-        <div
-          className="min-w-[18px] h-[14px] rounded flex items-center justify-center text-white text-[7px] font-black px-1 leading-none"
-          style={{ background: count >= total * 0.9 ? "#f97316" : count >= total * 0.5 ? "#e07b3a" : "#444" }}
-        >
-          {count}
-        </div>
-      )}
-      {!hot && (
-        <div className="min-w-[18px] h-[14px]" />
-      )}
+      <div
+        className="min-w-[18px] h-[14px] rounded flex items-center justify-center text-white text-[7px] font-black px-1 leading-none"
+        style={{
+          background: count >= total && total > 0 ? "#f97316" : count > 0 ? "#e07b3a" : "rgba(255,255,255,0.05)",
+          color: count > 0 ? "#fff" : "rgba(255,255,255,0.2)",
+        }}
+      >
+        {count}
+      </div>
     </div>
   );
 }
@@ -121,10 +120,11 @@ export default function WowAggregatedTalentTree({ trees, color }: { trees: Aggre
                       const node = nodesByRowCol.get(`${row}-${col}`);
                       if (!node) return <div key={`${row}-${col}`} className="w-10 h-10" />;
                       return (
-                        <AggregatedNode
+                        <AggregateNode
                           key={node.name || `${row}-${col}`}
                           name={node.name}
                           id={node.id}
+                          iconName={node.iconName}
                           count={node.count}
                           total={node.total}
                           color={color}

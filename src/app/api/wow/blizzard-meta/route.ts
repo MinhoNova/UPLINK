@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getKV, setKV, initTables } from "@/lib/db";
-import { fetchTopPlayersFromRaiderIO, fetchTopPlayersFromBlizzard, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
+import { fetchTopPlayersFromBlizzard, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
 import { aggregateBySpec } from "@/lib/blizzard/aggregator";
 import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 import type { MetaPipelineResult } from "@/lib/blizzard/types";
@@ -98,11 +98,10 @@ export async function GET(request: Request) {
       seasonSlug = season.slug;
     }
 
-    const raiderPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
     const blizzardPlayers = await fetchTopPlayersFromBlizzard(seasonSlug);
 
-    const mergedMap = new Map<string, typeof raiderPlayers[0]>();
-    for (const p of [...raiderPlayers, ...blizzardPlayers]) {
+    const mergedMap = new Map<string, typeof blizzardPlayers[0]>();
+    for (const p of blizzardPlayers) {
       const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
       const existing = mergedMap.get(key);
       if (!existing || p.score > existing.score) mergedMap.set(key, p);

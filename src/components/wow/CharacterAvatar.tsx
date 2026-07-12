@@ -42,7 +42,7 @@ export default function CharacterAvatar({
           const data = await res.json();
           if (data.available && data.render) {
             const r = data.render;
-            const url = free ? (r.mainRaw || r.main || r.inset || r.avatar)
+            const url = free ? (r.inset || r.avatar || r.mainRaw || r.main)
                        : (r.mainRaw || r.main || r.inset || r.avatar);
             if (url) {
               avatarCache.set(cacheKey, { url, ts: Date.now() });
@@ -71,7 +71,7 @@ export default function CharacterAvatar({
     return (
       <div className="relative shrink-0 overflow-hidden" style={{ width: size, height: h }}>
         {imgUrl ? (
-          <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ objectPosition: "center top" }} onError={() => setFailed(true)} />
+          <img src={imgUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition: "center 20%" }} onError={() => setFailed(true)} />
         ) : (
           <Image src={specIcon} alt="" width={size} height={size} className="shrink-0" style={{ backgroundColor: `${classColor}25`, boxShadow: `0 0 12px ${classColor}15` }} />
         )}

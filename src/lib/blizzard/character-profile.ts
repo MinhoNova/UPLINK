@@ -42,6 +42,7 @@ export interface CharacterProfile {
     name: string;
     selected: boolean;
     spellId?: number;
+    iconName?: string;
     row?: number;
     col?: number;
     treeName?: string;
@@ -165,25 +166,33 @@ export async function fetchCharacterProfile(
       const loadout = activeSpec.loadouts?.find((l: any) => l.is_active) || activeSpec.loadouts?.[0];
       if (!loadout) return profile;
 
-      const allTalentEntries: { id: number; rank: number; name: string; treeName: string; treeKind: string }[] = [];
+      const allTalentEntries: { id: number; rank: number; name: string; spellId?: number; iconName?: string; treeName: string; treeKind: string }[] = [];
 
       function getName(t: any, fallbackId: number): string {
         return t.tooltip?.talent?.name || t.tooltip?.spell_tooltip?.spell?.name || `Talent ${fallbackId}`;
       }
 
+      function getSpellId(t: any): number | undefined {
+        return t.tooltip?.talent?.id || t.tooltip?.spell_tooltip?.spell?.id || undefined;
+      }
+
+      function getIconName(t: any): string | undefined {
+        return t.tooltip?.talent?.icon || undefined;
+      }
+
       const classTreeName = loadout.selected_class_talent_tree?.name || "Class Talents";
       for (const t of loadout.selected_class_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), treeName: classTreeName, treeKind: "class" });
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), spellId: getSpellId(t), iconName: getIconName(t), treeName: classTreeName, treeKind: "class" });
       }
 
       const specTreeName = loadout.selected_spec_talent_tree?.name || (activeSpec.specialization?.name || "Spec Talents");
       for (const t of loadout.selected_spec_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), treeName: specTreeName, treeKind: "spec" });
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), spellId: getSpellId(t), iconName: getIconName(t), treeName: specTreeName, treeKind: "spec" });
       }
 
       const heroTreeName = loadout.selected_hero_talent_tree?.name || "Hero Talents";
       for (const t of loadout.selected_hero_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), treeName: heroTreeName, treeKind: "hero" });
+        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), spellId: getSpellId(t), iconName: getIconName(t), treeName: heroTreeName, treeKind: "hero" });
       }
 
       // Group by tree for row/col assignment
@@ -199,7 +208,8 @@ export async function fetchCharacterProfile(
           profile.talents.push({
             nodeId: entry.id,
             name: entry.name,
-            spellId: entry.id,
+            spellId: entry.spellId || entry.id,
+            iconName: entry.iconName,
             selected: entry.rank > 0,
             row: curRow,
             col: curCol,
