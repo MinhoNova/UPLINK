@@ -14,6 +14,13 @@ export async function GET(req: NextRequest) {
       if (iconUrl) {
         return NextResponse.json({ available: true, url: iconUrl });
       }
+      // Fall back to name search if ID lookup fails
+      if (name) {
+        const nameIcon = await fetchBlizzardIcon(name, type);
+        if (nameIcon) {
+          return NextResponse.json({ available: true, url: nameIcon });
+        }
+      }
       return NextResponse.json({ available: false });
     }
   }
