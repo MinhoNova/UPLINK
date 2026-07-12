@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
-import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents, type TalentTree } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
@@ -381,7 +381,8 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
           {/* ═══ POPULAR TALENTS ═══ */}
           {data && data.builds.length > 0 && (() => {
-            const aggregatedTrees = aggregatePlayerTalents(aggData?.topPlayers);
+            const baseTrees: TalentTree[] = data.builds[0]?.trees || [];
+            const aggregatedTrees = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
             if (aggregatedTrees.length === 0) return null;
             const totalPlayers = aggData?.topPlayers?.length || 0;
             return (
@@ -401,7 +402,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {data && data.bis.length > 0 && (
             <section>
               <h2 className="text-lg font-black text-white mb-1">{spec.name} BIS Gear{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, galaxy mauve = alternative.</p>
+              <p className="text-xs text-gray-500 mb-6">Gear rankings based on top 50 Mythic+ players. Orange = most popular, purple = alternative.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
                 {data.bis.map((slot) => {
                   return (
@@ -417,16 +418,16 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                           <BisItemIcon slot={slot.slot} color={color} itemId={opt.itemId} itemName={opt.name} size={56} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold leading-tight truncate" style={{ color: idx === 0 ? "#f97316" : "#c084fc" }}>{opt.name}</span>
+                              <span className="text-sm font-bold leading-tight truncate" style={{ color: idx === 0 ? "#f97316" : "#a335ee" }}>{opt.name}</span>
                               {(slot.slot === "Head" || slot.slot === "Shoulders" || slot.slot === "Chest" || slot.slot === "Hands" || slot.slot === "Legs") && (
                                 <span className="shrink-0 text-[6px] font-black text-yellow-500 bg-yellow-500/15 border border-yellow-500/30 px-1.5 py-0.5 rounded tracking-widest uppercase">Tier</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
-                                <div className="h-full rounded-md" style={{ width: `${opt.pct}%`, background: idx === 0 ? "linear-gradient(90deg, #f97316, #fb923c)" : "linear-gradient(90deg, #c084fc, #d8b4fe)" }} />
+                                <div className="flex-1 h-3 rounded-md bg-white/5 overflow-hidden">
+                                <div className="h-full rounded-md" style={{ width: `${opt.pct}%`, background: idx === 0 ? "linear-gradient(90deg, #f97316, #fb923c)" : "linear-gradient(90deg, #a335ee, #b060ff)" }} />
                               </div>
-                              <span className="text-[10px] font-black shrink-0" style={{ color: idx === 0 ? "#f97316" : "#c084fc" }}>{opt.count}</span>
+                              <span className="text-[10px] font-black shrink-0" style={{ color: idx === 0 ? "#f97316" : "#a335ee" }}>{opt.count}</span>
                             </div>
                           </div>
                         </div>

@@ -6249,11 +6249,25 @@ export interface AggregatedTalentTree {
 
 export function aggregatePlayerTalents(
   topPlayers: AggregatedSpecData['topPlayers'],
-  _baseTrees?: TalentTree[]
+  baseTrees?: TalentTree[]
 ): AggregatedTalentTree[] {
   if (!topPlayers || topPlayers.length === 0) return [];
 
   const total = topPlayers?.length || 0;
+
+  // Check if any player has talent data
+  const hasTalents = topPlayers.some((p) => p.talents && p.talents.length > 0);
+
+  // Fallback: no talent data in any player — use hardcoded base trees with zero counts
+  if (!hasTalents) {
+    if (!baseTrees || baseTrees.length === 0) return [];
+    return baseTrees.map((tree) => ({
+      name: tree.name,
+      nodes: tree.nodes.map((n) => ({
+        name: n.name, id: n.id, row: n.row, col: n.col, count: 0, total,
+      })),
+    }));
+  }
 
   // Collect all unique talents across all players, keyed by nodeId
   const talentMap = new Map<string, { name: string; id?: number; iconName?: string; spellId?: number; treeName: string; count: number; playerIndices: Set<number> }>();
@@ -6284,7 +6298,7 @@ export function aggregatePlayerTalents(
     }
   }
 
-  // Group by tree, sort by nodeId for consistent layout, assign sequential positions
+  // Group by tree, sort by id for consistent layout, assign sequential positions
   const byTree = new Map<string, { name: string; id?: number; iconName?: string; count: number }[]>();
   const seenNodeIds = new Map<string, Set<number>>();
 
@@ -6295,12 +6309,11 @@ export function aggregatePlayerTalents(
     }
     const treeNodes = byTree.get(entry.treeName)!;
     const seen = seenNodeIds.get(entry.treeName)!;
-    if (seen.has(entry.id || 0)) continue; // dedup by id within tree
+    if (seen.has(entry.id || 0)) continue;
     seen.add(entry.id || 0);
     treeNodes.push({ name: entry.name, id: entry.id, iconName: entry.iconName, count: entry.count });
   }
 
-  // Sort by id (spellId) for stable order, then assign positions
   const result: AggregatedTalentTree[] = [];
   for (const [treeName, nodes] of byTree) {
     nodes.sort((a, b) => (a.id || 0) - (b.id || 0));
