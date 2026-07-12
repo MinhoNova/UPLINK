@@ -6249,64 +6249,78 @@ export interface AggregatedTalentTree {
 
 export function aggregatePlayerTalents(
   topPlayers: AggregatedSpecData['topPlayers'],
-  baseTrees: TalentTree[]
+  _baseTrees?: TalentTree[]
 ): AggregatedTalentTree[] {
-  if (!topPlayers || topPlayers.length === 0 || !baseTrees || baseTrees.length === 0) return [];
+  if (!topPlayers || topPlayers.length === 0) return [];
 
   const total = topPlayers?.length || 0;
-  const nodeMap = new Map<string, { name: string; id?: number; iconName?: string; row: number; col: number; count: number; treeName: string }>();
-  const nameToKey = new Map<string, string>();
 
-  for (const tree of baseTrees) {
-    for (const node of tree.nodes) {
-      const key = `${tree.name}:${node.row || 0}-${node.col || 0}`;
-      if (!nodeMap.has(key)) {
-        nodeMap.set(key, { name: node.name, id: node.id, row: node.row || 0, col: node.col || 0, count: 0, treeName: tree.name });
-        const nk = `${tree.name}:${node.name}`;
-        if (!nameToKey.has(nk)) nameToKey.set(nk, key);
-      }
-    }
-  }
+  // Collect all unique talents across all players, keyed by nodeId
+  const talentMap = new Map<string, { name: string; id?: number; iconName?: string; spellId?: number; treeName: string; count: number; playerIndices: Set<number> }>();
 
-  for (const player of topPlayers) {
+  for (let pi = 0; pi < topPlayers.length; pi++) {
+    const player = topPlayers[pi];
     if (!player.talents) continue;
     for (const talent of player.talents) {
       if (!talent.selected) continue;
       const treeName = talent.treeName || "Talents";
-      const posKey = `${treeName}:${talent.row || 0}-${talent.col || 0}`;
-      if (nodeMap.has(posKey)) {
-        nodeMap.get(posKey)!.count++;
-        continue;
+      const key = `${treeName}:${talent.nodeId}`;
+      if (!talentMap.has(key)) {
+        talentMap.set(key, {
+          name: talent.name,
+          id: talent.spellId || talent.nodeId,
+          iconName: talent.iconName,
+          spellId: talent.spellId,
+          treeName,
+          count: 0,
+          playerIndices: new Set(),
+        });
       }
-      const nameKey = `${treeName}:${talent.name}`;
-      const mappedKey = nameToKey.get(nameKey);
-      if (mappedKey && nodeMap.has(mappedKey)) {
-        nodeMap.get(mappedKey)!.count++;
-        continue;
-      }
-      // Try matching by id across all nodes
-      let matched = false;
-      for (const [, v] of nodeMap) {
-        if (v.id && v.id === talent.nodeId && v.treeName === treeName) { v.count++; matched = true; break; }
-      }
-      if (matched) continue;
-      // Add as new node (player has a talent not in hardcoded tree)
-      const newKey = `${treeName}:${talent.name}`;
-      if (!nodeMap.has(newKey)) {
-        nodeMap.set(newKey, { name: talent.name, id: talent.spellId || talent.nodeId, iconName: talent.iconName, row: talent.row || 0, col: talent.col || 0, count: 1, treeName });
-      } else {
-        nodeMap.get(newKey)!.count++;
+      const entry = talentMap.get(key)!;
+      if (!entry.playerIndices.has(pi)) {
+        entry.playerIndices.add(pi);
+        entry.count++;
       }
     }
   }
 
-  const treeMap = new Map<string, AggregatedTalentNode[]>();
-  for (const [, data] of nodeMap) {
-    if (!treeMap.has(data.treeName)) treeMap.set(data.treeName, []);
-    treeMap.get(data.treeName)!.push({ name: data.name, id: data.id, iconName: data.iconName, row: data.row, col: data.col, count: data.count, total });
+  // Group by tree, sort by nodeId for consistent layout, assign sequential positions
+  const byTree = new Map<string, { name: string; id?: number; iconName?: string; count: number }[]>();
+  const seenNodeIds = new Map<string, Set<number>>();
+
+  for (const [, entry] of talentMap) {
+    if (!byTree.has(entry.treeName)) {
+      byTree.set(entry.treeName, []);
+      seenNodeIds.set(entry.treeName, new Set());
+    }
+    const treeNodes = byTree.get(entry.treeName)!;
+    const seen = seenNodeIds.get(entry.treeName)!;
+    if (seen.has(entry.id || 0)) continue; // dedup by id within tree
+    seen.add(entry.id || 0);
+    treeNodes.push({ name: entry.name, id: entry.id, iconName: entry.iconName, count: entry.count });
   }
-  for (const [, nodes] of treeMap) {
-    nodes.sort((a, b) => (a.row * 10 + a.col) - (b.row * 10 + b.col));
+
+  // Sort by id (spellId) for stable order, then assign positions
+  const result: AggregatedTalentTree[] = [];
+  for (const [treeName, nodes] of byTree) {
+    nodes.sort((a, b) => (a.id || 0) - (b.id || 0));
+    const aggNodes: AggregatedTalentNode[] = [];
+    let row = 1, col = 1;
+    for (const node of nodes) {
+      aggNodes.push({
+        name: node.name,
+        id: node.id,
+        iconName: node.iconName,
+        row,
+        col,
+        count: node.count,
+        total,
+      });
+      col = col === 1 ? 2 : 1;
+      if (col === 1) row++;
+    }
+    result.push({ name: treeName, nodes: aggNodes });
   }
-  return Array.from(treeMap.entries()).map(([name, nodes]) => ({ name, nodes }));
+
+  return result;
 }
