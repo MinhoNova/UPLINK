@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
-import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents, type TalentTree } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
@@ -381,7 +381,8 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
           {/* ═══ POPULAR TALENTS ═══ */}
           {data && data.builds.length > 0 && (() => {
-            const baseTrees = data.builds[0]?.trees || [];
+            const hardcodedData = getSpecData(id, !!ptr);
+            const baseTrees: TalentTree[] = hardcodedData?.builds[0]?.trees || data.builds[0]?.trees || [];
             const aggregatedTrees = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
             if (aggregatedTrees.length === 0) return null;
             const totalPlayers = aggData?.topPlayers?.length || 0;
