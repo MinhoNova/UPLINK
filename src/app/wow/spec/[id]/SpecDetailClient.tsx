@@ -9,6 +9,7 @@ import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import WowAggregatedTalentTree from "@/components/wow/WowAggregatedTalentTree";
+import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const RANK_COLORS = ["#ff6d00", "#a335ee", "#a0a0a0"];
@@ -379,6 +380,33 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               </>
             )}
           </section>
+
+          {/* ═══ TOP PLAYER BUILDS ═══ */}
+          {data && data.builds.length > 0 && (
+            <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
+              <h2 className="text-lg font-black text-white mb-1">Top Player Builds{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
+              <p className="text-xs text-gray-500 mb-6">Individual talent trees from the highest-rated {spec.name} players.</p>
+              <div className="space-y-4">
+                {data.builds.map((build, i) => (
+                  <div key={i} className="rounded-2xl p-4 border border-white/5 bg-white/[0.03] hover:border-white/10 transition">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black text-white shrink-0" style={{ backgroundColor: `${color}20` }}>{build.player.charAt(0)}</div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-white">{build.player}</span>
+                            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${build.type === "raid" ? "bg-yellow-500/10 text-yellow-400" : "bg-[#ff007f]/10 text-[#ff007f]"}`}>{build.type === "raid" ? "Raid" : "Mythic+"}</span>
+                          </div>
+                          <span className="text-[9px] text-gray-500">{build.class} · {build.region} · Score: {build.score.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <WowTalentTreeDisplay trees={build.trees} color={color} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* ═══ POPULAR TALENTS ═══ */}
           {data && data.builds.length > 0 && (() => {
