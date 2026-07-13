@@ -6256,7 +6256,7 @@ export function mergeAggregatedData(
           region: p.region,
           score: p.score,
           type: "mythic+" as const,
-          talentString: "",
+          talentString: p.talentLoadout || "",
           trees,
         };
       })

@@ -1,5 +1,5 @@
 import type { AggregatedSpecData, AggregatedCharacter, PlayerListing } from "./types";
-import { fetchCharacterProfile } from "./character-profile";
+import { fetchCharacterProfile, fetchCharacterStats } from "./character-profile";
 
 interface TopPlayer {
   name: string;
@@ -39,21 +39,46 @@ export async function aggregateBySpec(
   for (let i = 0; i < allFetches.length; i += BATCH_SIZE) {
     const batch = allFetches.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
-      batch.map(({ player }) =>
-        fetchCharacterProfile(player.name, player.realm, player.region, env, player.classId)
-      )
+      batch.map(async ({ player }) => {
+        const profile = await fetchCharacterProfile(player.name, player.realm, player.region, env, player.classId);
+        if (profile) return profile;
+        // Retry once on failure
+        return fetchCharacterProfile(player.name, player.realm, player.region, env, player.classId);
+      })
     );
     profileResults.push(...results);
   }
 
-  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
+  // Also fetch stats for successful profiles (batch)
+  const statsResults: (PromiseSettledResult<any> | null)[] = allFetches.map(() => null);
+  const statsBatch = allFetches.filter((_, i) => profileResults[i]?.status === "fulfilled" && profileResults[i]?.value);
+  if (statsBatch.length > 0) {
+    for (let i = 0; i < statsBatch.length; i += BATCH_SIZE) {
+      const batch = statsBatch.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(({ player }) => fetchCharacterStats(player.name, player.realm, player.region))
+      );
+      for (let j = 0; j < results.length; j++) {
+        const origIdx = allFetches.indexOf(statsBatch[i + j]);
+        if (origIdx >= 0) statsResults[origIdx] = results[j];
+      }
+    }
+  }
+
+  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talentLoadout?: string; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string; itemLevel?: number }[]; gems: string[]; stats: {} }[]>();
 
   let idx = 0;
   for (const { specId, player } of allFetches) {
-    const profResult = profileResults[idx++];
+    const profResult = profileResults[idx];
+    const statsResult = statsResults[idx];
+    idx++;
     if (profResult.status !== "fulfilled" || !profResult.value) continue;
+    const profileData = profResult.value;
+    if (statsResult?.status === "fulfilled" && statsResult.value) {
+      profileData.stats = statsResult.value;
+    }
     if (!profilesBySpec.has(specId)) profilesBySpec.set(specId, []);
-    profilesBySpec.get(specId)!.push({ player, ...profResult.value });
+    profilesBySpec.get(specId)!.push({ player, ...profileData });
   }
 
   // Build player listings from ALL top players (Raider.IO data, no Blizzard profile needed)
@@ -176,11 +201,8 @@ export async function aggregateBySpec(
         .map(([name, count]) => ({ name, count, pct: pct(count, total) })),
     }));
 
-    // Aggregate stat priority from first 5 primaries if available
-    const statPriority = deriveStatPriority(profiles.map((p) => ({
-      name: p.player.name,
-      score: p.player.score,
-    })));
+    // Aggregate stat priority from real character stats
+    const statPriority = deriveStatPriority(profiles);
 
     // Top players list
     const topPlayers: AggregatedCharacter[] = profiles.map((p) => ({
@@ -192,7 +214,8 @@ export async function aggregateBySpec(
       score: p.mythicPlusRating || p.player.score,
       race: p.player.race,
       talents: p.talents,
-      gear: p.gear.map((g) => ({ slot: g.slot, name: g.name, itemId: g.itemId })),
+      talentLoadout: p.talentLoadout,
+      gear: p.gear.map((g) => ({ slot: g.slot, name: g.name, itemId: g.itemId, itemLevel: g.itemLevel })),
       gems: p.gems,
       enchants: p.gear.filter((g) => g.enchant).map((g) => ({ slot: g.slot, name: g.enchant! })),
       statPriority,
@@ -213,8 +236,35 @@ export async function aggregateBySpec(
   return result;
 }
 
-function deriveStatPriority(characters: { name: string; score: number }[]): string[] {
-  // If we can't get actual stats from Blizzard API (separate call needed),
-  // return a reasonable default. The stats endpoint is optional.
-  return ["Intellect", "Haste", "Mastery", "Critical Strike", "Versatility"];
+function deriveStatPriority(profiles: any[]): string[] {
+  const statOrder = ["strength", "agility", "intellect", "haste", "criticalStrike", "mastery", "versatility"];
+  const statValues: Record<string, number[]> = {};
+  for (const key of statOrder) statValues[key] = [];
+
+  for (const p of profiles) {
+    if (!p.stats) continue;
+    for (const key of statOrder) {
+      const val = p.stats[key];
+      if (val != null) statValues[key].push(val);
+    }
+  }
+
+  // Compute average for each stat, sort descending, return top 3-5 non-primary stats
+  const primaryMap: Record<string, string> = { "death-knight": "strength", "demon-hunter": "agility", "druid": "intellect", "evoker": "intellect", "hunter": "agility", "mage": "intellect", "monk": "intellect", "paladin": "strength", "priest": "intellect", "rogue": "agility", "shaman": "intellect", "warlock": "intellect", "warrior": "strength" };
+  const classId = profiles[0]?.player?.classId;
+  const primary = primaryMap[classId || ""] || "intellect";
+
+  const avgs: { key: string; avg: number; label: string }[] = [];
+  for (const [key, vals] of Object.entries(statValues)) {
+    if (vals.length === 0) continue;
+    if (key === primary) continue; // skip primary stat
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const label = key === "criticalStrike" ? "Critical Strike" : key.charAt(0).toUpperCase() + key.slice(1);
+    avgs.push({ key, avg, label });
+  }
+
+  if (avgs.length === 0) return ["Intellect", "Haste", "Mastery", "Critical Strike", "Versatility"];
+
+  avgs.sort((a, b) => b.avg - a.avg);
+  return avgs.map(a => a.label);
 }

@@ -116,8 +116,9 @@ export interface AggregatedCharacter {
   classId: string;
   score: number;
   race?: string;
+  talentLoadout?: string;
   talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[];
-  gear: { slot: string; name: string; itemId: number }[];
+  gear: { slot: string; name: string; itemId: number; itemLevel?: number }[];
   gems: string[];
   enchants: { slot: string; name: string }[];
   statPriority: string[];
@@ -125,7 +126,7 @@ export interface AggregatedCharacter {
 
 export interface AggregatedSpecData {
   totalPlayers: number;
-  bis: { slot: string; names: { name: string; count: number; pct: string }[] }[];
+  bis: { slot: string; names: { name: string; count: number; pct: string; itemId?: number }[] }[];
   enchants: { slot: string; names: { name: string; count: number; pct: string }[] }[];
   gems: { name: string; count: number; pct: string }[];
   statPriority: string[];

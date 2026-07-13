@@ -18,6 +18,7 @@ function sanitizeName(name: string): string {
 
 const itemNameCache = new Map<number, string>();
 const treeNodeCache = new Map<number, Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>>();
+const spellMediaCache = new Map<number, string>();
 
 async function fetchItemName(itemId: number, env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }): Promise<string | null> {
   if (itemNameCache.has(itemId)) return itemNameCache.get(itemId)!;
@@ -55,6 +56,7 @@ export interface CharacterProfile {
     name: string;
     itemId: number;
     enchant?: string;
+    itemLevel?: number;
   }[];
   gems: string[];
   stats: {
@@ -67,6 +69,7 @@ export interface CharacterProfile {
     versatility?: number;
   };
   mythicPlusRating?: number;
+  talentLoadout?: string;
 }
 
 const GEAR_SLOT_MAP: Record<string, string> = {
@@ -144,6 +147,7 @@ export async function fetchCharacterProfile(
           name: itemName,
           itemId: item.item?.id || 0,
           enchant: item.enchantments?.[0]?.display_string || item.enchant?.display_string || undefined,
+          itemLevel: item.item?.level || item.level,
         });
 
         // Extract gems
@@ -170,7 +174,32 @@ export async function fetchCharacterProfile(
       const loadout = activeSpec.loadouts?.find((l: any) => l.is_active) || activeSpec.loadouts?.[0];
       if (!loadout) return profile;
 
+      // Extract talent import/export string
+      profile.talentLoadout = loadout.text || loadout.talent_loadout_code || "";
+
       const allTalentEntries: { id: number; rank: number; name: string; spellId?: number; iconName?: string; row?: number; col?: number; treeName: string; treeKind: string }[] = [];
+
+      async function fetchSpellIcon(spellId: number): Promise<string | null> {
+        if (spellMediaCache.has(spellId)) return spellMediaCache.get(spellId)! || null;
+        try {
+          const res = await fetch(`https://us.api.blizzard.com/data/wow/media/spell/${spellId}?namespace=static-us&locale=en_US`, {
+            headers: { Authorization: `Bearer ${token}` },
+            next: { revalidate: 86400 },
+          });
+          if (res.ok) {
+            const mediaData: any = await res.json();
+            const iconAsset = mediaData.assets?.find((a: any) => a.key === "icon");
+            if (iconAsset?.value) {
+              const match = iconAsset.value.match(/([^/]+)\.(jpg|png)$/);
+              const iconName = match ? match[1] : null;
+              if (iconName) spellMediaCache.set(spellId, iconName);
+              return iconName;
+            }
+          }
+        } catch { /* ignore */ }
+        spellMediaCache.set(spellId, "");
+        return null;
+      }
 
       async function fetchTreeNodeMap(treeId: number): Promise<Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>> {
         if (treeNodeCache.has(treeId)) return treeNodeCache.get(treeId)!;
@@ -196,6 +225,21 @@ export async function fetchCharacterProfile(
                 });
               }
             }
+
+            // Batch resolve icons via spell media API for all spell IDs missing icon
+            const missingIcon = [...nodeMap.values()].filter(n => n.spellId && !n.icon);
+            const uniqueSpellIds = [...new Set(missingIcon.map(n => n.spellId!))];
+            if (uniqueSpellIds.length > 0) {
+              const results = await Promise.allSettled(uniqueSpellIds.map(id => fetchSpellIcon(id)));
+              for (let i = 0; i < uniqueSpellIds.length; i++) {
+                const iconName = results[i].status === "fulfilled" ? results[i].value : null;
+                if (iconName) {
+                  for (const node of nodeMap.values()) {
+                    if (node.spellId === uniqueSpellIds[i]) node.icon = iconName;
+                  }
+                }
+              }
+            }
           }
         } catch {
           // ignore
@@ -215,7 +259,7 @@ export async function fetchCharacterProfile(
 
       const treeNodeMaps = new Map<string, Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>>();
       await Promise.all(treeDefs.map(async (td) => {
-        const nodeMap = await fetchTreeNodeMap(td.id, td.kind);
+        const nodeMap = await fetchTreeNodeMap(td.id);
         if (nodeMap.size > 0) treeNodeMaps.set(td.kind, nodeMap);
       }));
 
@@ -325,7 +369,7 @@ export async function fetchCharacterProfile(
     if (mythicRes?.ok) {
       const mythicData = await mythicRes.json();
       // Try seasons array (current season first), fall back to top-level current_mythic_rating
-      const seasons = mythicData.seasons || mythicData.mything_keystone_seasons || [];
+      const seasons = mythicData.seasons || mythicData.mythic_keystone_seasons || [];
       const currentSeason = seasons[0];
       if (currentSeason?.best_runs || currentSeason?.mythic_rating) {
         const rating = currentSeason.mythic_rating?.rating;
