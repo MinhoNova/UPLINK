@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles } from "lucide-react";
-import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents, type TalentTree } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents, type TalentTree, type AggregatedTalentTree } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
-import WowAggregatedTalentTree from "@/components/wow/WowAggregatedTalentTree";
+import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
 const RANK_COLORS = ["#ff6d00", "#a335ee", "#a0a0a0"];
@@ -383,18 +383,29 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
           {/* ═══ POPULAR TALENTS ═══ */}
           {data && data.builds.length > 0 && (() => {
             const baseTrees: TalentTree[] = data.builds[0]?.trees || [];
-            const aggregatedTrees = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
+            const aggregatedTrees: AggregatedTalentTree[] = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
             if (aggregatedTrees.length === 0) return null;
             const totalPlayers = aggData?.topPlayers?.length || 0;
+            const displayTrees: TalentTree[] = aggregatedTrees.map(t => ({
+              name: t.name,
+              nodes: t.nodes.map(n => ({
+                name: n.name,
+                id: n.id,
+                iconName: n.iconName,
+                row: n.row,
+                col: n.col,
+                selected: n.count > 0,
+              })),
+            }));
             return (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">Popular Talents{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
               <p className="text-xs text-gray-500 mb-4">
                 {totalPlayers > 0
-                  ? `Talent popularity from top ${totalPlayers} ${spec.name} M+ players — orange = most selected, dim = rarely used.`
+                  ? `Talent popularity from top ${totalPlayers} ${spec.name} M+ players — most picked talents shown.`
                   : `Talent guide for ${spec.name} — all recommended picks shown.`}
               </p>
-              <WowAggregatedTalentTree trees={aggregatedTrees} color={color} />
+              <WowTalentTreeDisplay trees={displayTrees} color={color} />
             </section>
             );
           })()}
