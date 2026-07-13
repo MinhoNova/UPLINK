@@ -329,10 +329,10 @@ export async function fetchCharacterProfile(
       const currentSeason = seasons[0];
       if (currentSeason?.best_runs || currentSeason?.mythic_rating) {
         const rating = currentSeason.mythic_rating?.rating;
-        if (rating != null && rating > 0) profile.mythicPlusRating = rating;
+        if (rating != null && rating > 0) profile.mythicPlusRating = Math.round(rating);
       }
       if (!profile.mythicPlusRating && mythicData.current_mythic_rating?.rating) {
-        profile.mythicPlusRating = mythicData.current_mythic_rating.rating;
+        profile.mythicPlusRating = Math.round(mythicData.current_mythic_rating.rating);
       }
     }
 

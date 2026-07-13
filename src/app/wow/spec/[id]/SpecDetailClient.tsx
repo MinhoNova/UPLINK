@@ -195,12 +195,12 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
   const playerEntries: ({ name: string; realm: string; region: string; score: number; specId: string; classId: string; faction: string; race?: string; rank: number; itemLevel?: number })[] =
     (aggData?.players || [])
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => Math.round(b.score) - Math.round(a.score) || a.name.localeCompare(b.name))
       .map((p, i) => ({
         name: p.name,
         realm: p.realm,
         region: p.region,
-        score: p.score,
+        score: Math.round(p.score),
         specId: p.specId || id,
         classId: p.classId,
         faction: "horde",

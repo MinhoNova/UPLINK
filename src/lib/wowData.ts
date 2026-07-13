@@ -6297,7 +6297,7 @@ export function aggregatePlayerTalents(
     return baseTrees.map((tree) => ({
       name: tree.name,
       nodes: tree.nodes.map((n) => ({
-        name: n.name, id: n.id, row: n.row, col: n.col, count: 0, total,
+        name: n.name, id: n.id, iconName: n.iconName, row: n.row, col: n.col, count: 0, total,
       })),
     }));
   }
@@ -6377,7 +6377,7 @@ export function aggregatePlayerTalents(
         aggNodes.push({
           name: match?.name || baseNode.name,
           id: baseNode.id,
-          iconName: match?.iconName,
+          iconName: match?.iconName || baseNode.iconName,
           row: baseNode.row,
           col: baseNode.col,
           count: match?.count || 0,
