@@ -6364,7 +6364,12 @@ export function aggregatePlayerTalents(
   for (const [treeName, nodes] of byTree) {
     if (nodes.some(n => n.treeKind === "class")) continue;
 
+    // Skip trees that aren't the current spec and aren't hero talents
+    // (e.g. Unholy/Frost on a Blood DK page)
+    const isHeroTree = nodes.every(n => n.treeKind === "hero");
     const baseTree = baseTrees?.find(t => t.name === treeName);
+    if (!isHeroTree && !baseTree) continue;
+
     if (baseTree && baseTree.nodes.length > 0) {
       // Use base tree layout: match by spellId, overlay aggregated counts
       const countById = new Map<number, { name: string; iconName?: string; count: number }>();

@@ -237,6 +237,7 @@ export default function PlayerProfileClient({
               if (playerTalents) {
                 const treeMap = new Map<string, TalentTree>();
                 for (const t of playerTalents) {
+                  if (t.treeKind === "class") continue;
                   const treeName = t.treeName || "Talents";
                   if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
                   treeMap.get(treeName)!.nodes.push({
