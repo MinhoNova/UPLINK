@@ -8,6 +8,14 @@ export const metadata = {
   description:
     "Live feed of Blizzard blue posts — class tuning, hotfixes, PTR notes, and developer updates aggregated from official Blizzard forums for World of Warcraft.",
   alternates: { canonical: `${siteUrl}/wow/pipeline` },
+  openGraph: {
+    title: "The Pipeline — WoW Blue Tracker & Blizzard Class Tuning Feed",
+    description: "Live aggregation of Blizzard blue posts: class tuning, hotfixes, PTR notes, and developer updates for World of Warcraft.",
+    url: `${siteUrl}/wow/pipeline`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", title: "The Pipeline — WoW Blue Tracker & Blizzard Class Tuning Feed", description: "Live feed of Blizzard blue posts — class tuning, hotfixes, PTR notes, and developer updates.", images: [`${siteUrl}/og.png`] },
 };
 
 export default function PipelinePage() {

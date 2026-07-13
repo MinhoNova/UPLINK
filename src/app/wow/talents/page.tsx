@@ -8,6 +8,14 @@ export const metadata = {
   description:
     "Browse all World of Warcraft spec talent builds. Filter by role, class, or search by name. BIS gear, enchants, gems, and talent trees for every spec.",
   alternates: { canonical: `${siteUrl}/wow/talents` },
+  openGraph: {
+    title: "WoW Talents — All Spec Talent Builds for Raid & Mythic+",
+    description: "Browse all World of Warcraft spec talent builds. Filter by role, class, or search by name. BIS gear, enchants, gems, and talent trees.",
+    url: `${siteUrl}/wow/talents`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", title: "WoW Talents — All Spec Talent Builds for Raid & Mythic+", description: "Browse all World of Warcraft spec talent builds. Filter by role, class, or search by name.", images: [`${siteUrl}/og.png`] },
 };
 
 export default function TalentsPage() {

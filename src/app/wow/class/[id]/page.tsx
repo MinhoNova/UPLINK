@@ -70,6 +70,14 @@ export async function generateMetadata({
     title: `${className} Specs — ${specNames} Talent Builds, BIS Gear & Enchants | WoWLFG`,
     description: `All ${className} specs for Mythic+ and Raid. ${specNames}. BIS gear, enchants, gems, stat priorities, and talent builds for every ${className} specialization.`,
     alternates: { canonical: `${siteUrl}/wow/class/${id}` },
+    openGraph: {
+      title: `${className} Specs — ${specNames} Talent Builds & BIS Gear`,
+      description: `All ${className} specs for Mythic+ and Raid. ${specNames}. BIS gear, enchants, gems, stat priorities, and talent builds.`,
+      url: `${siteUrl}/wow/class/${id}`,
+      siteName: "WoWLFG — UPLINK",
+      images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+    },
+    twitter: { card: "summary_large_image", title: `${className} Specs — ${specNames} Talent Builds & BIS Gear`, description: `All ${className} specs for Mythic+. ${specNames}. BIS gear, enchants, gems, stat priorities.`, images: [`${siteUrl}/og.png`] },
   };
 }
 

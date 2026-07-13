@@ -7,23 +7,25 @@ import { Calendar, Shield, Swords, HeartHandshake, ChevronRight, ExternalLink, C
 
 const siteUrl = getSiteUrl();
 
+export const metadata: Metadata = {
+  title: "WoW PTR — Patch 11.2 Class Changes, New Dungeons & Updates | WoWLFG",
+  description: "World of Warcraft PTR patch notes, class tuning changes, new dungeon previews, and upcoming features for The War Within on the Public Test Realm.",
+  alternates: { canonical: `${siteUrl}/wow/ptr` },
+  openGraph: {
+    title: "WoW PTR — Patch 11.2 Class Changes, New Dungeons & Updates",
+    description: "World of Warcraft PTR patch notes, class tuning changes, new dungeon previews, and upcoming features.",
+    url: `${siteUrl}/wow/ptr`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", title: "WoW PTR — Patch 11.2 Class Changes, New Dungeons & Updates", description: "World of Warcraft PTR patch notes, class tuning changes, and upcoming features.", images: [`${siteUrl}/og.png`] },
+};
+
 const ROLE_ORDER = ["dps", "healer", "tank"] as const;
 const ROLE_META: Record<string, { label: string; icon: typeof Swords; color: string }> = {
   dps: { label: "DPS", icon: Swords, color: "#ff4444" },
   healer: { label: "Healer", icon: HeartHandshake, color: "#00cc66" },
   tank: { label: "Tank", icon: Shield, color: "#4488ff" },
-};
-
-export const metadata: Metadata = {
-  title: "PTR Season 2 — Midnight Tier List & Spec Previews | WoWLFG",
-  description:
-    "PTR Season 2 (Midnight) preview for all 40 WoW specs. Projected tier list, talent builds, BIS gear, enchants, gems for PTR S2. Plan your main for the next Mythic+ season.",
-  keywords: "ptr s2, wow ptr, ptr season 2, midnight ptr, ptr talents, wow ptr talents, ptr tier list, ptr s2 talents, mythic plus ptr, ptr season 2 talents, wow ptr s2 build",
-  openGraph: {
-    title: "PTR Season 2 — Midnight Tier List & Spec Previews | WoWLFG",
-    description: "PTR Season 2 preview for all 40 WoW specs. Projected tier list, talent builds, BIS gear, enchants, gems. Plan your main for Midnight Season 2 Mythic+.",
-  },
-  alternates: { canonical: `${siteUrl}/wow/ptr` },
 };
 
 interface S2Dungeon {

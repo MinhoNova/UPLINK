@@ -10,6 +10,14 @@ export const metadata: Metadata = {
   description:
     "World of Warcraft class tier lists, spec rankings, meta builds, and performance data. Browse by class — Death Knight, Demon Hunter, Druid, and all 13 classes with BIS gear, enchants, and talent builds.",
   alternates: { canonical: `${siteUrl}/wow` },
+  openGraph: {
+    title: "WoW Tools & Class Guides — Tier Lists, Spec Builds & Rankings",
+    description: "World of Warcraft class tier lists, spec rankings, meta builds, and performance data.",
+    url: `${siteUrl}/wow`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", title: "WoW Tools & Class Guides — Tier Lists, Spec Builds & Rankings", description: "World of Warcraft class tier lists, spec rankings, meta builds, and performance data.", images: [`${siteUrl}/og.png`] },
 };
 
 function ClassCard({ classId }: { classId: string }) {

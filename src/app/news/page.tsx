@@ -1,4 +1,22 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/siteUrl";
+
+const siteUrl = getSiteUrl();
+
+export const metadata: Metadata = {
+  title: "WoW News — Leveling Guides & Dungeon Strategies | WoWLFG",
+  description: "World of Warcraft news covering leveling methods, XP farms, dungeon guides, Mythic+ route changes, affixes, and class updates for The War Within.",
+  alternates: { canonical: `${siteUrl}/news` },
+  openGraph: {
+    title: "WoW News — Leveling Guides & Dungeon Strategies",
+    description: "World of Warcraft news covering leveling methods, dungeon guides, Mythic+ route changes, and class updates for The War Within.",
+    url: `${siteUrl}/news`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", title: "WoW News — Leveling Guides & Dungeon Strategies", description: "World of Warcraft news covering leveling methods, dungeon guides, and Mythic+ updates.", images: [`${siteUrl}/og.png`] },
+};
 
 export default function NewsLanding() {
   return (

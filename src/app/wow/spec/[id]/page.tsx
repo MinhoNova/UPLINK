@@ -54,7 +54,11 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
     openGraph: {
       title: `${spec.name} Talents & Build — WoW Meta${ptr ? " (PTR S2)" : ""} | UPLINK`,
       description: generateMetaDescription(spec, pipelineData, ptr).slice(0, 200),
+      url: `${siteUrl}/wow/spec/${id}${ptr ? "?ptr=1" : ""}`,
+      siteName: "WoWLFG — UPLINK",
+      images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
     },
+    twitter: { card: "summary_large_image", title: `${spec.name} Talents & Build — WoW Meta${ptr ? " (PTR S2)" : ""}`, description: generateMetaDescription(spec, pipelineData, ptr).slice(0, 200), images: [`${siteUrl}/og.png`] },
     alternates: { canonical: `${siteUrl}/wow/spec/${id}${ptr ? "?ptr=1" : ""}` },
   };
 }

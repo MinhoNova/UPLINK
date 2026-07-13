@@ -71,18 +71,17 @@ export default {
         if (minute % 15 !== 0) return;
         console.log(`[cron] pipeline start`);
 
-        try {
-          await runBlizzardPipeline(env);
-          if (env.CRON_SECRET) {
-            const baseUrl = `https://${env.NEXT_PUBLIC_SITE_URL || "uplinklfg.com"}`;
-            await fetch(`${baseUrl}/api/news/auto-generate`, {
-              method: "POST", headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
-              signal: AbortSignal.timeout(30000),
-            }).catch(() => {});
-          }
-        } catch (e) {
-          console.error("[pipeline] error:", e);
-        }
+        // Run pipeline (may fail — don't block auto-news)
+        runBlizzardPipeline(env).catch((e) => console.error("[pipeline] error:", e));
+
+        // Always attempt auto-news (RSS + meta report)
+        const siteUrl = env.NEXT_PUBLIC_SITE_URL || "https://uplinklfg.com";
+        const baseUrl = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
+        fetch(`${baseUrl}/api/news/auto-generate`, {
+          method: "POST",
+          ...(env.CRON_SECRET ? { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } } : {}),
+          signal: AbortSignal.timeout(30000),
+        }).catch((e) => console.error("[auto-news] fetch error:", e));
 
         // Auto-role sync (background, with timeout)
         try {

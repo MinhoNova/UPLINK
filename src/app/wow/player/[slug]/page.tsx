@@ -21,6 +21,14 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     title: `${name} - Mythic+ Profile | WoWLFG`,
     description: `${name}${realm ? ` (${realm}-${region})` : ""} Mythic+ profile. Talents, BIS gear, enchants, gems, and stat priority.`,
     alternates: { canonical: `${siteUrl}/wow/player/${slug}` },
+    openGraph: {
+      title: `${name} - Mythic+ Profile`,
+      description: `${name}${realm ? ` (${realm}-${region})` : ""} Mythic+ profile. Talents, BIS gear, enchants, gems, and stat priority.`,
+      url: `${siteUrl}/wow/player/${slug}`,
+      siteName: "WoWLFG — UPLINK",
+      images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+    },
+    twitter: { card: "summary_large_image", title: `${name} - Mythic+ Profile`, description: `${name}${realm ? ` (${realm}-${region})` : ""} Mythic+ profile. Talents, BIS gear, enchants, gems.`, images: [`${siteUrl}/og.png`] },
   };
 }
 

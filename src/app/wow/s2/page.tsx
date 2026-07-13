@@ -25,7 +25,10 @@ export const metadata = {
     description:
       "Projected WoW spec rankings for Midnight Season 2 Mythic+. PTR-powered tier list with S/A/B/C/D/F tiers for all 40 specs.",
     url: `${siteUrl}/wow/s2`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
   },
+  twitter: { card: "summary_large_image", title: "Midnight Season 2 Tier List — WoW PTR S2 Meta Specs", description: "Projected WoW spec rankings for Midnight Season 2 Mythic+. PTR-powered tier list with S/A/B/C/D/F tiers for all 40 specs.", images: [`${siteUrl}/og.png`] },
 };
 
 export default function S2Page() {

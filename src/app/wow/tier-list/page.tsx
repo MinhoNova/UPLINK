@@ -8,6 +8,14 @@ export const metadata = {
   description:
     "Live WoW spec rankings for Mythic+. See which specs top the charts with real-time scores, highest keys, and dynamic tier assignments from Raider.IO data",
   alternates: { canonical: `${siteUrl}/wow/tier-list` },
+  openGraph: {
+    title: "WoW Meta Classes Rankings — Mythic+ Spec Tier List S/A/B/C/D/F",
+    description: "Live WoW spec rankings for Mythic+. See which specs top the charts with real-time scores, highest keys, and dynamic tier assignments.",
+    url: `${siteUrl}/wow/tier-list`,
+    siteName: "WoWLFG — UPLINK",
+    images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", title: "WoW Meta Classes Rankings — Mythic+ Spec Tier List", description: "Live WoW spec rankings for Mythic+. S/A/B/C/D/F tier assignments from Raider.IO data.", images: [`${siteUrl}/og.png`] },
 };
 
 export default function TierListPage() {

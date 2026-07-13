@@ -24,7 +24,7 @@ async function getKvBinding(): Promise<any | null> {
 function inferCategory(text: string): string {
   const lower = text.toLowerCase();
   if (lower.includes("class tuning")) return "Class Tuning";
-  if (lower.includes("mythic") || lower.includes("dungeon")) return "Dungeons";
+  if (lower.includes("mythic") || lower.includes("dungeon") || lower.includes("timewalk")) return "Dungeons";
   if (lower.includes("hotfix")) return "Hotfixes";
   if (lower.includes("ptr") || lower.includes("development notes") || lower.includes("testing")) return "PTR";
   if (lower.includes("blog") || lower.includes("wow weekly") || lower.includes("wowcast")) return "Blog";
@@ -36,17 +36,17 @@ function inferCategory(text: string): string {
 }
 
 async function postPipelineItems() {
+  let posted = 0;
   try {
-    const res = await fetch(RSS_URL, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) return;
+    const res = await fetch(RSS_URL, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) { console.error(`[auto-news] RSS fetch failed: ${res.status}`); return; }
     const xml = await res.text();
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
     const doc = parser.parse(xml);
     const items = doc?.rss?.channel?.item;
-    if (!items || !Array.isArray(items)) return;
+    if (!items || !Array.isArray(items)) { console.error(`[auto-news] no items in RSS`); return; }
 
     const db = await getDb();
-    let posted = 0;
     for (const item of items) {
       const title: string = item.title || "";
       const link: string = item.link || "";
@@ -73,8 +73,10 @@ async function postPipelineItems() {
       });
       posted++;
     }
-    if (posted > 0) console.log(`[auto-news] posted ${posted} pipeline items`);
-  } catch { /* ignore */ }
+  } catch (e) {
+    console.error(`[auto-news] postPipelineItems error:`, e);
+  }
+  if (posted > 0) console.log(`[auto-news] posted ${posted} pipeline items`);
 }
 
 function todayStr(): string {
