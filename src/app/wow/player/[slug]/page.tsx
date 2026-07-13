@@ -51,12 +51,16 @@ export default async function PlayerProfilePage({ params, searchParams }: PagePr
       faction: player.faction ?? "unknown",
     };
 
+    // Extract talent data from pipeline if available
+    const playerTalents = player.talents?.length ? player.talents : null;
+
     return (
       <PlayerProfileClient
         player={playerMapped}
         spec={spec || null}
         specData={specData || null}
         seasonDisplay={data.season || ""}
+        playerTalents={playerTalents}
       />
     );
   } catch {

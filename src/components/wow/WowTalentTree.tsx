@@ -4,20 +4,23 @@ import { useState, useEffect } from "react";
 import type { TalentTree } from "@/lib/wowData";
 
 const iconCache = new Map<string, string>();
-const ICON_CACHE_TTL = 30 * 60 * 1000;
 
 function TalentNode({
-  name, id, selected, color,
+  name, id, iconName, selected, color,
 }: {
-  name: string; id?: number; selected: boolean; color: string;
+  name: string; id?: number; iconName?: string; selected: boolean; color: string;
 }) {
   const [iconUrl, setIconUrl] = useState<string | null>(() => {
+    if (iconName) return `https://render.worldofwarcraft.com/icons/56/${iconName}.jpg`;
     const cacheKey = id ? `spell:${id}` : `spell:${name}`;
     const cached = iconCache.get(cacheKey);
     return cached || null;
   });
 
+  const [iconFailed, setIconFailed] = useState(false);
+
   useEffect(() => {
+    if (iconUrl && !iconFailed) return;
     let cancelled = false;
     const cacheKey = id ? `spell:${id}` : `spell:${name}`;
     if (iconCache.has(cacheKey)) return;
@@ -41,7 +44,7 @@ function TalentNode({
       .catch(() => { clearTimeout(timer); });
 
     return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
-  }, [name, id]);
+  }, [name, id, iconUrl, iconFailed]);
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -60,8 +63,14 @@ function TalentNode({
           opacity: selected ? 1 : 0.4,
         }}
       >
-        {iconUrl ? (
-          <img src={iconUrl} alt={name} className="w-full h-full object-cover" style={{ opacity: selected ? 1 : 0.55 }} />
+        {iconUrl && !iconFailed ? (
+          <img
+            src={iconUrl}
+            alt={name}
+            className="w-full h-full object-cover"
+            style={{ opacity: selected ? 1 : 0.55 }}
+            onError={() => { iconCache.delete(id ? `spell:${id}` : `spell:${name}`); setIconFailed(true); }}
+          />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"
@@ -118,6 +127,7 @@ export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTr
                           key={node.name || `${row}-${col}`}
                           name={node.name}
                           id={node.id}
+                          iconName={node.iconName}
                           selected={node.selected}
                           color={color}
                         />

@@ -21,6 +21,7 @@ function AggregateNode({
     if (id) return spellIconUrl(id);
     return null;
   });
+  const [iconFailed, setIconFailed] = useState(false);
 
   useEffect(() => {
     if (iconUrl || !id || iconName) return;
@@ -39,9 +40,15 @@ function AggregateNode({
     return () => controller.abort();
   }, [name, id, iconName, iconUrl]);
 
+  function handleIconError() {
+    iconCache.delete(`spell:${id}`);
+    setIconFailed(true);
+  }
+
   const hot = count > 0;
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   const intensity = hot ? Math.max(0.3, pct / 100) : 0;
+  const showIcon = iconUrl && !iconFailed;
 
   return (
     <div className="flex flex-col items-center gap-0.5">
@@ -60,8 +67,8 @@ function AggregateNode({
           opacity: hot ? 1 : 0.35,
         }}
       >
-        {iconUrl ? (
-          <img src={iconUrl} alt={name} className="w-full h-full object-cover" style={{ opacity: hot ? 1 : 0.5 }} />
+        {showIcon ? (
+          <img src={iconUrl!} alt={name} onError={handleIconError} className="w-full h-full object-cover" style={{ opacity: hot ? 1 : 0.5 }} />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"

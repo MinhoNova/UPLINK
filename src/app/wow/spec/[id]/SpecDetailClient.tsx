@@ -30,7 +30,8 @@ const ROLE_META: Record<string, { label: string; icon: typeof Swords; color: str
 const GEAR_SLOT_ICONS: Record<string, any> = {
   Head: Crown, Neck: CircleDot, Shoulders: Shirt, Back: SquareStack, Chest: Shield,
   Wrist: CircleDot, Hands: HandMetal, Waist: LinkChain, Legs: Rows3, Feet: Footprints,
-  "Ring 1": Gem, "Ring 2": Gem, "Trinket 1": Sparkles, "Trinket 2": Sparkles,
+  Rings: Gem,
+  Trinkets: Sparkles,
   Weapon: Swords, "Off-Hand": BookOpen,
 };
 

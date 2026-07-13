@@ -40,13 +40,13 @@ export async function aggregateBySpec(
     const batch = allFetches.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(({ player }) =>
-        fetchCharacterProfile(player.name, player.realm, player.region, env)
+        fetchCharacterProfile(player.name, player.realm, player.region, env, player.classId)
       )
     );
     profileResults.push(...results);
   }
 
-  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
+  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string }[]; gems: string[] }[]>();
 
   let idx = 0;
   for (const { specId, player } of allFetches) {
@@ -99,7 +99,7 @@ export async function aggregateBySpec(
       }
     }
 
-    const bis = Array.from(gearBySlot.entries())
+    let bis = Array.from(gearBySlot.entries())
       .filter(([slot]) => !["Tabard", "Shirt"].includes(slot))
       .map(([slot, items]) => ({
         slot,
@@ -111,6 +111,42 @@ export async function aggregateBySpec(
         const order = ["Head", "Neck", "Shoulders", "Back", "Chest", "Wrist", "Hands", "Waist", "Legs", "Feet", "Ring 1", "Ring 2", "Trinket 1", "Trinket 2", "Weapon", "Off-Hand"];
         return order.indexOf(a.slot) - order.indexOf(b.slot);
       });
+
+    // Merge Ring 1+2 → Rings, Trinket 1+2 → Trinkets
+    const merged: typeof bis = [];
+    const ringMap = new Map<number, { name: string; count: number; itemId: number }>();
+    const trinketMap = new Map<number, { name: string; count: number; itemId: number }>();
+    for (const entry of bis) {
+      if (entry.slot === "Ring 1" || entry.slot === "Ring 2") {
+        for (const item of entry.names) {
+          const key = item.itemId || (item.name.length + item.count);
+          const existing = ringMap.get(key) || { name: item.name, count: 0, itemId: item.itemId || 0 };
+          existing.count += item.count;
+          ringMap.set(key, existing);
+        }
+      } else if (entry.slot === "Trinket 1" || entry.slot === "Trinket 2") {
+        for (const item of entry.names) {
+          const key = item.itemId || (item.name.length + item.count);
+          const existing = trinketMap.get(key) || { name: item.name, count: 0, itemId: item.itemId || 0 };
+          existing.count += item.count;
+          trinketMap.set(key, existing);
+        }
+      } else {
+        merged.push(entry);
+      }
+    }
+    if (ringMap.size > 0) {
+      const sorted = Array.from(ringMap.values()).sort((a, b) => b.count - a.count);
+      merged.push({ slot: "Rings", names: sorted.map(i => ({ name: i.name, count: i.count, pct: pct(i.count, total), itemId: i.itemId })) });
+    }
+    if (trinketMap.size > 0) {
+      const sorted = Array.from(trinketMap.values()).sort((a, b) => b.count - a.count);
+      merged.push({ slot: "Trinkets", names: sorted.map(i => ({ name: i.name, count: i.count, pct: pct(i.count, total), itemId: i.itemId })) });
+    }
+    bis = merged.sort((a, b) => {
+      const order = ["Head", "Neck", "Shoulders", "Back", "Chest", "Wrist", "Hands", "Waist", "Legs", "Feet", "Rings", "Trinkets", "Weapon", "Off-Hand"];
+      return order.indexOf(a.slot) - order.indexOf(b.slot);
+    });
 
     // Aggregate gems
     const gemCounts = new Map<string, number>();

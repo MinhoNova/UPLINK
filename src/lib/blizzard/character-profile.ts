@@ -1,4 +1,5 @@
 import { getBlizzardToken } from "./auth";
+import { guessIconName } from "@/lib/wow/spellIcons";
 
 const REGION_HOSTS: Record<string, string> = {
   US: "https://us.api.blizzard.com",
@@ -16,6 +17,7 @@ function sanitizeName(name: string): string {
 }
 
 const itemNameCache = new Map<number, string>();
+const treeNodeCache = new Map<number, Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>>();
 
 async function fetchItemName(itemId: number, env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }): Promise<string | null> {
   if (itemNameCache.has(itemId)) return itemNameCache.get(itemId)!;
@@ -46,6 +48,7 @@ export interface CharacterProfile {
     row?: number;
     col?: number;
     treeName?: string;
+    treeKind?: string;
   }[];
   gear: {
     slot: string;
@@ -91,7 +94,8 @@ export async function fetchCharacterProfile(
   name: string,
   realm: string,
   region: string,
-  env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string }
+  env?: { BATTLENET_CLIENT_ID?: string; BATTLENET_CLIENT_SECRET?: string },
+  classId?: string
 ): Promise<CharacterProfile | null> {
   const token = await getBlizzardToken(env);
   if (!token) return null;
@@ -166,36 +170,113 @@ export async function fetchCharacterProfile(
       const loadout = activeSpec.loadouts?.find((l: any) => l.is_active) || activeSpec.loadouts?.[0];
       if (!loadout) return profile;
 
-      const allTalentEntries: { id: number; rank: number; name: string; spellId?: number; iconName?: string; treeName: string; treeKind: string }[] = [];
+      const allTalentEntries: { id: number; rank: number; name: string; spellId?: number; iconName?: string; row?: number; col?: number; treeName: string; treeKind: string }[] = [];
 
-      function getName(t: any, fallbackId: number): string {
-        return t.tooltip?.talent?.name || t.tooltip?.spell_tooltip?.spell?.name || `Talent ${fallbackId}`;
+      async function fetchTreeNodeMap(treeId: number): Promise<Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>> {
+        if (treeNodeCache.has(treeId)) return treeNodeCache.get(treeId)!;
+        const nodeMap = new Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>();
+        try {
+          const res = await fetch(`https://us.api.blizzard.com/data/wow/talent-tree/${treeId}?namespace=static-us&locale=en_US`, {
+            headers: { Authorization: `Bearer ${token}` },
+            next: { revalidate: 86400 },
+          });
+          if (res.ok) {
+            const treeData: any = await res.json();
+            const rawNodes: any[] = treeData.nodes || [];
+            for (const n of rawNodes) {
+              const talentData = n.tooltip?.talent || n.tooltip?.spell_tooltip?.spell || n.talent_node_key?.talent || n.talent;
+              const spellId = talentData?.spell_id || talentData?.id;
+              const iconName = talentData?.icon || "";
+              if (spellId || iconName || n.display_row != null || n.display_col != null) {
+                nodeMap.set(n.id, {
+                  spellId,
+                  icon: iconName,
+                  row: n.display_row ?? n.row,
+                  col: n.display_col ?? n.col,
+                });
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+        treeNodeCache.set(treeId, nodeMap);
+        return nodeMap;
       }
 
-      function getSpellId(t: any): number | undefined {
-        return t.tooltip?.talent?.id || t.tooltip?.spell_tooltip?.spell?.id || undefined;
+      // Pre-fetch tree definitions for position/icon resolution
+      const treeDefs: { id: number; name: string; kind: string }[] = [];
+      const classTree = loadout.selected_class_talent_tree;
+      const specTree = loadout.selected_spec_talent_tree;
+      const heroTree = loadout.selected_hero_talent_tree;
+      if (classTree?.id) treeDefs.push({ id: classTree.id, name: classTree.name || "Class Talents", kind: "class" });
+      if (specTree?.id) treeDefs.push({ id: specTree.id, name: specTree.name || (activeSpec.specialization?.name || "Spec Talents"), kind: "spec" });
+      if (heroTree?.id) treeDefs.push({ id: heroTree.id, name: heroTree.name || "Hero Talents", kind: "hero" });
+
+      const treeNodeMaps = new Map<string, Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>>();
+      await Promise.all(treeDefs.map(async (td) => {
+        const nodeMap = await fetchTreeNodeMap(td.id, td.kind);
+        if (nodeMap.size > 0) treeNodeMaps.set(td.kind, nodeMap);
+      }));
+
+      function getTalentInfo(t: any): { name?: string; id?: number; icon?: string } | null {
+        const direct = t.tooltip?.talent || t.tooltip?.spell_tooltip?.spell;
+        if (direct) return { name: direct.name, id: direct.id, icon: direct.icon };
+        if (t.choices && t.choices.length > 0) {
+          const choice = t.choices[t.selected_choice_index ?? 0] ?? t.choices[0];
+          const choiceInfo = choice.tooltip?.talent || choice.tooltip?.spell_tooltip?.spell;
+          if (choiceInfo) return { name: choiceInfo.name, id: choiceInfo.id, icon: choiceInfo.icon };
+          return { name: choice.name, id: choice.id };
+        }
+        return null;
       }
 
-      function getIconName(t: any): string | undefined {
-        return t.tooltip?.talent?.icon || undefined;
+      function resolveIcon(spellName: string, spellId?: number): string | undefined {
+        const guessed = guessIconName(spellName, classId, spellId);
+        return guessed || undefined;
       }
 
-      const classTreeName = loadout.selected_class_talent_tree?.name || "Class Talents";
-      for (const t of loadout.selected_class_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), spellId: getSpellId(t), iconName: getIconName(t), treeName: classTreeName, treeKind: "class" });
+      async function processTalentList(talents: any[], treeName: string, treeKind: string) {
+        const nodeMap = treeNodeMaps.get(treeKind);
+        for (const t of talents) {
+          let info = getTalentInfo(t);
+          const name = info?.name;
+
+          // Resolve from tree definition if available (preferred: has spellId + icon + position)
+          const treeNode = nodeMap?.get(t.id);
+          if (treeNode) {
+            const spellId = treeNode.spellId || info?.id;
+            const iconName = treeNode.icon || info?.icon || (name ? resolveIcon(name, spellId) : undefined);
+            allTalentEntries.push({
+              id: t.id, rank: t.rank || 1,
+              name: name || `Talent ${t.id}`,
+              spellId, iconName,
+              row: treeNode.row, col: treeNode.col,
+              treeName, treeKind,
+            });
+          } else {
+            // No tree definition → use sequential fallback
+            const iconName = info?.icon || (info?.name ? resolveIcon(info.name, info?.id) : undefined);
+            allTalentEntries.push({
+              id: t.id, rank: t.rank || 1,
+              name: info?.name || `Talent ${t.id}`,
+              spellId: info?.id, iconName,
+              row: undefined, col: undefined,
+              treeName, treeKind,
+            });
+          }
+        }
       }
 
-      const specTreeName = loadout.selected_spec_talent_tree?.name || (activeSpec.specialization?.name || "Spec Talents");
-      for (const t of loadout.selected_spec_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), spellId: getSpellId(t), iconName: getIconName(t), treeName: specTreeName, treeKind: "spec" });
-      }
+      const classTreeName = classTree?.name || "Class Talents";
+      await processTalentList(loadout.selected_class_talents || [], classTreeName, "class");
 
-      const heroTreeName = loadout.selected_hero_talent_tree?.name || "Hero Talents";
-      for (const t of loadout.selected_hero_talents || []) {
-        allTalentEntries.push({ id: t.id, rank: t.rank || 1, name: getName(t, t.id), spellId: getSpellId(t), iconName: getIconName(t), treeName: heroTreeName, treeKind: "hero" });
-      }
+      const specTreeName = specTree?.name || (activeSpec.specialization?.name || "Spec Talents");
+      await processTalentList(loadout.selected_spec_talents || [], specTreeName, "spec");
 
-      // Group by tree for row/col assignment
+      const heroTreeName = heroTree?.name || "Hero Talents";
+      await processTalentList(loadout.selected_hero_talents || [], heroTreeName, "hero");
+
       const byTree = new Map<string, typeof allTalentEntries>();
       for (const entry of allTalentEntries) {
         if (!byTree.has(entry.treeName)) byTree.set(entry.treeName, []);
@@ -203,20 +284,39 @@ export async function fetchCharacterProfile(
       }
 
       for (const [treeName, entries] of byTree) {
-        let curRow = 1, curCol = 1;
-        for (const entry of entries) {
-          profile.talents.push({
-            nodeId: entry.id,
-            name: entry.name,
-            spellId: entry.spellId || entry.id,
-            iconName: entry.iconName,
-            selected: entry.rank > 0,
-            row: curRow,
-            col: curCol,
-            treeName,
-          });
-          curCol = curCol === 1 ? 2 : 1;
-          if (curCol === 1) curRow++;
+        const hasPositions = entries.some(e => e.row != null && e.col != null);
+
+        if (hasPositions) {
+          for (const entry of entries) {
+            profile.talents.push({
+              nodeId: entry.id,
+              name: entry.name,
+              spellId: entry.spellId || entry.id,
+              iconName: entry.iconName,
+              selected: entry.rank > 0,
+              row: entry.row!,
+              col: entry.col!,
+              treeName,
+              treeKind: entry.treeKind,
+            });
+          }
+        } else {
+          let curRow = 1, curCol = 1;
+          for (const entry of entries) {
+            profile.talents.push({
+              nodeId: entry.id,
+              name: entry.name,
+              spellId: entry.spellId || entry.id,
+              iconName: entry.iconName,
+              selected: entry.rank > 0,
+              row: curRow,
+              col: curCol,
+              treeName,
+              treeKind: entry.treeKind,
+            });
+            curCol = curCol === 1 ? 2 : 1;
+            if (curCol === 1) curRow++;
+          }
         }
       }
     }
@@ -224,10 +324,15 @@ export async function fetchCharacterProfile(
     // Parse M+ rating
     if (mythicRes?.ok) {
       const mythicData = await mythicRes.json();
+      // Try seasons array (current season first), fall back to top-level current_mythic_rating
       const seasons = mythicData.seasons || mythicData.mything_keystone_seasons || [];
       const currentSeason = seasons[0];
       if (currentSeason?.best_runs || currentSeason?.mythic_rating) {
-        profile.mythicPlusRating = currentSeason.mythic_rating?.rating || 0;
+        const rating = currentSeason.mythic_rating?.rating;
+        if (rating != null && rating > 0) profile.mythicPlusRating = rating;
+      }
+      if (!profile.mythicPlusRating && mythicData.current_mythic_rating?.rating) {
+        profile.mythicPlusRating = mythicData.current_mythic_rating.rating;
       }
     }
 

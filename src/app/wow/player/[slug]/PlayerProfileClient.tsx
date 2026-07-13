@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Copy, Check, ChevronLeft, Swords, HeartHandshake, Shield, ExternalLink } from "lucide-react";
-import { getClassColor, type WoWSpec, type SpecData, type PlayerBuild } from "@/lib/wowData";
+import { getClassColor, type WoWSpec, type SpecData, type TalentTree } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
@@ -51,12 +51,13 @@ function RegionFlag({ region }: { region: string }) {
 }
 
 export default function PlayerProfileClient({
-  player, spec, specData, seasonDisplay,
+  player, spec, specData, seasonDisplay, playerTalents,
 }: {
   player: LeaderboardEntry;
   spec: WoWSpec | null;
   specData: SpecData | null;
   seasonDisplay: string;
+  playerTalents?: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[] | null;
 }) {
   const color = getClassColor(spec?.classId || player.classId);
   const [filterType, setFilterType] = useState<"all" | "raid" | "mythic+">("all");
@@ -208,28 +209,57 @@ export default function PlayerProfileClient({
             </div>
 
             {/* Player's Own Build Highlight */}
-            {playerBuilds.length > 0 && (
-              <div className="mb-6 p-4 rounded-2xl border-2 border-dashed" style={{ borderColor: `${color}40`, backgroundColor: `${color}08` }}>
-                <div className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color }}>✦ This Player's Build{playerBuilds.length > 1 ? "s" : ""}</div>
-                <div className="space-y-4">
-                  {playerBuilds.map((build, i) => (
-                    <div key={i} className="bg-black/40 rounded-xl p-4 border border-white/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{build.type === "mythic+" ? "Mythic+" : "Raid"} Build</span>
-                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${build.type === "raid" ? "bg-yellow-500/10 text-yellow-400" : "bg-[#ff007f]/10 text-[#ff007f]"}`}>{build.type === "raid" ? "Raid" : "Mythic+"}</span>
+            {(playerBuilds.length > 0 || playerTalents) && (() => {
+              if (playerBuilds.length > 0) {
+                return (
+                  <div className="mb-6 p-4 rounded-2xl border-2 border-dashed" style={{ borderColor: `${color}40`, backgroundColor: `${color}08` }}>
+                    <div className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color }}>&#10022; This Player&apos;s Build{playerBuilds.length > 1 ? "s" : ""}</div>
+                    <div className="space-y-4">
+                      {playerBuilds.map((build, i) => (
+                        <div key={i} className="bg-black/40 rounded-xl p-4 border border-white/5">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{build.type === "mythic+" ? "Mythic+" : "Raid"} Build</span>
+                              <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${build.type === "raid" ? "bg-yellow-500/10 text-yellow-400" : "bg-[#ff007f]/10 text-[#ff007f]"}`}>{build.type === "raid" ? "Raid" : "Mythic+"}</span>
+                            </div>
+                            <button onClick={() => copyTalentString(build.talentString, i)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border ${copiedIndex === i ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10"}`}>
+                              {copiedIndex === i ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                              {copiedIndex === i ? "Copied!" : "Copy Talents"}
+                            </button>
+                          </div>
+                          <WowTalentTreeDisplay trees={build.trees} color={color} />
                         </div>
-                        <button onClick={() => copyTalentString(build.talentString, i)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border ${copiedIndex === i ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10"}`}>
-                          {copiedIndex === i ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
-                          {copiedIndex === i ? "Copied!" : "Copy Talents"}
-                        </button>
-                      </div>
-                      <WowTalentTreeDisplay trees={build.trees} color={color} />
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </div>
+                );
+              }
+              if (playerTalents) {
+                const treeMap = new Map<string, TalentTree>();
+                for (const t of playerTalents) {
+                  const treeName = t.treeName || "Talents";
+                  if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
+                  treeMap.get(treeName)!.nodes.push({
+                    name: t.name,
+                    id: t.spellId || t.nodeId,
+                    iconName: t.iconName,
+                    row: t.row ?? Math.ceil((treeMap.get(treeName)!.nodes.length + 1) / 2),
+                    col: t.col ?? ((treeMap.get(treeName)!.nodes.length % 2) + 1),
+                    selected: t.selected,
+                  });
+                }
+                const pipelineTrees = Array.from(treeMap.values());
+                return (
+                  <div className="mb-6 p-4 rounded-2xl border-2 border-dashed" style={{ borderColor: `${color}40`, backgroundColor: `${color}08` }}>
+                    <div className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color }}>&#10022; This Player&apos;s Build</div>
+                    <div className="bg-black/40 rounded-xl p-4 border border-white/5">
+                      <WowTalentTreeDisplay trees={pipelineTrees} color={color} />
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* All Spec Builds */}
             {filteredBuilds.length > 0 && (

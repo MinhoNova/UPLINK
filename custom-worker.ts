@@ -55,7 +55,8 @@ async function runBlizzardPipeline(env: CloudflareEnv) {
 export default {
   fetch: async (request: Request, env: CloudflareEnv, ctx: ExecutionContext) => {
     const url = new URL(request.url);
-    if (url.searchParams.has("pipeline")) {
+    // Trigger pipeline via /api/pipeline/trigger (no static asset at this path)
+    if (url.pathname === "/api/pipeline/trigger") {
       ctx.waitUntil(runBlizzardPipeline(env));
       return new Response("Pipeline started", { status: 202 });
     }

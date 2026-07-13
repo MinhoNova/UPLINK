@@ -130,6 +130,7 @@ export interface TalentNode {
   col: number;
   selected: boolean;
   id?: number;
+  iconName?: string;
 }
 
 export interface TalentTree {
@@ -6144,7 +6145,7 @@ export interface AggregatedSpecData {
   enchants: { slot: string; names: { name: string; count: number; pct: string }[] }[];
   gems: { name: string; count: number; pct: string }[];
   statPriority: string[];
-  topPlayers: { name: string; realm: string; region: string; specId: string; classId: string; score: number; race?: string; talents?: { nodeId: number; name: string; selected: boolean; spellId?: number; row?: number; col?: number; treeName?: string }[]; gear?: { slot: string; name: string; itemId: number }[]; gems?: string[]; enchants?: { slot: string; name: string }[]; statPriority?: string[] }[];
+  topPlayers: { name: string; realm: string; region: string; specId: string; classId: string; score: number; race?: string; talents?: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear?: { slot: string; name: string; itemId: number }[]; gems?: string[]; enchants?: { slot: string; name: string }[]; statPriority?: string[] }[];
   players: { name: string; realm: string; region: string; score: number; specId: string; classId: string; race?: string }[];
   lastUpdated: number;
 }
@@ -6157,16 +6158,20 @@ export function mergeAggregatedData(
   const hardcoded = getSpecData(specId, ptr) || {
     bis: [], enchants: [], gems: [], builds: [], statPriority: ["Intellect", "Haste", "Mastery", "Critical Strike", "Versatility"],
   };
+  // Strip class tree from hardcoded fallback builds
+  const stripClassTree = (trees: TalentTree[]) => trees.filter(t => t.name !== "Class Talents");
+
   if (!aggregated || aggregated.totalPlayers === 0) {
     return {
       ...hardcoded,
       bis: [],
       enchants: [],
       gems: [],
+      builds: hardcoded.builds.map(b => ({ ...b, trees: stripClassTree(b.trees) })),
     };
   }
 
-  const bis = aggregated.bis?.length
+  let bis = aggregated.bis?.length
     ? aggregated.bis.map((s) => {
         const options = (s.names || [])
           .map((n) => ({
@@ -6180,6 +6185,31 @@ export function mergeAggregatedData(
         return { slot: s.slot, name: primary.name, itemId: primary.itemId, options };
       })
     : [];
+
+  // Merge Ring 1+2 → Rings, Trinket 1+2 → Trinkets (supports both old KV format and new)
+  const merged: typeof bis = [];
+  const ringItems: typeof bis[0]['options'] = [];
+  const trinketItems: typeof bis[0]['options'] = [];
+  for (const entry of bis) {
+    if (entry.slot === "Ring 1" || entry.slot === "Ring 2") { ringItems.push(...(entry.options || [])); }
+    else if (entry.slot === "Trinket 1" || entry.slot === "Trinket 2") { trinketItems.push(...(entry.options || [])); }
+    else { merged.push(entry); }
+  }
+  const mergeDedup = (items: typeof ringItems, slot: string) => {
+    if (items.length === 0) return;
+    const map = new Map<number, typeof items[0]>();
+    for (const item of items) {
+      const key = item.itemId || item.name.length + item.count;
+      const existing = map.get(key) || { ...item, count: 0 };
+      existing.count += item.count;
+      map.set(key, existing);
+    }
+    const sorted = Array.from(map.values()).sort((a, b) => b.count - a.count);
+    merged.push({ slot, name: sorted[0].name, itemId: sorted[0].itemId, options: sorted });
+  };
+  mergeDedup(ringItems, "Rings");
+  mergeDedup(trinketItems, "Trinkets");
+  bis = merged;
 
   const enchants = aggregated.enchants?.length
     ? aggregated.enchants.map((s) => ({
@@ -6202,11 +6232,14 @@ export function mergeAggregatedData(
         if (p.talents && p.talents.length > 0) {
           const treeMap = new Map<string, TalentTree>();
           for (const t of p.talents) {
+            // Skip class tree — redundant on spec page
+            if (t.treeKind === "class") continue;
             const treeName = t.treeName || "Talents";
             if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
             treeMap.get(treeName)!.nodes.push({
               name: t.name,
               id: t.spellId || t.nodeId,
+              iconName: t.iconName,
               row: t.row || Math.ceil((treeMap.get(treeName)!.nodes.length + 1) / 2),
               col: t.col || ((treeMap.get(treeName)!.nodes.length % 2) + 1),
               selected: t.selected,
@@ -6214,7 +6247,7 @@ export function mergeAggregatedData(
           }
           trees = Array.from(treeMap.values());
         } else {
-          trees = hardcoded.builds[0]?.trees || [];
+          trees = stripClassTree(hardcoded.builds[0]?.trees || []);
         }
 
         return {
@@ -6227,7 +6260,7 @@ export function mergeAggregatedData(
           trees,
         };
       })
-    : hardcoded.builds;
+    : hardcoded.builds.map(b => ({ ...b, trees: stripClassTree(b.trees) }));
 
   return { bis, enchants, gems, builds, statPriority };
 }
@@ -6270,7 +6303,7 @@ export function aggregatePlayerTalents(
   }
 
   // Collect all unique talents across all players, keyed by nodeId
-  const talentMap = new Map<string, { name: string; id?: number; iconName?: string; spellId?: number; treeName: string; count: number; playerIndices: Set<number> }>();
+  const talentMap = new Map<string, { name: string; id?: number; iconName?: string; spellId?: number; treeName: string; treeKind?: string; count: number; playerIndices: Set<number> }>();
 
   for (let pi = 0; pi < topPlayers.length; pi++) {
     const player = topPlayers[pi];
@@ -6286,6 +6319,7 @@ export function aggregatePlayerTalents(
           iconName: talent.iconName,
           spellId: talent.spellId,
           treeName,
+          treeKind: talent.treeKind,
           count: 0,
           playerIndices: new Set(),
         });
@@ -6298,8 +6332,20 @@ export function aggregatePlayerTalents(
     }
   }
 
-  // Group by tree, sort by id for consistent layout, assign sequential positions
-  const byTree = new Map<string, { name: string; id?: number; iconName?: string; count: number }[]>();
+  // Build position map from base trees (spellId → row/col)
+  const basePosMap = new Map<string, Map<number, { row: number; col: number }>>();
+  if (baseTrees) {
+    for (const tree of baseTrees) {
+      const map = new Map<number, { row: number; col: number }>();
+      for (const n of tree.nodes) {
+        if (n.id) map.set(n.id, { row: n.row, col: n.col });
+      }
+      basePosMap.set(tree.name, map);
+    }
+  }
+
+  // Group by tree, deduplicate by spellId
+  const byTree = new Map<string, { name: string; id?: number; iconName?: string; count: number; treeKind?: string }[]>();
   const seenNodeIds = new Map<string, Set<number>>();
 
   for (const [, entry] of talentMap) {
@@ -6311,28 +6357,54 @@ export function aggregatePlayerTalents(
     const seen = seenNodeIds.get(entry.treeName)!;
     if (seen.has(entry.id || 0)) continue;
     seen.add(entry.id || 0);
-    treeNodes.push({ name: entry.name, id: entry.id, iconName: entry.iconName, count: entry.count });
+    treeNodes.push({ name: entry.name, id: entry.id, iconName: entry.iconName, count: entry.count, treeKind: entry.treeKind });
   }
 
   const result: AggregatedTalentTree[] = [];
   for (const [treeName, nodes] of byTree) {
-    nodes.sort((a, b) => (a.id || 0) - (b.id || 0));
-    const aggNodes: AggregatedTalentNode[] = [];
-    let row = 1, col = 1;
-    for (const node of nodes) {
-      aggNodes.push({
-        name: node.name,
-        id: node.id,
-        iconName: node.iconName,
-        row,
-        col,
-        count: node.count,
-        total,
-      });
-      col = col === 1 ? 2 : 1;
-      if (col === 1) row++;
+    if (nodes.some(n => n.treeKind === "class")) continue;
+
+    const baseTree = baseTrees?.find(t => t.name === treeName);
+    if (baseTree && baseTree.nodes.length > 0) {
+      // Use base tree layout: match by spellId, overlay aggregated counts
+      const countById = new Map<number, { name: string; iconName?: string; count: number }>();
+      for (const n of nodes) {
+        if (n.id) countById.set(n.id, { name: n.name, iconName: n.iconName, count: n.count });
+      }
+      const aggNodes: AggregatedTalentNode[] = [];
+      for (const baseNode of baseTree.nodes) {
+        const match = baseNode.id ? countById.get(baseNode.id) : undefined;
+        aggNodes.push({
+          name: match?.name || baseNode.name,
+          id: baseNode.id,
+          iconName: match?.iconName,
+          row: baseNode.row,
+          col: baseNode.col,
+          count: match?.count || 0,
+          total,
+        });
+      }
+      result.push({ name: treeName, nodes: aggNodes });
+    } else {
+      // No base tree — assign sequential positions (e.g. hero talents)
+      nodes.sort((a, b) => (a.id || 0) - (b.id || 0));
+      const aggNodes: AggregatedTalentNode[] = [];
+      let row = 1, col = 1;
+      for (const node of nodes) {
+        aggNodes.push({
+          name: node.name,
+          id: node.id,
+          iconName: node.iconName,
+          row,
+          col,
+          count: node.count,
+          total,
+        });
+        col = col === 1 ? 2 : 1;
+        if (col === 1) row++;
+      }
+      result.push({ name: treeName, nodes: aggNodes });
     }
-    result.push({ name: treeName, nodes: aggNodes });
   }
 
   return result;

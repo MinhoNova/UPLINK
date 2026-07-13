@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchBlizzardIcon, fetchSpellIconById, fetchItemIconById } from "@/lib/blizzard/icon";
+import { guessIconName } from "@/lib/wow/spellIcons";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const name = searchParams.get("name");
   const type = searchParams.get("type") as "item" | "spell" | null;
   const id = searchParams.get("id");
+  const classId = searchParams.get("classId");
 
   if (type === "item" && id) {
     const itemId = parseInt(id, 10);
@@ -14,7 +16,6 @@ export async function GET(req: NextRequest) {
       if (iconUrl) {
         return NextResponse.json({ available: true, url: iconUrl });
       }
-      // Fall back to name search if ID lookup fails
       if (name) {
         const nameIcon = await fetchBlizzardIcon(name, type);
         if (nameIcon) {
@@ -32,11 +33,17 @@ export async function GET(req: NextRequest) {
       if (iconUrl) {
         return NextResponse.json({ available: true, url: iconUrl });
       }
-      // Fall back to name search if ID lookup fails
       if (name) {
         const nameIcon = await fetchBlizzardIcon(name, type);
         if (nameIcon) {
           return NextResponse.json({ available: true, url: nameIcon });
+        }
+      }
+      // Fall back to icon name guessing (Midnight spell IDs have no media)
+      if (name) {
+        const guessed = guessIconName(name, classId || undefined, spellId);
+        if (guessed) {
+          return NextResponse.json({ available: true, url: `https://render.worldofwarcraft.com/icons/56/${guessed}.jpg`, guessed: true });
         }
       }
       return NextResponse.json({ available: false });

@@ -116,7 +116,7 @@ export interface AggregatedCharacter {
   classId: string;
   score: number;
   race?: string;
-  talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string }[];
+  talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[];
   gear: { slot: string; name: string; itemId: number }[];
   gems: string[];
   enchants: { slot: string; name: string }[];
