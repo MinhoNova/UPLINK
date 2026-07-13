@@ -18,27 +18,37 @@ function AggregateNode({
 }) {
   const [iconUrl, setIconUrl] = useState<string | null>(() => {
     if (iconName) return `https://render.worldofwarcraft.com/icons/56/${iconName}.jpg`;
-    if (id) return spellIconUrl(id);
+    if (id) {
+      const cached = iconCache.get(`spell:${id}`);
+      if (cached) return cached;
+    }
     return null;
   });
   const [iconFailed, setIconFailed] = useState(false);
 
   useEffect(() => {
-    if (iconUrl || !id || iconName) return;
-    const cacheKey = `spell:${id}`;
+    if (iconUrl && !iconFailed) return;
+    if (iconName) return;
+    let cancelled = false;
+    const cacheKey = id ? `spell:${id}` : `spell:${name}`;
     if (iconCache.has(cacheKey)) return;
     const controller = new AbortController();
-    fetch(`/api/wow/blizzard/icon?type=spell&id=${id}&name=${encodeURIComponent(name)}`, { signal: controller.signal })
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const url = id
+      ? `/api/wow/blizzard/icon?type=spell&id=${id}&name=${encodeURIComponent(name)}`
+      : `/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`;
+    fetch(url, { signal: controller.signal })
       .then(r => r.json())
       .then(d => {
-        if (!controller.signal.aborted && d.available && d.url) {
+        clearTimeout(timer);
+        if (!cancelled && d.available && d.url) {
           iconCache.set(cacheKey, d.url);
           setIconUrl(d.url);
         }
       })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [name, id, iconName, iconUrl]);
+      .catch(() => { clearTimeout(timer); });
+    return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
+  }, [name, id, iconName, iconUrl, iconFailed]);
 
   function handleIconError() {
     iconCache.delete(`spell:${id}`);
