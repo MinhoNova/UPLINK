@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { news } from "@/db/schema";
 import { and, desc, eq, like } from "drizzle-orm";
+import { XMLParser } from "fast-xml-parser";
 
+const RSS_URL = "https://www.bluetracker.gg/rss/wow/";
 const GENERATED_TAG = "auto-meta-report";
+const PIPELINE_TAGS = ["blizzard-tracker", "auto-generated"];
 
 async function getKvBinding(): Promise<any | null> {
   try {
@@ -16,6 +19,62 @@ async function getKvBinding(): Promise<any | null> {
     }
     return env?.KV_BINDING ?? null;
   } catch { return null; }
+}
+
+function inferCategory(text: string): string {
+  const lower = text.toLowerCase();
+  if (lower.includes("class tuning")) return "Class Tuning";
+  if (lower.includes("mythic") || lower.includes("dungeon")) return "Dungeons";
+  if (lower.includes("hotfix")) return "Hotfixes";
+  if (lower.includes("ptr") || lower.includes("development notes") || lower.includes("testing")) return "PTR";
+  if (lower.includes("blog") || lower.includes("wow weekly") || lower.includes("wowcast")) return "Blog";
+  if (lower.includes("feedback")) return "Feedback";
+  if (lower.includes("patch") || lower.includes("content update")) return "Patch Notes";
+  if (lower.includes("pvp")) return "PvP";
+  if (lower.includes("class") || lower.includes("spec") || lower.includes("talent")) return "Classes";
+  return "General";
+}
+
+async function postPipelineItems() {
+  try {
+    const res = await fetch(RSS_URL, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return;
+    const xml = await res.text();
+    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
+    const doc = parser.parse(xml);
+    const items = doc?.rss?.channel?.item;
+    if (!items || !Array.isArray(items)) return;
+
+    const db = await getDb();
+    let posted = 0;
+    for (const item of items) {
+      const title: string = item.title || "";
+      const link: string = item.link || "";
+      const description: string = item.description || "";
+      const category = inferCategory(title + " " + description);
+      if (category !== "Dungeons") continue;
+
+      // Dedup by link
+      const existing = await db.select({ id: news.id }).from(news).where(like(news.content, `%${link}%`)).limit(1);
+      if (existing.length > 0) continue;
+
+      const cleanTitle = title.replace(/^\[US\]\s*|^\[EU\]\s*/, "");
+      const content = `${description}\n\n[Read on Blizzard Forums](${link})`;
+      const now = Date.now();
+      await db.insert(news).values({
+        title: cleanTitle,
+        content,
+        section: "dungeons",
+        tags: JSON.stringify(["dungeons", ...PIPELINE_TAGS]),
+        authorId: "000000000000000000",
+        authorName: "Blizzard Tracker",
+        createdAt: now,
+        updatedAt: now,
+      });
+      posted++;
+    }
+    if (posted > 0) console.log(`[auto-news] posted ${posted} pipeline items`);
+  } catch { /* ignore */ }
 }
 
 function todayStr(): string {
@@ -44,6 +103,9 @@ export async function POST(request: Request) {
 
     const kv = await getKvBinding();
     if (!kv) return NextResponse.json({ error: "No KV binding" }, { status: 500 });
+
+    // Always post new pipeline items (dedup by link)
+    await postPipelineItems();
 
     const cacheKey = ptr ? "wow:blizzard-meta-ptr" : "wow:blizzard-meta";
     const raw = await kv.get(cacheKey);
