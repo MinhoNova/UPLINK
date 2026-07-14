@@ -6230,22 +6230,60 @@ export function mergeAggregatedData(
     ? aggregated.topPlayers.slice(0, 5).map((p) => {
         let trees: TalentTree[];
         if (p.talents && p.talents.length > 0) {
-          const treeMap = new Map<string, TalentTree>();
-          for (const t of p.talents) {
-            // Skip class tree — redundant on spec page
-            if (t.treeKind === "class") continue;
-            const treeName = t.treeName || "Talents";
-            if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
-            treeMap.get(treeName)!.nodes.push({
-              name: t.name,
-              id: t.spellId || t.nodeId,
-              iconName: t.iconName,
-              row: t.row || Math.ceil((treeMap.get(treeName)!.nodes.length + 1) / 2),
-              col: t.col || ((treeMap.get(treeName)!.nodes.length % 2) + 1),
-              selected: t.selected,
-            });
+          const baseTrees = stripClassTree(hardcoded.builds[0]?.trees || []);
+          if (baseTrees.length > 0) {
+            // Build set of player's selected talent IDs per tree
+            const selectedByTree = new Map<string, Set<number>>();
+            const heroTalentMap = new Map<string, TalentTree>();
+            for (const t of p.talents) {
+              if (t.treeKind === "class") continue;
+              const treeName = t.treeName || "Talents";
+              if (t.treeKind === "hero") {
+                if (!heroTalentMap.has(treeName)) heroTalentMap.set(treeName, { name: treeName, nodes: [] });
+                heroTalentMap.get(treeName)!.nodes.push({
+                  name: t.name,
+                  id: t.spellId || t.nodeId,
+                  iconName: t.iconName,
+                  row: t.row || Math.ceil((heroTalentMap.get(treeName)!.nodes.length + 1) / 2),
+                  col: t.col || ((heroTalentMap.get(treeName)!.nodes.length % 2) + 1),
+                  selected: t.selected,
+                });
+              } else {
+                if (!selectedByTree.has(treeName)) selectedByTree.set(treeName, new Set());
+                selectedByTree.get(treeName)!.add(t.spellId || t.nodeId);
+              }
+            }
+            // Overlay player selections on base tree layout
+            trees = baseTrees.map(tree => ({
+              name: tree.name,
+              nodes: tree.nodes.map(n => ({
+                name: n.name,
+                id: n.id,
+                iconName: n.iconName,
+                row: n.row,
+                col: n.col,
+                selected: selectedByTree.get(tree.name)?.has(n.id || 0) || false,
+              })),
+            }));
+            // Append hero trees (no base layout in hardcoded data)
+            if (heroTalentMap.size > 0) trees = [...trees, ...Array.from(heroTalentMap.values())];
+          } else {
+            const treeMap = new Map<string, TalentTree>();
+            for (const t of p.talents) {
+              if (t.treeKind === "class") continue;
+              const treeName = t.treeName || "Talents";
+              if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
+              treeMap.get(treeName)!.nodes.push({
+                name: t.name,
+                id: t.spellId || t.nodeId,
+                iconName: t.iconName,
+                row: t.row || Math.ceil((treeMap.get(treeName)!.nodes.length + 1) / 2),
+                col: t.col || ((treeMap.get(treeName)!.nodes.length % 2) + 1),
+                selected: t.selected,
+              });
+            }
+            trees = Array.from(treeMap.values());
           }
-          trees = Array.from(treeMap.values());
         } else {
           trees = stripClassTree(hardcoded.builds[0]?.trees || []);
         }
