@@ -405,7 +405,7 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   ? `Talent popularity from top ${totalPlayers} ${spec.name} M+ players — most picked talents shown.`
                   : `Talent guide for ${spec.name} — all recommended picks shown.`}
               </p>
-              <WowTalentTreeDisplay trees={displayTrees} color={color} />
+              <WowTalentTreeDisplay trees={displayTrees} color={color} classId={spec.classId} />
             </section>
             );
           })()}

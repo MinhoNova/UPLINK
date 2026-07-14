@@ -227,7 +227,7 @@ export default function PlayerProfileClient({
                               {copiedIndex === i ? "Copied!" : "Copy Talents"}
                             </button>
                           </div>
-                          <WowTalentTreeDisplay trees={build.trees} color={color} />
+                          <WowTalentTreeDisplay trees={build.trees} color={color} classId={spec?.classId || player.classId} />
                         </div>
                       ))}
                     </div>
@@ -254,7 +254,7 @@ export default function PlayerProfileClient({
                   <div className="mb-6 p-4 rounded-2xl border-2 border-dashed" style={{ borderColor: `${color}40`, backgroundColor: `${color}08` }}>
                     <div className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color }}>&#10022; This Player&apos;s Build</div>
                     <div className="bg-black/40 rounded-xl p-4 border border-white/5">
-                      <WowTalentTreeDisplay trees={pipelineTrees} color={color} />
+                      <WowTalentTreeDisplay trees={pipelineTrees} color={color} classId={spec?.classId || player.classId} />
                     </div>
                   </div>
                 );
@@ -290,7 +290,7 @@ export default function PlayerProfileClient({
                             {copiedIndex === buildIndex ? "Copied!" : "Copy"}
                           </button>
                         </div>
-                        <WowTalentTreeDisplay trees={build.trees} color={color} />
+                        <WowTalentTreeDisplay trees={build.trees} color={color} classId={spec?.classId || player.classId} />
                       </div>
                     );
                   })}

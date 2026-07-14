@@ -6,9 +6,9 @@ import type { TalentTree } from "@/lib/wowData";
 const iconCache = new Map<string, string>();
 
 function TalentNode({
-  name, id, iconName, selected, color,
+  name, id, iconName, selected, color, classId,
 }: {
-  name: string; id?: number; iconName?: string; selected: boolean; color: string;
+  name: string; id?: number; iconName?: string; selected: boolean; color: string; classId?: string;
 }) {
   const [iconUrl, setIconUrl] = useState<string | null>(() => {
     if (iconName) return `https://render.worldofwarcraft.com/icons/56/${iconName}.jpg`;
@@ -28,9 +28,10 @@ function TalentNode({
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
 
-    const url = id
-      ? `/api/wow/blizzard/icon?type=spell&id=${id}&name=${encodeURIComponent(name)}`
-      : `/api/wow/blizzard/icon?type=spell&name=${encodeURIComponent(name)}`;
+    const params = new URLSearchParams({ type: "spell", name });
+    if (id) params.set("id", String(id));
+    if (classId) params.set("classId", classId);
+    const url = `/api/wow/blizzard/icon?${params}`;
 
     fetch(url, { signal: controller.signal })
       .then(r => r.json())
@@ -90,7 +91,7 @@ function TalentNode({
   );
 }
 
-export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTree[]; color: string }) {
+export default function WowTalentTreeDisplay({ trees, color, classId }: { trees: TalentTree[]; color: string; classId?: string }) {
   if (!trees || trees.length === 0) return null;
 
   return (
@@ -130,6 +131,7 @@ export default function WowTalentTreeDisplay({ trees, color }: { trees: TalentTr
                           iconName={node.iconName}
                           selected={node.selected}
                           color={color}
+                          classId={classId}
                         />
                       );
                     })}

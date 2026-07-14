@@ -147,7 +147,7 @@ export async function fetchCharacterProfile(
           name: itemName,
           itemId: item.item?.id || 0,
           enchant: item.enchantments?.[0]?.display_string || item.enchant?.display_string || undefined,
-          itemLevel: item.item?.level || item.level,
+          itemLevel: item.level?.value,
         });
 
         // Extract gems
