@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords, HeartHandshake, Shield, ChevronLeft, Crown, Shirt, SquareStack, HandMetal, Footprints, CircleDot, Sparkles, BookOpen, Gem, Rows3, Link as LinkChain, WandSparkles, Copy, Check } from "lucide-react";
-import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, type TalentTree } from "@/lib/wowData";
+import { SPECS, getClassColor, getSpecData, mergeAggregatedData, CLASS_NAMES, aggregatePlayerTalents, type TalentTree, type AggregatedTalentTree } from "@/lib/wowData";
 import type { AggregatedSpecData } from "@/lib/wowData";
 import type { ItemDetail } from "@/lib/blizzard/item-detail";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
@@ -389,50 +389,48 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
             )}
           </section>
 
-          {/* ═══ TALENT BUILDS ═══ */}
-          {data && data.builds.length > 0 && (
+          {/* ═══ POPULAR TALENTS ═══ */}
+          {data && data.builds.length > 0 && (() => {
+            const baseTrees: TalentTree[] = data.builds[0]?.trees || [];
+            const aggregatedTrees: AggregatedTalentTree[] = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
+            if (aggregatedTrees.length === 0) return null;
+            const totalPlayers = aggData?.topPlayers?.length || 0;
+            const displayTrees: TalentTree[] = aggregatedTrees.map(t => ({
+              name: t.name,
+              nodes: t.nodes.map(n => ({
+                name: n.name,
+                id: n.id,
+                iconName: n.iconName,
+                row: n.row,
+                col: n.col,
+                selected: n.count > 0,
+                count: n.count,
+                total: n.total,
+              })),
+            }));
+            const topBuild = data.builds[0];
+            return (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
-              <h2 className="text-lg font-black text-white mb-1">Talent Builds{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
-              <p className="text-xs text-gray-500 mb-4">Top {spec.name} talent builds from Mythic+ leaderboard.</p>
-              <div className="space-y-4">
-                {data.builds.map((build, i) => {
-                  const playerEntry = aggData?.players?.find(p => p.name === build.player && p.region === build.region);
-                  const profileUrl = playerProfileUrl(build.player, playerEntry?.realm || "", build.region);
-                  return (
-                    <div key={i} className={`rounded-2xl p-4 border transition ${i === 0 ? "border-[#ff6d00]/30 bg-[#ff6d00]/5" : "bg-white/[0.03] border-white/5 hover:border-white/10"}`}>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black text-white shrink-0" style={{ backgroundColor: `${color}20` }}>{build.player.charAt(0)}</div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-black text-white">{build.player}</span>
-                              {i === 0 && <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-[#ff6d00]/10 text-[#ff6d00] uppercase tracking-wider">Best</span>}
-                              <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${build.type === "raid" ? "bg-yellow-500/10 text-yellow-400" : "bg-[#ff007f]/10 text-[#ff007f]"}`}>{build.type === "raid" ? "Raid" : "Mythic+"}</span>
-                            </div>
-                            <span className="text-[9px] text-gray-500">{build.class} · {build.region} · Score: {build.score.toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {build.talentString && (
-                            <button onClick={() => copyTalentString(build.talentString, i)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border ${copiedIndex === i ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10"}`}>
-                              {copiedIndex === i ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
-                              {copiedIndex === i ? "Copied!" : "Import Code"}
-                            </button>
-                          )}
-                          <Link href={profileUrl} className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white">
-                            Profile
-                          </Link>
-                        </div>
-                      </div>
-                      {build.trees && build.trees.length > 0 && (
-                        <WowTalentTreeDisplay trees={build.trees} color={color} classId={spec.classId} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <h2 className="text-lg font-black text-white mb-1">Popular Talents{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
+              <p className="text-xs text-gray-500 mb-4">
+                {totalPlayers > 0
+                  ? `Talent popularity from top ${totalPlayers} ${spec.name} M+ players — orange = most popular, purple = picked, dim = unpicked.`
+                  : `Talent guide for ${spec.name} — all recommended picks shown.`}
+              </p>
+              {topBuild?.talentString && (
+                <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider">Import Code</span>
+                  <code className="text-[9px] font-mono text-white/70 truncate flex-1">{topBuild.talentString}</code>
+                  <button onClick={() => copyTalentString(topBuild.talentString, 999)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border ${copiedIndex === 999 ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10"}`}>
+                    {copiedIndex === 999 ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                    {copiedIndex === 999 ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              )}
+              <WowTalentTreeDisplay trees={displayTrees} color={color} classId={spec.classId} />
             </section>
-          )}
+            );
+          })()}
 
           {/* BIS Gear — banner style */}
           {data && data.bis.length > 0 && (

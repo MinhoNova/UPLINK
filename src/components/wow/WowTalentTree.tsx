@@ -6,9 +6,9 @@ import type { TalentTree } from "@/lib/wowData";
 const iconCache = new Map<string, string>();
 
 function TalentNode({
-  name, id, iconName, selected, color, classId,
+  name, id, iconName, selected, color, classId, count, total,
 }: {
-  name: string; id?: number; iconName?: string; selected: boolean; color: string; classId?: string;
+  name: string; id?: number; iconName?: string; selected: boolean; color: string; classId?: string; count?: number; total?: number;
 }) {
   const [iconUrl, setIconUrl] = useState<string | null>(() => {
     if (iconName) return `https://render.worldofwarcraft.com/icons/56/${iconName}.jpg`;
@@ -47,21 +47,25 @@ function TalentNode({
     return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
   }, [name, id, iconUrl, iconFailed]);
 
+  const popColor = count != null && count > 0 && total && count / total >= 0.7 ? "#f97316" : selected ? color : undefined;
+  const nodeColor = popColor || (selected ? color : undefined);
+  const labelColor = count != null && count > 0 ? (count / (total || 1) >= 0.7 ? "#f97316" : "#a335ee") : "rgba(255,255,255,0.15)";
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-0.5">
       <div
         className="relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-200"
         style={{
-          background: selected
-            ? `linear-gradient(135deg, ${color}25 0%, ${color}10 100%)`
+          background: nodeColor
+            ? `linear-gradient(135deg, ${nodeColor}25 0%, ${nodeColor}10 100%)`
             : "rgba(255,255,255,0.03)",
-          border: selected
-            ? `1.5px solid ${color}60`
+          border: nodeColor
+            ? `1.5px solid ${nodeColor}60`
             : "1px solid rgba(255,255,255,0.06)",
-          boxShadow: selected
-            ? `0 0 12px ${color}20, inset 0 0 8px ${color}10`
+          boxShadow: nodeColor
+            ? `0 0 12px ${nodeColor}20, inset 0 0 8px ${nodeColor}10`
             : "none",
-          opacity: selected ? 1 : 0.4,
+          opacity: nodeColor ? 1 : 0.4,
         }}
       >
         {iconUrl && !iconFailed ? (
@@ -69,24 +73,29 @@ function TalentNode({
             src={iconUrl}
             alt={name}
             className="w-full h-full object-cover"
-            style={{ opacity: selected ? 1 : 0.55 }}
+            style={{ opacity: nodeColor ? 1 : 0.55 }}
             onError={() => { iconCache.delete(id ? `spell:${id}` : `spell:${name}`); setIconFailed(true); }}
           />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${color}25 0%, ${color}10 100%)` }}
+            style={{ background: nodeColor ? `linear-gradient(135deg, ${nodeColor}25 0%, ${nodeColor}10 100%)` : "rgba(255,255,255,0.03)" }}
           >
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color, opacity: selected ? 1 : 0.3 }} />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: nodeColor || "rgba(255,255,255,0.3)", opacity: nodeColor ? 1 : 0.3 }} />
           </div>
         )}
       </div>
       <span
         className="text-[6px] font-bold text-center leading-tight max-w-[60px] truncate px-0.5"
-        style={{ color: selected ? `${color}cc` : "rgba(255,255,255,0.15)" }}
+        style={{ color: labelColor }}
       >
         {name}
       </span>
+      {count != null && (
+        <span className="text-[7px] font-black" style={{ color: count > 0 ? (count / (total || 1) >= 0.7 ? "#f97316" : "#a335ee") : "rgba(255,255,255,0.2)" }}>
+          {count}
+        </span>
+      )}
     </div>
   );
 }
@@ -132,6 +141,8 @@ export default function WowTalentTreeDisplay({ trees, color, classId }: { trees:
                           selected={node.selected}
                           color={color}
                           classId={classId}
+                          count={node.count}
+                          total={node.total}
                         />
                       );
                     })}
