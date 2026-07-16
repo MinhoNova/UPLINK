@@ -106,11 +106,11 @@ export async function POST(request: Request) {
     const url = new URL(request.url);
     const ptr = url.searchParams.get("ptr") === "1";
 
-    const kv = await getKvBinding();
-    if (!kv) return NextResponse.json({ error: "No KV binding" }, { status: 500 });
-
-    // Always post new pipeline items (dedup by link)
+    // Always post new pipeline items first (RSS → D1, doesn't need KV)
     await postPipelineItems();
+
+    const kv = await getKvBinding();
+    if (!kv) return NextResponse.json({ ok: true, posted: true, reason: "No KV binding, RSS items posted" });
 
     const cacheKey = ptr ? "wow:blizzard-meta-ptr" : "wow:blizzard-meta";
     const raw = await kv.get(cacheKey);
