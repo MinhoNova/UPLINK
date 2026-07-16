@@ -6224,9 +6224,25 @@ export function mergeAggregatedData(
     ? aggregated.gems.slice(0, 3).map((g) => `${g.name} ×${Math.ceil((parseInt(g.pct) / 100) * aggregated.totalPlayers)}`)
     : [];
 
-  const statPriority = aggregated.statPriority && aggregated.statPriority.length >= 5
+  const specPrimaryStat: Record<string, string> = {
+    "death-knight": "Strength", "unholy-death-knight": "Strength", "blood-death-knight": "Strength", "frost-death-knight": "Strength",
+    "demon-hunter": "Agility", "havoc-demon-hunter": "Agility", "vengeance-demon-hunter": "Agility",
+    "druid": "Intellect", "balance-druid": "Intellect", "feral-druid": "Agility", "guardian-druid": "Agility", "restoration-druid": "Intellect",
+    "evoker": "Intellect", "augmentation-evoker": "Intellect", "devastation-evoker": "Intellect", "preservation-evoker": "Intellect",
+    "hunter": "Agility", "beast-mastery-hunter": "Agility", "marksmanship-hunter": "Agility", "survival-hunter": "Agility",
+    "mage": "Intellect", "arcane-mage": "Intellect", "fire-mage": "Intellect", "frost-mage": "Intellect",
+    "monk": "Intellect", "brewmaster-monk": "Agility", "mistweaver-monk": "Intellect", "windwalker-monk": "Agility",
+    "paladin": "Strength", "holy-paladin": "Strength", "protection-paladin": "Strength", "retribution-paladin": "Strength",
+    "priest": "Intellect", "discipline-priest": "Intellect", "holy-priest": "Intellect", "shadow-priest": "Intellect",
+    "rogue": "Agility", "assassination-rogue": "Agility", "outlaw-rogue": "Agility", "subtlety-rogue": "Agility",
+    "shaman": "Intellect", "elemental-shaman": "Intellect", "enhancement-shaman": "Agility", "restoration-shaman": "Intellect",
+    "warlock": "Intellect", "affliction-warlock": "Intellect", "demonology-warlock": "Intellect", "destruction-warlock": "Intellect",
+    "warrior": "Strength", "arms-warrior": "Strength", "fury-warrior": "Strength", "protection-warrior": "Strength",
+  };
+  const primaryStat = specPrimaryStat[specId] || "Intellect";
+  const statPriority = (aggregated.statPriority && aggregated.statPriority.length >= 5
     ? aggregated.statPriority
-    : hardcoded.statPriority;
+    : hardcoded.statPriority).map(s => s.replace("Main Stat", primaryStat));
 
   const builds = aggregated.topPlayers && aggregated.topPlayers.length > 0
     ? aggregated.topPlayers.slice(0, 5).map((p) => {

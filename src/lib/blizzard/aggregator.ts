@@ -249,17 +249,21 @@ function deriveStatPriority(profiles: any[]): string[] {
     }
   }
 
-  // Compute average for each stat, sort descending, return top 3-5 non-primary stats
   const primaryMap: Record<string, string> = { "death-knight": "strength", "demon-hunter": "agility", "druid": "intellect", "evoker": "intellect", "hunter": "agility", "mage": "intellect", "monk": "intellect", "paladin": "strength", "priest": "intellect", "rogue": "agility", "shaman": "intellect", "warlock": "intellect", "warrior": "strength" };
   const classId = profiles[0]?.player?.classId;
   const primary = primaryMap[classId || ""] || "intellect";
+  const labelMap: Record<string, string> = { strength: "Strength", agility: "Agility", intellect: "Intellect", haste: "Haste", criticalStrike: "Critical Strike", mastery: "Mastery", versatility: "Versatility" };
 
   const avgs: { key: string; avg: number; label: string }[] = [];
   for (const [key, vals] of Object.entries(statValues)) {
     if (vals.length === 0) continue;
-    if (key === primary) continue; // skip primary stat
+    if (key === primary) {
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      avgs.push({ key, avg, label: labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1) });
+      continue;
+    }
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const label = key === "criticalStrike" ? "Critical Strike" : key.charAt(0).toUpperCase() + key.slice(1);
+    const label = labelMap[key] || (key === "criticalStrike" ? "Critical Strike" : key.charAt(0).toUpperCase() + key.slice(1));
     avgs.push({ key, avg, label });
   }
 

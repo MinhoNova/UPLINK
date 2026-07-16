@@ -7,6 +7,7 @@ import { Copy, Check, ChevronLeft, Swords, HeartHandshake, Shield, ExternalLink 
 import { getClassColor, type WoWSpec, type SpecData, type TalentTree } from "@/lib/wowData";
 import type { LeaderboardEntry } from "@/app/api/wow/leaderboard/route";
 import WowTalentTreeDisplay from "@/components/wow/WowTalentTree";
+import BisItemIcon from "@/components/wow/BisItemIcon";
 import CharacterAvatar from "@/components/wow/CharacterAvatar";
 import ClassSidebar from "@/components/wow/ClassSidebar";
 
@@ -324,10 +325,11 @@ export default function PlayerProfileClient({
               <p className="text-xs text-gray-500 mb-6">Best-in-slot gear for {spec?.classId?.replace(/-/g, " ") || ""}.</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 {specData.bis.map((item) => (
-                  <div key={item.slot} className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between hover:bg-white/[0.05] transition">
-                    <div>
+                  <div key={item.slot} className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center gap-3 hover:bg-white/[0.05] transition">
+                    <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} itemName={item.name} size={44} />
+                    <div className="min-w-0">
                       <span className="text-[7px] font-black text-gray-500 uppercase tracking-wider block">{item.slot}</span>
-                      <span className="text-sm font-black text-white">{item.name}</span>
+                      <span className="text-sm font-black text-white truncate block">{item.name}</span>
                     </div>
                   </div>
                 ))}
