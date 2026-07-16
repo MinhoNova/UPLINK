@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { X, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, ChevronLeft, Check, Loader2, TrendingUp, Sword, Shield, Coins, Zap, Send, ScrollText } from "lucide-react";
 import { DUNGEONS } from "@/lib/dungeonAssets";
 
 type BoostRequest = {
@@ -39,8 +39,6 @@ type Props = {
   currentUserId: string;
   userName: string;
 };
-
-const STEPS = ["type", "details", "budget", "done"] as const;
 
 export default function BoostRequestModal({ isOpen, onClose, currentUserId, userName }: Props) {
   const [step, setStep] = useState<number>(0);
@@ -108,245 +106,258 @@ export default function BoostRequestModal({ isOpen, onClose, currentUserId, user
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md" onClick={onClose}>
       <motion.div
-        initial={{ scale: 0.92, opacity: 0, y: 20 }}
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="w-full max-w-lg bg-gradient-to-br from-[#0a0a16] to-black border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        className="w-full max-w-xl bg-gradient-to-br from-[#0a0a16] via-[#0d0d1a] to-black border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col shadow-[0_0_60px_rgba(0,0,0,0.5)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-amber-400" />
+        <div className="relative px-7 py-5 border-b border-white/5 flex items-center gap-4 shrink-0 bg-gradient-to-r from-[#0a0a16] to-[#0f0f1e]">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/10 blur-[80px] rounded-full -translate-x-12 -translate-y-12 pointer-events-none" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
+            <TrendingUp className="w-5 h-5 text-amber-400" />
           </div>
-          <div className="flex-1">
-            <h2 className="text-sm font-black text-white uppercase tracking-widest">Boost Request</h2>
-            <p className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Find a booster — gold only</p>
+          <div className="flex-1 relative z-10">
+            <h2 className="text-base font-black text-white uppercase tracking-[0.15em]">Boost Request</h2>
+            <p className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em]">Set your terms — boosters bid for your run</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl">
-            <X className="w-4 h-4 text-gray-400" />
+          <button type="button" onClick={onClose} className="relative z-10 p-2 hover:bg-white/5 rounded-xl transition-colors">
+            <X className="w-4 h-4 text-gray-500 hover:text-white transition-colors" />
           </button>
         </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-              {step === 0 ? (
-              /* Step 1: Choose type */
-              <div className="space-y-3">
-                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">What do you need?</p>
-                <button
-                  type="button"
-                  onClick={() => { setType("leveling"); setStep(1); }}
-                  className={`w-full p-4 rounded-2xl border text-left transition ${
-                    type === "leveling" ? "border-[#00ffff]/60 bg-[#00ffff]/10" : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                  }`}
+        {/* Step indicator */}
+        <div className="flex items-center gap-1.5 px-7 pt-4 pb-2">
+          {[0, 1, 2].map((s) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                s < step ? "bg-amber-500" : s === step ? "bg-amber-500/60" : "bg-white/10"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-7 py-4">
+          <AnimatePresence mode="wait">
+            {step === 0 ? (
+              <motion.div key="type" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">What do you need?</p>
+
+                <button type="button" onClick={() => { setType("leveling"); setStep(1); }}
+                  className="group w-full p-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:from-green-500/10 hover:border-green-500/40 text-left transition-all duration-300"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-green-400" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center justify-center group-hover:shadow-[0_0_25px_rgba(34,197,94,0.2)] transition-shadow">
+                      <Shield className="w-6 h-6 text-green-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-black text-white">Power Leveling</p>
-                      <p className="text-[9px] text-gray-500">1–90 • Horde or Alliance</p>
+                      <p className="text-base font-black text-white group-hover:text-green-300 transition-colors">Power Leveling</p>
+                      <p className="text-[10px] text-gray-500 font-bold mt-0.5">1–90 &bull; Horde or Alliance &bull; Any spec</p>
                     </div>
+                    <ChevronLeft className="w-5 h-5 text-gray-600 rotate-180 ml-auto group-hover:text-green-400/60 transition-colors" />
                   </div>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setType("dungeon"); setStep(1); }}
-                  className={`w-full p-4 rounded-2xl border text-left transition ${
-                    type === "dungeon" ? "border-[#00ffff]/60 bg-[#00ffff]/10" : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                  }`}
+
+                <button type="button" onClick={() => { setType("dungeon"); setStep(1); }}
+                  className="group w-full p-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent hover:from-purple-500/10 hover:border-purple-500/40 text-left transition-all duration-300"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 border border-purple-500/30 flex items-center justify-center">
-                      <Sword className="w-5 h-5 text-purple-400" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 border border-purple-500/30 flex items-center justify-center group-hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] transition-shadow">
+                      <Sword className="w-6 h-6 text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-black text-white">Mythic+ Dungeon</p>
-                      <p className="text-[9px] text-gray-500">Any key level & dungeon</p>
+                      <p className="text-base font-black text-white group-hover:text-purple-300 transition-colors">Mythic+ Dungeon</p>
+                      <p className="text-[10px] text-gray-500 font-bold mt-0.5">Any key level &bull; Any dungeon &bull; Timer optional</p>
                     </div>
+                    <ChevronLeft className="w-5 h-5 text-gray-600 rotate-180 ml-auto group-hover:text-purple-400/60 transition-colors" />
                   </div>
                 </button>
-              </div>
+              </motion.div>
             ) : step === 1 ? (
-              /* Step 2: Details */
-              <div className="space-y-4">
-                <button type="button" onClick={() => setStep(0)} className="flex items-center gap-1 text-[9px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition">
-                  <ChevronLeft className="w-3 h-3" /> Back
+              <motion.div key="details" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                <button type="button" onClick={() => setStep(0)} className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] hover:text-white transition-colors">
+                  <ChevronLeft className="w-3.5 h-3.5" /> Back
                 </button>
 
                 {type === "leveling" ? (
                   <>
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Choose your faction</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {(["horde", "alliance"] as const).map((f) => (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={() => setFaction(f)}
-                          className={`p-3 rounded-2xl border text-center transition ${
-                            faction === f ? "border-[#00ffff]/60 bg-[#00ffff]/10 shadow-[0_0_20px_rgba(0,255,255,0.1)]" : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                          }`}
-                        >
-                          <img
-                            src={`/assets/${f === "horde" ? "Horde" : "Alliance"}.svg`}
-                            alt={f}
-                            className="w-10 h-10 mx-auto mb-1 opacity-80"
-                          />
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${faction === f ? "text-[#00ffff]" : "text-gray-400"}`}>
-                            {f === "horde" ? "Horde" : "Alliance"}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-
                     <div>
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">From level</p>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setStartLevel(clampStartLevel(startLevel - 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
-                        <input
-                          type="number"
-                          value={startLevel}
-                          onChange={(e) => setStartLevel(clampStartLevel(Number(e.target.value) || 1))}
-                          className="w-16 text-center text-lg font-black text-[#00d4ff] tabular-nums bg-black/50 border border-white/10 rounded-lg px-2 py-1 outline-none focus:border-[#00ffff]/50"
-                          min={1}
-                          max={89}
-                        />
-                        <button onClick={() => setStartLevel(clampStartLevel(startLevel + 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Choose your faction</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {(["horde", "alliance"] as const).map((f) => (
+                          <button key={f} type="button" onClick={() => setFaction(f)}
+                            className={`group p-4 rounded-2xl border text-center transition-all duration-300 ${
+                              faction === f
+                                ? "border-amber-500/60 bg-amber-500/10 shadow-[0_0_25px_rgba(251,191,36,0.15)]"
+                                : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]"
+                            }`}
+                          >
+                            <img src={`/assets/${f === "horde" ? "Horde" : "Alliance"}.svg`} alt={f} className="w-12 h-12 mx-auto mb-2 opacity-80 group-hover:opacity-100 transition-opacity" />
+                            <p className={`text-[11px] font-black uppercase tracking-[0.15em] ${
+                              faction === f ? "text-amber-400" : "text-gray-400 group-hover:text-white/80"
+                            }`}>
+                              {f === "horde" ? "Horde" : "Alliance"}
+                            </p>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
-                    <div>
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">To level</p>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setEndLevel(clampEndLevel(endLevel - 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">−</button>
-                        <input
-                          type="number"
-                          value={endLevel}
-                          onChange={(e) => setEndLevel(clampEndLevel(Number(e.target.value) || 1))}
-                          className="w-16 text-center text-lg font-black text-[#ff007f] tabular-nums bg-black/50 border border-white/10 rounded-lg px-2 py-1 outline-none focus:border-[#ff007f]/50"
-                          min={2}
-                          max={90}
-                        />
-                        <button onClick={() => setEndLevel(clampEndLevel(endLevel + 1))} className="w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg text-white font-black hover:bg-white/10">+</button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2.5">From level</p>
+                        <div className="flex items-center gap-2 justify-center">
+                          <button onClick={() => setStartLevel(clampStartLevel(startLevel - 1))} className="w-9 h-9 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">−</button>
+                          <input type="number" value={startLevel} onChange={(e) => setStartLevel(clampStartLevel(Number(e.target.value) || 1))}
+                            className="w-16 text-center text-xl font-black text-amber-400 tabular-nums bg-black/50 border border-white/10 rounded-xl px-2 py-1.5 outline-none focus:border-amber-500/50"
+                            min={1} max={89}
+                          />
+                          <button onClick={() => setStartLevel(clampStartLevel(startLevel + 1))} className="w-9 h-9 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">+</button>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2.5">To level</p>
+                        <div className="flex items-center gap-2 justify-center">
+                          <button onClick={() => setEndLevel(clampEndLevel(endLevel - 1))} className="w-9 h-9 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">−</button>
+                          <input type="number" value={endLevel} onChange={(e) => setEndLevel(clampEndLevel(Number(e.target.value) || 1))}
+                            className="w-16 text-center text-xl font-black text-amber-400 tabular-nums bg-black/50 border border-white/10 rounded-xl px-2 py-1.5 outline-none focus:border-amber-500/50"
+                            min={2} max={90}
+                          />
+                          <button onClick={() => setEndLevel(clampEndLevel(endLevel + 1))} className="w-9 h-9 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">+</button>
+                        </div>
                       </div>
                     </div>
                   </>
                 ) : (
                   <>
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Select dungeon</p>
-                    <div className="grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto custom-scrollbar">
-                      {(DUNGEONS || []).map((d) => (
-                        <button
-                          key={d.name}
-                          type="button"
-                          onClick={() => setDungeonName(d.name)}
-                          className={`p-2 rounded-xl border text-center transition ${
-                            dungeonName === d.name ? "border-[#00ffff]/60 bg-[#00ffff]/10" : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                          }`}
-                        >
-                          {d.img && <img src={d.img} alt={d.name} className="w-10 h-10 mx-auto mb-1 rounded-lg object-cover" />}
-                          <p className={`text-[7px] font-black uppercase tracking-wider truncate ${dungeonName === d.name ? "text-[#00ffff]" : "text-gray-400"}`}>{d.short || d.name}</p>
-                        </button>
-                      ))}
+                    <div>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Select dungeon</p>
+                      <div className="grid grid-cols-4 gap-2.5 max-h-[240px] overflow-y-auto custom-scrollbar">
+                        {(DUNGEONS || []).map((d) => (
+                          <button key={d.name} type="button" onClick={() => setDungeonName(d.name)}
+                            className={`group p-3 rounded-xl border text-center transition-all duration-200 ${
+                              dungeonName === d.name
+                                ? "border-amber-500/60 bg-amber-500/10 shadow-[0_0_20px_rgba(251,191,36,0.1)]"
+                                : "border-white/10 bg-white/[0.03] hover:border-white/25"
+                            }`}
+                          >
+                            {d.img && <img src={d.img} alt={d.name} className="w-10 h-10 mx-auto mb-1.5 rounded-lg object-cover group-hover:scale-105 transition-transform" />}
+                            <p className={`text-[8px] font-black uppercase tracking-wider truncate ${
+                              dungeonName === d.name ? "text-amber-400" : "text-gray-500 group-hover:text-white/70"
+                            }`}>{d.short || d.name}</p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div>
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Key level</p>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setKeyLevel(Math.max(2, keyLevel - 1))} className="w-8 h-8 flex items-center justify-center bg-[#ff007f]/20 rounded-lg text-white font-black hover:bg-[#ff007f]/30">−</button>
-                        <span className="text-lg font-black text-[#00d4ff] tabular-nums w-12 text-center">{keyLevel}</span>
-                        <button onClick={() => setKeyLevel(Math.min(40, keyLevel + 1))} className="w-8 h-8 flex items-center justify-center bg-[#00ffff]/20 rounded-lg text-black font-black hover:bg-[#00ffff]/30">+</button>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2.5">Key level</p>
+                      <div className="flex items-center gap-3 justify-center">
+                        <button onClick={() => setKeyLevel(Math.max(2, keyLevel - 1))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">−</button>
+                        <div className="text-center">
+                          <span className="text-2xl font-black text-amber-400 tabular-nums">+{keyLevel}</span>
+                        </div>
+                        <button onClick={() => setKeyLevel(Math.min(40, keyLevel + 1))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">+</button>
                       </div>
                     </div>
                   </>
                 )}
 
                 <div>
-                  <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Notes (optional)</p>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2.5">Notes <span className="text-gray-600 normal-case tracking-normal">(optional)</span></p>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Warlock preferred, have own key, etc."
+                    placeholder="Warlock preferred, have own key, voice required, etc."
                     rows={2}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500/50 resize-none placeholder:text-gray-600"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500/50 focus:shadow-[0_0_20px_rgba(251,191,36,0.05)] resize-none placeholder:text-gray-600 transition-all"
                   />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  disabled={type === "leveling" && !faction}
-                  className="w-full py-3 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:opacity-90 disabled:opacity-40 transition"
+                <button type="button" onClick={() => setStep(2)} disabled={type === "leveling" && !faction}
+                  className="group relative w-full py-3.5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-500/50 hover:shadow-[0_0_30px_rgba(251,191,36,0.15)]"
                 >
+                  <Coins className="w-4 h-4" />
                   Continue to Budget
                 </button>
-              </div>
+              </motion.div>
             ) : step === 2 ? (
-              /* Step 3: Budget — gold only */
-              <div className="space-y-4">
-                <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1 text-[9px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition">
-                  <ChevronLeft className="w-3 h-3" /> Back
+              <motion.div key="budget" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] hover:text-white transition-colors">
+                  <ChevronLeft className="w-3.5 h-3.5" /> Back
                 </button>
 
-                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Your budget (gold)</p>
-                <p className="text-[8px] text-gray-600">Boosters will bid on your request. Set a starting budget in gold.</p>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Your budget <span className="text-amber-400">(gold)</span></p>
+                <p className="text-[9px] text-gray-600 font-medium">Boosters will bid on your request. Set a starting budget in gold — higher offers get faster responses.</p>
 
-                <div className="flex items-center gap-3 justify-center">
-                  <button onClick={() => setBudget(Math.max(1, budget - 10))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/10">−</button>
+                <div className="flex items-center gap-4 justify-center py-2">
+                  <button onClick={() => setBudget(Math.max(1, budget - 10))} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">−</button>
                   <div className="text-center">
-                    <span className="text-2xl font-black text-yellow-400 tabular-nums">{budget}</span>
-                    <p className="text-[8px] font-black text-yellow-400/60 uppercase tracking-widest">K Gold</p>
+                    <span className="text-3xl font-black text-amber-400 tabular-nums">{budget}</span>
+                    <p className="text-[9px] font-black text-amber-500/60 uppercase tracking-[0.25em] mt-0.5">K Gold</p>
                   </div>
-                  <button onClick={() => setBudget(budget + 10)} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/10">+</button>
+                  <button onClick={() => setBudget(budget + 10)} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white font-black hover:bg-white/15 hover:text-amber-400 transition-all">+</button>
                 </div>
 
-                <div className="flex gap-2 flex-wrap justify-center">
+                <div className="flex gap-2.5 flex-wrap justify-center">
                   {[10, 25, 50, 100, 200, 500].map((v) => (
-                    <button key={v} type="button" onClick={() => setBudget(v)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition ${
-                      budget === v ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/40" : "bg-white/5 text-gray-500 border border-white/10 hover:border-white/20"
-                    }`}>{v}K</button>
+                    <button key={v} type="button" onClick={() => setBudget(v)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-200 ${
+                        budget === v
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-[0_0_20px_rgba(251,191,36,0.1)]"
+                          : "bg-white/5 text-gray-500 border border-white/10 hover:border-white/25 hover:text-white/70"
+                      }`}
+                    >{v}K</button>
                   ))}
                 </div>
 
-                <button
-                  type="button"
-                  disabled={loading || budget <= 0}
-                  onClick={handleCreate}
-                  className="w-full py-3.5 rounded-xl font-black uppercase text-[11px] tracking-widest transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:opacity-90"
+                <button type="button" disabled={loading || budget <= 0} onClick={handleCreate}
+                  className="group relative w-full py-4 rounded-2xl font-black uppercase text-sm tracking-[0.25em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white hover:shadow-[0_0_40px_rgba(251,191,36,0.3)] hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  )}
                   {loading ? "Posting..." : `Post Request — ${budget}K Gold`}
                 </button>
-              </div>
+
+                <p className="text-center text-[8px] text-gray-600 font-bold uppercase tracking-[0.15em]">No upfront payment &bull; Pay booster after completion</p>
+              </motion.div>
             ) : (
-              /* Step 4: Done */
-              <div className="text-center py-6 space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                  <Check className="w-8 h-8 text-green-400" />
+              <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-5">
+                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(34,197,94,0.15)]">
+                  <Check className="w-10 h-10 text-green-400" />
                 </div>
-                <p className="text-lg font-black text-white">Request Posted!</p>
-                <p className="text-[10px] text-gray-500">Boosters will see your request and place bids.</p>
+                <div>
+                  <p className="text-xl font-black text-white">Request Posted!</p>
+                  <p className="text-[11px] text-gray-500 font-bold mt-1.5">Boosters will see your request and place bids shortly.</p>
+                </div>
                 {createdRequest && (
-                  <div className="bg-white/[0.03] rounded-2xl p-4 border border-white/5 text-left space-y-1">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-2xl p-5 border border-amber-500/20 text-left space-y-1.5">
+                    <p className="text-[10px] font-black text-amber-400/60 uppercase tracking-[0.15em]">
                       {createdRequest.type === "leveling"
-                        ? `Leveling ${createdRequest.startLevel}→${createdRequest.endLevel}`
+                        ? `Leveling ${createdRequest.startLevel} → ${createdRequest.endLevel}`
                         : `${createdRequest.dungeonName} +${createdRequest.keyLevel}`}
                     </p>
-                    <p className="text-sm font-black text-amber-400">{createdRequest.budget}K Gold</p>
+                    <p className="text-lg font-black text-amber-400 flex items-center gap-2">
+                      <Coins className="w-4 h-4" />
+                      {createdRequest.budget}K Gold
+                    </p>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="w-full py-3 rounded-xl bg-white/5 text-gray-400 font-black uppercase text-[10px] tracking-widest hover:bg-white/10 hover:text-white transition"
+                <button type="button" onClick={onClose}
+                  className="w-full py-3.5 rounded-2xl bg-white/5 text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-white/10 hover:text-white transition-all border border-white/5"
                 >
                   Close
                 </button>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </div>

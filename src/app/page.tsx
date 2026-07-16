@@ -4920,18 +4920,18 @@ export default function HomePage() {
                                   </div>
                                    <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#ff007f]/60" />
                                 </div>
-                                <button
-                                   type="button"
-                                   onClick={() => {
-                                      if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
-                                      if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
-                                      setIsBoostRequestModalOpen(true);
-                                   }}
-                                   className="group flex items-center gap-2.5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] px-5 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-amber-400/70 hover:text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/40 transition-all backdrop-blur-sm"
-                                >
-                                   <Compass className="w-4 h-4 shrink-0 text-amber-400/50 group-hover:text-amber-400 transition-colors" />
-                                   <span>Feeling lost? Request a Boost</span>
-                                </button>
+                                 <button
+                                    type="button"
+                                    onClick={() => {
+                                       if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
+                                       if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
+                                       setIsBoostRequestModalOpen(true);
+                                    }}
+                                    className="group relative px-10 py-5 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 text-amber-400 rounded-[2rem] font-black uppercase tracking-[0.25em] text-xs transition-all shadow-[0_0_30px_rgba(251,191,36,0.15)] hover:shadow-[0_0_50px_rgba(251,191,36,0.3)] hover:scale-105 active:scale-95 flex items-center gap-4 border border-amber-500/30 hover:border-amber-500/50"
+                                 >
+                                    <Compass className="w-5 h-5 shrink-0 relative z-10 text-amber-400/70 group-hover:text-amber-300 transition-colors" />
+                                    <span className="relative z-10 group-hover:text-white transition-colors">Feeling lost? Request a Boost</span>
+                                 </button>
                              </div>
                             </motion.div>
                         </div>
