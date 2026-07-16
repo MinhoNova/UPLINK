@@ -32,7 +32,7 @@ import '@livekit/components-styles';
 
 /* --- COMPONENTS --- */
 import BoostRequestModal from "@/components/modals/BoostRequestModal";
-import BoostRequestsSidebar from "@/components/BoostRequestsSidebar";
+
 import SecretClubCard from "@/components/SecretClubCard";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
@@ -5341,16 +5341,6 @@ Requests
                                      </div>
                                       </div>)); })()}
                                   </div>
-                                </div>
-                                {/* Boost Requests sidebar — next to offers */}
-                                <div className="w-72 shrink-0 hidden xl:block">
-                                   <BoostRequestsSidebar
-                                      currentUserId={currentUserId}
-                                      currentUserDisplay={currentUserDisplay}
-                                      isSuspended={isSuspended}
-                                      hasPendingPayments={hasPendingPayments}
-                                      setIsBoostRequestModalOpen={setIsBoostRequestModalOpen}
-                                   />
                                 </div>
                                </div>
                           )}
