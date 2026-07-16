@@ -6329,15 +6329,9 @@ export function aggregatePlayerTalents(
 ): AggregatedTalentTree[] {
   const total = topPlayers?.length || 0;
 
-  // Fallback: no pipeline data or no talents — use hardcoded base trees with zero counts
+  // Only show talents from pipeline data — no hardcoded fallback
   if (!topPlayers || topPlayers.length === 0 || !topPlayers.some((p) => p.talents && p.talents.length > 0)) {
-    if (!baseTrees || baseTrees.length === 0) return [];
-    return baseTrees.map((tree) => ({
-      name: tree.name,
-      nodes: tree.nodes.map((n) => ({
-        name: n.name, id: n.id, iconName: n.iconName, row: n.row, col: n.col, count: 0, total,
-      })),
-    }));
+    return [];
   }
 
   // Collect all unique talents across all players, keyed by nodeId
@@ -6373,17 +6367,6 @@ export function aggregatePlayerTalents(
   }
 
   // Build position map from base trees (spellId → row/col)
-  const basePosMap = new Map<string, Map<number, { row: number; col: number }>>();
-  if (baseTrees) {
-    for (const tree of baseTrees) {
-      const map = new Map<number, { row: number; col: number }>();
-      for (const n of tree.nodes) {
-        if (n.id) map.set(n.id, { row: n.row, col: n.col });
-      }
-      basePosMap.set(tree.name, map);
-    }
-  }
-
   // Group by tree, deduplicate by spellId
   const byTree = new Map<string, { name: string; id?: number; iconName?: string; count: number; treeKind?: string; row?: number; col?: number }[]>();
   const seenNodeIds = new Map<string, Set<number>>();
