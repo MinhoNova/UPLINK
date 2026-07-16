@@ -6334,7 +6334,21 @@ export function aggregatePlayerTalents(
     return [];
   }
 
-  // Collect all unique talents across all players, keyed by nodeId
+  // Build icon lookup from ALL talents across all players (including unselected)
+  const allIconLookup = new Map<number, string>();
+  const allNameLookup = new Map<number, string>();
+  for (const player of topPlayers) {
+    if (!player.talents) continue;
+    for (const talent of player.talents) {
+      const tid = talent.spellId || talent.nodeId;
+      if (tid) {
+        if (talent.iconName && !allIconLookup.has(tid)) allIconLookup.set(tid, talent.iconName);
+        if (!allNameLookup.has(tid)) allNameLookup.set(tid, talent.name);
+      }
+    }
+  }
+
+  // Collect all unique selected talents across all players, keyed by nodeId
   const talentMap = new Map<string, { name: string; id?: number; iconName?: string; spellId?: number; treeName: string; treeKind?: string; count: number; playerIndices: Set<number>; row?: number; col?: number }>();
 
   for (let pi = 0; pi < topPlayers.length; pi++) {
@@ -6411,9 +6425,9 @@ export function aggregatePlayerTalents(
         const match = baseNode.id ? countById.get(baseNode.id) : undefined;
         const playerPos = baseNode.id ? playerPositions.get(baseNode.id) : undefined;
         aggNodes.push({
-          name: match?.name || baseNode.name,
+          name: match?.name || baseNode.name || allNameLookup.get(baseNode.id || 0) || "",
           id: baseNode.id,
-          iconName: match?.iconName || baseNode.iconName,
+          iconName: match?.iconName || baseNode.iconName || allIconLookup.get(baseNode.id || 0) || undefined,
           row: playerPos?.row ?? baseNode.row,
           col: playerPos?.col ?? baseNode.col,
           count: match?.count || 0,
@@ -6431,7 +6445,7 @@ export function aggregatePlayerTalents(
           aggNodes.push({
             name: node.name,
             id: node.id,
-            iconName: node.iconName,
+            iconName: node.iconName || allIconLookup.get(node.id || 0) || undefined,
             row: node.row ?? 0,
             col: node.col ?? 0,
             count: node.count,
@@ -6442,7 +6456,7 @@ export function aggregatePlayerTalents(
         let row = 1, col = 1;
         for (const node of nodes) {
           aggNodes.push({
-            name: node.name, id: node.id, iconName: node.iconName, row, col, count: node.count, total,
+            name: node.name, id: node.id, iconName: node.iconName || allIconLookup.get(node.id || 0) || undefined, row, col, count: node.count, total,
           });
           col = col === 1 ? 2 : 1;
           if (col === 1) row++;
