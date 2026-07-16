@@ -174,8 +174,8 @@ export async function fetchCharacterProfile(
       const loadout = activeSpec.loadouts?.find((l: any) => l.is_active) || activeSpec.loadouts?.[0];
       if (!loadout) return profile;
 
-      // Extract talent import/export string
-      profile.talentLoadout = loadout.text || loadout.talent_loadout_code || "";
+      // Extract talent import/export string — talent_loadout_code is the TWW+ format (includes hero talents)
+      profile.talentLoadout = loadout.talent_loadout_code || loadout.text || "";
 
       const allTalentEntries: { id: number; rank: number; name: string; spellId?: number; iconName?: string; row?: number; col?: number; treeName: string; treeKind: string }[] = [];
 
@@ -365,18 +365,23 @@ export async function fetchCharacterProfile(
       }
     }
 
-    // Parse M+ rating
+    // Parse M+ rating — current_mythic_rating is always the active season
     if (mythicRes?.ok) {
       const mythicData = await mythicRes.json();
-      // Try seasons array (current season first), fall back to top-level current_mythic_rating
-      const seasons = mythicData.seasons || mythicData.mythic_keystone_seasons || [];
-      const currentSeason = seasons[0];
-      if (currentSeason?.best_runs || currentSeason?.mythic_rating) {
-        const rating = currentSeason.mythic_rating?.rating;
-        if (rating != null && rating > 0) profile.mythicPlusRating = Math.round(rating);
-      }
-      if (!profile.mythicPlusRating && mythicData.current_mythic_rating?.rating) {
+      // Primary: current_mythic_rating (always current season, 0 if no runs this season)
+      if (mythicData.current_mythic_rating?.rating > 0) {
         profile.mythicPlusRating = Math.round(mythicData.current_mythic_rating.rating);
+      } else {
+        // Fallback: pick the latest season (highest season.id) from the seasons array
+        const seasons = mythicData.seasons || mythicData.mythic_keystone_seasons || [];
+        if (seasons.length > 0) {
+          const latest = seasons.reduce((a: any, b: any) =>
+            (a.season?.id || 0) > (b.season?.id || 0) ? a : b
+          );
+          if (latest?.mythic_rating?.rating > 0) {
+            profile.mythicPlusRating = Math.round(latest.mythic_rating.rating);
+          }
+        }
       }
     }
 

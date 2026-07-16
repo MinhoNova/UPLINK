@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getKV, setKV, initTables } from "@/lib/db";
-import { fetchTopPlayersFromBlizzard, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
+import { fetchTopPlayersFromBlizzard, fetchTopPlayersFromRaiderIO, selectTopPlayersBySpec } from "@/lib/blizzard/leaderboard";
 import { aggregateBySpec } from "@/lib/blizzard/aggregator";
 import { getCurrentMythicPlusSeason } from "@/lib/mythicSeason";
 import type { MetaPipelineResult } from "@/lib/blizzard/types";
@@ -71,7 +71,14 @@ export async function GET(request: Request) {
           for (const [specId, specData] of Object.entries(cached.specs)) {
             const found = (specData as any).topPlayers?.find(match) || (specData as any).players?.find(match);
             if (found) {
-              return NextResponse.json({ player: found, specId, season: cached.season, cached: true });
+              // Calculate rank from the sorted full players list
+              const allPlayers = [...((specData as any).players || [])].sort(
+                (a: any, b: any) => Math.round(b.score) - Math.round(a.score)
+              );
+              const rank = allPlayers.findIndex(
+                (p: any) => p.name === found.name && p.realm === found.realm
+              ) + 1;
+              return NextResponse.json({ player: { ...found, rank }, specId, season: cached.season, cached: true });
             }
           }
           return NextResponse.json({ player: null, cached: true });
@@ -102,6 +109,15 @@ export async function GET(request: Request) {
 
     const mergedMap = new Map<string, typeof blizzardPlayers[0]>();
     for (const p of blizzardPlayers) {
+      const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
+      const existing = mergedMap.get(key);
+      if (!existing || p.score > existing.score) mergedMap.set(key, p);
+    }
+
+    // Supplement with RaiderIO estimated combined scores
+    // (Blizzard CR scores are per-dungeon ~200-500, not combined M+ scores)
+    const rioPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
+    for (const p of rioPlayers) {
       const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
       const existing = mergedMap.get(key);
       if (!existing || p.score > existing.score) mergedMap.set(key, p);

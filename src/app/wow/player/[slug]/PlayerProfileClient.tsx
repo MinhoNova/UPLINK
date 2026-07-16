@@ -235,26 +235,46 @@ export default function PlayerProfileClient({
                 );
               }
               if (playerTalents) {
-                const treeMap = new Map<string, TalentTree>();
+                // Overlay player's selected talents on full base tree layout
+                const baseTrees = (specData?.builds?.[0]?.trees || []).filter(t => t.name !== "Class Talents");
+                const selectedByTree = new Map<string, Set<number>>();
+                const heroTalentMap = new Map<string, TalentTree>();
                 for (const t of playerTalents) {
                   if (t.treeKind === "class") continue;
                   const treeName = t.treeName || "Talents";
-                  if (!treeMap.has(treeName)) treeMap.set(treeName, { name: treeName, nodes: [] });
-                  treeMap.get(treeName)!.nodes.push({
-                    name: t.name,
-                    id: t.spellId || t.nodeId,
-                    iconName: t.iconName,
-                    row: t.row ?? Math.ceil((treeMap.get(treeName)!.nodes.length + 1) / 2),
-                    col: t.col ?? ((treeMap.get(treeName)!.nodes.length % 2) + 1),
-                    selected: t.selected,
-                  });
+                  if (t.treeKind === "hero") {
+                    if (!heroTalentMap.has(treeName)) heroTalentMap.set(treeName, { name: treeName, nodes: [] });
+                    heroTalentMap.get(treeName)!.nodes.push({
+                      name: t.name,
+                      id: t.spellId || t.nodeId,
+                      iconName: t.iconName,
+                      row: t.row ?? Math.ceil((heroTalentMap.get(treeName)!.nodes.length + 1) / 2),
+                      col: t.col ?? ((heroTalentMap.get(treeName)!.nodes.length % 2) + 1),
+                      selected: t.selected,
+                    });
+                  } else {
+                    if (!selectedByTree.has(treeName)) selectedByTree.set(treeName, new Set());
+                    selectedByTree.get(treeName)!.add(t.spellId || t.nodeId);
+                  }
                 }
-                const pipelineTrees = Array.from(treeMap.values());
+                const trees = baseTrees.length > 0
+                  ? baseTrees.map(tree => ({
+                      name: tree.name,
+                      nodes: tree.nodes.map(n => ({
+                        name: n.name,
+                        id: n.id,
+                        iconName: n.iconName,
+                        row: n.row,
+                        col: n.col,
+                        selected: selectedByTree.get(tree.name)?.has(n.id || 0) || false,
+                      })),
+                    })).concat(Array.from(heroTalentMap.values()))
+                  : Array.from(heroTalentMap.values());
                 return (
                   <div className="mb-6 p-4 rounded-2xl border-2 border-dashed" style={{ borderColor: `${color}40`, backgroundColor: `${color}08` }}>
                     <div className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color }}>&#10022; This Player&apos;s Build</div>
                     <div className="bg-black/40 rounded-xl p-4 border border-white/5">
-                      <WowTalentTreeDisplay trees={pipelineTrees} color={color} classId={spec?.classId || player.classId} />
+                      <WowTalentTreeDisplay trees={trees} color={color} classId={spec?.classId || player.classId} />
                     </div>
                   </div>
                 );

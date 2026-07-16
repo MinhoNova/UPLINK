@@ -391,7 +391,8 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
 
           {/* ═══ POPULAR TALENTS ═══ */}
           {data && data.builds.length > 0 && (() => {
-            const baseTrees: TalentTree[] = data.builds[0]?.trees || [];
+            const hardcodedBaseTrees = (getSpecData(id, ptr)?.builds?.[0]?.trees || []).filter(t => t.name !== "Class Talents");
+            const baseTrees: TalentTree[] = (data.builds[0]?.trees?.length ? data.builds[0].trees : hardcodedBaseTrees);
             const aggregatedTrees: AggregatedTalentTree[] = aggregatePlayerTalents(aggData?.topPlayers, baseTrees);
             if (aggregatedTrees.length === 0) return null;
             const totalPlayers = aggData?.topPlayers?.length || 0;
@@ -409,6 +410,8 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
               })),
             }));
             const topBuild = data.builds[0];
+            const hardcodedBuild = getSpecData(id, ptr)?.builds?.[0];
+            const talentString = topBuild?.talentString || hardcodedBuild?.talentString || "";
             return (
             <section className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-[2rem] p-6 sm:p-8">
               <h2 className="text-lg font-black text-white mb-1">Popular Talents{ptr && <span className="ml-2 text-[9px] font-black text-fuchsia-400 bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.5 rounded tracking-wider">Projected S2</span>}</h2>
@@ -417,11 +420,11 @@ export default function SpecDetailClient({ id, ptr }: { id: string; ptr?: boolea
                   ? `Talent popularity from top ${totalPlayers} ${spec.name} M+ players — orange = most popular, purple = picked, dim = unpicked.`
                   : `Talent guide for ${spec.name} — all recommended picks shown.`}
               </p>
-              {topBuild?.talentString && (
+              {talentString && (
                 <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
                   <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider">Import Code</span>
-                  <code className="text-[9px] font-mono text-white/70 truncate flex-1">{topBuild.talentString}</code>
-                  <button onClick={() => copyTalentString(topBuild.talentString, 999)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border ${copiedIndex === 999 ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10"}`}>
+                  <code className="text-[9px] font-mono text-white/70 truncate flex-1">{talentString}</code>
+                  <button onClick={() => copyTalentString(talentString, 999)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all border ${copiedIndex === 999 ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-[#00ffff]/5 text-[#00ffff] border-[#00ffff]/20 hover:bg-[#00ffff]/10"}`}>
                     {copiedIndex === 999 ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
                     {copiedIndex === 999 ? "Copied!" : "Copy"}
                   </button>

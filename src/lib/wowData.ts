@@ -6236,15 +6236,18 @@ export function mergeAggregatedData(
           if (baseTrees.length > 0) {
             // Build set of player's selected talent IDs per tree
             const selectedByTree = new Map<string, Set<number>>();
+            const iconLookup = new Map<number, string>();
             const heroTalentMap = new Map<string, TalentTree>();
             for (const t of p.talents) {
               if (t.treeKind === "class") continue;
               const treeName = t.treeName || "Talents";
+              const tid = t.spellId || t.nodeId;
+              if (tid && t.iconName) iconLookup.set(tid, t.iconName);
               if (t.treeKind === "hero") {
                 if (!heroTalentMap.has(treeName)) heroTalentMap.set(treeName, { name: treeName, nodes: [] });
                 heroTalentMap.get(treeName)!.nodes.push({
                   name: t.name,
-                  id: t.spellId || t.nodeId,
+                  id: tid,
                   iconName: t.iconName,
                   row: t.row || Math.ceil((heroTalentMap.get(treeName)!.nodes.length + 1) / 2),
                   col: t.col || ((heroTalentMap.get(treeName)!.nodes.length % 2) + 1),
@@ -6252,7 +6255,7 @@ export function mergeAggregatedData(
                 });
               } else {
                 if (!selectedByTree.has(treeName)) selectedByTree.set(treeName, new Set());
-                selectedByTree.get(treeName)!.add(t.spellId || t.nodeId);
+                selectedByTree.get(treeName)!.add(tid);
               }
             }
             // Overlay player selections on base tree layout
@@ -6261,7 +6264,7 @@ export function mergeAggregatedData(
               nodes: tree.nodes.map(n => ({
                 name: n.name,
                 id: n.id,
-                iconName: n.iconName,
+                iconName: n.iconName || iconLookup.get(n.id || 0),
                 row: n.row,
                 col: n.col,
                 selected: selectedByTree.get(tree.name)?.has(n.id || 0) || false,
@@ -6324,15 +6327,10 @@ export function aggregatePlayerTalents(
   topPlayers: AggregatedSpecData['topPlayers'],
   baseTrees?: TalentTree[]
 ): AggregatedTalentTree[] {
-  if (!topPlayers || topPlayers.length === 0) return [];
-
   const total = topPlayers?.length || 0;
 
-  // Check if any player has talent data
-  const hasTalents = topPlayers.some((p) => p.talents && p.talents.length > 0);
-
-  // Fallback: no talent data in any player — use hardcoded base trees with zero counts
-  if (!hasTalents) {
+  // Fallback: no pipeline data or no talents — use hardcoded base trees with zero counts
+  if (!topPlayers || topPlayers.length === 0 || !topPlayers.some((p) => p.talents && p.talents.length > 0)) {
     if (!baseTrees || baseTrees.length === 0) return [];
     return baseTrees.map((tree) => ({
       name: tree.name,

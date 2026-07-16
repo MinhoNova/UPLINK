@@ -26,18 +26,13 @@ async function runBlizzardPipeline(env: CloudflareEnv) {
     if (!existing || p.score > existing.score) mergedMap.set(key, p);
   }
 
-  // 2) Count per spec — if any spec < 50, supplement via RaiderIO
-  const specCounts = new Map<string, number>();
-  for (const p of mergedMap.values()) specCounts.set(p.specId, (specCounts.get(p.specId) || 0) + 1);
-  const lowSpecs = [...specCounts.entries()].filter(([, c]) => c < 50).map(([s]) => s);
-  if (lowSpecs.length > 0) {
-    const rioPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
-    for (const p of rioPlayers) {
-      if (!lowSpecs.includes(p.specId)) continue;
-      const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
-      const existing = mergedMap.get(key);
-      if (!existing || p.score > existing.score) mergedMap.set(key, p);
-    }
+  // 2) Supplement ALL specs with RaiderIO estimated combined scores
+  //    (Blizzard CR scores are per-dungeon ~200-500, not combined M+ scores)
+  const rioPlayers = await fetchTopPlayersFromRaiderIO(seasonSlug);
+  for (const p of rioPlayers) {
+    const key = `${p.name}|${p.realm}|${p.region}|${p.specId}`;
+    const existing = mergedMap.get(key);
+    if (!existing || p.score > existing.score) mergedMap.set(key, p);
   }
 
   // 3) Aggregate

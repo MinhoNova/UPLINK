@@ -15,3 +15,34 @@ npm run thumbs:regen
 ```
 
 All class/role thumbnails are served without `loading="lazy"` or `decoding="async"` where possible — add these when creating new `<img>` tags pointing to `/classes-thumb/*.webp`.
+
+## Blizzard Pipeline Fixes
+
+### Talent Loadout (`character-profile.ts:178`)
+- `talent_loadout_code` (TWW+ format with hero talents) must be prioritized over `loadout.text` (old Dragonflight format)
+- Precedence: `loadout.talent_loadout_code || loadout.text || ""`
+
+### M+ Rating Extraction (`character-profile.ts:368-382`)
+- `current_mythic_rating` from the keystone profile API is the primary source (always current season, 0 if no runs)
+- Fallback: latest season (highest `season.id`) from `seasons` array, not `seasons[0]` (oldest)
+- Blizzard's per-dungeon CR leaderboard scores (~200-500) are NOT combined M+ scores; always override with profile `mythicPlusRating`
+
+### RaiderIO Supplement (`custom-worker.ts`, `blizzard-meta/route.ts`)
+- Always supplement ALL specs with RaiderIO estimated combined scores, not just specs with <50 Blizzard CR players
+- Blizzard CR scores are per-dungeon (~200-500) — RaiderIO scores are estimated combined (1000-5000+)
+- Merge dedup key: `${p.name}|${p.realm}|${p.region}|${p.specId}` — keeps highest score
+
+### Player Profile Rank (`blizzard-meta/route.ts`)
+- Rank is calculated from the sorted `players` list at lookup time (not stored in cache)
+- Sort by `Math.round(b.score) - Math.round(a.score)`, then findIndex + 1
+
+### Auto-News Category Matching (`route.ts:24-36`)
+- `inferCategory()` now matches additional keywords: "keystone", "m+", "undermine", "midnight"
+- RSS parser handles single-item feeds (XML may return object instead of array)
+
+### Pipeline Order
+1. Blizzard CR leaderboards → discover players (per-dungeon scores, ignore for ranking)
+2. RaiderIO runs → supplement all specs with estimated combined scores
+3. Merge dedup by name|realm|region|specId, keep highest score
+4. `selectTopPlayersBySpec` → top 50 per spec by score
+5. `aggregateBySpec` → fetch Blizzard profiles, override scores with `mythicPlusRating`

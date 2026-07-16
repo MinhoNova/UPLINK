@@ -24,7 +24,9 @@ async function getKvBinding(): Promise<any | null> {
 function inferCategory(text: string): string {
   const lower = text.toLowerCase();
   if (lower.includes("class tuning")) return "Class Tuning";
-  if (lower.includes("mythic") || lower.includes("dungeon") || lower.includes("timewalk")) return "Dungeons";
+  if (lower.includes("mythic") || lower.includes("dungeon") || lower.includes("timewalk") ||
+      lower.includes("keystone") || lower.includes("m+") || lower.includes("undermine") ||
+      lower.includes("midnight")) return "Dungeons";
   if (lower.includes("hotfix")) return "Hotfixes";
   if (lower.includes("ptr") || lower.includes("development notes") || lower.includes("testing")) return "PTR";
   if (lower.includes("blog") || lower.includes("wow weekly") || lower.includes("wowcast")) return "Blog";
@@ -43,8 +45,9 @@ async function postPipelineItems() {
     const xml = await res.text();
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
     const doc = parser.parse(xml);
-    const items = doc?.rss?.channel?.item;
-    if (!items || !Array.isArray(items)) { console.error(`[auto-news] no items in RSS`); return; }
+    let items = doc?.rss?.channel?.item;
+    if (!items) { console.error(`[auto-news] no items in RSS`); return; }
+    if (!Array.isArray(items)) items = [items];
 
     const db = await getDb();
     for (const item of items) {
