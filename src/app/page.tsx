@@ -31,6 +31,7 @@ import '@livekit/components-styles';
 
 /* --- COMPONENTS --- */
 import BoostRequestModal from "@/components/modals/BoostRequestModal";
+import BoostRequestsSidebar from "@/components/BoostRequestsSidebar";
 import SecretClubCard from "@/components/SecretClubCard";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
@@ -4989,11 +4990,12 @@ export default function HomePage() {
                           </div>
 </div>
 
-                              <div className={`${activeMainTab !== "admin" ? 'w-full' : ''}`}>
-                           {activeMainTab === "boosts" && (
-                              <div className="grid gap-2 overflow-visible mt-2">
-                                 <div className="flex flex-col gap-4">
-                                     {(() => {
+                               <div className={`${activeMainTab !== "admin" ? 'w-full' : ''}`}>
+                            {activeMainTab === "boosts" && (
+                               <div className="flex gap-8 mt-2">
+                               <div className="grid gap-2 overflow-visible flex-1 min-w-0">
+                                  <div className="flex flex-col gap-4">
+                                      {(() => {
                                         const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));
                                         const sorted = [...activeLobbies].sort((a, b) => {
                                            const tierA = getUserTier(a.ownerId);
@@ -5325,12 +5327,23 @@ export default function HomePage() {
                                         )}
                                      </div>
                                       </div>)); })()}
-                                 </div>
-                              </div>
-                        )}
+                                  </div>
+                                </div>
+                                {/* Boost Requests sidebar — next to offers */}
+                                <div className="w-72 shrink-0 hidden xl:block">
+                                   <BoostRequestsSidebar
+                                      currentUserId={currentUserId}
+                                      currentUserDisplay={currentUserDisplay}
+                                      isSuspended={isSuspended}
+                                      hasPendingPayments={hasPendingPayments}
+                                      setIsBoostRequestModalOpen={setIsBoostRequestModalOpen}
+                                   />
+                                </div>
+                               </div>
+                          )}
 
 
-                          {activeMainTab === "admin" && isAdmin && (
+                           {activeMainTab === "admin" && isAdmin && (
                              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
                                 <div className="flex flex-wrap gap-2 p-2 bg-black/30 rounded-2xl border border-white/5">
                                     {[
