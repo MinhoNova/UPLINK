@@ -50,7 +50,9 @@ export default async function PlayerProfilePage({ params, searchParams }: PagePr
     if (!player) notFound();
 
     const spec = SPECS.find((s) => s.id === data.specId);
-    const specData = getSpecData(data.specId);
+    // Use pipeline spec data (with Blizzard API tree definitions) when available, fall back to hardcoded
+    const pipelineSpecData = data.specData as any;
+    const specData = pipelineSpecData?.topPlayers?.length ? pipelineSpecData : getSpecData(data.specId);
 
     // Map from AggregatedCharacter to LeaderboardEntry-compatible shape
     const playerMapped = {

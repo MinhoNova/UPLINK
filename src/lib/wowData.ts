@@ -6150,6 +6150,7 @@ export interface AggregatedSpecData {
   topPlayers: { name: string; realm: string; region: string; specId: string; classId: string; score: number; race?: string; talents?: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear?: { slot: string; name: string; itemId: number }[]; gems?: string[]; enchants?: { slot: string; name: string }[]; statPriority?: string[] }[];
   players: { name: string; realm: string; region: string; score: number; specId: string; classId: string; race?: string }[];
   lastUpdated: number;
+  treeDefinitions?: { name: string; id: number; kind: string; nodes: { nodeId: number; name: string; spellId?: number; iconName?: string; row: number; col: number }[] }[];
 }
 
 export function mergeAggregatedData(
@@ -6244,11 +6245,22 @@ export function mergeAggregatedData(
     ? aggregated.statPriority
     : hardcoded.statPriority).map(s => s.replace("Main Stat", primaryStat));
 
+  // Use pipeline tree definitions (from Blizzard API) as base layout when available
+  const pipelineBase = aggregated.treeDefinitions
+    ? aggregated.treeDefinitions
+        .filter(td => td.kind !== "class")
+        .map(td => ({
+          name: td.name,
+          nodes: td.nodes.map(n => ({
+            name: n.name, id: n.nodeId, iconName: n.iconName || "", row: n.row, col: n.col, selected: false,
+          })),
+        }))
+    : [];
   const builds = aggregated.topPlayers && aggregated.topPlayers.length > 0
     ? aggregated.topPlayers.slice(0, 5).map((p) => {
         let trees: TalentTree[];
         if (p.talents && p.talents.length > 0) {
-          const baseTrees = stripClassTree(hardcoded.builds[0]?.trees || []);
+          const baseTrees = pipelineBase.length > 0 ? pipelineBase : stripClassTree(hardcoded.builds[0]?.trees || []);
           if (baseTrees.length > 0) {
             // Build set of player's selected talent IDs per tree
             const selectedByTree = new Map<string, Set<number>>();
@@ -6306,7 +6318,7 @@ export function mergeAggregatedData(
             trees = Array.from(treeMap.values());
           }
         } else {
-          trees = stripClassTree(hardcoded.builds[0]?.trees || []);
+          trees = pipelineBase.length > 0 ? pipelineBase : stripClassTree(hardcoded.builds[0]?.trees || []);
         }
 
         return {

@@ -124,6 +124,22 @@ export interface AggregatedCharacter {
   statPriority: string[];
 }
 
+export interface TreeDefNode {
+  nodeId: number;
+  name: string;
+  spellId?: number;
+  iconName?: string;
+  row: number;
+  col: number;
+}
+
+export interface TreeDefinition {
+  name: string;
+  id: number;
+  kind: string;
+  nodes: TreeDefNode[];
+}
+
 export interface AggregatedSpecData {
   totalPlayers: number;
   bis: { slot: string; names: { name: string; count: number; pct: string; itemId?: number }[] }[];
@@ -133,6 +149,7 @@ export interface AggregatedSpecData {
   topPlayers: AggregatedCharacter[];
   players: PlayerListing[];
   lastUpdated: number;
+  treeDefinitions?: TreeDefinition[];
 }
 
 export interface MetaPipelineResult {

@@ -1,4 +1,4 @@
-import type { AggregatedSpecData, AggregatedCharacter, PlayerListing } from "./types";
+import type { AggregatedSpecData, AggregatedCharacter, PlayerListing, TreeDefinition } from "./types";
 import { fetchCharacterProfile, fetchCharacterStats } from "./character-profile";
 
 interface TopPlayer {
@@ -65,7 +65,7 @@ export async function aggregateBySpec(
     }
   }
 
-  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talentLoadout?: string; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string; itemLevel?: number }[]; gems: string[]; stats: {} }[]>();
+  const profilesBySpec = new Map<string, { player: TopPlayer; mythicPlusRating?: number; talentLoadout?: string; talents: { nodeId: number; name: string; selected: boolean; spellId?: number; iconName?: string; row?: number; col?: number; treeName?: string; treeKind?: string }[]; gear: { slot: string; name: string; itemId: number; enchant?: string; itemLevel?: number }[]; gems: string[]; stats: {}; treeDefinitions?: TreeDefinition[] }[]>();
 
   let idx = 0;
   for (const { specId, player } of allFetches) {
@@ -221,6 +221,8 @@ export async function aggregateBySpec(
       statPriority,
     }));
 
+    const treeDefinitions = profiles[0]?.treeDefinitions;
+
     result[specId] = {
       totalPlayers: total,
       bis,
@@ -230,6 +232,7 @@ export async function aggregateBySpec(
       topPlayers,
       players: playerLists.get(specId) || [],
       lastUpdated: Date.now(),
+      treeDefinitions,
     };
   }
 

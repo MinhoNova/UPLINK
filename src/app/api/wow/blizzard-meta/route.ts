@@ -78,7 +78,7 @@ export async function GET(request: Request) {
               const rank = allPlayers.findIndex(
                 (p: any) => p.name === found.name && p.realm === found.realm
               ) + 1;
-              return NextResponse.json({ player: { ...found, rank }, specId, season: cached.season, cached: true });
+              return NextResponse.json({ player: { ...found, rank }, specData: specData as any, specId, season: cached.season, cached: true });
             }
           }
           return NextResponse.json({ player: null, cached: true });

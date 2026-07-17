@@ -39,6 +39,22 @@ async function fetchItemName(itemId: number, env?: { BATTLENET_CLIENT_ID?: strin
   }
 }
 
+export interface TreeDefNode {
+  nodeId: number;
+  name: string;
+  spellId?: number;
+  iconName?: string;
+  row: number;
+  col: number;
+}
+
+export interface TreeDefinition {
+  name: string;
+  id: number;
+  kind: string;
+  nodes: TreeDefNode[];
+}
+
 export interface CharacterProfile {
   talents: {
     nodeId: number;
@@ -70,6 +86,7 @@ export interface CharacterProfile {
   };
   mythicPlusRating?: number;
   talentLoadout?: string;
+  treeDefinitions?: TreeDefinition[];
 }
 
 const GEAR_SLOT_MAP: Record<string, string> = {
@@ -175,7 +192,7 @@ export async function fetchCharacterProfile(
       if (!loadout) return profile;
 
       // Extract talent import/export string — talent_loadout_code is the TWW+ format (includes hero talents)
-      profile.talentLoadout = loadout.talent_loadout_code || loadout.text || "";
+        profile.talentLoadout = loadout.talent_loadout_code || loadout.text || "";
 
       const allTalentEntries: { id: number; rank: number; name: string; spellId?: number; iconName?: string; row?: number; col?: number; treeName: string; treeKind: string }[] = [];
 
@@ -201,9 +218,9 @@ export async function fetchCharacterProfile(
         return null;
       }
 
-      async function fetchTreeNodeMap(treeId: number): Promise<Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>> {
+      async function fetchTreeNodeMap(treeId: number): Promise<Map<number, { name?: string; spellId?: number; icon?: string; row?: number; col?: number }>> {
         if (treeNodeCache.has(treeId)) return treeNodeCache.get(treeId)!;
-        const nodeMap = new Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>();
+        const nodeMap = new Map<number, { name?: string; spellId?: number; icon?: string; row?: number; col?: number }>();
         try {
           const res = await fetch(`https://us.api.blizzard.com/data/wow/talent-tree/${treeId}?namespace=static-us&locale=en_US`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -216,8 +233,10 @@ export async function fetchCharacterProfile(
               const talentData = n.tooltip?.talent || n.tooltip?.spell_tooltip?.spell || n.talent_node_key?.talent || n.talent;
               const spellId = talentData?.spell_id || talentData?.id;
               const iconName = talentData?.icon || "";
-              if (spellId || iconName || n.display_row != null || n.display_col != null) {
+              const nodeName = talentData?.name || n.name || "";
+              if (nodeName || spellId || iconName || n.display_row != null || n.display_col != null) {
                 nodeMap.set(n.id, {
+                  name: nodeName || `Node ${n.id}`,
                   spellId,
                   icon: iconName,
                   row: n.display_row ?? n.row,
@@ -257,11 +276,32 @@ export async function fetchCharacterProfile(
       if (specTree?.id) treeDefs.push({ id: specTree.id, name: specTree.name || (activeSpec.specialization?.name || "Spec Talents"), kind: "spec" });
       if (heroTree?.id) treeDefs.push({ id: heroTree.id, name: heroTree.name || "Hero Talents", kind: "hero" });
 
-      const treeNodeMaps = new Map<string, Map<number, { spellId?: number; icon?: string; row?: number; col?: number }>>();
+      const treeNodeMaps = new Map<string, Map<number, { name?: string; spellId?: number; icon?: string; row?: number; col?: number }>>();
       await Promise.all(treeDefs.map(async (td) => {
         const nodeMap = await fetchTreeNodeMap(td.id);
         if (nodeMap.size > 0) treeNodeMaps.set(td.kind, nodeMap);
       }));
+      // Build full tree definitions (all nodes, selected + unselected) for use as base layout
+      const treeDefinitions: TreeDefinition[] = [];
+      for (const td of treeDefs) {
+        const nodeMap = treeNodeMaps.get(td.kind);
+        if (!nodeMap || nodeMap.size === 0) continue;
+        const nodes: TreeDefNode[] = [];
+        for (const [nodeId, info] of nodeMap) {
+          if (info.name) {
+            nodes.push({
+              nodeId,
+              name: info.name,
+              spellId: info.spellId,
+              iconName: info.icon || "",
+              row: info.row ?? 0,
+              col: info.col ?? 0,
+            });
+          }
+        }
+        treeDefinitions.push({ name: td.name, id: td.id, kind: td.kind, nodes });
+      }
+      profile.treeDefinitions = treeDefinitions;
 
       function getTalentInfo(t: any): { name?: string; id?: number; icon?: string } | null {
         const direct = t.tooltip?.talent || t.tooltip?.spell_tooltip?.spell;
