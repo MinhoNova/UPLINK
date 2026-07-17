@@ -236,8 +236,18 @@ export default function PlayerProfileClient({
                 );
               }
               if (playerTalents) {
-                // Overlay player's selected talents on full base tree layout
-                const baseTrees = (specData?.builds?.[0]?.trees || []).filter(t => t.name !== "Class Talents");
+                // Use pipeline tree definitions as base layout when available, fall back to hardcoded
+                const pipelineTrees = (specData as any)?.treeDefinitions
+                  ?.filter((td: any) => td.kind !== "class")
+                  ?.map((td: any) => ({
+                    name: td.name,
+                    nodes: td.nodes.map((n: any) => ({
+                      name: n.name, id: n.nodeId, iconName: n.iconName || "", row: n.row, col: n.col, spellId: n.spellId,
+                    })),
+                  })) || [];
+                const baseTrees = pipelineTrees.length > 0
+                  ? pipelineTrees
+                  : (specData?.builds?.[0]?.trees || []).filter(t => t.name !== "Class Talents");
                 const selectedByTree = new Map<string, Set<number>>();
                 const heroTalentMap = new Map<string, TalentTree>();
                 for (const t of playerTalents) {
@@ -263,11 +273,14 @@ export default function PlayerProfileClient({
                       name: tree.name,
                       nodes: tree.nodes.map(n => ({
                         name: n.name,
-                        id: n.id,
+                        id: (n as any).id ?? (n as any).nodeId,
                         iconName: n.iconName,
                         row: n.row,
                         col: n.col,
-                        selected: selectedByTree.get(tree.name)?.has(n.id || 0) || false,
+                        // Match by spellId OR nodeId since player data may use either
+                        selected: selectedByTree.get(tree.name)?.has((n as any).spellId || n.id || 0)
+                          || selectedByTree.get(tree.name)?.has(n.id || 0)
+                          || false,
                       })),
                     })).concat(Array.from(heroTalentMap.values()))
                   : Array.from(heroTalentMap.values());
@@ -324,15 +337,21 @@ export default function PlayerProfileClient({
               <h2 className="text-lg font-black text-white mb-1">BIS Gear</h2>
               <p className="text-xs text-gray-500 mb-6">Best-in-slot gear for {spec?.classId?.replace(/-/g, " ") || ""}.</p>
               <div className="grid sm:grid-cols-2 gap-2">
-                {specData.bis.map((item) => (
+                {specData.bis.map((item) => {
+                  const topItem = item.names[0];
+                  return (
                   <div key={item.slot} className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center gap-3 hover:bg-white/[0.05] transition">
-                    <BisItemIcon slot={item.slot} color={color} itemId={item.itemId} itemName={item.name} size={44} />
+                    <BisItemIcon slot={item.slot} color={color} itemId={topItem?.itemId} itemName={topItem?.name} size={44} />
                     <div className="min-w-0">
                       <span className="text-[7px] font-black text-gray-500 uppercase tracking-wider block">{item.slot}</span>
-                      <span className="text-sm font-black text-white truncate block">{item.name}</span>
+                      <span className="text-sm font-black text-white truncate block">{topItem?.name || "—"}</span>
+                      {topItem && topItem.count > 1 && (
+                        <span className="text-[9px] text-gray-500 font-bold">{topItem.count} players</span>
+                      )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 

@@ -68,18 +68,28 @@ export async function GET(request: Request) {
             p.name?.toLowerCase() === playerLookup.toLowerCase() &&
             (!realm || p.realm?.toLowerCase() === realm.toLowerCase()) &&
             (!region || p.region?.toLowerCase() === region.toLowerCase());
+          // Find the BEST match across all specs (highest score) to avoid returning
+          // a low per-dungeon CR score when a higher combined RaiderIO/profile score exists
+          let bestMatch: any = null;
+          let bestMatchSpecId = "";
+          let bestMatchSpecData: any = null;
           for (const [specId, specData] of Object.entries(cached.specs)) {
             const found = (specData as any).topPlayers?.find(match) || (specData as any).players?.find(match);
-            if (found) {
-              // Calculate rank from the sorted full players list
-              const allPlayers = [...((specData as any).players || [])].sort(
-                (a: any, b: any) => Math.round(b.score) - Math.round(a.score)
-              );
-              const rank = allPlayers.findIndex(
-                (p: any) => p.name === found.name && p.realm === found.realm
-              ) + 1;
-              return NextResponse.json({ player: { ...found, rank }, specData: specData as any, specId, season: cached.season, cached: true });
+            if (found && (!bestMatch || found.score > bestMatch.score)) {
+              bestMatch = found;
+              bestMatchSpecId = specId;
+              bestMatchSpecData = specData;
             }
+          }
+          if (bestMatch) {
+            // Calculate rank from the sorted full players list of the best spec
+            const allPlayers = [...((bestMatchSpecData as any).players || [])].sort(
+              (a: any, b: any) => Math.round(b.score) - Math.round(a.score)
+            );
+            const rank = allPlayers.findIndex(
+              (p: any) => p.name === bestMatch.name && p.realm === bestMatch.realm
+            ) + 1;
+            return NextResponse.json({ player: { ...bestMatch, rank }, specData: bestMatchSpecData, specId: bestMatchSpecId, season: cached.season, cached: true });
           }
           return NextResponse.json({ player: null, cached: true });
         }
