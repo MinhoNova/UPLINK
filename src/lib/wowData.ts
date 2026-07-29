@@ -6246,7 +6246,7 @@ export function mergeAggregatedData(
     : hardcoded.statPriority).map(s => s.replace("Main Stat", primaryStat));
 
   // Use pipeline tree definitions (from Blizzard API) as base layout when available
-  const pipelineBase = aggregated.treeDefinitions
+  const pipelineBase: TalentTree[] = aggregated.treeDefinitions
     ? aggregated.treeDefinitions
         .filter(td => td.kind !== "class")
         .map(td => ({
@@ -6256,6 +6256,32 @@ export function mergeAggregatedData(
           })),
         }))
     : [];
+  // When treeDefinitions is not yet in KV (old cache), build base trees from player API data
+  // which has correct nodeIds and positions from Blizzard — better than hardcoded fallback
+  if (pipelineBase.length === 0 && aggregated.topPlayers?.length) {
+    const nodePositions = new Map<string, Map<number, { row: number; col: number; name: string; iconName?: string }>>();
+    for (const p of aggregated.topPlayers) {
+      if (!p.talents) continue;
+      for (const t of p.talents) {
+        if (t.treeKind === "class" || t.treeKind === "hero") continue;
+        const treeName = t.treeName || "Talents";
+        if (!nodePositions.has(treeName)) nodePositions.set(treeName, new Map());
+        const treeNodes = nodePositions.get(treeName)!;
+        const key = t.spellId || t.nodeId;
+        if (!treeNodes.has(key)) {
+          treeNodes.set(key, { row: t.row ?? 0, col: t.col ?? 0, name: t.name, iconName: t.iconName });
+        }
+      }
+    }
+    for (const [name, nodes] of nodePositions) {
+      pipelineBase.push({
+        name,
+        nodes: Array.from(nodes.entries()).map(([id, info]) => ({
+          name: info.name, id, iconName: info.iconName || "", row: info.row, col: info.col, selected: false,
+        })),
+      });
+    }
+  }
   const builds = aggregated.topPlayers && aggregated.topPlayers.length > 0
     ? aggregated.topPlayers.slice(0, 5).map((p) => {
         let trees: TalentTree[];
@@ -6422,7 +6448,7 @@ export function aggregatePlayerTalents(
     const seen = seenNodeIds.get(entry.treeName)!;
     if (seen.has(entry.id || 0)) continue;
     seen.add(entry.id || 0);
-    treeNodes.push({ name: entry.name, id: entry.id, iconName: entry.iconName, count: entry.count, treeKind: entry.treeKind, row: entry.row, col: entry.col });
+    treeNodes.push({ name: entry.name, id: entry.id, iconName: entry.iconName, count: entry.count, treeKind: entry.treeKind, row: entry.row, col: entry.col, spellId: entry.spellId });
   }
 
   const result: AggregatedTalentTree[] = [];
@@ -6445,13 +6471,20 @@ export function aggregatePlayerTalents(
       // Use base tree layout: match by spellId, overlay aggregated counts
       // Prefer player data positions (real 4-col layout from Blizzard API) over hardcoded base tree
       const countById = new Map<number, { name: string; iconName?: string; count: number }>();
+      const countBySpellId = new Map<number, { name: string; iconName?: string; count: number }>();
       for (const n of nodes) {
         if (n.id) countById.set(n.id, { name: n.name, iconName: n.iconName, count: n.count });
+        if ((n as any).spellId) countBySpellId.set((n as any).spellId, { name: n.name, iconName: n.iconName, count: n.count });
       }
       const aggNodes: AggregatedTalentNode[] = [];
       for (const baseNode of baseTree.nodes) {
-        const match = baseNode.id ? countById.get(baseNode.id) : undefined;
-        const playerPos = baseNode.id ? playerPositions.get(baseNode.id) : undefined;
+        // Try matching by baseNode.id (nodeId), then check baseNode's spellId vs player's spellId
+        const match = baseNode.id
+          ? countById.get(baseNode.id) || ((baseNode as any).spellId ? countBySpellId.get((baseNode as any).spellId) : undefined)
+          : undefined;
+        const playerPos = baseNode.id
+          ? playerPositions.get(baseNode.id)
+          : undefined;
         aggNodes.push({
           name: match?.name || baseNode.name || allNameLookup.get(baseNode.id || 0) || "",
           id: baseNode.id,
