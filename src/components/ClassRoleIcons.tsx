@@ -1,8 +1,6 @@
 "use client";
 
-import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
-
-const roleIconScale = (role?: string) => (String(role || "").toLowerCase() === "healer" ? 1.22 : 1.08);
+const roleIconScale = (role?: string) => (String(role || '').toLowerCase() === 'healer' ? 1.22 : 1.08);
 
 const ClassRoleIcons = ({
    className,
@@ -23,28 +21,23 @@ const ClassRoleIcons = ({
    classImgClassName?: string;
    roleImgClassName?: string;
 }) => {
-   const normalizedClass = className || "Warrior";
-   const normalizedRole = role || "dps";
-   const roleLg = size >= 40;
+   const normalizedClass = (className || 'WARRIOR').toUpperCase();
+   const normalizedRole = (role || 'dps').toUpperCase();
 
    return (
-      <div className="flex items-center shrink-0" style={{ width: size * 2 - overlap }}>
+      <div className="flex items-center shrink-0" style={{ width: (size * 2) - overlap }}>
          <img
-            src={classThumbUrl(normalizedClass)}
+            src={`/classes/${normalizedClass}.svg`}
             alt={className || "Class"}
-            width={size}
-            height={size}
-            className={`object-contain relative z-10 drop-shadow-lg ${classIconClass()} ${classImgClassName}`}
+            className={`object-contain relative z-10 drop-shadow-lg ${classImgClassName}`}
             style={{ width: size, height: size }}
          />
          <div className="relative group shrink-0" style={{ width: size, height: size, marginLeft: -overlap }}>
             <img
-               src={roleIconUrl(normalizedRole)}
+               src={`/classes/${normalizedRole}.svg`}
                alt={role || "Role"}
-               width={size}
-               height={size}
-               className={`w-full h-full object-contain drop-shadow-lg ${roleIconClass(normalizedRole, roleLg ? "lg" : "sm")} ${roleImgClassName}`}
-               style={{ transform: `scale(${roleIconScale(role)})`, transformOrigin: "center" }}
+               className={`w-full h-full object-contain drop-shadow-lg ${roleImgClassName}`}
+               style={{ transform: `scale(${roleIconScale(role)})`, transformOrigin: 'center' }}
             />
             {onRoleClick && (
                <div

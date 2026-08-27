@@ -14,10 +14,7 @@ export function isOfferLimitExempt(user: unknown): boolean {
   return isSecretClubTier(user);
 }
 
-export async function getOfferDailyUsage(
-  userId: string,
-  user?: unknown
-): Promise<{
+export async function getOfferDailyUsage(userId: string): Promise<{
   count: number;
   limit: number;
   remaining: number;
@@ -28,17 +25,16 @@ export async function getOfferDailyUsage(
   const day = utcDayKey();
   const rec = store[String(userId)];
   const count = rec?.day === day ? rec.count : 0;
-  const exempt = !!user && isOfferLimitExempt(user);
   return {
     count,
     limit: FREE_DAILY_OFFER_LIMIT,
-    remaining: exempt ? Infinity : Math.max(0, FREE_DAILY_OFFER_LIMIT - count),
-    exempt,
+    remaining: Math.max(0, FREE_DAILY_OFFER_LIMIT - count),
+    exempt: false,
   };
 }
 
 export function offerDailyLimitError(): string {
-  return `Daily limit reached (${FREE_DAILY_OFFER_LIMIT}/day).`;
+  return `Daily limit reached (${FREE_DAILY_OFFER_LIMIT}/day). Secret Club members have unlimited offers.`;
 }
 
 /** Atomically check limit and record one offer action (create or apply). */

@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getClientIp } from "@/lib/requestIp";
-import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
+import { banIpAutomatic, rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { validateBattleTag, parseRaiderProfileUrl } from "@/lib/battleTagValidation";
-import { resolveRaiderCharacterLevel } from "@/lib/raiderCharacter";
-import { rateLimitByIp, rateLimitByUser, rateLimitResponse } from "@/lib/rateLimit";
+import { isBanExempt } from "@/lib/banCheck";
 
-const VERIFY_LIMIT_PER_USER = 40;
-const VERIFY_LIMIT_PER_IP = 60;
-const VERIFY_WINDOW_MS = 60 * 60_000;
-/** Minimum character level on Raider.io to complete registration (no IO/rating requirement). */
-export const ONBOARDING_MIN_LEVEL = 80;
-
-function rejectVerification(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+async function rejectAndBan(
+  req: Request,
+  userId: string,
+  handle: string,
+  reason: string,
+  message: string
+) {
+  if (!isBanExempt(handle, userId)) {
+    const ip = getClientIp(req);
+    await banIpAutomatic(ip, reason, userId);
+  }
+  return NextResponse.json({ error: message, banned: true }, { status: 403 });
 }
 
 export async function POST(req: Request) {
@@ -23,26 +26,29 @@ export async function POST(req: Request) {
   const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
   if (ipBlock) return ipBlock;
 
-  const ip = getClientIp(req);
-  const userRl = await rateLimitByUser(auth.user.id, "onboarding_verify", VERIFY_LIMIT_PER_USER, VERIFY_WINDOW_MS);
-  if (!userRl.ok) return rateLimitResponse(userRl);
-
-  const ipRl = await rateLimitByIp(ip, "onboarding_verify", VERIFY_LIMIT_PER_IP, VERIFY_WINDOW_MS);
-  if (!ipRl.ok) return rateLimitResponse(ipRl);
-
   const body = await req.json().catch(() => ({}));
   const battleTag = String(body?.battleTag || "").trim();
   const raiderLink = String(body?.raiderLink || "").trim();
 
   const tagCheck = validateBattleTag(battleTag);
   if (!tagCheck.valid) {
-    return rejectVerification(tagCheck.error || "Invalid Battle.net ID");
+    return rejectAndBan(
+      req,
+      auth.user.id,
+      auth.user.username,
+      `invalid_battletag:${battleTag.slice(0, 24)}`,
+      tagCheck.error || "Invalid Battle.net ID"
+    );
   }
 
   const profile = parseRaiderProfileUrl(raiderLink);
   if (!profile) {
-    return rejectVerification(
-      "Invalid Raider.io link. Paste the full profile URL (e.g. https://raider.io/characters/us/area-52/character-name)."
+    return rejectAndBan(
+      req,
+      auth.user.id,
+      auth.user.username,
+      "invalid_raider_link",
+      "Invalid Raider.io link format"
     );
   }
 
@@ -55,27 +61,28 @@ export async function POST(req: Request) {
 
     const res = await fetch(url.toString(), { next: { revalidate: 0 } });
     if (!res.ok) {
-      return rejectVerification(
-        "Character not found on Raider.io. Check the link matches your character name and realm."
+      return rejectAndBan(
+        req,
+        auth.user.id,
+        auth.user.username,
+        `raider_not_found:${profile.name}`,
+        "Character not found on Raider.io"
       );
     }
 
     const data = await res.json();
-    const level = resolveRaiderCharacterLevel(data);
-    if (level > 0 && level < ONBOARDING_MIN_LEVEL) {
-      return rejectVerification(
-        `Level ${ONBOARDING_MIN_LEVEL}+ character required (detected ${level}). Level up in Midnight, then try again.`
+    if (Number(data.level || 0) < 90) {
+      return rejectAndBan(
+        req,
+        auth.user.id,
+        auth.user.username,
+        "raider_under_level",
+        "Level 90+ character required"
       );
-    }
-
-    if (!level) {
-      data.level = ONBOARDING_MIN_LEVEL;
-    } else {
-      data.level = level;
     }
 
     return NextResponse.json({ ok: true, profile: data, battleTag });
   } catch {
-    return NextResponse.json({ error: "Raider.io connection failed. Try again in a moment." }, { status: 502 });
+    return NextResponse.json({ error: "Raider.io connection failed" }, { status: 502 });
   }
 }

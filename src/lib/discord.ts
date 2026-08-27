@@ -1,6 +1,4 @@
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
-import { resolveDiscordEmbedIdentity } from "@/lib/profileImage";
-import { getSiteUrl } from "@/lib/siteUrl";
 
 const API = "https://discord.com/api/v10";
 
@@ -24,14 +22,9 @@ async function discordFetch(path: string, options?: RequestInit) {
 
 async function ensureGuildCache() {
    if (cachedGuildId && cachedChannels && Date.now() - lastFetch < 60000) return;
-   const fromEnv = process.env.DISCORD_GUILD_ID?.trim();
-   if (fromEnv) {
-      cachedGuildId = fromEnv;
-   } else {
-      const guilds: any[] = await discordFetch("/users/@me/guilds");
-      if (!guilds?.length) return;
-      cachedGuildId ??= guilds[0].id;
-   }
+   const guilds: any[] = await discordFetch("/users/@me/guilds");
+   if (!guilds?.length) return;
+   cachedGuildId ??= guilds[0].id;
    const channels: any[] = await discordFetch(`/guilds/${cachedGuildId}/channels`);
    if (channels) cachedChannels = channels.map((c: any) => ({ id: c.id, name: c.name }));
    lastFetch = Date.now();
@@ -46,7 +39,7 @@ function findChannelId(namePatterns: string[]): string | null {
    return null;
 }
 
-const SITE_URL = getSiteUrl();
+const SITE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 function formatRolesProgress(lobby: any): string {
    const roles = lobby.roles || {};
@@ -109,7 +102,7 @@ function buildInviteEmbedFields(lobby: any, ownerName: string) {
    ];
 }
 
-export async function sendLobbyEmbed(lobby: any, ownerUser?: any) {
+export async function sendLobbyEmbed(lobby: any) {
    await ensureGuildCache();
    const channelNames = lobby.category === "leveling"
       ? ["🚀・leveling-squads", "leveling-squads", "leveling"]
@@ -123,14 +116,14 @@ export async function sendLobbyEmbed(lobby: any, ownerUser?: any) {
    const price = lobby.totalGold || 0;
    const rolesNeeded = Object.entries(lobby.roles || {}).filter(([, c]) => (c as number) > 0);
    const rolesStr = rolesNeeded.map(([r, c]) => `**${String(r).toUpperCase()}** ×${c}`).join(" · ") || "Any role";
-   const { name: ownerName, avatar: ownerAvatar } = resolveDiscordEmbedIdentity(ownerUser, lobby);
+   const ownerName = lobby.ownerDiscordName || lobby.ownerHandle || "Unknown";
    const title = missionTitle(lobby);
    const squadProgress = formatRolesProgress(lobby);
 
    const embed = {
       author: {
          name: `${ownerName} · UPLINK Mission Lead`,
-         icon_url: ownerAvatar || undefined,
+         icon_url: lobby.ownerImage || undefined,
       },
       title: lobby.category === "leveling" ? `🚀 ${title}` : `⚔️ ${title}`,
       description:
@@ -200,7 +193,8 @@ export async function sendDiscordInviteDM(
    const channelId = await createDMChannel(discordUserId);
    if (!channelId) return false;
 
-   const { name: ownerName, avatar: ownerAvatar } = resolveDiscordEmbedIdentity(ownerUser, lobby);
+   const ownerName = ownerUser?.displayName || ownerUser?.name || lobby.ownerDiscordName || "Mission Lead";
+   const ownerAvatar = ownerUser?.customAvatar || ownerUser?.profileGif || ownerUser?.avatar || lobby.ownerImage;
 
    const payload = {
       content: `<@${discordUserId}> **Mission Invitation** — you have **60 seconds** to respond.`,
@@ -264,7 +258,8 @@ export async function sendDiscordConfirmedDM(
    const channelId = await createDMChannel(discordUserId);
    if (!channelId) return false;
 
-   const { name: ownerName, avatar: ownerAvatar } = resolveDiscordEmbedIdentity(ownerUser, lobby);
+   const ownerName = ownerUser?.displayName || ownerUser?.name || lobby.ownerDiscordName || "Mission Lead";
+   const ownerAvatar = ownerUser?.customAvatar || ownerUser?.profileGif || ownerUser?.avatar || lobby.ownerImage;
 
    const payload = {
       content: `<@${discordUserId}> You're **confirmed** on a UPLINK mission!`,

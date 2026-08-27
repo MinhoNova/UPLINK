@@ -1,9 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import {
-   PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search, Compass,
+   PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search,
    Mic, MicOff, Headphones, PhoneOff, VolumeX, Volume2, Video, VideoOff, Phone, Settings
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -31,8 +30,6 @@ import { Track, RoomEvent, Participant, Room } from 'livekit-client';
 import '@livekit/components-styles';
 
 /* --- COMPONENTS --- */
-import BoostRequestModal from "@/components/modals/BoostRequestModal";
-
 import SecretClubCard from "@/components/SecretClubCard";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
@@ -41,7 +38,6 @@ import OnboardingModal from "@/components/modals/OnboardingModal";
 import PaymentModal from "@/components/modals/PaymentModal";
 import TicketModal from "@/components/modals/TicketModal";
 import SupportChatWidget from "@/components/SupportChatWidget";
-import ClubLoungeChatWidget from "@/components/ClubLoungeChatWidget";
 import HomeFloatingActions from "@/components/HomeFloatingActions";
 import OngoingMissionsPanel from "@/components/OngoingMissionsPanel";
 import EditingGoldModal from "@/components/modals/EditingGoldModal";
@@ -57,19 +53,17 @@ import { mergeRegisteredUsersFromServer, notificationMatchesUser, resolveNotific
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
 import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
-import AdminAnalyticsPanel from "@/components/admin/AdminAnalyticsPanel";
 import { getTicketActivity, TICKET_TTL_MS, isTicketExpired } from "@/lib/tickets";
 import { validateBattleTag } from "@/lib/battleTagValidation";
-import { resolveProfileDisplayName, resolveProfileImage, resolveOfferFeedProfileImage } from "@/lib/profileImage";
+import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote, sanitizeApplicantNoteDraft } from "@/lib/applicantNote";
-import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer, getRemovedCharacterKeys, clearRemovedCharacterKey } from "@/lib/raiderCharacter";
+import { buildCharacterFromRaiderProfile, mergeMyCharactersFromServer } from "@/lib/raiderCharacter";
 import WelcomePlansModal from "@/components/modals/WelcomePlansModal";
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
-import { classThumbUrl, roleIconUrl, roleIconClass } from "@/lib/classThumb";
+import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
 import { OfferFeedAvatar as OfferFeedAvatarBase } from "@/components/OfferFeedAvatar";
 import { resolveLobbyBannerBg, resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
 import { formatIpForAdmin } from "@/lib/formatIp";
-import { isPrimaryAdmin, hasAdminPower } from "@/lib/rolesConstants";
 
 const VoiceParticipant = ({ participant }: { participant: Participant }) => {
   const isSpeaking = useIsSpeaking(participant);
@@ -313,7 +307,7 @@ const RoleCard = ({ role, accepted, lobby, charClass, hideIdentity }: { role: st
                   {charClass ? (
                      <ClassRoleIcons className={charClass} role={role} size={64} overlap={18} />
                   ) : (
-                     <img src={roleIconUrl(role)} width={128} height={128} className={`w-16 h-16 object-contain drop-shadow-lg ${roleIconClass(role, "lg")}`} alt={role} />
+                     <img src={`/classes/${role.toUpperCase()}.svg`} className="w-16 h-16 object-contain drop-shadow-lg" />
                   )}
                </div>
             </div>
@@ -362,15 +356,14 @@ const RoleCard = ({ role, accepted, lobby, charClass, hideIdentity }: { role: st
 
 const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIdentity, rankStats, rankRatings, onAvatarClick, userData }: { role: string; accepted: any; visual: any; AvatarComponent: any; hideIdentity?: boolean; rankStats?: any; rankRatings?: number[]; onAvatarClick?: (user: any) => void; userData?: any }) => {
    const [isFlipped, setIsFlipped] = useState(false);
-   const isInvited = accepted?.status === "invited";
 
    return (
-      <div className="w-24 h-32 p-1.5 cursor-pointer relative shrink-0" style={{ perspective: 1000 }} onClick={() => setIsFlipped(!isFlipped)}>
+      <div className="w-24 h-32 p-1.5 cursor-pointer relative" style={{ perspective: 1000 }} onClick={() => setIsFlipped(!isFlipped)}>
          <motion.div className="relative w-full h-full" animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }} style={{ transformStyle: "preserve-3d" }}>
             {/* FRONT */}
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-white/10 rounded-2xl shadow-lg" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-               <img src={roleIconUrl(role)} width={128} height={128} className={`w-12 h-12 object-contain mb-1 drop-shadow-lg ${roleIconClass(role, "lg")}`} alt={role} />
-               {accepted && isInvited && <span className="text-[9px] uppercase font-black text-green-400 mt-1 tracking-widest animate-pulse">INVITED</span>}
+               <img src={`/classes/${role.toUpperCase()}.svg`} className="w-12 h-12 object-contain mb-1" />
+               {accepted && <span className="text-[9px] uppercase font-black text-green-400 mt-1 tracking-widest animate-pulse">INVITED</span>}
             </div>
             {/* BACK */}
             <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-[#ff007f]/50 rounded-2xl p-1.5 shadow-[0_0_20px_rgba(255,0,127,0.3)]" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
@@ -528,8 +521,7 @@ export default function HomePage() {
    registeredUsersRef.current = registeredUsers;
    const [bannedUsers, setBannedUsers] = useState<string[]>([]);
    const [globalCharacters, setGlobalCharacters] = useState<any[]>([]);
-    const [applications, setApplications] = useState<any[]>([]);
-    const [boostRequests, setBoostRequests] = useState<any[]>([]);
+   const [applications, setApplications] = useState<any[]>([]);
     const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(() => {
        if (typeof window === "undefined") return false;
        return localStorage.getItem("uplink_is_registered") !== "true";
@@ -537,7 +529,6 @@ export default function HomePage() {
     const [globalDataReady, setGlobalDataReady] = useState(false);
     const [isWelcomePlansOpen, setIsWelcomePlansOpen] = useState(false);
     const [onboardingData, setOnboardingData] = useState({ interests: [] as string[], raiderLink: "", battleTag: "" });
-    const [onboardingError, setOnboardingError] = useState("");
     const [voiceToken, setVoiceToken] = useState<string | null>(null);
     const [voiceServerUrl, setVoiceServerUrl] = useState<string | null>(null);
     const [isJoiningVoice, setIsJoiningVoice] = useState(false);
@@ -552,13 +543,8 @@ export default function HomePage() {
       const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
       return resolveProfileDisplayName(me, session?.user?.name || "Guest");
    }, [registeredUsers, currentUserId, session?.user?.name]);
-   const siteOwnerAvatar = useMemo(() => {
-      const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
-      return resolveOfferFeedProfileImage(me, currentUserDisplay);
-   }, [registeredUsers, currentUserId, currentUserDisplay]);
-    const currentUserDiscordHandle = (session?.user as any)?.username || "";
-    const isAdmin = hasAdminPower(currentUserId, currentUserDiscordHandle);
-    const isPrimary = isPrimaryAdmin(currentUserId, currentUserDiscordHandle);
+   const currentUserDiscordHandle = (session?.user as any)?.username || "";
+   const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471";
 
     const [activeMainTab, setActiveMainTab] = useState(() => {
        if (typeof window !== "undefined") {
@@ -592,7 +578,6 @@ export default function HomePage() {
     });
     const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
     const [supportWidgetOpen, setSupportWidgetOpen] = useState(false);
-    const [loungeWidgetOpen, setLoungeWidgetOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [ticketMessage, setTicketMessage] = useState("");
     const [showingBgPicker, setShowingBgPicker] = useState<string | null>(null);
@@ -644,27 +629,6 @@ export default function HomePage() {
             syncAutoApplyEnabled(false);
         }
     }, [currentUserId, registeredUsers, autoApplyEnabled, syncAutoApplyEnabled]);
-    useEffect(() => {
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key !== "Escape") return;
-        setIsArmoryModalOpen(false);
-        setIsCreateModalOpen(false);
-        setIsApplyModalOpen(false);
-        setIsManageModalOpen(false);
-        setIsPaymentModalOpen(false);
-        setIsAutoApplySettingsOpen(false);
-        setIsOnboardingModalOpen(false);
-        setIsWelcomePlansOpen(false);
-        setIsNotifOpen(false);
-        setIsGifModalOpen(false);
-        setIsTicketModalOpen(false);
-        setIsBoostRequestModalOpen(false);
-        setKickModal(null);
-        setLeaveModal(null);
-      };
-      window.addEventListener("keydown", onKey);
-      return () => window.removeEventListener("keydown", onKey);
-    }, []);
     const [autoAppliedLobbies, setAutoAppliedLobbies] = useState<string[]>(() => {
        if (typeof window !== "undefined") {
           const saved = localStorage.getItem("uplink_auto_applied");
@@ -760,9 +724,8 @@ export default function HomePage() {
       }
       return false;
    });
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isBoostRequestModalOpen, setIsBoostRequestModalOpen] = useState(false);
-    const [submitError, setSubmitError] = useState("");
+   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+   const [submitError, setSubmitError] = useState("");
    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
    const [isManageModalOpen, setIsManageModalOpen] = useState(false);
    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -904,11 +867,7 @@ export default function HomePage() {
    }, [inviteToReview]);
 
    useEffect(() => {
-      if (status !== "authenticated" || !session?.user) {
-         setIsOnboardingModalOpen(false);
-         return;
-      }
-      if (!globalDataReady) return;
+      if (status !== "authenticated" || !session?.user || !globalDataReady) return;
       const isRegistered = registeredUsers.some(
          (u: any) => u.id === currentUserId || u.username === currentUserDiscordHandle
       );
@@ -944,15 +903,14 @@ export default function HomePage() {
             setIsManageModalOpen(false);
              setIsNotifOpen(false);
             setInviteToReview(null);
-             setIsAutoApplySettingsOpen(false);
-             setIsBoostRequestModalOpen(false);
-          }
-       };
-       window.addEventListener("keydown", handleKeyDown);
-       return () => window.removeEventListener("keydown", handleKeyDown);
-    }, []);
+            setIsAutoApplySettingsOpen(false);
+         }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+   }, []);
 
-    // Listen for profile click from shared Navbar
+   // Listen for profile click from shared Navbar
    useEffect(() => {
       const handler = () => setIsArmoryModalOpen(true);
       window.addEventListener('open-armory-modal', handler);
@@ -979,6 +937,46 @@ export default function HomePage() {
       };
       window.addEventListener('show-toast', handler);
       return () => window.removeEventListener('show-toast', handler);
+   }, []);
+
+   // Security Hardening: Disable Developer Tools and Right-Click
+   useEffect(() => {
+      if (typeof window === "undefined") return;
+
+      const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+      const handleKeyDown = (e: KeyboardEvent) => {
+         // Disable F12
+         if (e.keyCode === 123) {
+            e.preventDefault();
+            return false;
+         }
+         // Disable Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+         if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+            e.preventDefault();
+            return false;
+         }
+         if (e.ctrlKey && e.keyCode === 85) {
+            e.preventDefault();
+            return false;
+         }
+      };
+
+      window.addEventListener("contextmenu", handleContextMenu);
+      window.addEventListener("keydown", handleKeyDown);
+
+      // Console Security Loop
+      const secInterval = setInterval(() => {
+         console.clear();
+         console.log("%c[DATABASE SECURITY ACTIVE]", "color: #00ffff; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px #00ffff;");
+         console.log("%cUnauthorized terminal inspection is a violation of Security Protocol.", "color: white; font-size: 12px;");
+         console.log("%cAll activity is being monitored via encrypted network.", "color: #ff007f; font-size: 10px; font-weight: bold;");
+      }, 2000);
+
+      return () => {
+         window.removeEventListener("contextmenu", handleContextMenu);
+         window.removeEventListener("keydown", handleKeyDown);
+         clearInterval(secInterval);
+      };
    }, []);
 
    const sanitizeInput = (input: string) => {
@@ -1480,11 +1478,6 @@ export default function HomePage() {
                  if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
                     console.error("Profile save failed:", err.error || res.status);
-                    if (err.error) {
-                       window.dispatchEvent(
-                          new CustomEvent("show-toast", { detail: { msg: err.error, type: "error" } })
-                       );
-                    }
                     return false;
                  }
                  profileSaved = true;
@@ -1994,10 +1987,8 @@ export default function HomePage() {
 })));
             if (data.directMessages) setDirectMessages(data.directMessages);
             if (data.friends) setFriends(data.friends);
-              if (data.applications) setApplications(data.applications);
-              // Fetch boost requests in parallel
-              fetch("/api/boost-requests").then(r => r.ok && r.json().then(d => setBoostRequests(d.requests || []))).catch(() => {});
-              if (data.tickets) {
+             if (data.applications) setApplications(data.applications);
+             if (data.tickets) {
                 const activeTickets = data.tickets.filter((t: any) => !isTicketExpired(t));
                 setTickets(activeTickets);
                 if (selectedTicket && !activeTickets.some((t: any) => String(t.id) === String(selectedTicket.id))) {
@@ -2102,7 +2093,7 @@ export default function HomePage() {
       if (currentUserId === "guest") return;
       const serverMine = globalCharacters.filter((c) => String(c.userId) === String(currentUserId));
       if (!serverMine.length) return;
-      setMyCharacters((prev) => mergeMyCharactersFromServer(prev, serverMine, getRemovedCharacterKeys(currentUserId)));
+      setMyCharacters((prev) => mergeMyCharactersFromServer(prev, serverMine));
    }, [globalCharacters, currentUserId]);
 
    useEffect(() => { if (currentUserId !== "guest") localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(myCharacters)); }, [myCharacters, currentUserId]);
@@ -2144,9 +2135,16 @@ export default function HomePage() {
       }
     }, [session, currentUserDiscordHandle, registeredUsers]);
 
-    const getUserTier = useCallback((_userId?: string): "free" | "secret_club" => {
+    const getUserTier = useCallback((userId?: string): "free" | "secret_club" => {
+        if (!userId) return "free";
+        if (userId === "1497295886223544471") return "secret_club";
+        const user = registeredUsers.find((u: any) => String(u.id) === String(userId) || u.username === userId);
+        if (!user?.subscription) return "free";
+        const sub = user.subscription;
+        if (sub.tier !== "secret_club") return "free";
+        if (sub.endDate && Date.now() > sub.endDate) return "free";
         return "secret_club";
-     }, []);
+     }, [registeredUsers]);
 
      const activeBoostLobbyIds = useMemo(() => {
         const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));
@@ -3073,10 +3071,9 @@ export default function HomePage() {
            const newLobby = {
               id: Date.now().toString(),
               ownerId: currentUserId,
-              ownerName: currentUserDisplay,
               ownerDiscordName: currentUserDisplay,
               ownerHandle: currentUserDiscordHandle,
-              ownerImage: siteOwnerAvatar,
+              ownerImage: session?.user?.image || "",
               ownerEffect: myEffect,
               ownerPrestige: 100,
               category: fd.category || (activeMainTab === 'boosts' ? 'dungeon' : 'leveling'),
@@ -3112,10 +3109,11 @@ export default function HomePage() {
               setLobbies(newLobbies);
               const saved = await saveGlobalData({ lobbies: newLobbies });
               if (!saved) {
-                  setLobbies(lobbies);
-                  setIsCreateModalOpen(false);
-                  return;
-               }
+                 setLobbies(lobbies);
+                 addToast("Could not deploy mission. You may have reached the daily offer limit (3/day for free accounts).", "error");
+                 setIsCreateModalOpen(false);
+                 return;
+              }
               const updatedUsers = registeredUsers.map((u: any) => {
                  if (String(u.id) === String(currentUserId)) {
                     const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
@@ -3133,10 +3131,9 @@ export default function HomePage() {
              const newLobby = {
                id: Date.now().toString(),
                ownerId: currentUserId,
-               ownerName: currentUserDisplay,
                ownerDiscordName: currentUserDisplay,
                ownerHandle: currentUserDiscordHandle,
-               ownerImage: siteOwnerAvatar,
+               ownerImage: session?.user?.image || "",
                ownerEffect: myEffect,
                ownerPrestige: 100,
                category: 'leveling',
@@ -3168,11 +3165,12 @@ export default function HomePage() {
              const newLobbies = [newLobby, ...lobbies];
              setLobbies(newLobbies);
              const saved = await saveGlobalData({ lobbies: newLobbies });
-              if (!saved) {
-                 setLobbies(lobbies);
-                 setIsCreateModalOpen(false);
-                 return;
-              }
+             if (!saved) {
+                setLobbies(lobbies);
+                addToast("Could not deploy squad. You may have reached the daily offer limit (3/day for free accounts).", "error");
+                setIsCreateModalOpen(false);
+                return;
+             }
              const updatedUsers = registeredUsers.map((u: any) => {
                 if (String(u.id) === String(currentUserId)) {
                    const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
@@ -3204,7 +3202,7 @@ export default function HomePage() {
       if (!char) return;
 
       const currentRoleScore = char.roleScores?.[char.role] ?? char.score;
-      const isAdmin = hasAdminPower(currentUserId, currentUserDiscordHandle);
+      const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471";
 
       if (!isAdmin) {
         if ((targetLobby.roles[char.role] || 0) <= 0) return addToast(`This run doesn't need a ${char.role.toUpperCase()} anymore.`, "error");
@@ -3925,7 +3923,7 @@ export default function HomePage() {
    const deleteLobby = (id: string) => {
       const lobby = lobbies.find((l) => String(l.id) === String(id));
       if (lobby && !canOwnerCancelLobby(lobby)) {
-         addToast("Cannot cancel — squad is full or mission already started.", "error");
+         addToast("Cannot delete — squad has members or mission already started.", "error");
          return;
       }
       const updated = lobbies.filter(l => l.id !== id);
@@ -4065,7 +4063,6 @@ export default function HomePage() {
                   return;
                }
                const { updatedMy, updatedGlobal, isNewToMy } = upsertSyncedRaiderCharacter(data);
-               clearRemovedCharacterKey(currentUserId, { name: data.name, realm: data.realm, region: data.region });
                setMyCharacters(updatedMy);
                setGlobalCharacters(updatedGlobal);
                localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
@@ -4089,14 +4086,6 @@ export default function HomePage() {
       const sanitizedTag = sanitizeInput(onboardingData.battleTag);
       const sanitizedRaider = sanitizeInput(onboardingData.raiderLink);
 
-      if (!sanitizedTag || !sanitizedRaider) {
-         const msg = "Enter your Battle.net ID and Raider.io link.";
-         setOnboardingError(msg);
-         addToast(msg, "error");
-         return;
-      }
-
-      setOnboardingError("");
       setIsSyncing(true);
       try {
          const verifyRes = await fetch("/api/onboarding/verify", {
@@ -4107,9 +4096,11 @@ export default function HomePage() {
          });
          const verifyData = await verifyRes.json().catch(() => ({}));
          if (!verifyRes.ok) {
-            const msg = verifyData.error || "Verification failed";
-            setOnboardingError(msg);
-            addToast(msg, "error");
+            if (verifyData.banned) {
+               addToast("Invalid credentials — network access suspended.", "error");
+            } else {
+               addToast(verifyData.error || "Verification failed", "error");
+            }
             return;
          }
 
@@ -4118,14 +4109,11 @@ export default function HomePage() {
             (c) => c.name === data.name && c.realm === data.realm && String(c.userId) !== String(currentUserId)
          );
          if (crossUserDup) {
-            const msg = "This Raider.io character is already linked to another account.";
-            setOnboardingError(msg);
-            addToast(msg, "error");
+            addToast("CRITICAL: Character identity already registered by another operative.", "error");
             return;
          }
 
          const { updatedMy, updatedGlobal } = upsertSyncedRaiderCharacter(data);
-         clearRemovedCharacterKey(currentUserId, { name: data.name, realm: data.realm, region: data.region });
          setMyCharacters(updatedMy);
          setGlobalCharacters(updatedGlobal);
          localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
@@ -4135,16 +4123,9 @@ export default function HomePage() {
          );
 
          if (alreadyRegistered) {
-            const ok = await saveGlobalData({ characters: updatedGlobal });
-            if (!ok) {
-               const msg = "Could not save character. Try again.";
-               setOnboardingError(msg);
-               addToast(msg, "error");
-               return;
-            }
+            await saveGlobalData({ characters: updatedGlobal });
             localStorage.setItem("uplink_is_registered", "true");
             setIsOnboardingModalOpen(false);
-            setOnboardingError("");
             addToast("Character added to My Characters.", "success");
             return;
          }
@@ -4160,26 +4141,17 @@ export default function HomePage() {
          const updatedUsers = [...registeredUsers, newUser];
          setRegisteredUsers(updatedUsers);
 
-         const ok = await saveGlobalData({
+         await saveGlobalData({
             registeredUsers: updatedUsers,
             characters: updatedGlobal,
          });
-         if (!ok) {
-            const msg = "Registration could not be saved. Try again.";
-            setOnboardingError(msg);
-            addToast(msg, "error");
-            return;
-         }
 
          localStorage.setItem("uplink_is_registered", "true");
          setIsOnboardingModalOpen(false);
-         setOnboardingError("");
          setIsWelcomePlansOpen(true);
          addToast("Terminal Access Granted. Character added to My Characters.", "success");
       } catch {
-         const msg = "Uplink to Raider.io failed. Try again.";
-         setOnboardingError(msg);
-         addToast(msg, "error");
+         addToast("Uplink to Raider.io failed.", "error");
       } finally {
          setIsSyncing(false);
       }
@@ -4730,141 +4702,109 @@ export default function HomePage() {
        );
      }
 
-      const showOnboarding = false;
-
-     const toastLayer = (
-        <div className="fixed bottom-10 right-10 z-[250] flex flex-col gap-4 pointer-events-none">
-           <AnimatePresence>
-              {toasts.map((t) => (
-                 <motion.div
-                    key={t.id}
-                    initial={{ opacity: 0, x: 50, scale: 0.9 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                    className={`pointer-events-auto px-8 py-5 rounded-2xl border-2 backdrop-blur-xl shadow-2xl flex items-center gap-4 min-w-[300px] max-w-md ${t.type === "error" ? "bg-red-500/10 border-red-500 text-red-500" : t.type === "success" ? "bg-green-500/10 border-green-500 text-green-500" : "bg-black/80 border-[#00ffff] text-[#00ffff]"}`}
-                 >
-                    {t.type === "error" ? <ShieldAlert className="w-6 h-6 shrink-0" /> : t.type === "success" ? <CheckCircle2 className="w-6 h-6 shrink-0" /> : <Bell className="w-6 h-6 shrink-0" />}
-                    <div>
-                       <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Frequency Alert</p>
-                       <p className="font-black text-sm">{t.msg}</p>
-                    </div>
-                 </motion.div>
-              ))}
-           </AnimatePresence>
-        </div>
-     );
+     const likelyRegistered =
+        typeof window !== "undefined" && localStorage.getItem("uplink_is_registered") === "true";
+     const showOnboarding =
+        isOnboardingModalOpen && (!likelyRegistered || globalDataReady);
 
      return (
         <PageContext.Provider value={pageContextValue}>
          <div className={`min-h-screen ${theme === 'light' ? 'bg-[#f8f9fc] text-[#1a1a2e]' : 'bg-[#06060c] text-gray-200'} selection:bg-[#ff007f]/30 font-[family-name:var(--font-outfit)] overflow-x-hidden transition-colors duration-700`}>
-           {toastLayer}
-           {status === 'authenticated' && showOnboarding && (
-                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#030308]">
-                    <HeroBackground />
+           {status !== 'unauthenticated' ? (
+             showOnboarding ? (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#030308]">
+                   <HeroBackground />
 
-                    <motion.div
-                       variants={{
-                          hidden: { opacity: 0, scale: 0.95, y: 30 },
-                          visible: { 
-                             opacity: 1, 
-                             scale: 1, 
-                             y: 0, 
-                             transition: { 
-                                type: "spring", 
-                                damping: 25, 
-                                stiffness: 120,
-                                staggerChildren: 0.1
-                             } 
-                          }
-                       }}
-                       initial="hidden"
-                       animate="visible"
-                       onMouseMove={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const x = e.clientX - rect.left;
-                          const y = e.clientY - rect.top;
-                          e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
-                          e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
-                       }}
-                       style={{ background: 'rgba(255, 255, 255, 0.03)' }}
-                       className="w-full max-w-lg backdrop-blur-2xl border border-white/20 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.3)] relative p-8 sm:p-12 group/modal"
-                    >
-                       {/* INTERACTIVE MOUSE GLOW */}
-                       <div className="absolute inset-0 pointer-events-none opacity-0 group-hover/modal:opacity-100 transition-opacity duration-500">
-                          <div 
-                             className="absolute inset-0 bg-[radial-gradient(circle_600px_at_var(--mouse-x)_var(--mouse-y),rgba(99,102,241,0.15),rgba(168,85,247,0.1),transparent_80%)]"
-                          ></div>
-                       </div>
+                   <motion.div
+                      variants={{
+                         hidden: { opacity: 0, scale: 0.95, y: 30 },
+                         visible: { 
+                            opacity: 1, 
+                            scale: 1, 
+                            y: 0, 
+                            transition: { 
+                               type: "spring", 
+                               damping: 25, 
+                               stiffness: 120,
+                               staggerChildren: 0.1
+                            } 
+                         }
+                      }}
+                      initial="hidden"
+                      animate="visible"
+                      onMouseMove={(e) => {
+                         const rect = e.currentTarget.getBoundingClientRect();
+                         const x = e.clientX - rect.left;
+                         const y = e.clientY - rect.top;
+                         e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
+                         e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
+                      }}
+                      style={{ background: 'rgba(255, 255, 255, 0.03)' }}
+                      className="w-full max-w-lg backdrop-blur-2xl border border-white/20 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.3)] relative p-8 sm:p-12 group/modal"
+                   >
+                      {/* INTERACTIVE MOUSE GLOW */}
+                      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover/modal:opacity-100 transition-opacity duration-500">
+                         <div 
+                            className="absolute inset-0 bg-[radial-gradient(circle_600px_at_var(--mouse-x)_var(--mouse-y),rgba(99,102,241,0.15),rgba(168,85,247,0.1),transparent_80%)]"
+                         ></div>
+                      </div>
 
-                       <div className="relative z-10">
-                          <motion.div variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col items-center text-center mb-12">
-                             <ProtocolMark variant={1} className="w-20 h-20 text-white mb-6 drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" />
-                             <h2 className="text-5xl font-black tracking-widest uppercase mb-1 bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">UPLINK</h2>
-                             <span className="text-[9px] font-black uppercase tracking-[0.55em] text-amber-400/90 mb-2">Beta</span>
-                          </motion.div>
+                      <div className="relative z-10">
+                         <motion.div variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col items-center text-center mb-12">
+                            <ProtocolMark variant={1} className="w-20 h-20 text-white mb-6 drop-shadow-[0_0_25px_rgba(255,255,255,0.5)]" />
+                            <h2 className="text-5xl font-black tracking-widest uppercase mb-1 bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">UPLINK</h2>
+                            <span className="text-[9px] font-black uppercase tracking-[0.55em] text-amber-400/90 mb-2">Beta</span>
+                         </motion.div>
 
-                          <div className="space-y-6">
-                             <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
-                                <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">Neural Signature</label>
-                                <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
-                                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                   <div className="flex items-center gap-4 px-4 relative z-10">
-                                      <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="WoWLFG Battle.net" />
-                                      <input
-                                         type="text"
-                                         placeholder="Username#1234"
-                                         value={onboardingData.battleTag}
-                                         onChange={(e) => {
-                                            setOnboardingData({ ...onboardingData, battleTag: e.target.value });
-                                            if (onboardingError) setOnboardingError("");
-                                         }}
-                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
-                                      />
-                                   </div>
-                                </div>
-                             </motion.div>
+                         <div className="space-y-6">
+                            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
+                               <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">Neural Signature</label>
+                               <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                  <div className="flex items-center gap-4 px-4 relative z-10">
+                                     <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="Bnet" />
+                                     <input
+                                        type="text"
+                                        placeholder="Username#1234"
+                                        value={onboardingData.battleTag}
+                                        onChange={(e) => setOnboardingData({ ...onboardingData, battleTag: e.target.value })}
+                                        className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
+                                     />
+                                  </div>
+                               </div>
+                            </motion.div>
 
-                             <motion.div variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
-                                <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">Combat Registry</label>
-                                <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
-                                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                   <div className="flex items-center gap-4 px-4 relative z-10">
-                                      <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="WoWLFG Raider.io" />
-                                      <input
-                                         type="text"
-                                         placeholder="https://raider.io/characters/..."
-                                         value={onboardingData.raiderLink}
-                                         onChange={(e) => {
-                                            setOnboardingData({ ...onboardingData, raiderLink: e.target.value });
-                                            if (onboardingError) setOnboardingError("");
-                                         }}
-                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
-                                      />
-                                   </div>
-                                </div>
-                             </motion.div>
-                          </div>
+                            <motion.div variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
+                               <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">Combat Registry</label>
+                               <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                  <div className="flex items-center gap-4 px-4 relative z-10">
+                                     <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="RIO" />
+                                     <input
+                                        type="text"
+                                        placeholder="https://raider.io/characters/..."
+                                        value={onboardingData.raiderLink}
+                                        onChange={(e) => setOnboardingData({ ...onboardingData, raiderLink: e.target.value })}
+                                        className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
+                                     />
+                                  </div>
+                               </div>
+                            </motion.div>
+                         </div>
 
-                          {onboardingError ? (
-                             <p className="mt-6 text-center text-sm font-bold text-red-400 px-4">{onboardingError}</p>
-                          ) : null}
-
-                          <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12">
-                             <button
-                                onClick={handleApplyOperative}
-                                disabled={isSyncing}
-                                className="w-full group relative py-6 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-[0_20px_40px_rgba(0,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
-                             >
-                                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
-                                <span className="relative z-10">{isSyncing ? "VERIFYING..." : "AUTHORIZE UPLINK"}</span>
-                             </button>
-                          </motion.div>
-                       </div>
-                    </motion.div>
-                 </div>
-               )}
-
-              {(() => {
+                         <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12">
+                            <button
+                               onClick={handleApplyOperative}
+                               className="w-full group relative py-6 bg-gradient-to-r from-[#00ffff] to-[#ff007f] text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-[0_20px_40px_rgba(0,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all overflow-hidden"
+                            >
+                               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+                               <span className="relative z-10">AUTHORIZE UPLINK</span>
+                            </button>
+                         </motion.div>
+                      </div>
+                   </motion.div>
+                </div>
+              ) : (() => {
                  const innerAppContent = (
                    <>
 
@@ -4908,10 +4848,10 @@ export default function HomePage() {
                                </div>
                                <p className={`mt-5 text-[10px] font-black uppercase tracking-[0.35em] ${theme === "light" ? "text-gray-500" : "text-gray-500"}`}>{session ? "Open profile" : "Sign in to continue"}</p>
                             </motion.button>
-                             <h1 className={`text-sm md:text-base font-bold uppercase tracking-[0.16em] max-w-lg leading-relaxed ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-10`}>WoWLFG — Find your crew for keys, Mythic+ boosts &amp; leveling — fast, clear, no clutter.</h1>
+                            <p className={`text-sm md:text-base font-bold uppercase tracking-[0.16em] max-w-lg leading-relaxed ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-10`}>Find your crew for keys, boosts &amp; leveling — fast, clear, no clutter.</p>
                             <div className="flex flex-col sm:flex-row gap-6 items-center">
                                <motion.button
-                                   onClick={() => { if (!session) { signIn("discord"); return; } if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error"); if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error"); setSubmitError(""); setIsCreateModalOpen(true); }}
+                                  onClick={() => { if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error"); if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error"); setSubmitError(""); setIsCreateModalOpen(true); }}
                                   className="group relative px-12 py-6 bg-gradient-to-r from-[#00ffff] via-[#8a2be2] to-[#ff007f] text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[0_0_40px_rgba(0,255,255,0.25)] hover:shadow-[0_0_60px_rgba(255,0,127,0.4)] hover:scale-105 active:scale-95 flex items-center gap-4"
                                >
                                   <PlusCircle className="w-6 h-6 relative z-10 text-[#00ffff] group-hover:text-white transition-colors" />
@@ -4923,53 +4863,36 @@ export default function HomePage() {
                                      <span className="h-2 w-2 rounded-full bg-[#00ffff] shadow-[0_0_10px_#00ffff]" />
                                      <span className="h-2 w-2 rounded-full bg-[#ff007f] shadow-[0_0_10px_#ff007f]" />
                                   </div>
-                                   <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#ff007f]/60" />
-                                </div>
-                                 <button
-                                    type="button"
-                                    onClick={() => {
-                                       if (isSuspended) return addToast("ACCOUNT SUSPENDED. CONTACT SUPPORT.", "error");
-                                       if (hasPendingPayments) return addToast("CLEAR YOUR PENDING PAYMENTS FIRST.", "error");
-                                       setIsBoostRequestModalOpen(true);
-                                    }}
-                                    className="group relative px-10 py-5 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 text-amber-400 rounded-[2rem] font-black uppercase tracking-[0.25em] text-xs transition-all shadow-[0_0_30px_rgba(251,191,36,0.15)] hover:shadow-[0_0_50px_rgba(251,191,36,0.3)] hover:scale-105 active:scale-95 flex items-center gap-4 border border-amber-500/30 hover:border-amber-500/50"
-                                 >
-                                    <Compass className="w-5 h-5 shrink-0 relative z-10 text-amber-400/70 group-hover:text-amber-300 transition-colors" />
-                                    <span className="relative z-10 group-hover:text-white transition-colors">Feeling lost? Request a Boost</span>
-                                 </button>
-                             </div>
-                            </motion.div>
-                        </div>
-                        {/* SEO paragraph — visible, keyword-rich */}
-                        <div className="relative z-10 px-4 py-4 max-w-2xl mx-auto text-center pointer-events-auto">
-                          <p className={`text-[9px] font-bold uppercase tracking-[0.18em] leading-relaxed ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
-                            WoWLFG — World of Warcraft Looking for Group. Browse Mythic+ offers, post boost requests, check Raider.io scores, and find your next dungeon group on UPLINK. Free for all players.
-                          </p>
-                        </div>
-                     </section>
-                     {/* Main feed — full width on mobile; desktop uses slight scale for density */}
-                    <div className="px-2 sm:px-[5%] xl:px-12 py-4 -mt-8 sm:-mt-16 relative z-20">
-                    <div className="w-full mx-auto origin-top scale-100 md:scale-[0.85] lg:scale-[0.7]">
+                                  <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#ff007f]/60" />
+                               </div>
+                            </div>
+                          </motion.div>
+                       </div>
+                    </section>
+
+                    {/* ZOOMED WRAPPER - 75% scale with space both sides */}
+                    <div className="px-[5%] xl:px-12 py-4 -mt-16 relative z-20">
+                    <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
                           <div className="max-w-[1650px] mx-auto flex flex-col lg:flex-row gap-6 pb-16 items-start">
                         {/* LEFT COLUMN: tabs + content */}
                            <div className="flex flex-col gap-2 min-w-0 flex-1">
 <div className="flex flex-col gap-1.5">
-                             <div className="flex justify-end gap-1.5">
-                             <button
-                               type="button"
-                               onClick={(e) => {
-                                  e.stopPropagation();
-                                  const next = !offerSoundsEnabled;
-                                  setOfferSoundsEnabled(next);
-                                  localStorage.setItem("uplink_offer_sounds", next.toString());
-                                  addToast(next ? "New offer alert sounds on." : "New offer alert sounds muted.", "info");
-                               }}
-                               className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] transition-all backdrop-blur-md cursor-pointer ${
-                                  offerSoundsEnabled
-                                     ? theme === 'light'
-                                        ? 'border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/20'
-                                        : 'border-[#00ffff]/25 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/15'
-                                     : theme === 'light'
+                           <div className="flex justify-end">
+                           <button
+                              type="button"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 const next = !offerSoundsEnabled;
+                                 setOfferSoundsEnabled(next);
+                                 localStorage.setItem("uplink_offer_sounds", next.toString());
+                                 addToast(next ? "New offer alert sounds on." : "New offer alert sounds muted.", "info");
+                              }}
+                              className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] transition-all backdrop-blur-md cursor-pointer ${
+                                 offerSoundsEnabled
+                                    ? theme === 'light'
+                                       ? 'border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/20'
+                                       : 'border-[#00ffff]/25 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff]/15'
+                                    : theme === 'light'
                                        ? 'border-gray-200 bg-white/80 text-gray-400 hover:text-gray-600'
                                        : 'border-white/10 bg-black/40 text-white/45 hover:text-white/70'
                               }`}
@@ -4986,16 +4909,7 @@ export default function HomePage() {
 <button onClick={() => setActiveMainTab("boosts")} className={`flex-1 py-3 px-4 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] outline-none cursor-pointer text-center transition-all ${activeMainTab === "boosts" ? "bg-[#ff007f] shadow-[0_0_30px_rgba(255,0,127,0.4)] text-white" : `${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-white hover:text-white/80'}`}`}>
 ⚡ Offers
 </button>
-<button onClick={() => setActiveMainTab("requests")} className={`relative flex-1 py-3 px-4 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] outline-none cursor-pointer text-center transition-all ${activeMainTab === "requests" ? "bg-amber-500 shadow-[0_0_30px_rgba(251,191,36,0.4)] text-white" : `${theme === 'light' ? 'text-gray-500 hover:text-gray-800' : 'text-white/60 hover:text-white'}`}`}>
-<svg className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-Requests
-{boostRequests.filter((r: any) => r.status === "open").length > 0 && (
-  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(255,0,0,0.5)]">
-    {boostRequests.filter((r: any) => r.status === "open").length > 9 ? "9+" : boostRequests.filter((r: any) => r.status === "open").length}
-  </span>
-)}
-</button>
-                             {isPrimary && (
+                             {isAdmin && (
 <motion.button onClick={() => setActiveMainTab("admin")} className={`flex-1 py-3 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${activeMainTab === "admin" ? "bg-red-600 text-white shadow-[0_0_30px_rgba(220,38,38,0.4)]" : "text-red-500/50 hover:text-red-500"}`}>
                                    <ShieldAlert className="w-4 h-4" /> Admin
                                </motion.button>
@@ -5003,12 +4917,11 @@ Requests
                           </div>
 </div>
 
-                               <div className={`${activeMainTab !== "admin" ? 'w-full' : ''}`}>
-                            {activeMainTab === "boosts" && (
-                               <div className="flex gap-8 mt-2">
-                               <div className="grid gap-2 overflow-visible flex-1 min-w-0">
-                                  <div className="flex flex-col gap-4">
-                                      {(() => {
+                              <div className={`${activeMainTab !== "admin" ? 'w-full' : ''}`}>
+                           {activeMainTab === "boosts" && (
+                              <div className="grid gap-2 overflow-visible mt-2">
+                                 <div className="flex flex-col gap-4">
+                                     {(() => {
                                         const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));
                                         const sorted = [...activeLobbies].sort((a, b) => {
                                            const tierA = getUserTier(a.ownerId);
@@ -5124,7 +5037,7 @@ Requests
                                                  <div className="flex flex-col gap-2 w-full">
 <motion.button onClick={() => { setTargetLobby(lobby); setIsManageModalOpen(true); }} className={`w-full py-2 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all text-center flex justify-center gap-2 items-center ${lobby.category === 'leveling' ? 'bg-[#8a2be2]/10 border border-[#8a2be2]/30 text-[#8a2be2] hover:bg-[#8a2be2] hover:text-white shadow-[0_0_15px_rgba(138,43,226,0.1)]' : 'bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff] hover:text-black shadow-[0_0_15px_rgba(0,255,255,0.1)]'}`}><Crosshair className="w-3.5 h-3.5" /> Manage</motion.button>
                                                       {canOwnerCancelLobby(lobby) && (
-                                                         <motion.button onClick={() => deleteLobby(lobby.id)} className="w-full py-2 bg-red-900/20 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white transition-all text-center flex justify-center gap-2 items-center"><X className="w-3.5 h-3.5" /> Cancel</motion.button>
+                                                         <motion.button onClick={() => deleteLobby(lobby.id)} className="w-full py-2 bg-red-900/20 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white transition-all text-center flex justify-center gap-2 items-center"><Trash2 className="w-3.5 h-3.5" /> Delete</motion.button>
                                                       )}
                                                    </div>
                                                  ) : lobby.accepted?.some((a: any) => a.applicantId === currentUserId) ? (
@@ -5138,60 +5051,50 @@ Requests
                                                          <X className="w-3.5 h-3.5" /> CANCEL
                                                      </motion.button>
                                                   </div>
-                                                 ) : session ? (
-                                                   <div className="flex flex-col gap-2 w-full relative" onClick={e => e.stopPropagation()}>
+                                                ) : (
+                                                  <div className="flex flex-col gap-2 w-full relative" onClick={e => e.stopPropagation()}>
 <motion.button
-                                                             onClick={() => { if (isUserEligibleForLobby(lobby)) { setTargetLobby(lobby); setIsApplyModalOpen(true); setIsAutoApplySettingsOpen(true); } }}
-                                                             onMouseEnter={() => !isUserEligibleForLobby(lobby) && setHoveredLockedId(lobby.id)}
-                                                             onMouseLeave={() => setHoveredLockedId(null)}
-                                                             className={`w-full py-2 bg-[#ff007f]/10 border border-[#ff007f]/30 text-[#ff007f] text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#ff007f] hover:text-white transition-all shadow-[0_0_15px_rgba(255,0,127,0.1)] text-center flex justify-center gap-2 items-center overflow-hidden relative ${!isUserEligibleForLobby(lobby) ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}
-                                                         >
-                                                            <div className="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
-                                                            <Zap className={`w-4 h-4 relative z-10 ${isUserEligibleForLobby(lobby) ? 'animate-pulse' : ''}`} />
-                                                            <span className="relative z-10">{isUserEligibleForLobby(lobby) ? 'APPLY' : 'LOCKED'}</span>
-                                                         </motion.button>
+                                                            onClick={() => { if (isUserEligibleForLobby(lobby)) { setTargetLobby(lobby); setIsApplyModalOpen(true); setIsAutoApplySettingsOpen(true); } }}
+                                                            onMouseEnter={() => !isUserEligibleForLobby(lobby) && setHoveredLockedId(lobby.id)}
+                                                            onMouseLeave={() => setHoveredLockedId(null)}
+                                                            className={`w-full py-2 bg-[#ff007f]/10 border border-[#ff007f]/30 text-[#ff007f] text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#ff007f] hover:text-white transition-all shadow-[0_0_15px_rgba(255,0,127,0.1)] text-center flex justify-center gap-2 items-center overflow-hidden relative ${!isUserEligibleForLobby(lobby) ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}
+                                                        >
+                                                           <div className="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
+                                                           <Zap className={`w-4 h-4 relative z-10 ${isUserEligibleForLobby(lobby) ? 'animate-pulse' : ''}`} />
+                                                           <span className="relative z-10">{isUserEligibleForLobby(lobby) ? 'APPLY' : 'LOCKED'}</span>
+                                                        </motion.button>
 
-                                                        {hoveredLockedId === lobby.id && !isUserEligibleForLobby(lobby) && (
-                                                            <div className="absolute left-1/2 z-[9999] pointer-events-none w-max max-w-[min(420px,calc(100vw-2rem))]" style={{ top: 'calc(100% + 10px)', transform: 'translateX(-50%)' }}>
-                                                                 <div className="bg-[#0a0a16]/98 text-white text-sm font-bold px-6 py-5 border-2 border-[#ff007f]/60 relative rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_30px_rgba(255,0,127,0.25)] backdrop-blur-xl text-left whitespace-normal">
-                                                                 <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#ff007f]/20">
-                                                                    <span className="text-lg leading-none">⛔</span>
-                                                                    <span className="text-[13px] text-[#ff007f] font-black uppercase tracking-[0.14em]">Access Denied</span>
-                                                                 </div>
-                                                                 <div className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-white/90">
-                                                                   {(() => {
-                                                                      const reason = getEligibilityReason(lobby);
-                                                                      if (reason === "ALREADY IN THIS SQUAD") return <p className="text-white/80">You are already in this squad.</p>;
-                                                                      if (reason === "ALREADY APPLIED") return <p className="text-white/80">You already applied to this offer.</p>;
-                                                                      if (reason === "NO CHARACTERS SYNCED") return <p className="text-white/80">No characters detected. Sync your character via Raider.io first in the Armory.</p>;
-                                                                      if (reason === "NO QUALIFIED CHARACTER") return <p className="text-white/80">None of your characters meet the requirements for this operation.</p>;
-                                                                        return reason.split(" | ").map((r, i) => {
-                                                                           const cleaned = r
-                                                                             .replace(/^(\w+) ILVL (\d+) < (\d+)$/, '🔸 $1 — Your item level: $2 | Required: $3')
-                                                                             .replace(/^(\w+) IO (\d+) < (\d+)$/, '🔸 $1 — Your Raider IO: $2 | Required: $3')
-                                                                             .replace(/^(\w+) SLOTS FULL$/i, '🔸 $1 — No open slots available')
-                                                                             .replace(/^(\w+) (\w+) BLOCKED$/i, '🔸 $1 $2 is blacklisted for this role')
-                                                                             .replace(/^(\w+) CHARACTER MISSING$/i, '🔸 You have no characters on $1');
-                                                                           return <p key={i} className="text-white/90">{cleaned}</p>;
-                                                                      });
-                                                                   })()}
+                                                       {hoveredLockedId === lobby.id && !isUserEligibleForLobby(lobby) && (
+                                                           <div className="absolute left-1/2 z-[9999] pointer-events-none w-max max-w-[min(420px,calc(100vw-2rem))]" style={{ top: 'calc(100% + 10px)', transform: 'translateX(-50%)' }}>
+                                                                <div className="bg-[#0a0a16]/98 text-white text-sm font-bold px-6 py-5 border-2 border-[#ff007f]/60 relative rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85),0_0_30px_rgba(255,0,127,0.25)] backdrop-blur-xl text-left whitespace-normal">
+                                                                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#ff007f]/20">
+                                                                   <span className="text-lg leading-none">⛔</span>
+                                                                   <span className="text-[13px] text-[#ff007f] font-black uppercase tracking-[0.14em]">Access Denied</span>
                                                                 </div>
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-b-[#0a0a16]" />
-                                                             </div>
-                                                        </div>
-                                                    )}
-                                                  </div>
-                                              ) : (
-                                                <div className="flex flex-col gap-2 w-full relative" onClick={e => e.stopPropagation()}>
-                                                  <motion.button
-                                                    onClick={() => signIn("discord")}
-                                                    className="w-full py-2 bg-[#ff007f]/10 border border-[#ff007f]/30 text-[#ff007f] text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#ff007f] hover:text-white transition-all shadow-[0_0_15px_rgba(255,0,127,0.1)] text-center flex justify-center gap-2 items-center overflow-hidden relative"
-                                                  >
-                                                    <div className="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
-                                                    <span className="relative z-10">SIGN IN TO APPLY</span>
-                                                  </motion.button>
-                                                </div>
-                                              )}
+                                                                <div className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-white/90">
+                                                                  {(() => {
+                                                                     const reason = getEligibilityReason(lobby);
+                                                                     if (reason === "ALREADY IN THIS SQUAD") return <p className="text-white/80">You are already in this squad.</p>;
+                                                                     if (reason === "ALREADY APPLIED") return <p className="text-white/80">You already applied to this offer.</p>;
+                                                                     if (reason === "NO CHARACTERS SYNCED") return <p className="text-white/80">No characters detected. Sync your character via Raider.io first in the Armory.</p>;
+                                                                     if (reason === "NO QUALIFIED CHARACTER") return <p className="text-white/80">None of your characters meet the requirements for this operation.</p>;
+                                                                       return reason.split(" | ").map((r, i) => {
+                                                                          const cleaned = r
+                                                                            .replace(/^(\w+) ILVL (\d+) < (\d+)$/, '🔸 $1 — Your item level: $2 | Required: $3')
+                                                                            .replace(/^(\w+) IO (\d+) < (\d+)$/, '🔸 $1 — Your Raider IO: $2 | Required: $3')
+                                                                            .replace(/^(\w+) SLOTS FULL$/i, '🔸 $1 — No open slots available')
+                                                                            .replace(/^(\w+) (\w+) BLOCKED$/i, '🔸 $1 $2 is blacklisted for this role')
+                                                                            .replace(/^(\w+) CHARACTER MISSING$/i, '🔸 You have no characters on $1');
+                                                                          return <p key={i} className="text-white/90">{cleaned}</p>;
+                                                                     });
+                                                                  })()}
+                                                               </div>
+                                                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-[8px] border-transparent border-b-[#0a0a16]" />
+                                                            </div>
+                                                       </div>
+                                                   )}
+                                                 </div>
+                                             )}
                                            </div>
                                            </div>
                                        </div>
@@ -5295,7 +5198,7 @@ Requests
                                                                           const someBlocked = blockedRolesForClass.length > 0 && !allBlocked;
                                                                           return (
                                                                              <div key={cls} className={`flex flex-col items-center p-2.5 rounded-xl border transition-colors ${allBlocked ? 'bg-red-500/10 border-red-500/20 opacity-20 grayscale' : someBlocked ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-green-500/10 border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.1)]'}`}>
-                                                                                <img src={classThumbUrl(cls)} width={96} height={96} className="w-11 h-11 object-contain drop-shadow-md" alt={cls} decoding="async" />
+                                                                                <img src={classThumbUrl(cls)} width={44} height={44} className="w-11 h-11 object-contain drop-shadow-md" alt={cls} />
                                                                                {someBlocked && <span className="text-[7px] text-yellow-500 font-black mt-1">{blockedRolesForClass.map((b: any) => b.role.substring(0, 1).toUpperCase()).join('')}</span>}
                                                                             </div>
                                                                          );
@@ -5340,98 +5243,19 @@ Requests
                                         )}
                                      </div>
                                       </div>)); })()}
-                                  </div>
-                                </div>
-                               </div>
-                          )}
-
-                           {activeMainTab === "requests" && (
-                              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="mt-2">
-                                 <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center">
-                                       <TrendingUp className="w-5 h-5 text-amber-400" />
-                                    </div>
-                                    <div>
-                                       <h2 className="text-base font-black text-white uppercase tracking-[0.15em]">Boost Requests</h2>
-                                       <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Boosters bid for your run — gold only</p>
-                                    </div>
-                                    <button
-                                       type="button"
-                                       onClick={() => {
-                                          if (isSuspended) return;
-                                          if (hasPendingPayments) return;
-                                          setIsBoostRequestModalOpen(true);
-                                       }}
-                                       className="ml-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 font-black uppercase text-[9px] tracking-[0.15em] hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-500/50 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
-                                       disabled={isSuspended || hasPendingPayments}
-                                    >
-                                       <Send className="w-3.5 h-3.5" />
-                                       Post a Request
-                                    </button>
                                  </div>
+                              </div>
+                        )}
 
-                                 {boostRequests.length === 0 ? (
-                                    <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2rem]">
-                                       <TrendingUp className="w-8 h-8 text-gray-600 mx-auto mb-3" />
-                                       <p className="text-gray-500 text-xs font-black uppercase tracking-widest">No boost requests yet</p>
-                                       <p className="text-gray-600 text-[10px] font-bold mt-2">Post one and boosters will bid on your run.</p>
-                                    </div>
-                                 ) : (
-                                    <div className="grid gap-3">
-                                       {boostRequests.filter((r: any) => r.status === "open").map((req: any) => (
-                                          <div key={req.id} className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-5 hover:border-amber-500/30 transition-all">
-                                             <div className="flex items-center gap-3 mb-3">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                                   req.type === "leveling" ? "bg-green-500/20 border border-green-500/30" : "bg-purple-500/20 border border-purple-500/30"
-                                                }`}>
-                                                   {req.type === "leveling" ? (
-                                                      <Shield className="w-5 h-5 text-green-400" />
-                                                   ) : (
-                                                      <Sword className="w-5 h-5 text-purple-400" />
-                                                   )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                   <p className="text-sm font-black text-white">
-                                                      {req.type === "leveling"
-                                                         ? `Power Leveling ${req.startLevel} → ${req.endLevel}`
-                                                         : `${req.dungeonName || "Dungeon"} +${req.keyLevel}`
-                                                      }
-                                                   </p>
-                                                   <p className="text-[9px] text-gray-500 font-bold mt-0.5">
-                                                      by {req.userName || "Anonymous"} &bull; {new Date(req.createdAt).toLocaleDateString()}
-                                                   </p>
-                                                </div>
-                                                <div className="text-right">
-                                                   <p className="text-lg font-black text-amber-400">{req.budget}K</p>
-                                                   <p className="text-[8px] text-amber-500/60 font-black uppercase tracking-widest">Gold</p>
-                                                </div>
-                                             </div>
-                                             {req.notes && (
-                                                <p className="text-xs text-gray-400 bg-white/[0.02] rounded-xl px-3 py-2 border border-white/5">{req.notes}</p>
-                                             )}
-                                          </div>
-                                       ))}
-                                    </div>
-                                 )}
 
-                                 {boostRequests.length > 0 && (
-                                    <Link href="/boosts" className="mt-4 inline-flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.15em] hover:text-white transition-all">
-                                       <Plus className="w-3.5 h-3.5" />
-                                       View All on Boost Requests Page
-                                    </Link>
-                                 )}
-                              </motion.div>
-                           )}
-
-                           {activeMainTab === "admin" && isAdmin && (
+                          {activeMainTab === "admin" && isAdmin && (
                              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
                                 <div className="flex flex-wrap gap-2 p-2 bg-black/30 rounded-2xl border border-white/5">
-                                    {[
-                                       { id: "admin-users", label: "Users" },
-                                       { id: "admin-analytics", label: "Analytics" },
-                                       { id: "admin-audit", label: "Audit Log" },
-                                       { id: "admin-ip", label: "IP Bans" },
-                                    ].map((tab) => (
+                                   {[
+                                      { id: "admin-users", label: "Users" },
+                                      { id: "admin-audit", label: "Audit Log" },
+                                      { id: "admin-ip", label: "IP Bans" },
+                                   ].map((tab) => (
                                       <a
                                          key={tab.id}
                                          href={`#${tab.id}`}
@@ -5481,7 +5305,7 @@ Requests
                                          return (
                                          <div key={user.id} className="flex items-center justify-between p-6 bg-black/40 rounded-2xl border border-white/5 hover:border-red-500/30 transition-all group">
                                             <div className="flex items-center gap-6">
-                                                <AvatarWithEffect src={user.avatar} effect="none" className="w-16 h-16" />
+                                               <AvatarWithEffect src={user.avatar} effect={user.effect} className="w-16 h-16" />
                                                <div>
                                                    <h4 className="text-xl font-black text-white uppercase">{user.name}</h4>
                                                    <p className="text-[9px] font-mono mt-1">
@@ -5491,7 +5315,12 @@ Requests
                                                       <span className="text-gray-600 uppercase text-[8px] font-black tracking-widest mr-1">IP</span>
                                                       <span className="font-black">{ipInfo.text}</span>
                                                    </p>
-                                                </div>
+                                                   {getUserTier(user.id) === "secret_club" && (
+                                                      <p className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest mt-1">
+                                                         {getSubscriptionDaysLeft(user) ?? 0} days remaining
+                                                      </p>
+                                                   )}
+                                               </div>
                                             </div>
                                                 <div className="flex items-center gap-4">
                                                 <div className="flex items-center gap-2 text-xs">
@@ -5556,8 +5385,7 @@ Requests
                                       )}
                                    </div>
 
-                                    <AdminAnalyticsPanel />
-                                    <AdminAuditPanel />
+                                   <AdminAuditPanel />
                                    <div id="admin-ip" className="scroll-mt-24">
                                       <AdminIpBanPanel />
                                    </div>
@@ -5581,10 +5409,10 @@ Requests
                                    alignOfferIds={activeBoostLobbyIds}
                                 />
                              )}
-                     </div>
-                     </div>
-                     </div>
-                  </main>
+                    </div>
+                    </div>
+                    </div>
+                 </main>
 
                 {/* MODALS */}
                <AnimatePresence>
@@ -5815,13 +5643,6 @@ Requests
                   onSaveOfferDraft={handleSaveOfferDraft}
                   onDeleteOfferDraft={handleDeleteOfferDraft}
                   onDraftLoaded={(name) => addToast(`Loaded draft "${name}".`, "success")}
-                />
-
-                <BoostRequestModal
-                  isOpen={isBoostRequestModalOpen}
-                  onClose={() => setIsBoostRequestModalOpen(false)}
-                  currentUserId={currentUserId}
-                  userName={currentUserDisplay}
                 />
 
                 <AnimatePresence>
@@ -6188,6 +6009,18 @@ Requests
           }
         `}} />
 
+               {/* TOAST SYSTEM */}
+               <div className="fixed bottom-10 right-10 z-[100] flex flex-col gap-4 pointer-events-none">
+                  <AnimatePresence>
+                     {toasts.map(t => (
+                        <motion.div key={t.id} initial={{ opacity: 0, x: 50, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.8, x: 20 }} className={`pointer-events-auto px-8 py-5 rounded-2xl border-2 backdrop-blur-xl shadow-2xl flex items-center gap-4 min-w-[300px] ${t.type === 'error' ? 'bg-red-500/10 border-red-500 text-red-500' : t.type === 'success' ? 'bg-green-500/10 border-green-500 text-green-500' : 'bg-black/80 border-[#00ffff] text-[#00ffff]'}`}>
+                           {t.type === 'error' ? <ShieldAlert className="w-6 h-6" /> : t.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
+                           <div><p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Frequency Alert</p><p className="font-black text-sm">{t.msg}</p></div>
+                        </motion.div>
+                     ))}
+                  </AnimatePresence>
+               </div>
+
                </>
                   );
                    const serverUrl =
@@ -6214,7 +6047,7 @@ Requests
                          localStorage.removeItem('uplink_voice_lobby');
                        }}
                      >
-                         {innerAppContent}
+                       {innerAppContent}
                        {voiceToken ? <RoomAudioRenderer /> : null}
                        <AnimatePresence>
                          {voiceToken && !isManageModalOpen && (
@@ -6235,18 +6068,52 @@ Requests
                       </AnimatePresence>
                     </LiveKitRoom>
                   );
-                })()}
-           {!showOnboarding && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
+                })()
+               ) : (
+              <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=1600')] bg-cover opacity-10 grayscale" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#ff007f]/20 via-transparent to-black" />
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 text-center max-w-2xl">
+                   <h1 className="text-8xl font-black text-white uppercase tracking-tighter mb-4 italic">UPLINK</h1>
+                   <p className="text-[#ff007f] font-black tracking-[0.5em] mb-12 uppercase text-xs">Secure Gaming Network</p>
+                   <div className="p-12 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 shadow-2xl">
+                      <p className="text-gray-400 mb-12 font-medium leading-relaxed text-lg">This site is for registered members only. Please sign in to access the system.</p>
+                      <motion.button onClick={() => signIn("discord")} className="w-full py-8 bg-white text-black font-black uppercase text-2xl rounded-[2rem] flex items-center justify-center gap-4 hover:bg-[#ff007f] hover:text-white transition-all shadow-xl group">
+                         <ShieldCheck className="w-8 h-8" /> Sign in with Discord
+                      </motion.button>
+                   </div>
+                  {deleteConfirmation?.isOpen && (
+                     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <div className="bg-[#05050a] border border-[#ff007f]/30 p-8 rounded-3xl max-w-sm w-full text-center">
+                           <h3 className="text-xl font-black text-white mb-4">DELETE BACKGROUND</h3>
+                           <p className="text-gray-400 text-sm mb-8">Are you sure you want to delete this background? This action cannot be undone.</p>
+                           <div className="flex gap-4">
+                              <button onClick={() => setDeleteConfirmation(null)} className="w-1/3 shrink-0 py-3 bg-white/5 text-white font-black uppercase text-[10px] rounded-xl hover:bg-white/10">CANCEL</button>
+                              <button onClick={() => {
+                                 const { index, userId } = deleteConfirmation;
+                                 const userIdx = registeredUsersRef.current.findIndex((u: any) => u.id === userId);
+                                 if (userIdx !== -1) {
+                                    const updatedUsers = [...registeredUsersRef.current];
+                                    updatedUsers[userIdx].userVfx.splice(index, 1);
+                                    setRegisteredUsers(updatedUsers);
+                                    saveGlobalData({ registeredUsers: updatedUsers });
+                                 }
+                                 setDeleteConfirmation(null);
+                              }} className="w-1/3 shrink-0 py-3 bg-red-600 text-white font-black uppercase text-[10px] rounded-xl hover:bg-red-500">CONFIRM</button>
+                           </div>
+                        </div>
+                       </div>
+                    )}
+                 </motion.div>    </div>
+           )}
+           {status === "authenticated" && session?.user && !showOnboarding && !isManageModalOpen && !isArmoryModalOpen && !isCreateModalOpen && !isTicketModalOpen && (
               <>
               <HomeFloatingActions
-                  onOpenSupport={() => { setLoungeWidgetOpen(false); setSupportWidgetOpen(true); }}
-                  onOpenClubLounge={() => { setSupportWidgetOpen(false); setLoungeWidgetOpen(true); }}
-                  supportUnread={isAdmin ? adminTicketUnread : 0}
-                  supportOpen={supportWidgetOpen}
-                  loungeOpen={loungeWidgetOpen}
-                  currentUserId={currentUserId}
-                  isAdmin={isAdmin}
-               />
+                 onOpenSupport={() => setSupportWidgetOpen(true)}
+                 supportUnread={isAdmin ? adminTicketUnread : 0}
+                 currentUserId={currentUserId}
+                 isAdmin={isAdmin}
+              />
               <SupportChatWidget
                  tickets={tickets}
                  selectedTicket={selectedTicket}
@@ -6262,13 +6129,6 @@ Requests
                  onOpenChange={setSupportWidgetOpen}
                  isAdmin={isAdmin}
                  adminUnreadCount={adminTicketUnread}
-              />
-              <ClubLoungeChatWidget
-                 currentUserId={currentUserId}
-                 canChat
-                 hideFab
-                 open={loungeWidgetOpen}
-                 onOpenChange={setLoungeWidgetOpen}
               />
               </>
            )}

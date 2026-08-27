@@ -1,26 +1,4 @@
 import { isSecretClubTier } from "@/lib/userProfile";
-import { getSiteUrl } from "@/lib/siteUrl";
-
-/** Ensure Discord embed avatars are absolute HTTPS URLs. */
-export function toAbsoluteMediaUrl(url?: string | null): string | undefined {
-  const u = String(url || "").trim();
-  if (!u) return undefined;
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  if (u.startsWith("/")) return `${getSiteUrl()}${u}`;
-  return u;
-}
-
-/** Name + static avatar for Discord channel embeds (site profile, not Discord session). */
-export function resolveDiscordEmbedIdentity(user: any, lobby?: any) {
-  const name = resolveProfileDisplayName(
-    user,
-    lobby?.ownerName || lobby?.ownerDiscordName || "Mission Lead"
-  );
-  const avatar = toAbsoluteMediaUrl(
-    user ? resolveOfferFeedProfileImage(user, name) : lobby?.ownerImage
-  );
-  return { name, avatar };
-}
 
 /** Secret Club hidden identity — mask only on public offer party cards (not thread/DM/community). */
 export function shouldHidePublicIdentity(user: any, viewerUserId?: string): boolean {
@@ -93,9 +71,8 @@ export function isAnimatedImageUrl(url: string): boolean {
   if (/\.gif(\?|$)/i.test(trimmed)) return true;
   try {
     const u = new URL(trimmed);
-    if (u.hostname.endsWith(".giphy.com") || u.hostname === "giphy.com") return true;
-    if (u.hostname.endsWith(".tenor.com") || u.hostname === "tenor.com") return true;
-    if (u.hostname.includes("pinimg.com")) return true;
+    if (u.hostname.includes("giphy.com") && u.pathname.includes("/media/")) return true;
+    if (u.hostname.includes("tenor.com")) return true;
   } catch {
     /* ignore */
   }

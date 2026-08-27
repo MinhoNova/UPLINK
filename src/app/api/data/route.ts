@@ -5,7 +5,7 @@ import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
 import { isAdminUser, stripAdminFromBanList, validateDataWrites } from '@/lib/secureDataWrite';
 import { filterDataForUser } from '@/lib/dataAccess';
-import { requireSession, requireOptionalSession } from '@/lib/authz';
+import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
 import { isUserBanned, bannedResponse } from '@/lib/banCheck';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
@@ -14,18 +14,16 @@ import { touchUserLastIp } from '@/lib/userLastIp';
 
 export async function GET(req: Request) {
   try {
-    const auth = await requireOptionalSession(req);
-    const isLoggedIn = auth.ok && auth.user;
-    const userId = isLoggedIn ? auth.user!.id : "guest";
-    const handle = isLoggedIn ? auth.user!.username : "";
+    const auth = await requireSession(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
-    if (isLoggedIn) {
-      const ipBlock = await rejectIfIpBannedUnlessAdmin(req, userId, handle);
-      if (ipBlock) return ipBlock;
+    const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
+    if (ipBlock) return ipBlock;
 
-      if (await isUserBanned(handle, userId)) {
-        return bannedResponse();
-      }
+    if (await isUserBanned(auth.user.username, auth.user.id)) {
+      return bannedResponse();
     }
 
     await initTables();
@@ -64,10 +62,8 @@ export async function GET(req: Request) {
       }
     }
 
-    const scoped = filterDataForUser(data, userId, handle);
-    if (isLoggedIn) {
-      touchUserLastIp(userId, getClientIp(req)).catch(() => {});
-    }
+    const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
+    touchUserLastIp(auth.user.id, getClientIp(req)).catch(() => {});
     return NextResponse.json(scoped);
   } catch (error) {
     console.error("Error reading from D1:", error);

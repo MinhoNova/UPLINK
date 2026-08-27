@@ -10,7 +10,6 @@ import { getImageMetadata, normalizeProfileImage, extractGifPoster } from "@/lib
 import { storeUserMediaFile } from "@/lib/userMediaStorage";
 import { fetchExternalImageBuffer } from "@/lib/fetchExternalImage";
 import { validateSafeGifUrl } from "@/lib/safeRemoteUrl";
-import { isAnimatedImageUrl } from "@/lib/profileImage";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_DIM = 512;
@@ -26,7 +25,6 @@ function resolveField(raw: unknown): UploadField {
 }
 
 export async function POST(req: Request) {
-  try {
   const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -175,8 +173,4 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ success: true, url, thumbUrl });
-  } catch (e) {
-    console.error("Profile upload failed:", e);
-    return NextResponse.json({ error: "Upload failed — try again or use a direct .gif link" }, { status: 500 });
-  }
 }

@@ -5,7 +5,6 @@ export const posts = sqliteTable("posts", {
   userId: text("userId").notNull(),
   userName: text("userName").notNull(),
   userImage: text("userImage").notNull(),
-  title: text("title"),
   content: text("content").notNull(),
   image: text("image"),
   tags: text("tags").default("[]"),
@@ -37,20 +36,6 @@ export const commentReactions = sqliteTable("commentReactions", {
   userId: text("userId").notNull(),
   type: text("type").notNull(),
   createdAt: integer("createdAt").notNull(),
-});
-
-export const news = sqliteTable("news", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  image: text("image"),
-  tags: text("tags").default("[]"),
-  section: text("section").notNull(),
-  sourcePostId: integer("sourcePostId"),
-  authorId: text("authorId").notNull(),
-  authorName: text("authorName").notNull(),
-  createdAt: integer("createdAt").notNull(),
-  updatedAt: integer("updatedAt").notNull(),
 });
 
 export const comments = sqliteTable("comments", {

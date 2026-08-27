@@ -6,10 +6,10 @@ import { usePage } from "@/contexts/PageContext";
 import ClassRoleIcons from "@/components/ClassRoleIcons";
 import AutoAcceptTimer, { AUTO_ACCEPT_DURATION_MS } from "@/components/AutoAcceptTimer";
 import RankBadge from "@/components/RankBadge";
+import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { resolveVfxBannerUrl, resolveVfxSrc } from "@/lib/vfxAssets";
-import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob, uploadProfileGifBlob } from "@/lib/clientImagePoster";
-import { markCharacterRemoved } from "@/lib/raiderCharacter";
+import { extractGifPosterBlob, importLobbyVfxFromUrl, importProfileGifFromUrl, uploadLobbyVfxBlob } from "@/lib/clientImagePoster";
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -158,7 +158,26 @@ const ArmoryModal = ({
                                <motion.button onClick={() => setActiveArmoryTab("bank")} className={`py-4 px-6 rounded-xl text-left font-black transition-all border-2 ${activeArmoryTab === 'bank' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500'}`}>Gold Bank Vault</motion.button>
                               </div>
                               <div className="mt-auto flex flex-col gap-4">
-                                   <motion.button onClick={() => signOut()} className="w-full py-5 bg-red-500/10 border-2 border-red-500/30 text-red-500 font-black rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"><LogOut className="w-4 h-4" /> Log Out</motion.button>
+                                  {(() => {
+                                    const me = registeredUsers.find((u: any) => u.id === currentUserId);
+                                    const daysLeft = getSubscriptionDaysLeft(me);
+                                    const tier = getUserTier(currentUserId);
+                                    if (tier !== "secret_club" || daysLeft === null) return null;
+                                    return (
+                                      <div className="p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/5">
+                                        <p className="text-[8px] font-black text-yellow-500/70 uppercase tracking-widest mb-1">Secret Club</p>
+                                        <p className="text-lg font-black text-yellow-400">
+                                          {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : "Expired"}
+                                        </p>
+                                        {me?.subscription?.endDate && daysLeft > 0 && (
+                                          <p className="text-[8px] text-gray-500 mt-1">
+                                            Until {new Date(me.subscription.endDate).toLocaleDateString()}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                  <motion.button onClick={() => signOut()} className="w-full py-5 bg-red-500/10 border-2 border-red-500/30 text-red-500 font-black rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"><LogOut className="w-4 h-4" /> Log Out</motion.button>
                                  <motion.button onClick={() => onClose()} className="w-full py-5 border-2 border-white/5 bg-white/5 text-gray-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:text-white transition-all">Close Access</motion.button>
                               </div>
                            </div>
@@ -198,23 +217,40 @@ const ArmoryModal = ({
                                               const input = gifInputUrl?.trim();
                                               if (!input) { setIsGifModalOpen(false); return; }
 
-                                              let finalUrl: string;
+                                              let finalUrl = input;
                                               let thumbUrl: string | undefined;
-                                              try {
-                                                 if (input.startsWith("data:")) {
+                                              if (input.startsWith('data:')) {
+                                                 // Uploaded file: store as a real file on the server instead of base64 in the DB
+                                                 try {
                                                     const blob = await (await fetch(input)).blob();
-                                                    ({ url: finalUrl, thumbUrl } = await uploadProfileGifBlob(blob));
-                                                 } else if (isAnimatedImageUrl(input)) {
-                                                    ({ url: finalUrl, thumbUrl } = await importProfileGifFromUrl(input));
-                                                 } else {
-                                                    addToast("URL must be a GIF — use a direct .gif link or upload a file.", "error");
+                                                    const fd = new FormData();
+                                                    fd.append('file', blob, 'profile.gif');
+                                                    fd.append('field', 'profileGif');
+                                                    const poster = await extractGifPosterBlob(blob);
+                                                    if (poster) fd.append('poster', poster, 'poster.webp');
+                                                    const res = await fetch('/api/user/upload', { method: 'POST', body: fd });
+                                                    const data = await res.json();
+                                                    if (!res.ok || !data.url) { addToast(data.error || "Upload failed.", "error"); return; }
+                                                    finalUrl = data.url;
+                                                    thumbUrl = data.thumbUrl;
+                                                 } catch {
+                                                    addToast("Upload failed.", "error");
                                                     return;
                                                  }
-                                              } catch (err) {
-                                                 addToast(
-                                                    err instanceof Error ? err.message : "Upload failed.",
-                                                    "error"
-                                                 );
+                                              } else if (isAnimatedImageUrl(input)) {
+                                                 try {
+                                                    const imported = await importProfileGifFromUrl(input);
+                                                    finalUrl = imported.url;
+                                                    thumbUrl = imported.thumbUrl;
+                                                 } catch (err) {
+                                                    addToast(
+                                                       err instanceof Error ? err.message : "Could not load GIF URL.",
+                                                       "error"
+                                                    );
+                                                    return;
+                                                 }
+                                              } else {
+                                                 addToast("URL must be a GIF — use a direct .gif link or upload a file.", "error");
                                                  return;
                                               }
 
@@ -324,26 +360,7 @@ const ArmoryModal = ({
                                                    <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">IO</p>
                                                    <p className="text-xl font-black text-[#8a2be2]">{char.roleScores?.[char.role] ?? char.score}</p>
                                                  </div>
-                                                 <motion.button
-                                                    onClick={async () => {
-                                                       const updatedMy = myCharacters.filter((c) => c.id !== char.id);
-                                                       const updatedGlobal = globalCharacters.filter(
-                                                          (c) => !(c.id === char.id && String(c.userId) === String(currentUserId))
-                                                       );
-                                                       setMyCharacters(updatedMy);
-                                                       setGlobalCharacters(updatedGlobal);
-                                                       markCharacterRemoved(currentUserId, char);
-                                                       const ok = await saveGlobalData({ characters: updatedGlobal });
-                                                       if (!ok) {
-                                                          setMyCharacters(myCharacters);
-                                                          setGlobalCharacters(globalCharacters);
-                                                          addToast("Failed to remove character — try again.", "error");
-                                                          return;
-                                                       }
-                                                       addToast("Character removed.", "info");
-                                                    }}
-                                                    className="p-4 bg-red-500/10 text-red-500 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition-all text-center"
-                                                 >
+                                                 <motion.button onClick={() => setMyCharacters(prev => prev.filter(c => c.id !== char.id))} className="p-4 bg-red-500/10 text-red-500 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition-all text-center">
                                                     <Trash2 className="w-5 h-5" />
                                                 </motion.button>
                                              </div>

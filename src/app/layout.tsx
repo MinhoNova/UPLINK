@@ -4,7 +4,6 @@ import Navbar from "@/components/navbar/Navbar";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
-import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { getSiteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
@@ -20,14 +19,12 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "WoWLFG | UPLINK — WoW Mythic+ Group Finder & Boosting",
-    template: "%s | WoWLFG",
+    default: "UPLINK | WoW Mythic+ LFG",
+    template: "%s | UPLINK",
   },
   description:
-    "WoWLFG — World of Warcraft Looking for Group. Find Mythic+ groups, leveling squads, boost requests, and dungeon runs. Sync Raider.io, place bids in gold, and join the UPLINK boosting marketplace.",
+    "Find Mythic+ groups, leveling squads, and dungeon runs for World of Warcraft. Sync Raider.io, apply to offers, and coordinate with Discord.",
   keywords: [
-    "WoWLFG",
-    "wowlfg",
     "UPLINK",
     "WoW",
     "World of Warcraft",
@@ -35,46 +32,24 @@ export const metadata: Metadata = {
     "Mythic Plus",
     "Raider.io",
     "LFG",
-    "Looking for Group",
     "Dungeon",
     "Leveling",
-    "Boost",
-    "Boosting",
     "Retail WoW",
-    "WoW LFG",
-    "Group Finder",
   ],
-  alternates: {
-    canonical: siteUrl,
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    siteName: "WoWLFG — UPLINK",
-    title: "WoWLFG | UPLINK — WoW Group Finder & Boosting",
+    siteName: "UPLINK",
+    title: "UPLINK | WoW Mythic+ LFG",
     description:
-      "WoWLFG — World of Warcraft Looking for Group. Find Mythic+ groups, leveling squads, boost requests, and dungeon runs on UPLINK.",
-    images: [
-      {
-        url: `${siteUrl}/og.png`,
-        width: 1200,
-        height: 630,
-        alt: "WoWLFG — UPLINK — WoW Group Finder",
-        type: "image/png",
-      },
-    ],
+      "Tactical WoW group finder — Mythic+ offers, leveling squads, Raider.io sync, and Discord coordination.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "WoWLFG | UPLINK — WoW Group Finder & Boosting",
+    title: "UPLINK | WoW Mythic+ LFG",
     description:
-      "WoWLFG — Find Mythic+ groups, boost requests, leveling squads on UPLINK. Raider.io sync and Discord bot included.",
-    images: [`${siteUrl}/og.png`],
-  },
-  icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+      "Find Mythic+ groups and leveling squads. Raider.io sync and Discord bot included.",
   },
   robots: {
     index: true,
@@ -89,80 +64,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="antialiased dark">
-      <head>
-        <meta name="google-site-verification" content="RDFdGzVrRsCvu61dCKSkp6dHj8yKvMCKDN7sCGDU02I" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "WoWLFG — UPLINK",
-              url: siteUrl,
-              description:
-                "WoWLFG — World of Warcraft Looking for Group. Find Mythic+ groups, leveling squads, boost requests, and dungeon runs.",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: `${siteUrl}/?q={search_term_string}`,
-                "query-input": "required name=search_term_string",
-              },
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "WoWLFG — UPLINK",
-              url: siteUrl,
-              logo: `${siteUrl}/og.png`,
-              description:
-                "WoWLFG — World of Warcraft Looking for Group. Mythic+ group finder, boosting marketplace, and WoW community tools.",
-              sameAs: [`${siteUrl}/discord`],
-            }),
-          }}
-        />
-      </head>
       <body className="min-h-screen flex flex-col font-sans">
         <AuthProvider>
           <Navbar />
           <DirectCommsPanel />
           <CommunityNotificationsPanel />
-           <PlayerProfileModal />
-          <AnalyticsTracker />
+          <PlayerProfileModal />
           {children}
-          <footer className="border-t border-white/5 mt-auto py-10 px-4">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] font-black uppercase tracking-widest">
-                <a href="/" className="text-gray-500 hover:text-white transition-colors">Home</a>
-                <a href="/boosts" className="text-gray-500 hover:text-white transition-colors">Boost Requests</a>
-                <a href="/news" className="text-[#00ffff] hover:text-white transition-colors">News</a>
-                <a href="/reviews" className="text-gray-500 hover:text-white transition-colors">Reviews</a>
-                <a href="/community" className="text-gray-500 hover:text-white transition-colors">Community</a>
-                <a href="/leaderboard" className="text-gray-500 hover:text-white transition-colors">Leaderboard</a>
-                <a href="/guides" className="text-gray-500 hover:text-white transition-colors">Guides</a>
-                <a href="/addon" className="text-gray-500 hover:text-white transition-colors">Addon</a>
-                <span className="text-white/20">·</span>
-                <a href="/wowlfg" className="text-gray-500 hover:text-white transition-colors">WoWLFG</a>
-                <a href="/wow-boosting" className="text-gray-500 hover:text-white transition-colors">WoW Boosting</a>
-                <a href="/gold-auction" className="text-gray-500 hover:text-white transition-colors">Gold Auction</a>
-                <span className="text-white/20">·</span>
-                <a href="/wow/tier-list" className="text-[#ff007f] hover:text-white transition-colors">Meta Classes</a>
-                <span className="text-white/20">·</span>
-                <a href="/wow/dungeons" className="text-gray-500 hover:text-white transition-colors">Dungeons</a>
-                <span className="text-white/20">·</span>
-                <a href="/about" className="text-gray-500 hover:text-white transition-colors">About</a>
-                <a href="/contact" className="text-gray-500 hover:text-white transition-colors">Contact</a>
-                <a href="/privacy" className="text-gray-500 hover:text-white transition-colors">Privacy</a>
-                <a href="/terms" className="text-gray-500 hover:text-white transition-colors">Terms</a>
-              </div>
-              <p className="text-center mt-4 text-[8px] text-gray-700 font-black uppercase tracking-widest">
-                WoWLFG — World of Warcraft LFG, Boosting &amp; Group Finder | UPLINK
-              </p>
-            </div>
-          </footer>
         </AuthProvider>
       </body>
     </html>

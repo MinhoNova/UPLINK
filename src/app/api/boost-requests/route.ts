@@ -9,7 +9,10 @@ export async function GET(req: Request) {
   const myUserId = auth.ok && auth.user ? String(auth.user.id) : null;
 
   await initTables();
-  const requests: any[] = (await getKV("boostRequests")) || [];
+  const allRequests: any[] = (await getKV("boostRequests")) || [];
+
+  const gameFilter = new URL(req.url).searchParams.get("game") || "";
+  const requests = gameFilter ? allRequests.filter(r => r.game === gameFilter) : allRequests;
 
   const masked = requests.map((r) => {
     const isOwner = myUserId && String(r.userId) === myUserId;
@@ -54,25 +57,24 @@ export async function POST(req: Request) {
   }
 
   if (action === "create") {
-    const { type, faction, dungeonName, keyLevel, startLevel, endLevel, budget, notes } = payload;
-    if (!type || !["leveling", "dungeon"].includes(type)) {
-      return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+    const { type, faction, dungeonName, keyLevel, startLevel, endLevel, budget, notes, game } = payload;
+    const gameVal = game === "aion2" ? "aion2" : "wow";
+    if (gameVal === "wow") {
+      if (!type || !["leveling", "dungeon"].includes(type)) {
+        return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+      }
+      if (!budget || budget <= 0) {
+        return NextResponse.json({ error: "Invalid budget" }, { status: 400 });
+      }
     }
-    if (!budget || budget <= 0) {
-      return NextResponse.json({ error: "Invalid budget" }, { status: 400 });
-    }
-    const newRequest = {
+    const newRequest: any = {
       id: `br_${Date.now()}`,
       userId: String(auth.user.id),
       userName: auth.user.name || auth.user.username || "Operative",
-      type,
-      faction: type === "leveling" ? (faction === "horde" || faction === "alliance" ? faction : null) : null,
-      startLevel: type === "leveling" ? (Number(startLevel) || 1) : null,
-      endLevel: type === "leveling" ? (Number(endLevel) || 70) : null,
-      dungeonName: type === "dungeon" ? (dungeonName || "") : null,
-      keyLevel: type === "dungeon" ? (Number(keyLevel) || 0) : null,
-      budget: Number(budget),
-      budgetCurrency: "gold",
+      game: gameVal,
+      type: type || "general",
+      budget: Number(budget) || 0,
+      budgetCurrency: gameVal === "aion2" ? "kinah" : "gold",
       notes: notes || "",
       customBg: "",
       status: "open",
@@ -80,6 +82,13 @@ export async function POST(req: Request) {
       acceptedBidId: null,
       createdAt: Date.now(),
     };
+    if (gameVal === "wow") {
+      newRequest.faction = type === "leveling" ? (faction === "horde" || faction === "alliance" ? faction : null) : null;
+      newRequest.startLevel = type === "leveling" ? (Number(startLevel) || 1) : null;
+      newRequest.endLevel = type === "leveling" ? (Number(endLevel) || 70) : null;
+      newRequest.dungeonName = type === "dungeon" ? (dungeonName || "") : null;
+      newRequest.keyLevel = type === "dungeon" ? (Number(keyLevel) || 0) : null;
+    }
     requests.unshift(newRequest);
     await setKV("boostRequests", requests);
     return NextResponse.json({ success: true, request: newRequest });

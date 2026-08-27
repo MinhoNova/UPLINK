@@ -164,8 +164,8 @@ export default function OngoingMissionsPanel({
               >
                 <img
                   src={roleIconUrl(a.role || "dps")}
-                  width={40}
-                  height={40}
+                  width={20}
+                  height={20}
                   className="w-5 h-5 object-contain"
                   alt=""
                 />

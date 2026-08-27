@@ -8,7 +8,6 @@ import OfferThreadSelect from "@/components/OfferThreadSelect";
 import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
 import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import MemberKeyBadge from "@/components/MemberKeyBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
 interface ManageModalProps {
@@ -126,6 +125,12 @@ const ManageModal = ({
     isAdmin,
     DUNGEONS,
   } = usePage();
+
+  const resolveApplicantDungeon = (app: any) => {
+    const key = app.keystone || app.dungeon || "";
+    if (!key) return null;
+    return DUNGEONS.find((d) => d.name === key || d.short === key) || null;
+  };
 
   const sortApplicants = (apps: any[]) =>
     [...apps].sort((a, b) => {
@@ -424,7 +429,7 @@ const ManageModal = ({
                                              {canOwnerCancelLobby(targetLobby) && (
                                                 <motion.button onClick={() => {
                                                    if (!canOwnerCancelLobby(targetLobby)) {
-                                                      addToast("Cannot cancel — squad is full or mission already started.", "error");
+                                                      addToast("Cannot cancel — mission already started or completed.", "error");
                                                       return;
                                                    }
                                                    onTerminateLobby(targetLobby.id);
@@ -605,9 +610,8 @@ const ManageModal = ({
                                                                 const userForPreview = occupantUser ? { ...occupantUser, tierLabel: getUserTierLabel(occupantUser.id) } : null;
                                                                 const blockedStatus = userForPreview ? isUserBlocked(userForPreview.id) : false;
                                                                 return (
-                                                                   <div className="relative flex flex-col items-center gap-1.5">
+                                                                   <div className="relative">
                                                                       <InteractivePartyCard role={roleType} accepted={occupant} visual={resolveMemberVisual(occupant)} AvatarComponent={AvatarWithEffect} hideIdentity={false} onAvatarClick={(u: any) => setPreviewUser(u)} userData={userForPreview} />
-                                                                      <MemberKeyBadge member={occupant} />
                                                                        {userForPreview && blockedStatus && (
                                                                          <span className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 bg-yellow-500/20 text-yellow-400 text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border border-yellow-500/30">Blocked</span>
                                                                       )}
@@ -686,8 +690,12 @@ const ManageModal = ({
                                                             app.applicantName || app.name || "Applicant"
                                                          );
                                                          const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
+                                                         const dungeon = resolveApplicantDungeon(app);
+                                                         const keyLvl = app.applicantKeyLevel || app.keyLevel || "";
+                                                         const dropLvl = app.applicantDropLevel || app.dropLevel || "";
                                                          const ioScore = app.roleScores?.[app.role] ?? app.score ?? 0;
                                                          const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
+                                                         const dungeonShort = dungeon?.short || (dungeon?.name ? dungeon.name.slice(0, 2).toUpperCase() : "");
                                                          return (
                                                          <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 group hover:border-[#00ffff]/30 transition-all">
                                                             <div className="flex items-center gap-1.5 min-h-[40px]">
@@ -706,15 +714,11 @@ const ManageModal = ({
                                                                   <img
                                                                      src={classThumbUrl(app.class)}
                                                                      alt={app.class || "Class"}
-                                                                     width={96}
-                                                                     height={96}
                                                                      className={`w-9 h-9 object-contain drop-shadow-md ${classIconClass()}`}
                                                                   />
                                                                   <img
                                                                      src={roleIconUrl(app.role)}
                                                                      alt={app.role || "Role"}
-                                                                     width={96}
-                                                                     height={96}
                                                                      className={`w-9 h-9 object-contain drop-shadow-md -ml-3 ${roleIconClass(app.role, "lg")}`}
                                                                   />
                                                                </div>
@@ -728,7 +732,26 @@ const ManageModal = ({
                                                                      <p className="text-[7px] text-gray-400 uppercase font-black leading-none">iLvl</p>
                                                                      <p className="text-sm font-black text-[#c084fc] tabular-nums leading-tight">{app.ilvl || "—"}</p>
                                                                   </div>
+                                                                  <div className="w-3 h-3 rounded-full bg-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.55)] shrink-0" />
                                                                </div>
+
+                                                               {dungeon ? (
+                                                                  <div className="flex items-center gap-1.5 shrink-0 rounded-lg border border-[#00ffff]/30 bg-black/50 px-1.5 py-1">
+                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-10 h-10 rounded-md object-cover border border-white/20 shrink-0" />
+                                                                     <span className="text-sm font-black text-[#00ffff] uppercase leading-none tracking-wider drop-shadow-[0_0_8px_rgba(0,255,255,0.35)]">{dungeonShort}</span>
+                                                                     {keyLvl ? <span className="text-base font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
+                                                                     {dropLvl ? (
+                                                                        <span className="inline-flex items-center gap-0.5 text-base font-black text-[#00eaff] tabular-nums leading-none drop-shadow-[0_0_6px_rgba(0,234,255,0.4)]">
+                                                                           <ArrowDown className="w-4 h-4 stroke-[3]" />
+                                                                           {dropLvl}
+                                                                        </span>
+                                                                     ) : null}
+                                                                  </div>
+                                                               ) : (
+                                                                  <div className="shrink-0 min-w-[64px] rounded-lg border border-dashed border-white/10 px-2 py-1 flex items-center justify-center">
+                                                                     <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">No Key</p>
+                                                                  </div>
+                                                               )}
 
                                                                <div className={`flex-1 min-w-0 rounded-lg border px-2 py-1 flex items-center ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
                                                                   <p className={`text-[11px] leading-snug line-clamp-2 break-words font-semibold w-full ${note ? 'text-gray-100' : 'text-gray-600'}`}>

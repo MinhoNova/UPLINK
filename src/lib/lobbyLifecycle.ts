@@ -17,12 +17,13 @@ export function hasDungeonActivity(lobby: any): boolean {
   return false;
 }
 
-/** Offer owner may cancel while lobby is standby, no dungeon run started, and squad still has open slots. */
+/** Offer owner may cancel only a fresh standby lobby with no squad or mission activity. */
 export function canOwnerCancelLobby(lobby: any): boolean {
   if (!lobby) return false;
   const status = lobby.status || "standby";
   if (status !== "standby") return false;
   if (hasDungeonActivity(lobby)) return false;
+  if ((lobby.accepted || []).length > 0) return false;
   if (squadRolesFilled(lobby.roles || {})) return false;
   return true;
 }
