@@ -64,3 +64,6 @@ META*
 DRUID*
 EVOKER*
 MAGE*
+
+# build/dev logs
+*.log

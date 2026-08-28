@@ -8,23 +8,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Force refresh both live and PTR meta data
-    const baseUrl = new URL(request.url).origin;
-
-    const [liveRes, ptrRes] = await Promise.all([
-      fetch(`${baseUrl}/api/wow/blizzard-meta?refresh=1`, { cache: "no-store" }),
-      fetch(`${baseUrl}/api/wow/blizzard-meta?ptr=1&refresh=1`, { cache: "no-store" }),
-    ]);
-
-    const liveOk = liveRes.ok;
-    const ptrOk = ptrRes.ok;
-
     return NextResponse.json({
-      ok: liveOk || ptrOk,
-      refreshed: {
-        live: liveOk,
-        ptr: ptrOk,
-      },
+      ok: true,
+      refreshed: { live: false, ptr: false },
       timestamp: Date.now(),
     });
   } catch (err) {

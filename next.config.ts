@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "wss://uplink-sist6urm.livekit.cloud",
   },
   serverExternalPackages: ["better-sqlite3"],
+  outputFileTracingExcludes: {
+    "*": [
+      "src/data/uplink.db*",
+      "public/uploads/**",
+      "public/wow/banners/**",
+      "public/dream-background.gif",
+    ],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Trophy, Bell, DoorOpen, DoorClosed, MessageCircle, Zap, ArrowLeft } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -220,15 +220,6 @@ export default function Navbar() {
               <ProtocolMark variant={1} className="w-5 h-5 shrink-0" gold={pathname !== '/community'} />
               {pathname === '/community' ? 'Uplink' : 'CLUB'}
             </motion.button>
-            {pathname === '/leaderboard' ? (
-              <motion.a title="Back to Home" href="/" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30">
-                <ArrowLeft className="w-4 h-4" /> Back
-              </motion.a>
-            ) : (
-              <motion.a title="Leaderboard" href="/leaderboard" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30">
-                <Trophy className="w-4 h-4" /> Top
-              </motion.a>
-            )}
             <motion.button title="Direct Messages" onClick={() => {
               window.dispatchEvent(new CustomEvent('toggle-dm'));
             }} className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative">

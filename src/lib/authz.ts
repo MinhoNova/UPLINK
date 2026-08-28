@@ -27,6 +27,21 @@ export async function requireSession(req?: Request): Promise<
   return { ok: true, user: { id, username, name: session.user.name, role } };
 }
 
+export async function requireOptionalSession(req?: Request): Promise<
+  | { ok: true; user: SessionUser }
+  | { ok: false; status: number; error: string; user?: never }
+> {
+  const session = await getAppSession(req);
+  if (!session?.user) return { ok: false, status: 401, error: "Unauthorized" };
+
+  const id = (session.user as { id?: string }).id || "";
+  const username = (session.user as { username?: string }).username || "";
+  if (!id || !username) return { ok: false, status: 400, error: "Invalid session" };
+
+  const role = await getUserRole(id, username);
+  return { ok: true, user: { id, username, name: session.user.name, role } };
+}
+
 export async function requireAdmin(req?: Request): Promise<
   { ok: true; user: SessionUser } | { ok: false; status: number; error: string }
 > {

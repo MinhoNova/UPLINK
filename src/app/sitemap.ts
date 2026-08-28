@@ -12,11 +12,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1,
     },
-    {
-      url: `${siteUrl}/leaderboard`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
   ];
 }
