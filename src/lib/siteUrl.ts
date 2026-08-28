@@ -1,4 +1,4 @@
-const PRODUCTION_URL = "https://uplink.uplinklfg.workers.dev";
+const PRODUCTION_URL = "https://uplinklfg.com";
 
 /** Canonical public site URL for SEO, sitemap, and Open Graph. */
 export function getSiteUrl(): string {
