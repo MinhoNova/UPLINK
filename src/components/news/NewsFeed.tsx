@@ -15,7 +15,7 @@ import HomeFloatingActions from "@/components/HomeFloatingActions";
 import SupportChatWidget from "@/components/SupportChatWidget";
 import TicketModal from "@/components/modals/TicketModal";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
-import { hasAdminPower } from "@/lib/rolesConstants";
+import { isPrimaryAdmin as hasAdminPower } from "@/lib/rolesConstants";
 import DeleteNewsButton from "@/components/news/DeleteNewsButton";
 
 const REACTION_TYPES = [
@@ -487,14 +487,6 @@ export default function NewsFeed({ section }: NewsFeedProps) {
         
         {/* Navigation tabs */}
         <div className="flex items-center gap-2 mb-8">
-          <Link
-            href="/news/leveling"
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-all ${
-              section === "leveling" ? "text-[#00ffff] border-[#00ffff]/25 bg-[#00ffff]/10" : `text-white/40 border-white/10 ${inactiveAccentHover}`
-            }`}
-          >
-            <span>⚡</span> Leveling News
-          </Link>
           <Link
             href="/news/dungeons"
             className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-all ${
