@@ -528,7 +528,7 @@ export default function HomePage() {
     });
     const [globalDataReady, setGlobalDataReady] = useState(false);
     const [isWelcomePlansOpen, setIsWelcomePlansOpen] = useState(false);
-    const [onboardingData, setOnboardingData] = useState({ interests: [] as string[], raiderLink: "", battleTag: "" });
+    const [onboardingData, setOnboardingData] = useState({ interests: [] as string[], server: "", characterName: "" });
     const [voiceToken, setVoiceToken] = useState<string | null>(null);
     const [voiceServerUrl, setVoiceServerUrl] = useState<string | null>(null);
     const [isJoiningVoice, setIsJoiningVoice] = useState(false);
@@ -4041,6 +4041,49 @@ export default function HomePage() {
       };
    };
 
+   const upsertSyncedAionCharacter = (server: string, characterName: string) => {
+      const existingMyChar = myCharacters.find(
+         (c) => c.name === characterName && (c.realm || c.server) === server
+      );
+      const existingGlobalChar = globalCharacters.find(
+         (c) => String(c.userId) === String(currentUserId) && c.name === characterName && (c.realm || c.server) === server
+      );
+      const char = {
+         id: existingMyChar?.id || existingGlobalChar?.id || Date.now(),
+         name: characterName,
+         server,
+         realm: server,
+         region: server.toLowerCase(),
+         discordName: currentUserDiscordHandle,
+         userName: currentUserDisplay,
+         userAvatar: session?.user?.image || "",
+         userId: currentUserId,
+         ilvl: 0,
+         score: "0",
+         class: "Aionist",
+         role: "dps",
+         roleScores: { dps: "0", healer: "0", tank: "0" },
+         stats: { dps: 0, tank: 0, healer: 0 },
+         dpsValue: 0,
+         hpsValue: 0,
+         tankValue: 0,
+         runs: [],
+      };
+      const updatedMy = existingMyChar
+         ? myCharacters.map((c) => (c.id === existingMyChar.id ? char : c))
+         : [char, ...myCharacters];
+      const updatedGlobal = existingGlobalChar
+         ? globalCharacters.map((c) => (c.id === existingGlobalChar.id ? char : c))
+         : [...globalCharacters, char];
+      return {
+         char,
+         updatedMy,
+         updatedGlobal,
+         isNewToMy: !existingMyChar,
+         isNewToGlobal: !existingGlobalChar,
+      };
+   };
+
    const handleSyncRaiderIo = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!raiderLink) return;
@@ -4083,37 +4126,28 @@ export default function HomePage() {
 
 
    const handleApplyOperative = async () => {
-      const sanitizedTag = sanitizeInput(onboardingData.battleTag);
-      const sanitizedRaider = sanitizeInput(onboardingData.raiderLink);
+      const server = sanitizeInput(onboardingData.server);
+      const characterName = sanitizeInput(onboardingData.characterName);
+
+      if (!server || !characterName) {
+         addToast("Enter your server and character name.", "error");
+         return;
+      }
 
       setIsSyncing(true);
       try {
-         const verifyRes = await fetch("/api/onboarding/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ battleTag: sanitizedTag, raiderLink: sanitizedRaider }),
-         });
-         const verifyData = await verifyRes.json().catch(() => ({}));
-         if (!verifyRes.ok) {
-            if (verifyData.banned) {
-               addToast("Invalid credentials — network access suspended.", "error");
-            } else {
-               addToast(verifyData.error || "Verification failed", "error");
-            }
-            return;
-         }
-
-         const data = verifyData.profile;
          const crossUserDup = globalCharacters.some(
-            (c) => c.name === data.name && c.realm === data.realm && String(c.userId) !== String(currentUserId)
+            (c) =>
+               c.name === characterName &&
+               (c.realm || c.server) === server &&
+               String(c.userId) !== String(currentUserId)
          );
          if (crossUserDup) {
             addToast("CRITICAL: Character identity already registered by another operative.", "error");
             return;
          }
 
-         const { updatedMy, updatedGlobal } = upsertSyncedRaiderCharacter(data);
+         const { updatedMy, updatedGlobal } = upsertSyncedAionCharacter(server, characterName);
          setMyCharacters(updatedMy);
          setGlobalCharacters(updatedGlobal);
          localStorage.setItem(`UL_CHARS_${currentUserId}`, JSON.stringify(updatedMy));
@@ -4135,7 +4169,7 @@ export default function HomePage() {
             name: currentUserDisplay,
             username: currentUserDiscordHandle,
             avatar: session?.user?.image || "",
-            battleTag: sanitizedTag,
+            server,
          };
 
          const updatedUsers = [...registeredUsers, newUser];
@@ -4151,7 +4185,7 @@ export default function HomePage() {
          setIsWelcomePlansOpen(true);
          addToast("Terminal Access Granted. Character added to My Characters.", "success");
       } catch {
-         addToast("Uplink to Raider.io failed.", "error");
+         addToast("Failed to register character.", "error");
       } finally {
          setIsSyncing(false);
       }
@@ -4756,41 +4790,41 @@ export default function HomePage() {
                             <span className="text-[9px] font-black uppercase tracking-[0.55em] text-amber-400/90 mb-2">Beta</span>
                          </motion.div>
 
-                         <div className="space-y-6">
-                            <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
-                               <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">Neural Signature</label>
-                               <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
-                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                  <div className="flex items-center gap-4 px-4 relative z-10">
-                                     <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="Bnet" />
-                                     <input
-                                        type="text"
-                                        placeholder="Username#1234"
-                                        value={onboardingData.battleTag}
-                                        onChange={(e) => setOnboardingData({ ...onboardingData, battleTag: e.target.value })}
-                                        className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
-                                     />
-                                  </div>
-                               </div>
-                            </motion.div>
+                          <div className="space-y-6">
+                             <motion.div variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
+                                <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">Game Server</label>
+                                <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
+                                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                   <div className="flex items-center gap-4 px-4 relative z-10">
+                                      <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="Server" />
+                                      <input
+                                         type="text"
+                                         placeholder="e.g. Israphel / Siel"
+                                         value={onboardingData.server}
+                                         onChange={(e) => setOnboardingData({ ...onboardingData, server: e.target.value })}
+                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
+                                      />
+                                   </div>
+                                </div>
+                             </motion.div>
 
-                            <motion.div variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
-                               <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">Combat Registry</label>
-                               <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
-                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                  <div className="flex items-center gap-4 px-4 relative z-10">
-                                     <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="RIO" />
-                                     <input
-                                        type="text"
-                                        placeholder="https://raider.io/characters/..."
-                                        value={onboardingData.raiderLink}
-                                        onChange={(e) => setOnboardingData({ ...onboardingData, raiderLink: e.target.value })}
-                                        className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
-                                     />
-                                  </div>
-                               </div>
-                            </motion.div>
-                         </div>
+                             <motion.div variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} className="space-y-2">
+                                <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">Character Name</label>
+                                <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
+                                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                   <div className="flex items-center gap-4 px-4 relative z-10">
+                                      <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="Character" />
+                                      <input
+                                         type="text"
+                                         placeholder="Your Aion character name"
+                                         value={onboardingData.characterName}
+                                         onChange={(e) => setOnboardingData({ ...onboardingData, characterName: e.target.value })}
+                                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
+                                      />
+                                   </div>
+                                </div>
+                             </motion.div>
+                          </div>
 
                          <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12">
                             <button

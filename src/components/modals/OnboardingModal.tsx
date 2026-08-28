@@ -5,7 +5,7 @@ import { ProtocolMark } from "@/components/ProtocolMark";
 
 interface OnboardingModalProps {
   isOpen: boolean;
-  data: { interests: string[]; raiderLink: string; battleTag: string };
+  data: { interests: string[]; server: string; characterName: string };
   setData: (data: any) => void;
   onSubmit: () => void;
 }
@@ -94,17 +94,17 @@ export default function OnboardingModal({ isOpen, data, setData, onSubmit }: Onb
                   className="space-y-2"
                 >
                   <label className="text-[10px] font-black text-[#00ffff] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">
-                    Neural Signature
+                    Game Server
                   </label>
                   <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#00ffff]/10 focus-within:border-[#00ffff] transition-all shadow-[0_0_30px_rgba(0,255,255,0.1)] relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00ffff]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     <div className="flex items-center gap-4 px-4 relative z-10">
-                      <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="Bnet" />
+                      <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]" alt="Server" />
                       <input
                         type="text"
-                        placeholder="Username#1234"
-                        value={data.battleTag}
-                        onChange={(e) => setData({ ...data, battleTag: e.target.value })}
+                        placeholder="e.g. Israphel / Siel"
+                        value={data.server}
+                        onChange={(e) => setData({ ...data, server: e.target.value })}
                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
                       />
                     </div>
@@ -116,17 +116,17 @@ export default function OnboardingModal({ isOpen, data, setData, onSubmit }: Onb
                   className="space-y-2"
                 >
                   <label className="text-[10px] font-black text-[#ff007f] uppercase tracking-[0.4em] ml-4 drop-shadow-[0_0_5px_rgba(255,0,127,0.5)]">
-                    Combat Registry
+                    Character Name
                   </label>
                   <div className="bg-white/5 border-2 border-white/10 rounded-2xl p-2 group focus-within:bg-[#ff007f]/10 focus-within:border-[#ff007f] transition-all shadow-[0_0_30px_rgba(255,0,127,0.1)] relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff007f]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     <div className="flex items-center gap-4 px-4 relative z-10">
-                      <img src="/classes/RAIDER IO.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="RIO" />
+                      <img src="/classes/Battle.net.svg" className="w-9 h-9 drop-shadow-[0_0_8px_rgba(255,0,127,0.5)]" alt="Character" />
                       <input
                         type="text"
-                        placeholder="https://raider.io/characters/..."
-                        value={data.raiderLink}
-                        onChange={(e) => setData({ ...data, raiderLink: e.target.value })}
+                        placeholder="Your Aion character name"
+                        value={data.characterName}
+                        onChange={(e) => setData({ ...data, characterName: e.target.value })}
                         className="w-full bg-transparent py-4 text-white outline-none font-black placeholder:text-white/10 uppercase"
                       />
                     </div>
