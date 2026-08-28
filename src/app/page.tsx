@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-   PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search,
+   PlusCircle, Plus, X, Check, Swords, Trash2, UserCheck, Key, Coins, ShieldAlert, Users, Shield, Target, DoorClosed, DoorOpen, LogOut, Bell, CircleDollarSign, DollarSign, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Radio, Play, MessageSquare, Trophy, ChevronDown, ChevronRight, Zap, TrendingUp, ShieldX, Heart, Crosshair, Lock, Eye, Send, Wand2, Star, Search,
    Mic, MicOff, Headphones, PhoneOff, VolumeX, Volume2, Video, VideoOff, Phone, Settings
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -397,53 +397,53 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
    );
 };
 
-/* --- ASSETS & MOCKS --- */
+/* --- ASSETS & MOCKS (AION 2) --- */
 const DUNGEONS = [
-   { name: "Algeth'ar Academy", img: "/classes/Algeth'ar Academy.webp", short: "AA" },
-   { name: "Magisters Terrace", img: "/classes/Magisters Terrace.webp", short: "MT" },
-   { name: "Maisara Caverns", img: "/classes/Maisara Caverns.webp", short: "MC" },
-   { name: "Nexus-Point Xenas", img: "/classes/Nexus-Point Xenas.webp", short: "NPX" },
-   { name: "Pit of Saron", img: "/classes/Pit of Saron.webp", short: "POS" },
-   { name: "Seat of the Triumvirate", img: "/classes/Seat of the Triumvirate.webp", short: "SEAT" },
-   { name: "Skyreach", img: "/classes/Skyreach.webp", short: "SR" },
-   { name: "Windrunner Spire", img: "/classes/Windrunner Spire.webp", short: "WS" }
+   { name: "Krao Cave", img: "/classes/Krao Cave.webp", short: "KC" },
+   { name: "Draupnir", img: "/classes/Draupnir.webp", short: "DR" },
+   { name: "Urugugu Canyon", img: "/classes/Urugugu Canyon.webp", short: "UC" },
+   { name: "Vakron's Floating Island", img: "/classes/Vakron.webp", short: "VF" },
+   { name: "Fire Temple", img: "/classes/Fire Temple.webp", short: "FT" },
+   { name: "Ferocious Horn Den", img: "/classes/Ferocious Horn Den.webp", short: "FHD" },
+   { name: "Dead Dramata's Nest", img: "/classes/Dead Dramata's Nest.webp", short: "DDN" },
+   { name: "Abyssal Forge: Ludra", img: "/classes/Ludra.webp", short: "LU" }
 ];
 const DUNGEON_SHORT_MAP = Object.fromEntries(DUNGEONS.map(d => [d.short, d]));
 const DUNGEON_NAME_MAP = Object.fromEntries(DUNGEONS.map(d => [d.name, d]));
 const resolveDungeonSelection = (key?: string | null) => key ? DUNGEON_NAME_MAP[key] || DUNGEON_SHORT_MAP[key] || null : null;
 
 const CLASS_ROLE_OPTIONS: Record<string, string[]> = {
-   "Evoker": ["dps", "healer"],
-   "Demon Hunter": ["dps", "tank"],
-   "Druid": ["dps", "healer", "tank"],
-   "Monk": ["dps", "healer", "tank"],
-   "Paladin": ["dps", "healer", "tank"],
-   "Priest": ["dps", "healer"],
-   "Shaman": ["dps", "healer"],
-   "Warrior": ["dps", "tank"],
-   "Death Knight": ["dps", "tank"],
-   "Hunter": ["dps"],
-   "Rogue": ["dps"],
-   "Mage": ["dps"],
-   "Warlock": ["dps"]
+   "Templar": ["tank", "dps"],
+   "Gladiator": ["dps", "tank"],
+   "Assassin": ["dps"],
+   "Ranger": ["dps"],
+   "Sorcerer": ["dps"],
+   "Spiritmaster": ["dps", "healer"],
+   "Chanter": ["dps", "healer", "tank"],
+   "Cleric": ["healer", "dps"],
+   "Gunner": ["dps"],
+   "Aethertech": ["dps", "tank"],
+   "Songweaver": ["dps", "healer"]
 };
 
 const WOW_CLASSES = [
-   "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Death Knight", "Shaman", "Mage", "Warlock", "Monk", "Druid", "Demon Hunter", "Evoker"
+   "Templar", "Gladiator", "Assassin", "Ranger", "Sorcerer", "Spiritmaster", "Chanter", "Cleric", "Gunner", "Aethertech", "Songweaver"
 ];
 
 const WOW_CLASS_GROUPS = {
-   "Plate": ["Warrior", "Paladin", "Death Knight"],
-   "Mail": ["Hunter", "Shaman", "Evoker"],
-   "Leather": ["Rogue", "Monk", "Druid", "Demon Hunter"],
-   "Cloth": ["Mage", "Priest", "Warlock"]
+   "Warrior": ["Templar", "Gladiator"],
+   "Scout": ["Assassin", "Ranger"],
+   "Mage": ["Sorcerer", "Spiritmaster"],
+   "Priest": ["Chanter", "Cleric"],
+   "Techist": ["Gunner", "Aethertech", "Songweaver"]
 };
 
 const CLASS_GROUP_LABEL_STYLE: Record<string, string> = {
-   Plate: "text-[#f1f5f9] drop-shadow-[0_0_10px_rgba(203,213,225,0.85)]",
-   Mail: "text-[#67e8f9] drop-shadow-[0_0_10px_rgba(34,211,238,0.75)]",
-   Leather: "text-[#fcd34d] drop-shadow-[0_0_10px_rgba(251,191,36,0.75)]",
-   Cloth: "text-[#ddd6fe] drop-shadow-[0_0_10px_rgba(167,139,250,0.8)]",
+   "Warrior": "text-[#f1f5f9] drop-shadow-[0_0_10px_rgba(203,213,225,0.85)]",
+   "Scout": "text-[#67e8f9] drop-shadow-[0_0_10px_rgba(34,211,238,0.75)]",
+   "Mage": "text-[#fcd34d] drop-shadow-[0_0_10px_rgba(251,191,36,0.75)]",
+   "Priest": "text-[#ddd6fe] drop-shadow-[0_0_10px_rgba(167,139,250,0.8)]",
+   "Techist": "text-[#34d399] drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]",
 };
 
 const EFFECTS: Record<string, string> = {
@@ -1394,60 +1394,34 @@ export default function HomePage() {
    };
 
 
-    // Default form data factory
-    const getDefaultFormData = () => {
-       const shuffled = [...DUNGEONS].sort(() => Math.random() - 0.5);
-       const autoSelected: Record<string, number> = {};
-       for (let i = 0; i < 4; i++) {
-         autoSelected[shuffled[i].name] = 1;
-       }
-       return {
-          dungeonImage: DUNGEONS[0].img, goldAmount: "50", runsCount: "4", keyLevel: "+10", notes: "",
-          minIlvl: "266", minScore: "2500", hasKey: "I have the key", roles: { tank: 1, healer: 1, dps: 2 },
-           blacklistedClasses: [] as string[],
-           blockedRoles: [] as { class: string; role: string }[],
-           selectedDungeons: autoSelected,
-           category: 'dungeon',
-           isTimed: true,
-           startLevel: "1",
-           endLevel: "80",
-           goldPerRun: "12",
-           boosterNote: "",
-            serverRegion: typeof window !== 'undefined' ? (localStorage.getItem("uplink_region") || "US") : "US"
-        };
-    };
+    // Default form data factory (Aion 2 services)
+    const getDefaultFormData = () => ({
+       category: "",
+       serviceId: "",
+       serviceName: "",
+       basePriceUsd: 0,
+       priceUsd: "",
+       quantity: "1",
+       paymentMethod: "kinah",
+       speed: "standard",
+       notes: "",
+       serverRegion: typeof window !== 'undefined' ? (localStorage.getItem("uplink_region") || "US") : "US"
+    });
 
     const lobbyToFormData = (lobby: any) => ({
-       dungeonImage: lobby.dungeonImage || DUNGEONS[0]?.img || "",
-       goldAmount: String(lobby.goldAmount || lobby.totalGold || "50"),
-       runsCount: String(lobby.runsCount || "1"),
-       keyLevel: lobby.keyLevel || "+10",
+       category: lobby.category || "",
+       serviceId: lobby.serviceId || "",
+       serviceName: lobby.serviceName || "",
+       basePriceUsd: lobby.basePriceUsd || 0,
+       priceUsd: lobby.priceUsd != null ? String(lobby.priceUsd) : "",
+       quantity: String(lobby.quantity || "1"),
+       paymentMethod: lobby.paymentMethod || "kinah",
+       speed: lobby.speed || "standard",
        notes: lobby.notes || "",
-       minIlvl: lobby.minIlvl || "266",
-       minScore: lobby.minScore || "2500",
-       hasKey: lobby.hasKey || "I have the key",
-       roles: lobby.roles || { tank: 1, healer: 1, dps: 2 },
-       blacklistedClasses: lobby.blacklistedClasses || [],
-       blockedRoles: lobby.blockedRoles || [],
-       selectedDungeons: lobby.selectedDungeons || {},
-       category: lobby.category || 'dungeon',
-       isTimed: lobby.isTimed ?? true,
-       startLevel: lobby.startLevel || "1",
-       endLevel: lobby.endLevel || "80",
-       goldPerRun: String(lobby.goldPerRun || lobby.totalGold || "50"),
-       boosterNote: lobby.boosterNote || "",
-        serverRegion: lobby.serverRegion || "US"
+       serverRegion: lobby.serverRegion || "US"
     });
 
     const [formData, setFormData] = useState(() => getDefaultFormData());
-
-   // Gold perRun sync — goldAmount is now per-run value
-   useEffect(() => {
-      const perRun = parseFloat(formData.goldAmount) || 0;
-      if (formData.goldPerRun !== perRun.toString()) {
-         setFormData(prev => ({ ...prev, goldPerRun: perRun.toString() }));
-      }
-   }, [formData.goldAmount]);
 
    const [goldFormData, setGoldFormData] = useState({
       amountM: "5", pricePerM: "40", method: "Vodafone Cash", notes: "Fast delivery"
@@ -2998,56 +2972,55 @@ export default function HomePage() {
      const handleCreateLobby = async (e: React.FormEvent, data?: any) => {
         e.preventDefault();
         const fd = data || formData;
+        const quantity = parseInt(fd.quantity) || 1;
+        const priceUsd = parseFloat(fd.priceUsd) || 0;
+        const totalUsd = Math.round(priceUsd * quantity * 100) / 100;
+        const serviceName = fd.serviceName || "Aion 2 Service";
+        const category = "aion";
+        const kinahValue = fd.paymentMethod === "kinah" ? Math.round(totalUsd) : 0;
+        const baseLobby = {
+           serviceId: fd.serviceId || "",
+           serviceName,
+           serviceCategory: fd.category || "",
+           quantity,
+           priceUsd,
+           paymentMethod: fd.paymentMethod || "kinah",
+           speed: fd.speed || "standard",
+           totalGold: kinahValue || Math.max(1, Math.round(totalUsd)),
+           runsCount: quantity,
+           roles: { dps: 1 },
+           squadTemplate: null,
+           blacklistedClasses: [] as string[],
+           blockedRoles: [] as { class: string; role: string }[],
+           serverRegion: fd.serverRegion || "US",
+           title: `${quantity}x ${serviceName}`,
+           notes: fd.notes || "",
+           boosterNote: "",
+        };
         if (editingLobby) {
-           const gAmount = parseInt(fd.goldAmount) || 0;
-           const rCount = parseInt(fd.runsCount) || 1;
-           const selectedDungeonEntries = Object.entries(fd.selectedDungeons || {}).filter(([, count]: [string, any]) => count > 0);
-           const dungeonTitle = selectedDungeonEntries.length > 0
-              ? selectedDungeonEntries.map(([name, count]) => `${count}x ${name}`).join(', ')
-              : `${rCount}x ${fd.keyLevel} Runs`;
            const updatedLobby = {
               ...editingLobby,
-              category: fd.category || editingLobby.category,
-              title: (fd.category === "leveling") ? `Power Leveling ${fd.startLevel}-${fd.endLevel}` : dungeonTitle,
-              notes: fd.notes,
-              boosterNote: fd.boosterNote,
-              dungeonImage: fd.dungeonImage,
-              selectedDungeons: fd.selectedDungeons,
-              minIlvl: parseInt(fd.minIlvl) || 0,
-              minScore: parseInt(fd.minScore) || 0,
-              totalGold: fd.category === 'leveling' ? (parseInt(fd.goldAmount) || 0) : (gAmount * rCount),
-              goldPerRun: fd.category === 'leveling' ? (parseInt(fd.goldPerRun) || 0) : gAmount,
-              runsCount: fd.category === 'leveling' ? 1 : rCount,
-              hasKey: fd.hasKey,
-              keyLevel: fd.keyLevel,
-              isTimed: fd.isTimed,
-              roles: { ...fd.roles },
-              squadTemplate: buildSquadTemplateFromRoles(fd.roles, fd.category || editingLobby.category),
-              blacklistedClasses: fd.blacklistedClasses || [],
-              blockedRoles: fd.blockedRoles || [],
-               startLevel: fd.startLevel,
-               endLevel: fd.endLevel,
-               goldAmount: parseInt(fd.goldAmount) || 0,
-               serverRegion: fd.serverRegion || "EU"
-            };
-            const editText = buildOfferEditChatText(editingLobby, updatedLobby);
-            if (editText) {
-               updatedLobby.messages = [
-                  ...(editingLobby.messages || []),
-                  {
-                     id: Date.now(),
-                     fromId: "bot",
-                     from: "UPLINK",
-                     fromHandle: "UPLINK",
-                     fromAvatar: "",
-                     fromEffect: "none",
-                     text: editText,
-                     image: null,
-                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                  }
-               ];
-            }
-            const updatedLobbies = lobbies.map(l => l.id === editingLobby.id ? updatedLobby : l);
+              ...baseLobby,
+              category,
+           };
+           const editText = buildOfferEditChatText(editingLobby, updatedLobby);
+           if (editText) {
+              updatedLobby.messages = [
+                 ...(editingLobby.messages || []),
+                 {
+                    id: Date.now(),
+                    fromId: "bot",
+                    from: "UPLINK",
+                    fromHandle: "UPLINK",
+                    fromAvatar: "",
+                    fromEffect: "none",
+                    text: editText,
+                    image: null,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                 }
+              ];
+           }
+           const updatedLobbies = lobbies.map(l => l.id === editingLobby.id ? updatedLobby : l);
            setLobbies(updatedLobbies);
            saveGlobalData({ lobbies: updatedLobbies });
            playSound('terminal');
@@ -3056,135 +3029,51 @@ export default function HomePage() {
            setIsCreateModalOpen(false);
            return;
         }
-       const existingActive = lobbies.find(l => l.ownerId === currentUserId && ['in_progress', 'unpaid', 'payment_pending'].includes(l.status));
-        if (existingActive) {
-           addToast("You already have an active operation. Please complete or finalize it first.", "error");
-           setSubmitError("You already have an active operation. Complete or finalize it first.");
+        const existingActive = lobbies.find(l => l.ownerId === currentUserId && ['in_progress', 'unpaid', 'payment_pending'].includes(l.status));
+         if (existingActive) {
+            addToast("You already have an active operation. Please complete or finalize it first.", "error");
+            setSubmitError("You already have an active operation. Complete or finalize it first.");
+            return;
+         }
+        const newLobby = {
+           id: Date.now().toString(),
+           ownerId: currentUserId,
+           ownerDiscordName: currentUserDisplay,
+           ownerHandle: currentUserDiscordHandle,
+           ownerImage: session?.user?.image || "",
+           ownerEffect: myEffect,
+           ownerPrestige: 100,
+           category,
+           ...baseLobby,
+           status: 'standby' as const,
+           messages: [],
+           applicants: [],
+           invited: [],
+           accepted: [],
+           customBg: "",
+        };
+        const newLobbies = [newLobby, ...lobbies];
+        setLobbies(newLobbies);
+        const saved = await saveGlobalData({ lobbies: newLobbies });
+        if (!saved) {
+           setLobbies(lobbies);
+           addToast("Could not deploy offer. You may have reached the daily offer limit (3/day for free accounts).", "error");
+           setIsCreateModalOpen(false);
            return;
         }
-        if (activeMainTab === "boosts") {         const gAmount = parseInt(fd.goldAmount) || 0;
-           const rCount = parseInt(fd.runsCount) || 1;
-           const selectedDungeonEntries = Object.entries(fd.selectedDungeons || {}).filter(([, count]: [string, any]) => count > 0);
-           const dungeonTitle = selectedDungeonEntries.length > 0
-              ? selectedDungeonEntries.map(([name, count]) => `${count}x ${name}`).join(', ')
-              : `${rCount}x ${fd.keyLevel} Runs`;
-           const newLobby = {
-              id: Date.now().toString(),
-              ownerId: currentUserId,
-              ownerDiscordName: currentUserDisplay,
-              ownerHandle: currentUserDiscordHandle,
-              ownerImage: session?.user?.image || "",
-              ownerEffect: myEffect,
-              ownerPrestige: 100,
-              category: fd.category || (activeMainTab === 'boosts' ? 'dungeon' : 'leveling'),
-              title: (fd.category === "leveling") ? `Power Leveling ${fd.startLevel}-${fd.endLevel}` : dungeonTitle,
-              notes: fd.notes,
-              boosterNote: fd.boosterNote,
-              dungeonImage: fd.dungeonImage,
-              selectedDungeons: fd.selectedDungeons,
-              minIlvl: parseInt(fd.minIlvl) || 0,
-              minScore: parseInt(fd.minScore) || 0,
-              totalGold: fd.category === 'leveling' ? (parseInt(fd.goldAmount) || 0) : (gAmount * rCount),
-              goldPerRun: fd.category === 'leveling' ? (parseInt(fd.goldPerRun) || 0) : gAmount,
-              runsCount: fd.category === 'leveling' ? 1 : rCount,
-              hasKey: fd.hasKey,
-              keyLevel: fd.keyLevel,
-              isTimed: fd.isTimed,
-              roles: { ...fd.roles },
-              squadTemplate: buildSquadTemplateFromRoles(fd.roles, fd.category),
-              startLevel: fd.startLevel,
-              endLevel: fd.endLevel,
-              goldAmount: parseInt(fd.goldAmount) || 0,
-              status: 'standby' as const,
-              messages: [],
-              applicants: [],
-              invited: [],
-              accepted: [],
-               customBg: "",
-                blacklistedClasses: fd.blacklistedClasses || [],
-                blockedRoles: fd.blockedRoles || [],
-                serverRegion: fd.serverRegion || "US"
-             };
-             const newLobbies = [newLobby, ...lobbies];
-              setLobbies(newLobbies);
-              const saved = await saveGlobalData({ lobbies: newLobbies });
-              if (!saved) {
-                 setLobbies(lobbies);
-                 addToast("Could not deploy mission. You may have reached the daily offer limit (3/day for free accounts).", "error");
-                 setIsCreateModalOpen(false);
-                 return;
-              }
-              const updatedUsers = registeredUsers.map((u: any) => {
-                 if (String(u.id) === String(currentUserId)) {
-                    const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
-                    s.postCount = (s.postCount || 0) + 1;
-                    return { ...u, stats: s };
-                 }
-                 return u;
-              });
-              setRegisteredUsers(updatedUsers);
-              saveGlobalData({ registeredUsers: updatedUsers });
-              playSound('terminal');
-               addToast("Mission deployed to active grid.", "success");
-               fetch("/api/discord/broadcast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobby: newLobby }) }).catch(() => {});
-            } else if (activeMainTab === "leveling") {
-             const newLobby = {
-               id: Date.now().toString(),
-               ownerId: currentUserId,
-               ownerDiscordName: currentUserDisplay,
-               ownerHandle: currentUserDiscordHandle,
-               ownerImage: session?.user?.image || "",
-               ownerEffect: myEffect,
-               ownerPrestige: 100,
-               category: 'leveling',
-               title: `Power Leveling ${fd.startLevel}-${fd.endLevel}`,
-               notes: fd.notes,
-               boosterNote: fd.boosterNote,
-               dungeonImage: fd.dungeonImage,
-               selectedDungeons: fd.selectedDungeons,
-               minIlvl: parseInt(fd.minIlvl) || 0,
-               minScore: parseInt(fd.minScore) || 0,
-               totalGold: parseInt(fd.goldAmount) || 0,
-               goldPerRun: parseInt(fd.goldPerRun) || 0,
-               goldAmount: parseInt(fd.goldAmount) || 0,
-               runsCount: 1,
-               startLevel: fd.startLevel,
-               endLevel: fd.endLevel,
-               hasKey: fd.hasKey,
-               keyLevel: fd.keyLevel,
-               isTimed: fd.isTimed,
-               roles: { ...fd.roles },
-               squadTemplate: buildSquadTemplateFromRoles(fd.roles, "leveling"),
-               status: 'standby' as const,
-               messages: [],
-                applicants: [], invited: [], accepted: [],
-                blacklistedClasses: fd.blacklistedClasses || [],
-                blockedRoles: fd.blockedRoles || [],
-                serverRegion: fd.serverRegion || "US"
-             };
-             const newLobbies = [newLobby, ...lobbies];
-             setLobbies(newLobbies);
-             const saved = await saveGlobalData({ lobbies: newLobbies });
-             if (!saved) {
-                setLobbies(lobbies);
-                addToast("Could not deploy squad. You may have reached the daily offer limit (3/day for free accounts).", "error");
-                setIsCreateModalOpen(false);
-                return;
-             }
-             const updatedUsers = registeredUsers.map((u: any) => {
-                if (String(u.id) === String(currentUserId)) {
-                   const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
-                   s.postCount = (s.postCount || 0) + 1;
-                   return { ...u, stats: s };
-                }
-                return u;
-             });
-             setRegisteredUsers(updatedUsers);
-             saveGlobalData({ registeredUsers: updatedUsers });
-             playSound('terminal');
-             addToast("Leveling squad deployed.", "success");
-             fetch("/api/discord/broadcast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobby: newLobby }) }).catch(() => {});
-         }
+        const updatedUsers = registeredUsers.map((u: any) => {
+           if (String(u.id) === String(currentUserId)) {
+              const s = u.stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
+              s.postCount = (s.postCount || 0) + 1;
+              return { ...u, stats: s };
+           }
+           return u;
+        });
+        setRegisteredUsers(updatedUsers);
+        saveGlobalData({ registeredUsers: updatedUsers });
+        playSound('terminal');
+        addToast(fd.paymentMethod === "kinah" ? "Offer posted (confirmed with Kinah)." : `Offer posted (confirmed — ${totalUsd.toFixed(2)} USD).`, "success");
+        fetch("/api/discord/broadcast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobby: newLobby }) }).catch(() => {});
         setIsCreateModalOpen(false);
     };
 
@@ -5029,25 +4918,29 @@ export default function HomePage() {
                                                         return ownerUser ? <RankBadge stats={ownerUser.stats} ratings={ownerUser.ratings} compact /> : null;
                                                      })()}
                                               </div>
-                                               <div className="p-1.5 flex items-center justify-start">
-                                                 <div className="flex flex-col items-center gap-1">
-                                                    <span
-                                                       className="flex items-center gap-1.5 text-yellow-500 font-black text-3xl leading-none cursor-default offer-gold-pulse"
-                                                       style={{ ["--offer-glow-secondary" as string]: lobby.category === "leveling" ? "#8a2be2" : "#00ffff" }}
-                                                    >
-                                                        {lobby.totalGold}K
-                                                        <Coins className="w-7 h-7" />
-                                                    </span>
-                                                     {lobby.category !== 'leveling' && (
-                                                      <span className="text-base font-black uppercase text-white tracking-wider leading-none mt-0.5 px-2 py-0.5 rounded-lg bg-white/10 border border-white/20">
-                                                         {(lobby.totalGold / (lobby.runsCount || 1)).toFixed(0)}K <span className="text-[#00ffff]">PER RUN</span>
+                                                <div className="p-1.5 flex items-center justify-start">
+                                                  <div className="flex flex-col items-center gap-1">
+                                                     <span
+                                                        className="flex items-center gap-1.5 text-yellow-500 font-black text-3xl leading-none cursor-default offer-gold-pulse"
+                                                        style={{ ["--offer-glow-secondary" as string]: lobby.category === "leveling" ? "#8a2be2" : "#00ffff" }}
+                                                     >
+                                                        {lobby.serviceName ? (lobby.paymentMethod === 'cash' ? `$${(parseFloat(lobby.priceUsd) * (parseInt(lobby.quantity) || 1)).toFixed(2)}` : `${lobby.totalGold}K`) : `${lobby.totalGold}K`}
+                                                        {lobby.paymentMethod === 'cash' ? <DollarSign className="w-7 h-7" /> : <Coins className="w-7 h-7" />}
                                                      </span>
-                                                     )}
-                                                 </div>
-                                              </div>
-                                                  <div className="w-1/4 shrink-0 p-1.5 flex flex-col justify-center min-w-0">
-                                                      <h3 className={`text-3xl font-black uppercase tracking-tighter leading-none truncate flex items-center gap-2 ${lobby.category === 'leveling' ? 'text-[#00ffff]' : 'text-[#00ffff]'}`}>{lobby.category === 'leveling' ? `Leveling ${lobby.startLevel || "1"}-${lobby.endLevel || "80"}` : (() => { const totalRuns = (Object.values(lobby.selectedDungeons || {}) as number[]).reduce((a: number, b: number) => a + b, 0) || lobby.runsCount || 1; return `${totalRuns}x ${lobby.keyLevel || '+10'}`; })()}<span className="flex items-center gap-1"><img src={lobby.serverRegion === 'US' ? '/flags/us.svg' : '/flags/eu.svg'} alt="" className="w-4 h-4 rounded-sm object-cover inline-block" /><span className="text-[9px] font-black uppercase tracking-wider text-white/60">{lobby.serverRegion || 'EU'}</span></span></h3>
+                                                      {lobby.serviceName ? (
+                                                       <span className="text-base font-black uppercase text-white tracking-wider leading-none mt-0.5 px-2 py-0.5 rounded-lg bg-white/10 border border-white/20">
+                                                          {lobby.paymentMethod === 'cash' ? `${Number(lobby.priceUsd || 0).toFixed(2)} USD` : `PER UNIT`} {lobby.speed && lobby.speed !== 'standard' ? <span className="text-[#ff007f]">· {lobby.speed === 'super' ? 'SUPER' : 'EXPRESS'}</span> : null}
+                                                      </span>
+                                                      ) : lobby.category !== 'leveling' && (
+                                                       <span className="text-base font-black uppercase text-white tracking-wider leading-none mt-0.5 px-2 py-0.5 rounded-lg bg-white/10 border border-white/20">
+                                                          {(lobby.totalGold / (lobby.runsCount || 1)).toFixed(0)}K <span className="text-[#00ffff]">PER RUN</span>
+                                                      </span>
+                                                      )}
                                                   </div>
+                                               </div>
+                                                   <div className="w-2/5 shrink-0 p-1.5 flex flex-col justify-center min-w-0">
+                                                       <h3 className={`text-3xl font-black uppercase tracking-tighter leading-none truncate flex items-center gap-2 ${lobby.category === 'leveling' ? 'text-[#00ffff]' : 'text-[#00ffff]'}`}>{lobby.serviceName ? (lobby.serviceCategory ? `${lobby.serviceCategory} · ` : '') + lobby.serviceName : lobby.category === 'leveling' ? `Leveling ${lobby.startLevel || "1"}-${lobby.endLevel || "80"}` : (() => { const totalRuns = (Object.values(lobby.selectedDungeons || {}) as number[]).reduce((a: number, b: number) => a + b, 0) || lobby.runsCount || 1; return `${totalRuns}x ${lobby.keyLevel || '+10'}`; })()}<span className="flex items-center gap-1"><img src={lobby.serverRegion === 'US' ? '/flags/us.svg' : '/flags/eu.svg'} alt="" className="w-4 h-4 rounded-sm object-cover inline-block" /><span className="text-[9px] font-black uppercase tracking-wider text-white/60">{lobby.serverRegion || 'EU'}</span></span></h3>
+                                                   </div>
 
                                               {/* PARTY CARDS */}
                                                <div className="flex-1 flex items-center justify-start p-1.5">
@@ -5154,13 +5047,13 @@ export default function HomePage() {
                                                                  <div className={`text-base font-black ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{Object.entries(lobby.roles || {}).filter(([, count]) => (count as number) > 0).map(([role, count]) => `${count as number} ${role === 'dps' ? 'DPS' : role === 'tank' ? 'Tank' : 'Heal'}`).join(" + ") || "Any"}</div>
                                                              </div>
                                                           </div>
-                                                          <div className="flex items-center gap-3 p-3">
-                                                             <Coins className="w-6 h-6 text-yellow-500" />
-                                                             <div>
-                                                                <div className="text-[8px] font-black text-yellow-500 uppercase tracking-[0.2em]">Total Gold</div>
-                                                                <div className="text-xl font-black text-white">{lobby.totalGold}K</div>
-                                                             </div>
-                                                          </div>
+                                                           <div className="flex items-center gap-3 p-3">
+                                                              {lobby.serviceName && lobby.paymentMethod === 'cash' ? <DollarSign className="w-6 h-6 text-yellow-500" /> : <Coins className="w-6 h-6 text-yellow-500" />}
+                                                              <div>
+                                                                 <div className="text-[8px] font-black text-yellow-500 uppercase tracking-[0.2em]">{lobby.serviceName ? (lobby.paymentMethod === 'cash' ? 'Price (USD)' : 'Price (Kinah)') : 'Total Gold'}</div>
+                                                                 <div className="text-xl font-black text-white">{lobby.serviceName ? (lobby.paymentMethod === 'cash' ? `$${(parseFloat(lobby.priceUsd) * (parseInt(lobby.quantity) || 1)).toFixed(2)}` : `${lobby.totalGold}K`) : `${lobby.totalGold}K`}</div>
+                                                              </div>
+                                                           </div>
                                                        </div>
                                                       {lobby.notes && (
                                                          <div>
@@ -5670,9 +5563,6 @@ export default function HomePage() {
                   onSubmit={(e, data: any) => handleCreateLobby(e, data)}
                   submitError={submitError}
                   myVfxBg={myVfxBg}
-                  dungeons={DUNGEONS}
-                  classGroups={WOW_CLASS_GROUPS}
-                  classRoleOptions={CLASS_ROLE_OPTIONS}
                   offerDrafts={myOfferDrafts}
                   onSaveOfferDraft={handleSaveOfferDraft}
                   onDeleteOfferDraft={handleDeleteOfferDraft}
