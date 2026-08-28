@@ -31,10 +31,19 @@ export async function syncAuthEnvFromCloudflare(): Promise<void> {
     }
 
     for (const key of AUTH_ENV_KEYS) {
-      const value = env[key];
-      if (typeof value === "string" && value.length > 0) {
-        process.env[key] = value;
+      let value = env[key];
+      if (typeof value !== "string" || value.length === 0) continue;
+      // Defensive: strip stray surrounding quotes (e.g. a secret saved as
+      // "abc123") which break OAuth token exchange with invalid_client.
+      const trimmed = value.trim();
+      if (
+        trimmed.length >= 2 &&
+        ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+          (trimmed.startsWith("'") && trimmed.endsWith("'")))
+      ) {
+        value = trimmed.slice(1, -1);
       }
+      process.env[key] = value;
     }
   } catch {
     // Local dev without Cloudflare context

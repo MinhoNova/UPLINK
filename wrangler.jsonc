@@ -36,6 +36,7 @@
   },
   "vars": {
     "AUTH_TRUST_HOST": "true",
+    "AUTH_DEBUG": "true",
     "NEXTAUTH_URL": "https://uplinklfg.com",
     "NEXT_PUBLIC_SITE_URL": "https://uplinklfg.com",
     "NEXT_PUBLIC_LIVEKIT_URL": "wss://uplink-sist6urm.livekit.cloud",
