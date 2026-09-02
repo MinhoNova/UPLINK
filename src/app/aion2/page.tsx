@@ -191,7 +191,7 @@ export default function Aion2LobbyPage() {
       {/* Global background */}
       <div
         className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/AIO2.png')", opacity: 0.55 }}
+        style={{ backgroundImage: "url('/AION2%20PRO.png')", opacity: 0.55 }}
       />
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#05060f]/20 via-[#070a1a]/50 to-[#05060f]" />
 
@@ -304,7 +304,7 @@ export default function Aion2LobbyPage() {
         {/* Prominent hero image backdrop */}
         <div
           className="absolute inset-0"
-          style={{ backgroundImage: "url('/AIO2.png')", backgroundSize: "cover", backgroundPosition: "center 30%" }}
+          style={{ backgroundImage: "url('/AION2%20PRO.png')", backgroundSize: "cover", backgroundPosition: "center 30%" }}
         />
         {/* readability scrim — only mild so the image stays clearly visible */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#05060f]/60 via-[#05060f]/10 to-[#05060f]" />
@@ -347,13 +347,16 @@ export default function Aion2LobbyPage() {
               <button
                 type="button"
                 onClick={() => setShowCreate(true)}
-                className="group relative px-8 sm:px-12 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-sm text-white overflow-hidden
-                  bg-gradient-to-r from-cyan-500/25 via-purple-600/25 to-cyan-500/25 border border-cyan-300/40
-                  shadow-[0_0_30px_rgba(0,255,255,0.15)] hover:shadow-[0_0_50px_rgba(139,92,246,0.3)]
-                  hover:border-purple-300/60 transition-all duration-300"
+                className="group relative px-9 sm:px-14 py-4 rounded-full font-black uppercase tracking-[0.2em] text-sm text-white
+                  bg-gradient-to-r from-cyan-500 via-sky-500 to-purple-600
+                  border-2 border-cyan-200/80
+                  shadow-[0_0_25px_rgba(0,229,255,0.55),0_0_60px_rgba(139,92,246,0.35),inset_0_1px_0_rgba(255,255,255,0.6)]
+                  hover:shadow-[0_0_35px_rgba(0,229,255,0.8),0_0_90px_rgba(139,92,246,0.55),inset_0_1px_0_rgba(255,255,255,0.7)]
+                  hover:border-white hover:scale-[1.03] transition-all duration-300
+                  after:absolute after:inset-0 after:rounded-full after:border after:border-cyan-100/50 after:blur-[1px]"
               >
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700" />
-                <span className="relative flex items-center gap-2">
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent transition-transform duration-700 rounded-full" />
+                <span className="relative flex items-center gap-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                   <Plus className="w-4 h-4" /> CREATE YOUR OFFER
                 </span>
               </button>
@@ -388,7 +391,7 @@ export default function Aion2LobbyPage() {
       {/* ============ CATEGORY TABS ============ */}
       <section className="px-4 sm:px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-end border-b border-white/10">
             {FILTER_TABS.map(tab => {
               const meta = activeTab === tab.key ? (tab.key === "all" ? CATEGORY_META.Dungeons : CATEGORY_META[tab.key as string] || CATEGORY_META.Dungeons) : null;
               const Icon = (tab.key === "all" ? Swords : tab.key === "Leveling" ? Gem : tab.key === "Boosts" ? Zap : Flame);
@@ -399,17 +402,27 @@ export default function Aion2LobbyPage() {
                   key={tab.label}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={`relative flex items-center justify-center gap-2 px-4 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 border
-                    ${active
-                      ? "bg-black/40 border-cyan-300/40 text-cyan-200 shadow-[0_0_25px_rgba(0,255,255,0.15)]"
-                      : "bg-black/20 border-white/10 text-gray-400 hover:text-white hover:border-purple-300/40 hover:bg-black/30"}`}
+                  className={`group relative flex items-center justify-center gap-2 px-4 py-4 rounded-t-xl rounded-b-none font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300
+                    border-b-4 ${active
+                      ? "text-white bg-gradient-to-b from-cyan-400/15 to-transparent border-transparent"
+                      : "text-gray-400 bg-black/20 border-transparent hover:text-white hover:bg-black/30"}`}
                 >
-                  <Icon className="w-4 h-4" style={{ color }} />
-                  {tab.label}
+                  {/* prominent glowing top edge */}
+                  <span className={`absolute inset-x-2 top-0 h-1 rounded-full transition-all duration-300 ${
+                    active
+                      ? "bg-gradient-to-r from-cyan-300 via-sky-400 to-purple-400 shadow-[0_0_12px_rgba(0,229,255,0.9)]"
+                      : "bg-white/10 group-hover:bg-white/25"
+                  }`} />
+                  {/* neon side glow on active */}
+                  {active && (
+                    <span className="absolute inset-x-0 top-1 bottom-0 bg-[linear-gradient(to_bottom,rgba(0,229,255,0.15),transparent_60%)]" />
+                  )}
+                  <Icon className="w-4 h-4 relative z-10" style={{ color }} />
+                  <span className="relative z-10">{tab.label}</span>
                   {active && (
                     <motion.div
                       layoutId="tabglow"
-                      className="absolute inset-x-6 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+                      className="absolute inset-x-1 top-1 bottom-0 pointer-events-none border-x border-t border-cyan-300/40 rounded-t-lg"
                     />
                   )}
                 </button>
@@ -468,7 +481,7 @@ export default function Aion2LobbyPage() {
                       {/* background art */}
                       <div
                         className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500"
-                        style={{ backgroundImage: "url('/AIO2.png')", backgroundSize: "cover", backgroundPosition: "center" }}
+                        style={{ backgroundImage: "url('/AION2%20PRO.png')", backgroundSize: "cover", backgroundPosition: "center" }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
 
