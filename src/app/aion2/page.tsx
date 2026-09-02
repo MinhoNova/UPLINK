@@ -191,7 +191,7 @@ export default function Aion2LobbyPage() {
       {/* Global background */}
       <div
         className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/AION2%20PRO.png')", opacity: 0.55 }}
+        style={{ backgroundImage: "url('/AION%202.gif')", opacity: 0.55 }}
       />
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#05060f]/20 via-[#070a1a]/50 to-[#05060f]" />
 
@@ -304,7 +304,7 @@ export default function Aion2LobbyPage() {
         {/* Prominent hero image backdrop */}
         <div
           className="absolute inset-0"
-          style={{ backgroundImage: "url('/AION2%20PRO.png')", backgroundSize: "cover", backgroundPosition: "center 30%" }}
+          style={{ backgroundImage: "url('/AION%202.gif')", backgroundSize: "cover", backgroundPosition: "center 30%" }}
         />
         {/* readability scrim — only mild so the image stays clearly visible */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#05060f]/60 via-[#05060f]/10 to-[#05060f]" />
@@ -481,7 +481,7 @@ export default function Aion2LobbyPage() {
                       {/* background art */}
                       <div
                         className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500"
-                        style={{ backgroundImage: "url('/AION2%20PRO.png')", backgroundSize: "cover", backgroundPosition: "center" }}
+                        style={{ backgroundImage: "url('/AION%202.gif')", backgroundSize: "cover", backgroundPosition: "center" }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
 
