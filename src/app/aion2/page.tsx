@@ -191,9 +191,9 @@ export default function Aion2LobbyPage() {
       {/* Global background */}
       <div
         className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/AIO2.png')", opacity: 0.4 }}
+        style={{ backgroundImage: "url('/AIO2.png')", opacity: 0.55 }}
       />
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#05060f]/70 via-[#070a1a]/85 to-[#05060f]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#05060f]/20 via-[#070a1a]/50 to-[#05060f]" />
 
       {/* Floating particles */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
@@ -300,7 +300,16 @@ export default function Aion2LobbyPage() {
       </header>
 
       {/* ============ HERO ============ */}
-      <section id="club" className="relative pt-14 pb-10 px-4 sm:px-6">
+      <section id="club" className="relative pt-14 pb-16 px-4 sm:px-6 overflow-hidden">
+        {/* Prominent hero image backdrop */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundImage: "url('/AIO2.png')", backgroundSize: "cover", backgroundPosition: "center 30%" }}
+        />
+        {/* readability scrim — only mild so the image stays clearly visible */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#05060f]/60 via-[#05060f]/10 to-[#05060f]" />
+        <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_20%,transparent,rgba(5,6,15,0.5))]" />
+
         <div className="max-w-7xl mx-auto relative">
           {/* Wing decorations left/right */}
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-40 h-72 pointer-events-none opacity-60 hidden lg:block">
