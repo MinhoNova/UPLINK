@@ -465,12 +465,7 @@ export default function Aion2ClubPage() {
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="relative px-10 sm:px-16 py-4 rounded-full font-black uppercase tracking-[0.25em] text-xs sm:text-sm text-white
-                bg-gradient-to-r from-[#142358] via-[#21388b] to-[#401f78]
-                border-2 border-cyan-300/80
-                shadow-[0_0_30px_rgba(0,229,255,0.6),0_0_70px_rgba(139,92,246,0.4),inset_0_1px_3px_rgba(255,255,255,0.8)]
-                hover:shadow-[0_0_45px_rgba(0,229,255,0.9),0_0_90px_rgba(139,92,246,0.6),inset_0_1px_4px_rgba(255,255,255,1)]
-                hover:border-white hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
+              className="relative px-10 sm:px-16 py-4 rounded-full font-black uppercase tracking-[0.25em] text-xs sm:text-sm text-white bg-gradient-to-r from-[#142358] via-[#21388b] to-[#401f78] border-2 border-cyan-300/80 shadow-[0_0_30px_rgba(0,229,255,0.6),0_0_70px_rgba(139,92,246,0.4),inset_0_1px_3px_rgba(255,255,255,0.8)] hover:shadow-[0_0_45px_rgba(0,229,255,0.9),0_0_90px_rgba(139,92,246,0.6),inset_0_1px_4px_rgba(255,255,255,1)] hover:border-white hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
             >
               {/* Top diamond jewel */}
               <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rotate-45 bg-cyan-200 shadow-[0_0_8px_rgba(0,255,255,1)]" />
@@ -823,7 +818,7 @@ export default function Aion2ClubPage() {
         )}
       </AnimatePresence>
 
-      <style jsx global>{`
+      <style>{`
         @keyframes aionFloat {
           0% { transform: translateY(0); opacity: 0; }
           15% { opacity: 0.8; }
@@ -1016,11 +1011,7 @@ function CreateOfferModal({
           type="button"
           disabled={!canPublish}
           onClick={() => onPublish({ serviceId: serviceId || "custom", quantity: qty, priceUsd: parseFloat(price) || 25, paymentMethod: method, speed })}
-          className="w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs text-white
-            bg-gradient-to-r from-cyan-500 via-sky-500 to-purple-600
-            border-2 border-cyan-300/80 shadow-[0_0_30px_rgba(0,255,255,0.4)]
-            hover:shadow-[0_0_45px_rgba(0,255,255,0.7)] hover:border-white transition-all
-            disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs text-white bg-gradient-to-r from-cyan-500 via-sky-500 to-purple-600 border-2 border-cyan-300/80 shadow-[0_0_30px_rgba(0,255,255,0.4)] hover:shadow-[0_0_45px_rgba(0,255,255,0.7)] hover:border-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
         >
           <Send className="w-4 h-4" /> PUBLISH OFFER
         </button>
