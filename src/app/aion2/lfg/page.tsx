@@ -14,7 +14,7 @@ export default function Aion2LFGPage() {
     try {
       const res = await fetch("/api/boost-requests?game=aion2");
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as { requests?: any[] };
         setRequests(data.requests || []);
       }
     } catch { /* ignore */ } finally {
