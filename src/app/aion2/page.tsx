@@ -181,7 +181,7 @@ export default function Aion2ClubPage() {
             <div className="relative">
               <button type="button" onClick={() => setUserMenuOpen((p) => !p)} className="flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full bg-[#0b0e22]/80 border border-purple-400/25 hover:border-cyan-400/50 transition-all group cursor-pointer">
                 <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-cyan-300/50 shadow-[0_0_10px_rgba(0,255,255,0.3)]">
-                  <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/AION 2.gif')", backgroundPosition: "78% 25%" }} />
+                  <div className="w-full h-full bg-gradient-to-br from-cyan-500/40 via-sky-600/30 to-purple-600/40 flex items-center justify-center text-[10px] font-black text-cyan-100">OS</div>
                 </div>
                 <div className="text-left flex items-center gap-2">
                   <span className="text-[11px] font-black tracking-wider text-white uppercase">OMAR SALEH</span>
@@ -222,12 +222,10 @@ export default function Aion2ClubPage() {
           loop
           playsInline
           preload="metadata"
-          poster="/AION 2.gif"
         >
           <source src="/aion%202%20bg%20small.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none" style={{ backgroundImage: "url('/AION 2.gif')", backgroundPosition: "center 30%", opacity: 0.3 }} />
 
         {/* Lighter overlays so characters stay visible */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#04050d] via-transparent to-[#04050d]/60 pointer-events-none" />
@@ -361,8 +359,8 @@ export default function Aion2ClubPage() {
                   const isEU = offer.region === "EU";
                   return (
                     <motion.div key={offer.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }} className="group relative rounded-2xl overflow-hidden border border-white/[0.1] hover:border-cyan-400/50 bg-[#070919]/85 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(0,255,255,0.2)] transition-all duration-300">
-                      {/* Right scenic art */}
-                      <div className="absolute right-0 top-0 bottom-0 w-[50%] sm:w-[45%] bg-cover bg-no-repeat pointer-events-none opacity-50 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" style={{ backgroundImage: "url('/AION 2.gif')", backgroundPosition: offer.bgPosition, maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 25%, black 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 25%, black 100%)" }} />
+                      {/* Right ambient glow */}
+                      <div className="absolute right-0 top-0 bottom-0 w-[45%] pointer-events-none opacity-50 group-hover:opacity-70 transition-all duration-500" style={{ background: "radial-gradient(ellipse at right center, rgba(56,189,248,0.25), transparent 70%)" }} />
                       <div className="absolute inset-0 bg-gradient-to-r from-[#070919] via-[#070919]/70 to-transparent pointer-events-none" />
 
                       {/* Card content */}
