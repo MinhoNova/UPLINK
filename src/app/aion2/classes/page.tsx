@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronRight, Play, Sparkles, Heart, MessageCircle, Send, Music } from "lucide-react";
+import { ChevronRight, Sparkles, Music } from "lucide-react";
 import { AION_CLASSES_LIST } from "@/lib/aionClasses";
 
 const SHORTS_CLASSES = AION_CLASSES_LIST.slice(0, 8);
-
-const FAKE_COUNTS = ["12K", "847", "361"];
 
 export default function Aion2ClassesPage() {
   return (
@@ -84,29 +82,6 @@ export default function Aion2ClassesPage() {
 
                   {/* cinematic scrim */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30 pointer-events-none" />
-
-                  {/* play badge (always visible, like Shorts) */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-white/15 border border-white/50 backdrop-blur-md flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.5)] opacity-90 group-hover:opacity-100">
-                      <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-                    </div>
-                  </div>
-
-                  {/* right action rail (Shorts style) */}
-                  <div className="absolute right-2 sm:right-3 bottom-20 sm:bottom-24 flex flex-col items-center gap-3 pointer-events-none">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <Heart className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                      <span className="text-[8px] font-black text-white/90">{FAKE_COUNTS[0]}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <MessageCircle className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                      <span className="text-[8px] font-black text-white/90">{FAKE_COUNTS[1]}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <Send className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-                      <span className="text-[8px] font-black text-white/90">{FAKE_COUNTS[2]}</span>
-                    </div>
-                  </div>
 
                   {/* bottom info (Shorts-like caption) */}
                   <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
