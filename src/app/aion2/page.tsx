@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   Swords, Shield, Coins, Bell, ChevronDown, Zap, Users, Search,
   Crown, Sparkles, X, Send, Flame, Gem, Skull, Star, BookOpen,
-  Globe, ArrowRight, Clipboard, Settings,
+  ArrowRight, Clipboard, Settings, Trophy, Eye, Timer,
 } from "lucide-react";
 import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService } from "@/lib/aionServices";
 
@@ -27,15 +27,15 @@ const FILTER_TABS = [
   { label: "PVP", key: "PVP", icon: Flame },
 ];
 
-/* ── MINI SIDEBAR ICONS (matching mockup – only 4 small icons) ── */
+/* ── MINI SIDEBAR ICONS ── */
 const MINI_DOCK = [
-  { id: "home", icon: Crown },
-  { id: "clipboard", icon: Clipboard },
-  { id: "settings", icon: Settings },
-  { id: "star", icon: Star },
+  { id: "home", icon: Crown, label: "HOME" },
+  { id: "quests", icon: Clipboard, label: "QUESTS" },
+  { id: "settings", icon: Settings, label: "CODE" },
+  { id: "star", icon: Star, label: "RANK" },
 ];
 
-/* ── SEED OFFERS (only 2 as shown in mockup) ── */
+/* ── SEED OFFERS ── */
 interface OfferCard {
   id: string;
   serviceId: string;
@@ -91,6 +91,28 @@ const SEED_OFFERS: OfferCard[] = [
   },
 ];
 
+/* ── SMALL DECORATIVE HELPERS ── */
+function Rule({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center gap-2 text-cyan-300/70 ${className}`}>
+      <span className="h-px w-8 bg-gradient-to-r from-transparent to-cyan-300/60" />
+      <span className="text-[8px] leading-none">&#10022;</span>
+      <span className="h-px w-8 bg-gradient-to-l from-transparent to-cyan-300/60" />
+    </div>
+  );
+}
+
+function CornerFrame() {
+  return (
+    <>
+      <span className="pointer-events-none absolute left-0 top-0 h-3 w-3 border-l border-t border-cyan-300/50" />
+      <span className="pointer-events-none absolute right-0 top-0 h-3 w-3 border-r border-t border-cyan-300/50" />
+      <span className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b border-l border-cyan-300/50" />
+      <span className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-cyan-300/50" />
+    </>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════════════ */
 export default function Aion2ClubPage() {
   const [activeTab, setActiveTab] = useState("Dungeons");
@@ -145,14 +167,28 @@ export default function Aion2ClubPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#03040c] text-white relative selection:bg-cyan-500 selection:text-black font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#030410] text-white relative selection:bg-cyan-500 selection:text-black font-sans overflow-x-hidden">
+
+      <style>{`
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 45% { transform: scaleY(1); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+        @keyframes pulseGlow { 0%,100% { opacity:.35; } 50% { opacity:.8; } }
+        .hero-title { text-shadow: 0 0 18px rgba(120,220,255,.55), 0 0 60px rgba(120,90,255,.35); }
+        .shimmer-line { background: linear-gradient(100deg, transparent 20%, rgba(165,243,252,.9) 50%, transparent 80%); background-size: 200% 100%; animation: shimmer 3.2s linear infinite; }
+        .card-haa { border:1px solid transparent; background: linear-gradient(#070a1c,#070a1c) padding-box, linear-gradient(135deg, rgba(34,211,238,.35), rgba(168,85,247,.12) 45%, rgba(34,211,238,.05)) border-box; }
+      `}</style>
 
       {/* ═══ HEADER ═══ */}
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-2xl bg-[#050611]/75 border-b border-cyan-200/[0.12] shadow-[0_8px_42px_rgba(0,0,0,0.7)]">
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-2xl bg-[#04050f]/80 border-b border-cyan-200/[0.12] shadow-[0_8px_42px_rgba(0,0,0,0.7)]">
         <div className="max-w-[1700px] mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
 
           {/* Logo */}
           <a href="#club" className="flex items-center gap-2 group cursor-pointer select-none">
+            <span className="relative">
+              <span className="absolute -inset-1.5 rounded-full bg-cyan-400/20 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
+              <Swords className="relative h-6 w-6 text-cyan-200" />
+            </span>
             <span className="text-2xl sm:text-3xl font-black tracking-[0.2em] bg-gradient-to-r from-white via-cyan-100 to-sky-400 bg-clip-text text-transparent font-serif">AION</span>
             <span className="text-2xl sm:text-3xl font-black italic tracking-wider bg-gradient-to-b from-cyan-200 via-sky-300 to-purple-400 bg-clip-text text-transparent font-serif">2</span>
           </a>
@@ -163,9 +199,15 @@ export default function Aion2ClubPage() {
               const Icon = item.icon;
               const active = !!item.active;
               return (
-                <a key={item.label} href={item.href} className={active ? "flex items-center gap-2 px-5 py-2 border-b-2 border-cyan-300 text-[11px] font-black tracking-[0.18em] text-cyan-100 bg-cyan-500/[0.07] shadow-[0_10px_20px_rgba(0,229,255,0.12)]" : "flex items-center gap-2 px-5 py-2 border-b-2 border-transparent text-[11px] font-black tracking-[0.18em] text-gray-400 hover:text-white hover:border-purple-300/50 transition-colors"}>
+                <a key={item.label} href={item.href} className={active ? "relative flex items-center gap-2 px-5 py-2 text-[11px] font-black tracking-[0.18em] text-cyan-100" : "flex items-center gap-2 px-5 py-2 text-[11px] font-black tracking-[0.18em] text-gray-400 hover:text-white transition-colors"}>
                   <Icon className={active ? "w-3.5 h-3.5 text-cyan-300" : "w-3.5 h-3.5 text-gray-500"} />
                   <span>{item.label}</span>
+                  {active && (
+                    <>
+                      <span className="absolute inset-x-0 -bottom-px h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_10px_rgba(34,211,238,.9)]" />
+                      <span className="absolute inset-0 bg-cyan-400/[0.06]" />
+                    </>
+                  )}
                 </a>
               );
             })}
@@ -173,7 +215,7 @@ export default function Aion2ClubPage() {
 
           {/* Right: bell + user */}
           <div className="flex items-center gap-3">
-            <button type="button" className="relative w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-cyan-200 hover:border-cyan-400/40 transition-all">
+            <button type="button" className="relative w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-gray-300 hover:text-cyan-200 hover:border-cyan-400/40 transition-all cursor-pointer">
               <Bell className="w-4 h-4" />
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(0,255,255,1)]" />
             </button>
@@ -213,58 +255,108 @@ export default function Aion2ClubPage() {
       </header>
 
       {/* ═══ HERO SECTION ═══ */}
-      <section id="club" className="relative min-h-[620px] sm:min-h-[680px] lg:min-h-[735px] flex items-center justify-center overflow-hidden pt-16">
+      <section id="club" className="relative min-h-[640px] sm:min-h-[700px] lg:min-h-[760px] flex items-center justify-center overflow-hidden pt-16">
 
-        {/* Full-width animated video background — characters prominent */}
-        <video
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-        >
+        {/* Full-width animated video background */}
+        <video className="absolute inset-0 w-full h-full object-cover pointer-events-none" autoPlay muted loop playsInline preload="metadata">
           <source src="/aion%202%20bg%20small.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
         </video>
 
-        {/* Cinematic overlays preserve the video while reserving a calm center for the UI. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#03040c] via-[#03040c]/20 to-[#03040c]/65 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,10,30,0.12)_0%,rgba(3,4,12,0.32)_50%,rgba(3,4,12,0.92)_100%)] pointer-events-none" />
-        <div className="absolute left-[-10%] top-[12%] h-[78%] w-[35%] bg-[radial-gradient(ellipse_at_left,rgba(84,209,255,0.22),transparent_66%)] blur-2xl pointer-events-none" />
-        <div className="absolute right-[-10%] top-[12%] h-[78%] w-[35%] bg-[radial-gradient(ellipse_at_right,rgba(154,80,255,0.22),transparent_66%)] blur-2xl pointer-events-none" />
+        {/* Cinematic overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#030410] via-[#030410]/15 to-[#030410]/70 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,10,30,0.10)_0%,rgba(3,4,12,0.35)_55%,rgba(3,4,12,0.94)_100%)] pointer-events-none" />
+        <div className="absolute left-[-8%] top-[10%] h-[80%] w-[36%] bg-[radial-gradient(ellipse_at_left,rgba(84,209,255,0.25),transparent_66%)] blur-2xl pointer-events-none" style={{ animation: "pulseGlow 5s ease-in-out infinite" }} />
+        <div className="absolute right-[-8%] top-[10%] h-[80%] w-[36%] bg-[radial-gradient(ellipse_at_right,rgba(154,80,255,0.25),transparent_66%)] blur-2xl pointer-events-none" style={{ animation: "pulseGlow 6s ease-in-out infinite" }} />
 
-        {/* Hero content — intentionally only an overlay; the Aion 2 video remains the visual lead. */}
+        {/* Floating runes */}
+        {[
+          { l: "8%", t: "26%", s: 18, d: "0s" },
+          { l: "88%", t: "30%", s: 22, d: "1.2s" },
+          { l: "16%", t: "72%", s: 14, d: "2s" },
+          { l: "80%", t: "70%", s: 16, d: "0.6s" },
+          { l: "50%", t: "18%", s: 12, d: "2.6s" },
+        ].map((r, i) => (
+          <span key={i} className="pointer-events-none absolute text-cyan-200/40 font-serif italic select-none" style={{ left: r.l, top: r.t, fontSize: r.s, animation: `floaty ${7 + i}s ease-in-out infinite`, animationDelay: r.d }}>&#10022;</span>
+        ))}
+
+        {/* Hero content */}
         <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 pt-12 text-center">
-          <div className="mb-4 flex items-center gap-3 text-[9px] font-black tracking-[0.42em] text-cyan-100/80 sm:text-[10px]">
-            <span className="h-px w-10 bg-gradient-to-r from-transparent to-cyan-200/70" />
-            AION 2 COMMUNITY LOBBY
-            <span className="h-px w-10 bg-gradient-to-l from-transparent to-cyan-200/70" />
-          </div>
-          <h1 className="font-serif text-5xl font-black leading-[0.86] tracking-[0.08em] text-white drop-shadow-[0_0_28px_rgba(174,222,255,0.72)] sm:text-7xl lg:text-8xl">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <div className="mb-5 flex items-center gap-3 text-[9px] font-black tracking-[0.42em] text-cyan-100/90 sm:text-[10px]">
+              <span className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-200/80" />
+              <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
+              AION 2 COMMUNITY LOBBY
+              <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
+              <span className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-200/80" />
+            </div>
+          </motion.div>
+
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="hero-title font-serif text-6xl font-black leading-[0.86] tracking-[0.08em] text-white sm:text-8xl lg:text-9xl">
             FIND YOUR
-            <span className="mt-3 block bg-gradient-to-r from-cyan-100 via-white to-violet-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(124,105,255,0.8)]">CREW</span>
-          </h1>
-          <div className="mt-6 flex items-center gap-3 text-[10px] font-black tracking-[0.28em] text-cyan-100/90 sm:text-[11px]">
-            <span className="h-px w-8 bg-cyan-200/60" /> KEYS <span className="text-violet-300">•</span> BOOSTS <span className="text-violet-300">•</span> LEVELING <span className="h-px w-8 bg-cyan-200/60" />
+            <span className="mt-4 block bg-gradient-to-r from-cyan-100 via-white to-violet-300 bg-clip-text text-transparent">CREW</span>
+          </motion.h1>
+
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.8 }} className="mt-7 flex items-center gap-3 text-[10px] font-black tracking-[0.28em] text-cyan-100/90 sm:text-[11px]">
+            <span className="h-px w-10 bg-gradient-to-r from-transparent to-cyan-200/70" />
+            KEYS <span className="text-violet-300">&#10022;</span> BOOSTS <span className="text-violet-300">&#10022;</span> LEVELING
+            <span className="h-px w-10 bg-gradient-to-l from-transparent to-cyan-200/70" />
+          </motion.div>
+
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }} className="mt-5 max-w-lg text-sm font-medium leading-relaxed text-slate-200/90 sm:text-base">
+            Find trusted Daevas for your next dungeon, leveling route, or ranked push.
+          </motion.p>
+
+          {/* CTA — jewel-like double border */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.6 }} className="relative mt-9">
+            <button type="button" onClick={() => setShowCreate(true)} className="group relative inline-flex min-w-[300px] items-center justify-center overflow-hidden border border-cyan-100/80 bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-9 py-4 text-xs font-black tracking-[0.22em] text-white shadow-[0_0_0_1px_rgba(197,241,255,0.35),0_0_34px_rgba(90,120,255,0.65)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.8),0_0_52px_rgba(122,94,255,0.95)] cursor-pointer">
+              <span className="absolute inset-[3px] border border-white/25 opacity-80" />
+              <span className="absolute left-0 top-0 h-full w-full shimmer-line opacity-40" />
+              <Sparkles className="mr-3 h-4 w-4 text-cyan-100 transition-transform group-hover:rotate-12" /> CREATE YOUR OFFER <ArrowRight className="ml-3 h-4 w-4" />
+            </button>
+            <p className="mt-4 text-[9px] font-black tracking-[0.28em] text-slate-300/80">FAST <span className="text-cyan-300">&#10022;</span> CLEAR <span className="text-cyan-300">&#10022;</span> NO CLUTTER</p>
+          </motion.div>
+
+          {/* Live ticker */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.85, duration: 0.8 }} className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            {[
+              { icon: Users, label: "DAEVAS ONLINE", value: "1,424" },
+              { icon: Swords, label: "OFFERS LIVE", value: "87" },
+              { icon: Trophy, label: "MISSIONS DONE", value: "12,430" },
+            ].map((s) => (
+              <div key={s.label} className="flex items-center gap-2.5 rounded-md border border-cyan-300/20 bg-black/30 px-4 py-2 backdrop-blur-md">
+                <s.icon className="h-3.5 w-3.5 text-cyan-300" />
+                <span className="text-sm font-black text-white">{s.value}</span>
+                <span className="text-[8px] font-black tracking-[0.2em] text-slate-300 uppercase">{s.label}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2 rounded-md border border-emerald-400/30 bg-black/30 px-4 py-2 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[8px] font-black tracking-[0.2em] text-emerald-300 uppercase">LIVE</span>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
+          <span className="text-[8px] font-black tracking-[0.3em] text-cyan-200/80 uppercase">Scroll</span>
+          <div className="h-10 w-px overflow-hidden">
+            <span className="block h-full w-full bg-cyan-300/80" style={{ animation: "scrollLine 1.8s ease-in-out infinite" }} />
           </div>
-          <p className="mt-4 max-w-md text-sm font-medium leading-relaxed text-slate-200/85 sm:text-base">Find trusted Daevas for your next dungeon, leveling route, or ranked push.</p>
-          <button type="button" onClick={() => setShowCreate(true)} className="group relative mt-8 inline-flex min-w-[280px] items-center justify-center overflow-hidden rounded-sm border border-cyan-100/80 bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-8 py-4 text-xs font-black tracking-[0.22em] text-white shadow-[0_0_0_1px_rgba(197,241,255,0.35),0_0_30px_rgba(90,120,255,0.65)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.8),0_0_48px_rgba(122,94,255,0.9)]">
-            <span className="absolute inset-[3px] border border-white/20 opacity-70" />
-            <Sparkles className="mr-3 h-4 w-4 text-cyan-100 transition-transform group-hover:rotate-12" /> CREATE YOUR OFFER <ArrowRight className="ml-3 h-4 w-4" />
-          </button>
-          <p className="mt-3 text-[9px] font-black tracking-[0.26em] text-slate-300/80">FAST <span className="text-cyan-300">•</span> CLEAR <span className="text-cyan-300">•</span> NO CLUTTER</p>
         </div>
       </section>
 
       {/* ═══ FILTER TABS ═══ */}
-      <section className="px-4 sm:px-6 relative z-20 -mt-10 mb-8">
-        <div className="max-w-3xl mx-auto flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+      <section className="px-4 sm:px-6 relative z-20 -mt-9 mb-10">
+        <div className="mx-auto flex max-w-4xl items-center justify-center gap-2 sm:gap-4 flex-wrap">
           {FILTER_TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             const Icon = tab.icon;
             return (
-              <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={isActive ? "flex min-w-[148px] items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-sm text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-gradient-to-r from-cyan-500/25 via-blue-600/35 to-purple-600/25 border border-cyan-100/80 text-white shadow-[0_0_20px_rgba(0,255,255,0.35)] scale-105" : "flex min-w-[148px] items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-sm text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-[#070b1e]/85 border border-white/[0.14] text-gray-300 hover:text-white hover:border-cyan-400/60"}>
+              <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={isActive ? "relative flex min-w-[148px] items-center justify-center gap-2.5 rounded-sm px-6 sm:px-8 py-3.5 text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-gradient-to-r from-cyan-600/40 via-blue-700/50 to-purple-700/40 text-white shadow-[0_0_28px_rgba(0,229,255,0.45)] scale-105 border border-cyan-200/70" : "relative flex min-w-[148px] items-center justify-center gap-2.5 rounded-sm px-6 sm:px-8 py-3.5 text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-[#070b1e]/85 text-gray-300 hover:text-white hover:border-cyan-400/60 border border-white/[0.14]"}>
+                {isActive && <span className="absolute inset-[2px] border border-white/20 pointer-events-none" />}
                 <Icon className={isActive ? "w-4 h-4 text-cyan-300" : "w-4 h-4 text-gray-500"} />
                 <span>{tab.label}</span>
               </button>
@@ -277,29 +369,32 @@ export default function Aion2ClubPage() {
       <main className="max-w-[1700px] mx-auto px-4 sm:px-8 pb-20 relative z-20">
         <div className="flex gap-6 items-start">
 
-          {/* ── Mini floating sidebar (4 small icons matching mockup) ── */}
-          <aside className="hidden xl:flex flex-col items-center gap-2 pt-2 w-12 shrink-0 sticky top-20">
-            {MINI_DOCK.map((item) => {
-              const Icon = item.icon;
-              const active = activeDock === item.id;
-              return (
-                <button key={item.id} type="button" onClick={() => setActiveDock(item.id)} className={active ? "w-10 h-10 rounded-xl bg-[#0a0e24] border border-cyan-400/50 flex items-center justify-center text-cyan-300 shadow-[0_0_12px_rgba(0,255,255,0.3)] transition-all cursor-pointer" : "w-10 h-10 rounded-xl bg-[#0a0e24]/60 border border-white/[0.08] flex items-center justify-center text-gray-500 hover:text-gray-300 hover:border-white/20 transition-all cursor-pointer"}>
-                  <Icon className="w-4 h-4" />
-                </button>
-              );
-            })}
+          {/* ── Mini floating sidebar ── */}
+          <aside className="hidden xl:flex flex-col items-center gap-2 pt-2 w-14 shrink-0 sticky top-24">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#060818]/90 p-2">
+              {MINI_DOCK.map((item) => {
+                const Icon = item.icon;
+                const active = activeDock === item.id;
+                return (
+                  <button key={item.id} type="button" onClick={() => setActiveDock(item.id)} title={item.label} className={active ? "relative w-10 h-10 rounded-xl bg-gradient-to-b from-cyan-500/25 to-purple-600/25 border border-cyan-400/60 flex items-center justify-center text-cyan-300 shadow-[0_0_14px_rgba(0,255,255,0.35)] transition-all cursor-pointer" : "w-10 h-10 rounded-xl bg-transparent border border-white/[0.06] flex items-center justify-center text-gray-500 hover:text-gray-300 hover:border-white/20 transition-all cursor-pointer"}>
+                    <Icon className="w-4 h-4" />
+                    {active && <span className="absolute -left-[7px] h-5 w-[3px] rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(0,255,255,.9)]" />}
+                  </button>
+                );
+              })}
+            </div>
           </aside>
 
           {/* ── Content grid: offers + ongoing missions ── */}
-          <div id="offers" className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div id="offers" className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
 
             {/* Left: Available Offers */}
             <div>
-              <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/[0.08]">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-cyan-400 text-base">&#10022;</span>
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/[0.08]">
+                <div className="flex items-center gap-3">
+                  <span className="text-cyan-400">&#10022;</span>
                   <h3 className="text-base sm:text-lg font-black tracking-[0.25em] uppercase text-white font-serif">AVAILABLE OFFERS</h3>
-                  <span className="text-cyan-400 text-base">&#10022;</span>
+                  <span className="text-cyan-400">&#10022;</span>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-400/35 bg-cyan-500/10">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]" />
@@ -308,19 +403,21 @@ export default function Aion2ClubPage() {
               </div>
 
               <div className="space-y-4">
-                {displayOffers.map((offer) => {
+                {displayOffers.map((offer, idx) => {
                   const isEU = offer.region === "EU";
                   return (
-                    <motion.div key={offer.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -2 }} className="group relative rounded-2xl overflow-hidden border border-white/[0.1] hover:border-cyan-400/50 bg-[#070919]/85 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(0,255,255,0.2)] transition-all duration-300">
+                    <motion.div key={offer.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.06 }} whileHover={{ y: -3 }} className="card-haa group relative overflow-hidden shadow-[0_6px_28px_rgba(0,0,0,0.55)] hover:shadow-[0_0_38px_rgba(0,229,255,0.22)] transition-all duration-300 rounded-xl">
+                      <CornerFrame />
+
                       {/* Right ambient glow */}
-                      <div className="absolute right-0 top-0 bottom-0 w-[45%] pointer-events-none opacity-50 group-hover:opacity-70 transition-all duration-500" style={{ background: "radial-gradient(ellipse at right center, rgba(56,189,248,0.25), transparent 70%)" }} />
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#070919] via-[#070919]/70 to-transparent pointer-events-none" />
+                      <div className="absolute right-0 top-0 bottom-0 w-[45%] pointer-events-none opacity-40 group-hover:opacity-70 transition-all duration-500" style={{ background: "radial-gradient(ellipse at right center, rgba(56,189,248,0.28), transparent 70%)" }} />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#070a1c] via-[#070a1c]/70 to-transparent pointer-events-none" />
 
                       {/* Card content */}
                       <div className="relative z-10 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-4 min-w-0">
                           {/* Rank diamond */}
-                          <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl bg-gradient-to-b from-[#141b3f] to-[#0c1027] border border-cyan-400/40 flex items-center justify-center shadow-[0_0_12px_rgba(0,255,255,0.2)] group-hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all">
+                          <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-xl bg-gradient-to-b from-[#141b3f] to-[#0c1027] border border-cyan-400/40 flex items-center justify-center shadow-[0_0_14px_rgba(0,255,255,0.2)] group-hover:shadow-[0_0_22px_rgba(0,255,255,0.45)] transition-all">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                               <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="url(#rkG)" />
                               <circle cx="12" cy="12" r="2" fill="#ffffff" />
@@ -333,7 +430,14 @@ export default function Aion2ClubPage() {
                             </svg>
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-sm sm:text-base font-black tracking-wider text-white uppercase group-hover:text-cyan-200 transition-colors">{offer.name}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm sm:text-base font-black tracking-wider text-white uppercase group-hover:text-cyan-200 transition-colors">{offer.name}</h4>
+                              {offer.speed !== "Standard" && (
+                                <span className="hidden sm:inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest border border-[#ff007f]/40 bg-[#ff007f]/10 text-[#ff9fd0]">
+                                  <Timer className="w-2.5 h-2.5" /> {offer.speed}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-gray-300">
                                 <span>{offer.playersMeta}</span>
@@ -350,6 +454,11 @@ export default function Aion2ClubPage() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Join button */}
+                        <button type="button" onClick={() => setShowCreate(true)} className="relative shrink-0 rounded px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] border border-cyan-400/40 text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
+                          JOIN MISSION
+                        </button>
                       </div>
                     </motion.div>
                   );
@@ -366,7 +475,8 @@ export default function Aion2ClubPage() {
 
             {/* Right: Ongoing Missions */}
             <aside className="w-full">
-              <div className="relative rounded-3xl overflow-hidden border border-cyan-500/20 bg-[#060818]/85 backdrop-blur-2xl p-6 shadow-[0_0_30px_rgba(0,0,0,0.6)]">
+              <div className="relative rounded-2xl overflow-hidden border border-cyan-500/20 bg-[#060818]/85 backdrop-blur-2xl p-6 shadow-[0_0_34px_rgba(0,0,0,0.6)]">
+                <CornerFrame />
                 <div className="flex items-center gap-2.5 pb-4 mb-5 border-b border-white/[0.08]">
                   <Shield className="w-4 h-4 text-cyan-300" />
                   <h3 className="text-xs font-black tracking-[0.25em] uppercase text-cyan-100 font-serif">ONGOING MISSIONS</h3>
@@ -374,7 +484,7 @@ export default function Aion2ClubPage() {
 
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   {/* Aion triangle glyph */}
-                  <div className="relative w-20 h-20 mb-4 flex items-center justify-center">
+                  <div className="relative w-20 h-20 mb-4 flex items-center justify-center" style={{ animation: "floaty 6s ease-in-out infinite" }}>
                     <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-xl pointer-events-none" />
                     <svg width="70" height="70" viewBox="0 0 100 100" fill="none">
                       <path d="M50 8L92 82H8L50 8Z" stroke="url(#gG)" strokeWidth="2.5" fill="rgba(6,182,212,0.04)" />
@@ -397,14 +507,14 @@ export default function Aion2ClubPage() {
                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200">NO ACTIVE MISSIONS</p>
                   <p className="text-[10px] text-gray-500 font-bold mt-1.5 max-w-[200px] leading-relaxed">Create or accept an offer to embark on your Daeva journey.</p>
 
-                  <button type="button" onClick={() => setShowCreate(true)} className="mt-5 px-5 py-2 rounded-full text-[9px] font-black tracking-[0.2em] uppercase text-cyan-300 bg-cyan-500/10 border border-cyan-400/35 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
-                    START AN OPERATION
+                  <button type="button" onClick={() => setShowCreate(true)} className="group relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border border-cyan-400/40 bg-cyan-500/10 px-5 py-2.5 text-[9px] font-black tracking-[0.2em] uppercase text-cyan-200 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
+                    <Sparkles className="w-3 h-3" /> START AN OPERATION
                   </button>
                 </div>
               </div>
 
-              <div id="support" className="mt-4 rounded-2xl border border-white/[0.06] bg-[#060818]/50 p-4 text-center">
-                <div className="text-[9px] font-black text-cyan-300 uppercase tracking-widest mb-1 flex items-center justify-center gap-1.5">
+              <div id="support" className="card-haa mt-4 rounded-xl p-5">
+                <div className="flex items-center gap-2 text-[9px] font-black text-cyan-300 uppercase tracking-widest mb-2">
                   <Sparkles className="w-3 h-3 text-cyan-400" /> AION 2 EGYPTIAN COMMUNITY
                 </div>
                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed">Join hundreds of Egyptian Daevas on Discord for daily Abyss runs, trading &amp; voice rooms.</p>
@@ -415,9 +525,10 @@ export default function Aion2ClubPage() {
       </main>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="px-6 py-8 text-center border-t border-white/[0.06] relative z-20">
+      <footer className="px-6 py-9 text-center border-t border-white/[0.06] relative z-20">
+        <Rule className="mb-4 justify-center" />
         <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">
-          POWERED BY UPLINK <span className="text-cyan-400 mx-2">&bull;</span> AION 2 COMMUNITY LOBBY
+          POWERED BY UPLINK <span className="text-cyan-400 mx-2">&#10022;</span> AION 2 COMMUNITY LOBBY
         </p>
       </footer>
 
@@ -448,7 +559,8 @@ function CreateOfferModal({ onClose, onPublish }: {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 15 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#070a1e]/95 border-2 border-cyan-400/40 rounded-3xl p-6 sm:p-8 shadow-[0_0_60px_rgba(0,255,255,0.2)]">
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 15 }} onClick={(e) => e.stopPropagation()} className="card-haa relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 shadow-[0_0_60px_rgba(0,255,255,0.2)]">
+        <CornerFrame />
         <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <Sparkles className="w-5 h-5 text-cyan-300" />
@@ -519,7 +631,8 @@ function CreateOfferModal({ onClose, onPublish }: {
           <span className="text-xl font-black text-amber-300">{method === "cash" ? formatUsd(total) : Math.round(total) + "K Kinah"}</span>
         </div>
 
-        <button type="button" disabled={!canPublish} onClick={() => onPublish({ serviceId: serviceId || "custom", quantity: qty, priceUsd: parseFloat(price) || 25, paymentMethod: method, speed })} className="w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs text-white bg-gradient-to-r from-cyan-500 via-sky-500 to-purple-600 border-2 border-cyan-300/80 shadow-[0_0_30px_rgba(0,255,255,0.4)] hover:shadow-[0_0_45px_rgba(0,255,255,0.7)] hover:border-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer">
+        <button type="button" disabled={!canPublish} onClick={() => onPublish({ serviceId: serviceId || "custom", quantity: qty, priceUsd: parseFloat(price) || 25, paymentMethod: method, speed })} className="relative w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs text-white bg-gradient-to-r from-cyan-500 via-sky-500 to-purple-600 border border-cyan-300/80 shadow-[0_0_30px_rgba(0,255,255,0.4)] hover:shadow-[0_0_45px_rgba(0,255,255,0.7)] hover:border-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer">
+          <span className="absolute inset-[3px] border border-white/20" />
           <Send className="w-4 h-4" /> PUBLISH OFFER
         </button>
       </motion.div>
