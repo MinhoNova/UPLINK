@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
   Swords, Shield, Coins, Bell, ChevronDown, Zap, Users, Search,
-  Crown, Sparkles, X, Send, Flame, Gem, Skull, Star, BookOpen,
+  Crown, Sparkles, Flame, Gem, Skull, Star, BookOpen,
   ArrowRight, Clipboard, Settings, Trophy, Eye, Timer,
 } from "lucide-react";
-import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService } from "@/lib/aionServices";
 
 /* ── NAV ── */
 const NAV_ITEMS = [
@@ -117,8 +116,6 @@ function CornerFrame() {
 export default function Aion2ClubPage() {
   const [activeTab, setActiveTab] = useState("Dungeons");
   const [activeDock, setActiveDock] = useState("home");
-  const [offers, setOffers] = useState<OfferCard[]>(SEED_OFFERS);
-  const [showCreate, setShowCreate] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   /* Hide the global UPLINK navbar so only our custom header shows */
@@ -131,40 +128,12 @@ export default function Aion2ClubPage() {
   }, []);
 
   const filteredOffers = useMemo(() => {
-    if (activeTab === "all") return offers;
-    return offers.filter((o) => o.category.toLowerCase() === activeTab.toLowerCase());
-  }, [activeTab, offers]);
+    if (activeTab === "all") return SEED_OFFERS;
+    return SEED_OFFERS.filter((o) => o.category.toLowerCase() === activeTab.toLowerCase());
+  }, [activeTab]);
 
   /* Show all offers when category filter returns empty */
-  const displayOffers = filteredOffers.length > 0 ? filteredOffers : offers;
-
-  const handlePublish = useCallback(
-    (data: { serviceId: string; quantity: number; priceUsd: number; paymentMethod: "kinah" | "cash"; speed: string }) => {
-      const svc = AION_SERVICES.find((s) => s.id === data.serviceId);
-      const cat = svc?.category || "Dungeons";
-      const newOffer: OfferCard = {
-        id: Date.now().toString(),
-        serviceId: data.serviceId,
-        name: svc?.name?.toUpperCase() || "CUSTOM MISSION",
-        category: cat,
-        quantity: data.quantity,
-        priceUsd: data.priceUsd,
-        paymentMethod: data.paymentMethod,
-        speed: data.speed,
-        region: "US",
-        owner: "Omar Saleh",
-        ownerClass: "Daeva",
-        playersMeta: data.quantity + " \u00d7 PARTY",
-        rewardLabel: data.paymentMethod === "cash" ? formatUsd(data.priceUsd * data.quantity) : Math.round(data.priceUsd * data.quantity) + "K PER RUN",
-        bgPosition: "center 35%",
-        createdAt: Date.now(),
-      };
-      setOffers((prev) => [newOffer, ...prev]);
-      setShowCreate(false);
-      setActiveTab(cat);
-    },
-    [],
-  );
+  const displayOffers = filteredOffers.length > 0 ? filteredOffers : SEED_OFFERS;
 
   return (
     <div className="min-h-screen bg-[#030410] text-white relative selection:bg-cyan-500 selection:text-black font-sans overflow-x-hidden">
@@ -308,11 +277,11 @@ export default function Aion2ClubPage() {
 
           {/* CTA — jewel-like double border */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.6 }} className="relative mt-9">
-            <button type="button" onClick={() => setShowCreate(true)} className="group relative inline-flex min-w-[300px] items-center justify-center overflow-hidden border border-cyan-100/80 bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-9 py-4 text-xs font-black tracking-[0.22em] text-white shadow-[0_0_0_1px_rgba(197,241,255,0.35),0_0_34px_rgba(90,120,255,0.65)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.8),0_0_52px_rgba(122,94,255,0.95)] cursor-pointer">
+            <a href="/aion2/create-offer" className="group relative inline-flex min-w-[300px] items-center justify-center overflow-hidden border border-cyan-100/80 bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-9 py-4 text-xs font-black tracking-[0.22em] text-white shadow-[0_0_0_1px_rgba(197,241,255,0.35),0_0_34px_rgba(90,120,255,0.65)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.8),0_0_52px_rgba(122,94,255,0.95)] cursor-pointer">
               <span className="absolute inset-[3px] border border-white/25 opacity-80" />
               <span className="absolute left-0 top-0 h-full w-full shimmer-line opacity-40" />
               <Sparkles className="mr-3 h-4 w-4 text-cyan-100 transition-transform group-hover:rotate-12" /> CREATE YOUR OFFER <ArrowRight className="ml-3 h-4 w-4" />
-            </button>
+            </a>
             <p className="mt-4 text-[9px] font-black tracking-[0.28em] text-slate-300/80">FAST <span className="text-cyan-300">&#10022;</span> CLEAR <span className="text-cyan-300">&#10022;</span> NO CLUTTER</p>
           </motion.div>
 
@@ -456,9 +425,9 @@ export default function Aion2ClubPage() {
                         </div>
 
                         {/* Join button */}
-                        <button type="button" onClick={() => setShowCreate(true)} className="relative shrink-0 rounded px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] border border-cyan-400/40 text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
+                        <a href="/aion2/create-offer" className="relative shrink-0 rounded px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] border border-cyan-400/40 text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
                           JOIN MISSION
-                        </button>
+                        </a>
                       </div>
                     </motion.div>
                   );
@@ -507,9 +476,9 @@ export default function Aion2ClubPage() {
                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200">NO ACTIVE MISSIONS</p>
                   <p className="text-[10px] text-gray-500 font-bold mt-1.5 max-w-[200px] leading-relaxed">Create or accept an offer to embark on your Daeva journey.</p>
 
-                  <button type="button" onClick={() => setShowCreate(true)} className="group relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border border-cyan-400/40 bg-cyan-500/10 px-5 py-2.5 text-[9px] font-black tracking-[0.2em] uppercase text-cyan-200 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
+                  <a href="/aion2/create-offer" className="group relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border border-cyan-400/40 bg-cyan-500/10 px-5 py-2.5 text-[9px] font-black tracking-[0.2em] uppercase text-cyan-200 hover:bg-cyan-500/20 hover:border-cyan-300 transition-all cursor-pointer">
                     <Sparkles className="w-3 h-3" /> START AN OPERATION
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -532,110 +501,6 @@ export default function Aion2ClubPage() {
         </p>
       </footer>
 
-      {/* ═══ CREATE OFFER MODAL ═══ */}
-      <AnimatePresence>
-        {showCreate && <CreateOfferModal onClose={() => setShowCreate(false)} onPublish={handlePublish} />}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════════════ */
-function CreateOfferModal({ onClose, onPublish }: {
-  onClose: () => void;
-  onPublish: (data: { serviceId: string; quantity: number; priceUsd: number; paymentMethod: "kinah" | "cash"; speed: string }) => void;
-}) {
-  const [cat, setCat] = useState("Dungeons");
-  const [serviceId, setServiceId] = useState("");
-  const [qty, setQty] = useState(1);
-  const [price, setPrice] = useState("25");
-  const [method, setMethod] = useState<"kinah" | "cash">("kinah");
-  const [speed, setSpeed] = useState("Standard");
-
-  const services = AION_SERVICES.filter((s) => s.category === cat);
-  const selectService = (svc: AionService) => { setServiceId(svc.id); setPrice(svc.basePriceUsd.toFixed(0)); };
-  const total = (parseFloat(price) || 0) * qty;
-  const canPublish = (parseFloat(price) || 0) > 0;
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 15 }} onClick={(e) => e.stopPropagation()} className="card-haa relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 shadow-[0_0_60px_rgba(0,255,255,0.2)]">
-        <CornerFrame />
-        <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-5 h-5 text-cyan-300" />
-            <h3 className="text-sm sm:text-base font-black uppercase tracking-[0.2em] text-white font-serif">CREATE YOUR OFFER</h3>
-          </div>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-cyan-400/50 transition-colors cursor-pointer">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <label className="text-[10px] font-black text-cyan-200 uppercase tracking-widest block mb-2">Category</label>
-        <div className="flex flex-wrap gap-2 mb-5">
-          {AION_CATEGORIES.map((c) => (
-            <button key={c} type="button" onClick={() => { setCat(c); setServiceId(""); }} className={cat === c ? "px-3.5 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase border bg-cyan-500/25 border-cyan-400 text-cyan-100 shadow-[0_0_15px_rgba(0,255,255,0.3)] transition-all cursor-pointer" : "px-3.5 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase border bg-white/[0.03] border-white/10 text-gray-400 hover:text-white transition-all cursor-pointer"}>
-              {c}
-            </button>
-          ))}
-        </div>
-
-        <label className="text-[10px] font-black text-cyan-200 uppercase tracking-widest block mb-2">Service Type</label>
-        <div className="space-y-2 mb-5 max-h-44 overflow-y-auto pr-1">
-          {services.map((svc) => (
-            <button key={svc.id} type="button" onClick={() => selectService(svc)} className={svc.id === serviceId ? "w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-left border-cyan-400 bg-cyan-500/20 text-white shadow-[0_0_15px_rgba(0,255,255,0.25)] transition-all cursor-pointer" : "w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-left border-white/10 bg-white/[0.02] text-gray-300 hover:border-white/30 transition-all cursor-pointer"}>
-              <span className="text-xs font-black truncate">{svc.name}</span>
-              <span className="text-[10px] font-black text-amber-400">{formatUsd(svc.basePriceUsd)}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-5">
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Party / Slots</label>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 font-black text-white hover:border-cyan-400/50 cursor-pointer">&minus;</button>
-              <span className="flex-1 text-center font-black text-base text-white">{qty}</span>
-              <button type="button" onClick={() => setQty((q) => q + 1)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 font-black text-white hover:border-cyan-400/50 cursor-pointer">+</button>
-            </div>
-          </div>
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Price Per Run ({method === "kinah" ? "K" : "$"})</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="25" className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-black text-white outline-none focus:border-cyan-400/70" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Payment</label>
-            <div className="flex gap-2">
-              {(["kinah", "cash"] as const).map((m) => (
-                <button key={m} type="button" onClick={() => setMethod(m)} className={method === m ? "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(0,255,255,0.3)] transition-all cursor-pointer" : "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border bg-white/[0.03] border-white/10 text-gray-400 transition-all cursor-pointer"}>
-                  {m === "kinah" ? "Kinah" : "USD"}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Speed</label>
-            <select value={speed} onChange={(e) => setSpeed(e.target.value)} className="w-full bg-[#090d24] border border-white/10 rounded-xl px-3 py-2.5 text-xs font-black text-white outline-none focus:border-cyan-400/70">
-              <option>Standard</option>
-              <option>Express</option>
-              <option>Super Express</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-4 flex items-center justify-between mb-6">
-          <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Total Reward</span>
-          <span className="text-xl font-black text-amber-300">{method === "cash" ? formatUsd(total) : Math.round(total) + "K Kinah"}</span>
-        </div>
-
-        <button type="button" disabled={!canPublish} onClick={() => onPublish({ serviceId: serviceId || "custom", quantity: qty, priceUsd: parseFloat(price) || 25, paymentMethod: method, speed })} className="relative w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs text-white bg-gradient-to-r from-cyan-500 via-sky-500 to-purple-600 border border-cyan-300/80 shadow-[0_0_30px_rgba(0,255,255,0.4)] hover:shadow-[0_0_45px_rgba(0,255,255,0.7)] hover:border-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer">
-          <span className="absolute inset-[3px] border border-white/20" />
-          <Send className="w-4 h-4" /> PUBLISH OFFER
-        </button>
-      </motion.div>
-    </motion.div>
+      </div>
   );
 }
