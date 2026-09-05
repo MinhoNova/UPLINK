@@ -13,6 +13,7 @@ import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService } from "@/lib/ai
 /* ── NAV ── */
 const NAV_ITEMS = [
   { label: "CLUB", icon: Crown, href: "#club", active: true },
+  { label: "CLASSES", icon: BookOpen, href: "/aion2/classes" },
   { label: "MISSIONS", icon: Swords, href: "#offers" },
   { label: "MARKET", icon: Coins, href: "#offers" },
   { label: "SUPPORT", icon: Search, href: "#support" },
