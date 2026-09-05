@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
@@ -69,29 +70,21 @@ export default function Aion2ClubPage() {
   const [activeTab, setActiveTab] = useState("Dungeons");
   const [activeDock, setActiveDock] = useState("chat");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  /* Hide the global UPLINK navbar so only our custom header shows */
-  useEffect(() => {
-    const globalNav = document.querySelector("body > nav, nav.fixed.top-0");
-    if (globalNav instanceof HTMLElement) {
-      globalNav.style.display = "none";
-      return () => { globalNav.style.display = ""; };
-    }
-  }, []);
+  const { data: session } = useSession();
 
   const displayOffers = useMemo(() => {
     return SEED_OFFERS.filter((o) => o.category.toLowerCase() === activeTab.toLowerCase());
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
+    <div className={`min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden ${session ? "pt-24" : ""}`}>
 
       {/* ═══ HEADER ═══ */}
-      <header className="fixed top-0 w-full z-50 bg-[#050814]/80 backdrop-blur-xl border-b border-blue-900/30 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+      <header className={`sticky ${session ? "top-24" : "top-0"} w-full z-50 bg-[#050814]/80 backdrop-blur-xl border-b border-blue-900/30 shadow-[0_4px_30px_rgba(0,0,0,0.5)]`}>
         <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
           
           {/* Logo */}
-          <a href="#club" className="flex items-center gap-3 cursor-pointer group">
+          <a href="/" className="flex items-center gap-3 cursor-pointer group">
             {/* Minimal wing ornament */}
             <div className="w-8 h-8 opacity-60 group-hover:opacity-100 transition-opacity">
                <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-blue-400" stroke="currentColor" strokeWidth="1.5">
@@ -157,7 +150,7 @@ export default function Aion2ClubPage() {
       </header>
 
       {/* ═══ HERO SECTION ═══ */}
-      <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden pt-20">
+      <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
         
         {/* Background Video (with dark blue overlay) */}
         <div className="absolute inset-0 z-0">
@@ -194,7 +187,7 @@ export default function Aion2ClubPage() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.5 }} className="mt-12">
-            <button className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(168,85,247,0.5)] transition-all duration-500">
+            <motion.a href="/aion2/create-offer" className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(168,85,247,0.5)] transition-all duration-500">
               {/* Animated border gradient */}
               <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
               
@@ -205,7 +198,7 @@ export default function Aion2ClubPage() {
                  </span>
                  <span className="text-blue-300 group-hover:translate-x-1 transition-transform">›</span>
               </div>
-            </button>
+            </motion.a>
           </motion.div>
         </div>
       </section>

@@ -622,9 +622,7 @@ export default function HomePage() {
            (u: any) => String(u.id) === String(currentUserId) || u.username === currentUserId
         );
         const sub = user?.subscription;
-        const isSecretClub =
-           currentUserId === "1497295886223544471" ||
-           (sub?.tier === "secret_club" && (!sub.endDate || Date.now() <= sub.endDate));
+        const isSecretClub = true;
         if (!isSecretClub) {
             syncAutoApplyEnabled(false);
         }
@@ -1686,9 +1684,7 @@ export default function HomePage() {
            (u: any) => String(u.id) === String(currentUserId) || u.username === currentUserId
         );
         const sub = user?.subscription;
-        const isSecretClub =
-           currentUserId === "1497295886223544471" ||
-           (sub?.tier === "secret_club" && (!sub.endDate || Date.now() <= sub.endDate));
+        const isSecretClub = true;
         if (!autoApplyEnabled || !isSecretClub) return;
         if (myCharacters.length === 0 || !autoApplyCharId) return;
         const selectedChar = myCharacters.find((c) => String(c.id) === String(autoApplyCharId));
@@ -2110,15 +2106,8 @@ export default function HomePage() {
     }, [session, currentUserDiscordHandle, registeredUsers]);
 
     const getUserTier = useCallback((userId?: string): "free" | "secret_club" => {
-        if (!userId) return "free";
-        if (userId === "1497295886223544471") return "secret_club";
-        const user = registeredUsers.find((u: any) => String(u.id) === String(userId) || u.username === userId);
-        if (!user?.subscription) return "free";
-        const sub = user.subscription;
-        if (sub.tier !== "secret_club") return "free";
-        if (sub.endDate && Date.now() > sub.endDate) return "free";
         return "secret_club";
-     }, [registeredUsers]);
+     }, []);
 
      const activeBoostLobbyIds = useMemo(() => {
         const activeLobbies = lobbies.filter((l) => isLobbyListedInPublicFeed(l));
@@ -2259,7 +2248,7 @@ export default function HomePage() {
       useEffect(() => {
         if (!currentUserId) return;
         const user = registeredUsers.find((u: any) => String(u.id) === String(currentUserId) || u.username === currentUserDiscordHandle);
-        if (user?.subscription?.endDate && user.subscription.tier !== "free" && Date.now() > user.subscription.endDate) {
+        if (false && user?.subscription?.endDate && user.subscription.tier !== "free" && Date.now() > user.subscription.endDate) {
           const updatedUsers = registeredUsers.map((u: any) =>
              String(u.id) === String(currentUserId) || u.username === currentUserDiscordHandle
                 ? revokeSecretClubPerks({
