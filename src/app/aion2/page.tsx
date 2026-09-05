@@ -145,10 +145,10 @@ export default function Aion2ClubPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#04050d] text-white relative selection:bg-cyan-500 selection:text-black font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#03040c] text-white relative selection:bg-cyan-500 selection:text-black font-sans overflow-x-hidden">
 
       {/* ═══ HEADER ═══ */}
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#050612]/70 border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-2xl bg-[#050611]/75 border-b border-cyan-200/[0.12] shadow-[0_8px_42px_rgba(0,0,0,0.7)]">
         <div className="max-w-[1700px] mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
 
           {/* Logo */}
@@ -163,7 +163,7 @@ export default function Aion2ClubPage() {
               const Icon = item.icon;
               const active = !!item.active;
               return (
-                <a key={item.label} href={item.href} className={active ? "flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black tracking-[0.18em] text-cyan-200 bg-cyan-500/15 border border-cyan-400/50 shadow-[0_0_14px_rgba(0,255,255,0.3)]" : "flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black tracking-[0.18em] text-gray-400 hover:text-white hover:bg-white/[0.04] transition-colors"}>
+                <a key={item.label} href={item.href} className={active ? "flex items-center gap-2 px-5 py-2 border-b-2 border-cyan-300 text-[11px] font-black tracking-[0.18em] text-cyan-100 bg-cyan-500/[0.07] shadow-[0_10px_20px_rgba(0,229,255,0.12)]" : "flex items-center gap-2 px-5 py-2 border-b-2 border-transparent text-[11px] font-black tracking-[0.18em] text-gray-400 hover:text-white hover:border-purple-300/50 transition-colors"}>
                   <Icon className={active ? "w-3.5 h-3.5 text-cyan-300" : "w-3.5 h-3.5 text-gray-500"} />
                   <span>{item.label}</span>
                 </a>
@@ -213,7 +213,7 @@ export default function Aion2ClubPage() {
       </header>
 
       {/* ═══ HERO SECTION ═══ */}
-      <section id="club" className="relative min-h-[520px] sm:min-h-[580px] lg:min-h-[640px] flex items-center justify-center overflow-hidden pt-16">
+      <section id="club" className="relative min-h-[620px] sm:min-h-[680px] lg:min-h-[735px] flex items-center justify-center overflow-hidden pt-16">
 
         {/* Full-width animated video background — characters prominent */}
         <video
@@ -228,19 +228,43 @@ export default function Aion2ClubPage() {
           Your browser does not support the video tag.
         </video>
 
-        {/* Lighter overlays so characters stay visible */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#04050d] via-transparent to-[#04050d]/60 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(4,5,13,0.5)_75%)] pointer-events-none" />
+        {/* Cinematic overlays preserve the video while reserving a calm center for the UI. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#03040c] via-[#03040c]/20 to-[#03040c]/65 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,10,30,0.12)_0%,rgba(3,4,12,0.32)_50%,rgba(3,4,12,0.92)_100%)] pointer-events-none" />
+        <div className="absolute left-[-10%] top-[12%] h-[78%] w-[35%] bg-[radial-gradient(ellipse_at_left,rgba(84,209,255,0.22),transparent_66%)] blur-2xl pointer-events-none" />
+        <div className="absolute right-[-10%] top-[12%] h-[78%] w-[35%] bg-[radial-gradient(ellipse_at_right,rgba(154,80,255,0.22),transparent_66%)] blur-2xl pointer-events-none" />
+
+        {/* Hero content — intentionally only an overlay; the Aion 2 video remains the visual lead. */}
+        <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-5 pt-12 text-center">
+          <div className="mb-4 flex items-center gap-3 text-[9px] font-black tracking-[0.42em] text-cyan-100/80 sm:text-[10px]">
+            <span className="h-px w-10 bg-gradient-to-r from-transparent to-cyan-200/70" />
+            AION 2 COMMUNITY LOBBY
+            <span className="h-px w-10 bg-gradient-to-l from-transparent to-cyan-200/70" />
+          </div>
+          <h1 className="font-serif text-5xl font-black leading-[0.86] tracking-[0.08em] text-white drop-shadow-[0_0_28px_rgba(174,222,255,0.72)] sm:text-7xl lg:text-8xl">
+            FIND YOUR
+            <span className="mt-3 block bg-gradient-to-r from-cyan-100 via-white to-violet-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(124,105,255,0.8)]">CREW</span>
+          </h1>
+          <div className="mt-6 flex items-center gap-3 text-[10px] font-black tracking-[0.28em] text-cyan-100/90 sm:text-[11px]">
+            <span className="h-px w-8 bg-cyan-200/60" /> KEYS <span className="text-violet-300">•</span> BOOSTS <span className="text-violet-300">•</span> LEVELING <span className="h-px w-8 bg-cyan-200/60" />
+          </div>
+          <p className="mt-4 max-w-md text-sm font-medium leading-relaxed text-slate-200/85 sm:text-base">Find trusted Daevas for your next dungeon, leveling route, or ranked push.</p>
+          <button type="button" onClick={() => setShowCreate(true)} className="group relative mt-8 inline-flex min-w-[280px] items-center justify-center overflow-hidden rounded-sm border border-cyan-100/80 bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-8 py-4 text-xs font-black tracking-[0.22em] text-white shadow-[0_0_0_1px_rgba(197,241,255,0.35),0_0_30px_rgba(90,120,255,0.65)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.8),0_0_48px_rgba(122,94,255,0.9)]">
+            <span className="absolute inset-[3px] border border-white/20 opacity-70" />
+            <Sparkles className="mr-3 h-4 w-4 text-cyan-100 transition-transform group-hover:rotate-12" /> CREATE YOUR OFFER <ArrowRight className="ml-3 h-4 w-4" />
+          </button>
+          <p className="mt-3 text-[9px] font-black tracking-[0.26em] text-slate-300/80">FAST <span className="text-cyan-300">•</span> CLEAR <span className="text-cyan-300">•</span> NO CLUTTER</p>
+        </div>
       </section>
 
       {/* ═══ FILTER TABS ═══ */}
-      <section className="px-4 sm:px-6 relative z-20 -mt-2 mb-8">
+      <section className="px-4 sm:px-6 relative z-20 -mt-10 mb-8">
         <div className="max-w-3xl mx-auto flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
           {FILTER_TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             const Icon = tab.icon;
             return (
-              <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={isActive ? "flex items-center gap-2.5 px-6 sm:px-8 py-3 rounded-full text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-gradient-to-r from-cyan-500/20 via-blue-600/30 to-purple-600/20 border-2 border-cyan-300/70 text-white shadow-[0_0_20px_rgba(0,255,255,0.35)] scale-105" : "flex items-center gap-2.5 px-6 sm:px-8 py-3 rounded-full text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-[#070b1e]/60 border border-white/[0.1] text-gray-400 hover:text-white hover:border-cyan-400/40"}>
+              <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={isActive ? "flex min-w-[148px] items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-sm text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-gradient-to-r from-cyan-500/25 via-blue-600/35 to-purple-600/25 border border-cyan-100/80 text-white shadow-[0_0_20px_rgba(0,255,255,0.35)] scale-105" : "flex min-w-[148px] items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-sm text-[11px] sm:text-xs font-black tracking-[0.2em] uppercase transition-all duration-300 cursor-pointer bg-[#070b1e]/85 border border-white/[0.14] text-gray-300 hover:text-white hover:border-cyan-400/60"}>
                 <Icon className={isActive ? "w-4 h-4 text-cyan-300" : "w-4 h-4 text-gray-500"} />
                 <span>{tab.label}</span>
               </button>
