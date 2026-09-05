@@ -50,79 +50,87 @@ export default function Aion2ClassDetailPage({ params }: { params: { cls: string
           </Link>
         </header>
 
-        {/* Hero */}
-        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-[#070a1a]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-          {/* Class video cinematic */}
-          {cls.video ? (
-            <video
-              className="w-full h-[300px] sm:h-[420px] object-cover"
-              controls
-              autoPlay
-              muted
-              loop
-              playsInline
-              poster={undefined}
-            >
-              <source src={cls.video} type="video/mp4" />
-            </video>
-          ) : (
-            <div className="w-full h-[300px] sm:h-[420px] flex items-center justify-center"
-              style={{ background: `radial-gradient(70% 70% at 50% 40%, ${cls.color}18, transparent)` }}>
-              <Icon className="w-28 h-28" style={{ color: cls.color }} />
-            </div>
-          )}
+        {/* Hero — Shorts-style vertical video with info beside it */}
+        <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10">
 
-          {/* Overlay bottom info */}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/50 to-transparent p-6 sm:p-8">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl border flex items-center justify-center bg-black/50 backdrop-blur-md"
-                style={{ borderColor: `${cls.color}66`, boxShadow: `0 0 20px ${cls.glow}` }}>
-                <Icon className="w-7 h-7" style={{ color: cls.color }} />
+          {/* Vertical video card (like a real Short) */}
+          <div className="relative shrink-0 w-full max-w-[280px] sm:max-w-[360px] rounded-3xl overflow-hidden border border-white/10 bg-[#070a1a]/80 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+            {cls.video ? (
+              <video
+                className="w-full aspect-[9/16] object-cover"
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+              >
+                <source src={cls.video} type="video/mp4" />
+              </video>
+            ) : (
+              <div className="w-full aspect-[9/16] flex items-center justify-center"
+                style={{ background: `radial-gradient(70% 70% at 50% 40%, ${cls.color}18, transparent)` }}>
+                <Icon className="w-28 h-28" style={{ color: cls.color }} />
               </div>
-              <div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="text-3xl sm:text-4xl font-black tracking-[0.12em] uppercase font-serif text-white">{cls.name}</h1>
-                  <span className="px-2.5 py-1 rounded-md text-[9px] font-black tracking-widest uppercase border"
+            )}
+
+            {/* Bottom caption overlay inside video */}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/50 to-transparent p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl border flex items-center justify-center bg-black/50 backdrop-blur-md"
+                  style={{ borderColor: `${cls.color}66`, boxShadow: `0 0 16px ${cls.glow}` }}>
+                  <Icon className="w-5 h-5" style={{ color: cls.color }} />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black tracking-[0.12em] uppercase font-serif text-white">{cls.name}</h1>
+                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[8px] font-black tracking-widest uppercase border"
                     style={{ color: cls.color, borderColor: `${cls.color}55`, backgroundColor: `${cls.color}14` }}>
                     {cls.role}
                   </span>
                 </div>
-                <p className="mt-1 text-xs sm:text-sm text-gray-300 font-medium">{cls.tagline}</p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* About + CTA */}
-        <div className="mt-8 flex flex-col md:flex-row gap-6 items-start">
-          {/* Description */}
-          <div className="flex-1 rounded-2xl border border-white/[0.08] bg-[#070a1a]/70 backdrop-blur-xl p-6">
-            <h2 className="text-xs font-black tracking-[0.25em] uppercase text-cyan-200 flex items-center gap-2 mb-4 font-serif">
-              <BookOpen className="w-4 h-4 text-cyan-300" /> ABOUT THE {cls.name.toUpperCase()}
-            </h2>
-            <p className="text-sm text-gray-300 leading-relaxed">
-              The <span className="text-white font-black">{cls.name}</span> is a {cls.role.toLowerCase()} in Aion 2.
-              Masters of their craft, they bring a unique playstyle to any party —
-              whether leading the charge in the Abyss or supporting the squad through the toughest dungeons.
-            </p>
-            <div className="mt-5 grid grid-cols-3 gap-3">
+          {/* Info column */}
+          <div className="flex-1 w-full flex flex-col gap-6">
+            {/* Tagline header */}
+            <div>
+              <h2 className="text-lg sm:text-2xl font-black tracking-[0.1em] uppercase text-white font-serif">{cls.name}</h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-300 font-medium leading-relaxed">{cls.tagline}</p>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3">
               {[
                 { icon: Users, label: "Party Role", value: cls.role.split(" / ")[0] },
                 { icon: Shield, label: "Defense", value: cls.role.includes("Tank") ? "High" : "Medium" },
                 { icon: Flame, label: "Damage", value: cls.role.includes("DPS") ? "High" : "Medium" },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl bg-white/[0.03] border border-white/10 p-3 text-center">
-                  <s.icon className="w-4 h-4 mx-auto mb-1.5" style={{ color: cls.color }} />
+                <div key={s.label} className="rounded-2xl bg-[#070a1a]/70 border border-white/10 p-4 text-center backdrop-blur-xl">
+                  <s.icon className="w-4 h-4 mx-auto mb-2" style={{ color: cls.color }} />
                   <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{s.label}</p>
-                  <p className="text-[11px] font-black text-white mt-0.5">{s.value}</p>
+                  <p className="text-[12px] font-black text-white mt-1">{s.value}</p>
                 </div>
               ))}
             </div>
 
+            {/* About */}
+            <div className="rounded-2xl border border-white/[0.08] bg-[#070a1a]/70 backdrop-blur-xl p-6">
+              <h3 className="text-xs font-black tracking-[0.25em] uppercase text-cyan-200 flex items-center gap-2 mb-4 font-serif">
+                <BookOpen className="w-4 h-4 text-cyan-300" /> ABOUT
+              </h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
+                The <span className="text-white font-black">{cls.name}</span> is a {cls.role.toLowerCase()} in Aion 2.
+                Masters of their craft, they bring a unique playstyle to any party —
+                whether leading the charge in the Abyss or supporting the squad through the toughest dungeons.
+              </p>
+            </div>
+
+            {/* CTA */}
             <button
               type="button"
               onClick={() => setShowTalents(true)}
-              className="mt-6 w-full py-3.5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] text-white
+              className="w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] text-white
                 bg-gradient-to-r from-cyan-500/25 via-purple-600/25 to-cyan-500/25 border border-cyan-300/40
                 hover:border-cyan-300/70 hover:shadow-[0_0_30px_rgba(0,255,255,0.2)] transition-all
                 flex items-center justify-center gap-2 cursor-pointer"

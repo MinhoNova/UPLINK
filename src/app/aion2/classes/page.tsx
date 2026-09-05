@@ -1,24 +1,25 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronRight, Play, Sparkles } from "lucide-react";
+import { ChevronRight, Play, Sparkles, Heart, MessageCircle, Send, Music } from "lucide-react";
 import { AION_CLASSES_LIST } from "@/lib/aionClasses";
 
-export default function Aion2ClassesPage() {
-  const [hovered, setHovered] = useState<string | null>(null);
+const SHORTS_CLASSES = AION_CLASSES_LIST.slice(0, 8);
 
+const FAKE_COUNTS = ["12K", "847", "361"];
+
+export default function Aion2ClassesPage() {
   return (
     <div className="min-h-screen bg-[#04050d] text-white relative overflow-x-hidden selection:bg-cyan-500 selection:text-black font-sans">
       {/* Background */}
       <div className="fixed inset-0 -z-20 bg-gradient-to-b from-[#060a1c] via-[#04050d] to-[#03040a]" />
       <div className="fixed inset-0 -z-10 opacity-40 pointer-events-none bg-[radial-gradient(60%_40%_at_20%_0%,rgba(56,189,248,0.15),transparent),radial-gradient(50%_40%_at_80%_10%,rgba(168,85,247,0.12),transparent)]" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-10 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-8 pb-20">
 
         {/* Header */}
-        <header className="flex items-center justify-between mb-10">
+        <header className="flex items-center justify-between mb-8">
           <Link href="/aion2" className="flex items-center gap-2 group cursor-pointer">
             <span className="text-2xl sm:text-3xl font-black tracking-[0.2em] bg-gradient-to-r from-white via-cyan-100 to-sky-400 bg-clip-text text-transparent font-serif">AION</span>
             <span className="text-2xl sm:text-3xl font-black italic tracking-wider bg-gradient-to-b from-cyan-200 via-sky-300 to-purple-400 bg-clip-text text-transparent font-serif">2</span>
@@ -30,99 +31,97 @@ export default function Aion2ClassesPage() {
         </header>
 
         {/* Title */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-cyan-300/20 bg-black/30">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full border border-cyan-300/20 bg-black/30">
             <Sparkles className="w-3 h-3 text-cyan-300" />
-            <span className="text-[9px] font-black tracking-[0.3em] text-cyan-100/80 uppercase">Choose Your Legend</span>
+            <span className="text-[9px] font-black tracking-[0.3em] text-cyan-100/80 uppercase">Class Shorts — Choose Your Legend</span>
           </div>
           <h1 className="text-4xl sm:text-6xl font-black tracking-[0.12em] font-serif">
             <span className="bg-gradient-to-b from-white via-cyan-100 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(56,189,248,0.5)]">THE CLASSES</span>
           </h1>
           <p className="mt-3 text-xs sm:text-sm text-gray-400 font-medium max-w-xl mx-auto">
-            Preview every Aion 2 class. Tap a class to watch its cinematic and unlock its talents.
+            Watch each class cinematic, then tap to unlock talents and everything about it.
           </p>
         </div>
 
-        {/* Class grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {AION_CLASSES_LIST.map((cls, i) => {
+        {/* Shorts grid — 4 up / 4 down */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+          {SHORTS_CLASSES.map((cls, i) => {
             const Icon = cls.icon;
             const hasVideo = !!cls.video;
             return (
               <motion.div
                 key={cls.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                onMouseEnter={() => setHovered(cls.id)}
-                onMouseLeave={() => setHovered(null)}
+                transition={{ delay: i * 0.06 }}
+                className="relative"
               >
                 <Link
                   href={`/aion2/classes/${cls.id}`}
-                  className="group relative block rounded-3xl overflow-hidden border border-white/10 hover:border-cyan-400/50 bg-[#070a1a]/80 backdrop-blur-xl
-                    shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(56,189,248,0.2)]
-                    transition-all duration-300 hover:-translate-y-1"
+                  className="group relative block aspect-[9/16] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 hover:border-cyan-400/60
+                    bg-[#070a1a] shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_0_45px_rgba(56,189,248,0.25)]
+                    transition-all duration-300 hover:scale-[1.02]"
                 >
-                  {/* Preview video (Ranger and future classes) */}
-                  {hasVideo && (
-                    <div className="relative h-44 w-full overflow-hidden">
-                      <video
-                        className="absolute inset-0 w-full h-full object-cover"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                      >
-                        <source src={cls.video} type="video/mp4" />
-                      </video>
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#070a1a] to-transparent" />
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-14 h-14 rounded-full bg-cyan-400/30 border-2 border-cyan-300/80 backdrop-blur-md flex items-center justify-center shadow-[0_0_25px_rgba(0,255,255,0.5)]">
-                          <Play className="w-6 h-6 text-white fill-white ml-1" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Non-video placeholder */}
-                  {!hasVideo && (
-                    <div className="relative h-44 w-full flex items-center justify-center"
-                      style={{ background: `radial-gradient(80% 80% at 50% 30%, ${cls.color}14, transparent)` }}
+                  {/* Shorts video fills the full tall card */}
+                  {hasVideo ? (
+                    <video
+                      className="absolute inset-0 w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
                     >
-                      <div className="relative">
-                        <div className="absolute inset-0 rounded-full opacity-40 blur-2xl" style={{ backgroundColor: cls.color }} />
-                        <Icon className="w-16 h-16 relative" style={{ color: cls.color }} />
-                      </div>
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="px-4 py-2 rounded-full bg-white/10 border border-white/30 backdrop-blur-md flex items-center gap-1.5 text-[10px] font-black tracking-widest">
-                          <Play className="w-3 h-3" /> COMING SOON
-                        </div>
-                      </div>
+                      <source src={cls.video} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: `radial-gradient(90% 70% at 50% 35%, ${cls.color}1f, transparent)` }}>
+                      <Icon className="w-16 h-16" style={{ color: cls.color }} />
                     </div>
                   )}
 
-                  {/* Info */}
-                  <div className="relative p-5">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center border"
-                          style={{ borderColor: `${cls.color}66`, backgroundColor: `${cls.color}1a` }}>
-                          <Icon className="w-4 h-4" style={{ color: cls.color }} />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black tracking-widest text-white uppercase font-serif">{cls.name}</h3>
-                          <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{cls.role}</p>
-                        </div>
-                      </div>
-                      <span className="text-gray-500 group-hover:text-cyan-300 transition-colors"><ChevronRight className="w-4 h-4" /></span>
+                  {/* cinematic scrim */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/30 pointer-events-none" />
+
+                  {/* play badge (always visible, like Shorts) */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-white/15 border border-white/50 backdrop-blur-md flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.5)] opacity-90 group-hover:opacity-100">
+                      <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                     </div>
-                    <div className="mt-3 text-[10px] text-gray-400 font-medium leading-relaxed line-clamp-2">{cls.talent}</div>
                   </div>
 
-                  {/* Bottom accent */}
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ background: `linear-gradient(to right, transparent, ${cls.color}, transparent)` }} />
+                  {/* right action rail (Shorts style) */}
+                  <div className="absolute right-2 sm:right-3 bottom-20 sm:bottom-24 flex flex-col items-center gap-3 pointer-events-none">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <Heart className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                      <span className="text-[8px] font-black text-white/90">{FAKE_COUNTS[0]}</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <MessageCircle className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                      <span className="text-[8px] font-black text-white/90">{FAKE_COUNTS[1]}</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <Send className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+                      <span className="text-[8px] font-black text-white/90">{FAKE_COUNTS[2]}</span>
+                    </div>
+                  </div>
+
+                  {/* bottom info (Shorts-like caption) */}
+                  <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border flex items-center justify-center"
+                        style={{ backgroundColor: `${cls.color}2a`, borderColor: `${cls.color}88` }}>
+                        <Icon className="w-3.5 h-3.5" style={{ color: cls.color }} />
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] font-black text-cyan-200">{cls.name}</span>
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-black tracking-wide text-white uppercase font-serif leading-tight">{cls.tagline.split("—")[0]}</h3>
+                    <p className="mt-1 text-[8px] sm:text-[9px] text-gray-300 font-bold flex items-center gap-1">
+                      <Music className="w-3 h-3 text-gray-400" /> {cls.role}
+                    </p>
+                  </div>
                 </Link>
               </motion.div>
             );
@@ -132,7 +131,7 @@ export default function Aion2ClassesPage() {
         {/* Footer note */}
         <div className="mt-12 text-center">
           <p className="text-[10px] text-gray-600 font-black uppercase tracking-[0.3em]">
-            AION 2 COMMUNITY LOBBY <span className="text-cyan-500/70">&bull;</span> CLASS GALLERY
+            AION 2 COMMUNITY LOBBY <span className="text-cyan-500/70">&bull;</span> CLASS SHORTS
           </p>
         </div>
       </div>
