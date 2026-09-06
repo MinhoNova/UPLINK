@@ -1,21 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useSession } from "next-auth/react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import {
-  Swords, Shield, Coins, Bell, ChevronDown, Zap, Users, Search,
-  Crown, Sparkles, Flame, Star, BookOpen, MessageSquare, ClipboardList
+  Swords, Shield, Coins, Zap, Users, Search,
+  Sparkles, Star, MessageSquare, ClipboardList
 } from "lucide-react";
-
-/* ── NAV ── */
-const NAV_ITEMS = [
-  { label: "CLUB", icon: Crown, href: "#club", active: true },
-  { label: "MISSIONS", icon: Swords, href: "#offers" },
-  { label: "MARKET", icon: Coins, href: "#offers" },
-  { label: "SUPPORT", icon: Search, href: "#support" },
-];
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -69,85 +60,13 @@ const SEED_OFFERS: OfferCard[] = [
 export default function Aion2ClubPage() {
   const [activeTab, setActiveTab] = useState("Dungeons");
   const [activeDock, setActiveDock] = useState("chat");
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { data: session } = useSession();
 
   const displayOffers = useMemo(() => {
     return SEED_OFFERS.filter((o) => o.category.toLowerCase() === activeTab.toLowerCase());
   }, [activeTab]);
 
   return (
-    <div className={`min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden ${session ? "pt-24" : ""}`}>
-
-      {/* ═══ HEADER ═══ */}
-      <header className={`sticky ${session ? "top-24" : "top-0"} w-full z-50 bg-[#050814]/80 backdrop-blur-xl border-b border-blue-900/30 shadow-[0_4px_30px_rgba(0,0,0,0.5)]`}>
-        <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
-          
-          {/* Logo */}
-          <a href="/" className="flex items-center gap-3 cursor-pointer group">
-            {/* Minimal wing ornament */}
-            <div className="w-8 h-8 opacity-60 group-hover:opacity-100 transition-opacity">
-               <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-blue-400" stroke="currentColor" strokeWidth="1.5">
-                 <path d="M12 22s-8-4.5-8-11.8A6 6 0 0 1 12 2a6 6 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
-               </svg>
-            </div>
-            <div className="flex items-baseline tracking-widest font-serif">
-              <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-blue-200 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">AION</span>
-              <span className="text-4xl font-black italic ml-1 text-transparent bg-clip-text bg-gradient-to-b from-blue-300 to-purple-400 drop-shadow-[0_0_15px_rgba(120,160,255,0.5)]">2</span>
-            </div>
-          </a>
-
-          {/* Center Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = !!item.active;
-              return (
-                <a key={item.label} href={item.href} className="flex items-center gap-2 group cursor-pointer">
-                  <Icon className={`w-4 h-4 transition-colors ${active ? "text-blue-400" : "text-slate-500 group-hover:text-blue-300"}`} />
-                  <span className={`text-xs font-bold tracking-[0.2em] transition-colors ${active ? "text-white" : "text-slate-400 group-hover:text-slate-200"}`}>
-                    {item.label}
-                  </span>
-                </a>
-              );
-            })}
-          </nav>
-
-          {/* Right Controls */}
-          <div className="flex items-center gap-5">
-            <button className="relative text-slate-400 hover:text-blue-300 transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-            </button>
-
-            <div className="relative">
-              <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full bg-[#0a0f26]/80 border border-blue-900/50 hover:border-blue-500/50 transition-all shadow-inner group">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-800 p-0.5 shadow-[0_0_10px_rgba(59,130,246,0.3)]">
-                  <div className="w-full h-full rounded-full bg-[#050814] flex items-center justify-center overflow-hidden">
-                    {/* Placeholder for portrait */}
-                    <span className="text-[10px] font-bold text-blue-200">OS</span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-bold tracking-widest text-white uppercase group-hover:text-blue-100">OMAR SALEH</span>
-                <span className="px-2 py-0.5 rounded-full text-[8px] font-black tracking-widest border border-purple-500/30 bg-purple-500/10 text-purple-300">CLUB</span>
-                <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              <AnimatePresence>
-                {userMenuOpen && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 mt-3 w-56 bg-[#0a0f26]/95 backdrop-blur-xl border border-blue-900/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] p-2 z-50">
-                    {["Profile", "My Characters", "Wallet", "Settings"].map((item) => (
-                      <button key={item} className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-blue-600/20 transition-all flex justify-between items-center">
-                        {item}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
 
       {/* ═══ HERO SECTION ═══ */}
       <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
@@ -167,10 +86,6 @@ export default function Aion2ClubPage() {
         <div className="relative z-10 flex flex-col items-center text-center mt-12">
           
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="flex flex-col items-center">
-            {/* Massive Title mimicking mockup */}
-            <h1 className="text-7xl sm:text-9xl font-black font-serif tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white via-blue-100 to-blue-500 drop-shadow-[0_0_40px_rgba(59,130,246,0.6)] mb-2">
-              AION <span className="italic text-purple-400">2</span>
-            </h1>
             
             <div className="flex items-center gap-6 mt-4">
               <span className="h-px w-16 bg-gradient-to-r from-transparent to-blue-400/50" />
