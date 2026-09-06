@@ -7,6 +7,8 @@ import {
   Swords, Shield, Coins, Zap, Users, Search,
   Sparkles, Star, MessageSquare, ClipboardList
 } from "lucide-react";
+import { useI18n } from "@/i18n/i18n";
+import { useFlag } from "@/lib/siteFlags";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -67,18 +69,19 @@ const BG_VIDEOS = [
 function BgSlideshow() {
   const [idx, setIdx] = useState(0);
   const refs = useRef<(HTMLVideoElement | null)[]>([]);
+  const motionOn = useFlag("uplink_bg_motion", true);
 
   useEffect(() => {
     refs.current.forEach((v, i) => {
       if (!v) return;
-      if (i === idx) {
+      if (i === idx && motionOn) {
         v.currentTime = 0;
         v.play().catch(() => {});
       } else {
         v.pause();
       }
     });
-  }, [idx]);
+  }, [idx, motionOn]);
 
   return (
     <div className="absolute inset-0">
@@ -103,6 +106,7 @@ function BgSlideshow() {
 }
 
 export default function Aion2ClubPage() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("Dungeons");
   const [activeDock, setActiveDock] = useState("chat");
 
@@ -114,7 +118,7 @@ export default function Aion2ClubPage() {
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
 
       {/* ═══ HERO SECTION ═══ */}
-      <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="tn-hero relative w-full h-[600px] flex items-center justify-center overflow-hidden">
         
         {/* Background Video (sequential seamless crossfade) */}
         <div className="absolute inset-0 z-0">
@@ -132,16 +136,16 @@ export default function Aion2ClubPage() {
             
             <div className="flex items-center gap-6 mt-4">
               <span className="h-px w-16 bg-gradient-to-r from-transparent to-blue-400/50" />
-              <h2 className="text-sm sm:text-base font-bold tracking-[0.4em] text-blue-100 uppercase">Find Your Crew</h2>
+              <h2 className="text-sm sm:text-base font-bold tracking-[0.4em] text-blue-100 uppercase">{t("hero_crew")}</h2>
               <span className="h-px w-16 bg-gradient-to-l from-transparent to-blue-400/50" />
             </div>
 
             <p className="mt-4 text-[11px] font-bold tracking-[0.3em] text-slate-400 uppercase">
-              Keys <span className="mx-2 text-purple-500/50">✦</span> 
-              Boosts <span className="mx-2 text-purple-500/50">✦</span> 
-              Leveling
+              {t("hero_tagline").split("·").map((part, i) => (
+                <span key={i}>{i > 0 && <span className="mx-2 text-purple-500/50">✦</span>}{part}</span>
+              ))}
             </p>
-            <p className="mt-2 text-xs text-slate-500 font-medium">Find trusted players for your next adventure.</p>
+            <p className="mt-2 text-xs text-slate-500 font-medium">{t("hero_adventure")}</p>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.5 }} className="mt-12">
@@ -152,8 +156,8 @@ export default function Aion2ClubPage() {
               {/* Button inner */}
               <div className="relative bg-[#0a0f26]/90 backdrop-blur-xl px-16 py-4 rounded-full flex items-center justify-center gap-4">
                  <span className="text-xs font-black tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">
-                   Create Your Offer
-                 </span>
+                  {t("hero_create")}
+                </span>
                  <span className="text-blue-300 group-hover:translate-x-1 transition-transform">›</span>
               </div>
             </motion.a>
@@ -170,7 +174,7 @@ export default function Aion2ClubPage() {
             return (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${isActive ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40' : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'}`}>
                 <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
-                <span>{tab.label}</span>
+                <span>{t("tab_" + tab.key.toLowerCase())}</span>
                 {isActive && (
                   <span className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-12 h-[2px] bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,1)] rounded-full" />
                 )}
@@ -204,18 +208,18 @@ export default function Aion2ClubPage() {
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-blue-900/30">
               <div className="flex items-center gap-3">
                 <Sparkles className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-black tracking-[0.25em] text-blue-100 uppercase font-serif">Available Offers</h3>
+                <h3 className="text-sm font-black tracking-[0.25em] text-blue-100 uppercase font-serif">{t("offers_header")}</h3>
               </div>
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-bold tracking-widest text-emerald-300 uppercase">New Offers Online</span>
+                <span className="text-[9px] font-bold tracking-widest text-emerald-300 uppercase">{t("offers_online")}</span>
               </div>
             </div>
 
             {/* Offer List */}
             <div className="space-y-4">
               {displayOffers.map((offer) => (
-                <motion.div key={offer.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ scale: 1.01 }} className="relative w-full h-24 rounded-full bg-[#0a0f26] border border-blue-900/40 overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all">
+                <motion.div key={offer.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ scale: 1.01 }} className="tn-light relative w-full h-24 rounded-full bg-[#0a0f26] border border-blue-900/40 overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all">
                   
                   {/* Mockup placeholder background (Right side gradient/image) */}
                   <div className={`absolute right-0 top-0 bottom-0 w-2/3 bg-gradient-to-l ${offer.bgTheme} pointer-events-none opacity-50 group-hover:opacity-80 transition-opacity`} />
@@ -228,7 +232,7 @@ export default function Aion2ClubPage() {
 
                     {/* Offer Details */}
                     <div className="flex-1">
-                      <h4 className="text-sm font-black tracking-widest text-white uppercase group-hover:text-blue-200 transition-colors">{offer.name}</h4>
+                      <h4 className="text-sm font-black tracking-widest text-white uppercase group-hover:text-blue-200 transition-colors">{t(offer.id === "seed-1" ? "offer_dungeonboost" : "offer_leveling")}</h4>
                       <div className="flex items-center gap-5 mt-2">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-blue-200/80">
                           <span>{offer.playersMeta}</span>
@@ -240,7 +244,7 @@ export default function Aion2ClubPage() {
                         </div>
                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400">
                           <Coins className="w-3 h-3" />
-                          <span>{offer.rewardLabel}</span>
+                          <span>{t(offer.id === "seed-1" ? "reward_25k" : "reward_50k")}</span>
                         </div>
                       </div>
                     </div>
@@ -249,9 +253,9 @@ export default function Aion2ClubPage() {
               ))}
 
               {displayOffers.length === 0 && (
-                <div className="text-center py-16 bg-[#0a0f26]/40 border border-blue-900/30 rounded-[2rem]">
+                <div className="tn-light text-center py-16 bg-[#0a0f26]/40 border border-blue-900/30 rounded-[2rem]">
                   <Search className="w-8 h-8 text-slate-600 mx-auto mb-3" />
-                  <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">No matching offers found</p>
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{t("offers_empty")}</p>
                 </div>
               )}
             </div>
@@ -259,12 +263,12 @@ export default function Aion2ClubPage() {
 
           {/* 3. Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
-             <div className="relative w-full rounded-3xl bg-[#0a0f26]/80 backdrop-blur-xl border border-blue-900/40 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+             <div className="tn-light relative w-full rounded-3xl bg-[#0a0f26]/80 backdrop-blur-xl border border-blue-900/40 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
                
                {/* Widget Header */}
                <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
                  <Shield className="w-4 h-4 text-blue-400" />
-                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">Ongoing Missions</h3>
+                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">{t("missions_header")}</h3>
                </div>
 
                {/* Empty State */}
@@ -278,7 +282,7 @@ export default function Aion2ClubPage() {
                      <circle cx="50" cy="55" r="4" fill="#93c5fd" />
                    </svg>
                  </div>
-                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">No Active Missions</p>
+                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{t("missions_empty")}</p>
                </div>
              </div>
           </aside>

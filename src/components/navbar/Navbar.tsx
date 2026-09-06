@@ -4,17 +4,23 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { resolveProfileImage } from "@/lib/profileImage";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
+import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
+import { useFlag, setFlag } from "@/lib/siteFlags";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const { theme, toggleTheme } = useThemePreference();
+  const { t, lang } = useI18n();
+  const motionOn = useFlag("uplink_bg_motion", true);
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -122,6 +128,9 @@ export default function Navbar() {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
       }
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -164,7 +173,7 @@ export default function Navbar() {
   };
 
   const getUserTierLabel = (userId: string) => {
-    return { label: "★ CLUB", color: "text-purple-400 bg-purple-500/10 border-purple-500/30" };
+    return { label: `★ ${t("nav_club")}`, color: "text-purple-400 bg-purple-500/10 border-purple-500/30" };
   };
 
   const getAvatarForEffect = () => {
@@ -199,24 +208,19 @@ export default function Navbar() {
                   {pathname === '/community' ? 'CLUB' : 'Uplink'}
                 </span>
               </span>
-              {pathname !== '/community' && (
-                <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.28em] text-amber-400/95">
-                  Beta
-                </span>
-              )}
             </div>
           </a>
 
           <div className="flex items-center gap-4">
             <div className="flex bg-black/5 dark:bg-black/20 p-1.5 rounded-2xl gap-2 ml-8 border border-black/5 dark:border-white/5 transition-all shadow-inner">
-            <motion.button title={pathname === '/community' ? 'Back to Home' : getUserTier(currentUserId) === "free" ? 'Secret Club' : 'CLUB'} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-5 py-2.5 rounded-xl flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
+            <motion.button title={pathname === '/community' ? t('nav_backHome') : getUserTier(currentUserId) === "free" ? t('nav_club') : t('nav_club')} onClick={() => { if (pathname === '/community') { window.location.href = '/'; return; } if (getUserTier(currentUserId) === "free") { window.dispatchEvent(new CustomEvent('show-toast', { detail: { msg: 'Secret Club is a premium feature. Subscribe to unlock.', type: 'error' } })); return; } window.location.href = '/community'; }} className={`px-5 py-2.5 rounded-xl flex items-center gap-2 font-black uppercase text-[11px] tracking-widest transition-all border ${getUserTier(currentUserId) === "free" ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${pathname === '/community' ? 'bg-white/5 text-gray-400 hover:text-white border-white/5 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-yellow-500/10 text-[#ffd700] border-yellow-500/30 hover:bg-yellow-500 hover:text-black shadow-[0_0_12px_rgba(255,215,0,0.15)]'}`}>
               <ProtocolMark variant={1} className="w-5 h-5 shrink-0" gold={pathname !== '/community'} />
-              {pathname === '/community' ? 'Uplink' : 'CLUB'}
+              {pathname === '/community' ? t('nav_uplink') : t('nav_club')}
             </motion.button>
             <motion.button title="Direct Messages" onClick={() => {
               window.dispatchEvent(new CustomEvent('toggle-dm'));
             }} className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5 hover:bg-yellow-500/10 hover:border-yellow-500/30 relative">
-              <MessageCircle className="w-4 h-4" /> DM
+              <MessageCircle className="w-4 h-4" /> {t('nav_dm')}
               {dmUnreadCount > 0 && (
                 <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)]">
                   {dmUnreadCount > 99 ? '99+' : dmUnreadCount}
@@ -237,7 +241,7 @@ export default function Navbar() {
               localStorage.setItem("uplink_auto_apply", newVal ? "true" : "false");
               window.dispatchEvent(new CustomEvent('set-auto-apply-enabled', { detail: { enabled: newVal } }));
             }} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-center flex items-center gap-2 ${getUserTier(currentUserId) === "free" || autoFeaturesLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''} ${autoApplyEnabled ? 'bg-[#00ffff]/20 border border-[#00ffff] text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
-              <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? 'LOCKED' : autoFeaturesLocked ? 'IN OFFER' : autoApplyEnabled ? 'Auto ON' : 'Auto OFF'}
+              <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? t('nav_locked') : autoFeaturesLocked ? t('nav_inOffer') : autoApplyEnabled ? t('nav_autoOn') : t('nav_autoOff')}
             </motion.button>
             <motion.button title="Auto-Apply Settings" onClick={() => {
               if (getUserTier(currentUserId) === "free") return;
@@ -249,10 +253,29 @@ export default function Navbar() {
             }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
               ⚙️
             </motion.button>
-            <motion.button title="Toggle Theme" onClick={toggleTheme} className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
+            <motion.button title={t("nav_themeTitle")} onClick={toggleTheme} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
-              {theme === 'dark' ? 'Dark' : 'Light'}
+              {theme === 'dark' ? t('nav_dark') : t('nav_light')}
             </motion.button>
+            <motion.button title={motionOn ? t('nav_motionPause') : t('nav_motionPlay')} onClick={() => setFlag("uplink_bg_motion", !motionOn)} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${motionOn ? 'bg-white/5 text-gray-400 hover:text-white border-white/10 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-[#00ffff]/20 text-[#00ffff] border-[#00ffff] shadow-[0_0_12px_rgba(0,255,255,0.25)]'}`}>
+              {motionOn ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {motionOn ? t('nav_motionPause') : t('nav_motionPlay')}
+            </motion.button>
+            <div className="relative" ref={langRef}>
+              <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/10 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30`}>
+                <Languages className="w-4 h-4" /> {LANGS.find((l) => l.code === lang)?.short || "EN"}
+              </motion.button>
+              {langOpen && (
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="absolute top-full mt-2 right-0 w-44 rounded-2xl border border-white/10 bg-[#0a0a16]/95 backdrop-blur-xl p-1.5 z-50 shadow-2xl">
+                  {LANGS.map((l) => (
+                    <button key={l.code} onClick={() => { setLanguage(l.code); setLangOpen(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${lang === l.code ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30' : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent'}`}>
+                      <span className="text-xs font-black tracking-wide">{l.name}</span>
+                      <span className="text-[9px] font-black uppercase opacity-70">{l.short}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -269,15 +292,15 @@ export default function Navbar() {
                 {isNotifOpen && (
                   <div className={`absolute top-full mt-4 right-0 w-80 ${theme === 'light' ? 'bg-white shadow-2xl border-black/10' : 'bg-[#0a0a16] border-[#00ffff]/30'} border-2 rounded-2xl p-4 z-50`}>
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-black uppercase text-gray-400 tracking-widest">Alerts</h4>
+                      <h4 className="text-sm font-black uppercase text-gray-400 tracking-widest">{t('nav_alerts')}</h4>
                       {notifications.length > 0 && (
                         <button onClick={() => setNotifications([])} className="text-[9px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 px-2 py-1 rounded-lg hover:bg-white/5 transition-all">
-                          CLEAR ALL
+                          {t('nav_clearAll')}
                         </button>
                       )}
                     </div>
                     {notifications.length === 0 ? (
-                      <p className="text-xs text-center text-gray-500 py-4 italic">No alerts</p>
+                      <p className="text-xs text-center text-gray-500 py-4 italic">{t('nav_noAlerts')}</p>
                     ) : (
                       notifications.map((n: any) => (
                         <div key={n.id} className={`relative ${theme === 'light' ? 'bg-gray-100' : 'bg-white/5'} p-3 rounded-xl border border-white/10 mb-2 transition-all group`}>
@@ -307,7 +330,7 @@ export default function Navbar() {
                   fallbackName={currentUser?.name || session?.user?.name || "U"}
                 />
                 <span className="text-xs font-black uppercase tracking-widest hidden sm:block text-white/80 truncate max-w-[100px]">{currentUser?.name || session.user.name}</span>
-                <span className="text-[8px] font-black uppercase tracking-widest text-[#00ffff] px-2 py-0.5 rounded-md bg-[#00ffff]/10">MY PROFILE</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-[#00ffff] px-2 py-0.5 rounded-md bg-[#00ffff]/10">{t('nav_myProfile')}</span>
               </button>
               )}
 
@@ -337,7 +360,7 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || "Operative")}</span>
+                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}</span>
                   {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</span> : null; })()}
                 </button>
               </div>
@@ -345,7 +368,7 @@ export default function Navbar() {
             </div>
           ) : (
             <motion.button onClick={() => signIn("discord")} className="px-8 py-4 rounded-xl border-2 border-[#00ffff] text-[#00ffff] font-black text-lg uppercase tracking-widest hover:bg-[#00ffff] hover:text-black transition-all shadow-xl">
-              ACCESS TERMINAL
+              {t('nav_access')}
             </motion.button>
           )}
         </div>

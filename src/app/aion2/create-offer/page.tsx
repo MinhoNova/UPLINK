@@ -202,7 +202,7 @@ export default function Aion2CreateOfferPage() {
             <main className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-8">
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
                 {/* ── LEFT: BUILDER ── */}
-                <section className="rounded-2xl border border-white/[0.09] bg-[#070a1c]/80 shadow-[0_20px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                <section className="tn-light rounded-2xl border border-white/[0.09] bg-[#070a1c]/80 shadow-[0_20px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] bg-gradient-to-r from-cyan-500/[0.06] via-transparent to-purple-500/[0.06] px-5 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
                       <span className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/40 bg-gradient-to-b from-cyan-500/20 to-purple-600/20 shadow-[0_0_18px_rgba(0,229,255,0.18)]">
@@ -419,7 +419,7 @@ export default function Aion2CreateOfferPage() {
 
                 {/* ── RIGHT: ORDER SUMMARY BOARD ── */}
                 <aside className="h-fit lg:sticky lg:top-6">
-                  <div className="relative overflow-hidden rounded-2xl border border-cyan-300/[0.18] bg-[#070a1c]/85 shadow-[0_0_60px_rgba(0,180,255,0.12)] backdrop-blur-xl">
+                  <div className="tn-light relative overflow-hidden rounded-2xl border border-cyan-300/[0.18] bg-[#070a1c]/85 shadow-[0_0_60px_rgba(0,180,255,0.12)] backdrop-blur-xl">
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
                     <span className="pointer-events-none absolute left-0 top-0 h-5 w-5 rounded-tl-2xl border-l border-t border-cyan-300/40" />
                     <span className="pointer-events-none absolute right-0 top-0 h-5 w-5 rounded-tr-2xl border-r border-t border-cyan-300/40" />

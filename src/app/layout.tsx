@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/navbar/Navbar";
+import ThemeApplier from "@/components/ThemeApplier";
+import { I18nProvider } from "@/i18n/i18n";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
@@ -66,11 +68,14 @@ export default function RootLayout({
     <html lang="en" className="antialiased dark">
       <body className="min-h-screen flex flex-col font-sans">
         <AuthProvider>
-          <Navbar />
-          <DirectCommsPanel />
-          <CommunityNotificationsPanel />
-          <PlayerProfileModal />
-          {children}
+          <I18nProvider>
+            <ThemeApplier />
+            <Navbar />
+            <DirectCommsPanel />
+            <CommunityNotificationsPanel />
+            <PlayerProfileModal />
+            {children}
+          </I18nProvider>
         </AuthProvider>
       </body>
     </html>
