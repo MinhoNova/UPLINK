@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send,
+  Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send, Play,
   Sparkles, Check, Shield, Crown, Clock, Gem, Package, Star, Lock,
 } from "lucide-react";
 import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService } from "@/lib/aionServices";
@@ -16,6 +16,8 @@ const SPEEDS = [
   { label: "Priority", desc: "Queue within 2h", icon: Zap },
   { label: "Express", desc: "Immediate start", icon: Star },
 ];
+
+const FALLBACK_BG = "/aion%202%20bg%20small.mp4";
 
 export default function Aion2CreateOfferPage() {
   const [step, setStep] = useState<Step>("service");
@@ -50,6 +52,8 @@ export default function Aion2CreateOfferPage() {
       ? formatUsd(price)
       : `${(price * 1000).toLocaleString()} KINAH`;
 
+  const bgVideo = sel?.video || FALLBACK_BG;
+
   const advance = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
   const regress = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
   const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("cash"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); };
@@ -57,10 +61,14 @@ export default function Aion2CreateOfferPage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#030410] text-white selection:bg-cyan-400 selection:text-black font-sans">
 
-      {/* ── FULL-BLEED CINEMATIC BACKGROUND ── */}
-      <video
+      {/* ── FULL-BLEED CINEMATIC BACKGROUND (crossfades to the per-boss feed when that service is selected) ── */}
+      <motion.video
+        key={bgVideo}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
         className="fixed inset-0 h-full w-full object-cover"
-        src="/aion%202%20bg%20small.mp4"
+        src={bgVideo}
         autoPlay muted loop playsInline preload="metadata"
       />
       <div className="fixed inset-0 bg-gradient-to-b from-[#030410]/90 via-[#030410]/55 to-[#030410]/95" />
@@ -70,7 +78,7 @@ export default function Aion2CreateOfferPage() {
       {/* ── PREMIUM TOP BAR ── */}
       <header className="relative z-40 border-b border-white/[0.08] bg-black/45 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-5 sm:px-8 py-4">
-          <a href="/aion2" className="group flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200 backdrop-blur-md transition-all hover:border-cyan-300/50 hover:text-white cursor-pointer">
+          <a href="/aion2" className="group flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.03] px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-200 backdrop-blur-md transition-all hover:border-cyan-300/50 hover:text-white cursor-pointer">
             <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" /> Back to Lobby
           </a>
 
@@ -80,7 +88,7 @@ export default function Aion2CreateOfferPage() {
             </span>
             <div className="leading-none">
               <p className="font-serif text-lg font-black tracking-[0.14em] bg-gradient-to-r from-white via-cyan-100 to-sky-400 bg-clip-text text-transparent">AION 2</p>
-              <p className="mt-1 text-[8px] font-black tracking-[0.3em] text-amber-300/90 uppercase">Offer Forge</p>
+              <p className="mt-1 text-[10px] font-black tracking-[0.3em] text-amber-300/90 uppercase">Offer Forge</p>
             </div>
           </div>
 
@@ -91,8 +99,8 @@ export default function Aion2CreateOfferPage() {
               return (
                 <div key={s} className="flex items-center gap-2">
                   {i > 0 && <span className={`h-px w-4 ${doneStep ? "bg-cyan-400/60" : "bg-white/15"}`} />}
-                  <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.16em] transition-all ${activeStep ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-200 shadow-[0_0_12px_rgba(0,229,255,0.2)]" : doneStep ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-300/80" : "border-white/[0.1] bg-white/[0.03] text-gray-500"}`}>
-                    {doneStep ? <Check className="h-3 w-3" /> : <span className="text-[9px]">{i + 1}</span>}
+                  <span className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] transition-all ${activeStep ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-200 shadow-[0_0_12px_rgba(0,229,255,0.2)]" : doneStep ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-300/80" : "border-white/[0.1] bg-white/[0.03] text-gray-500"}`}>
+                    {doneStep ? <Check className="h-3.5 w-3.5" /> : <span className="text-xs">{i + 1}</span>}
                     {s}
                   </span>
                 </div>
@@ -124,12 +132,12 @@ export default function Aion2CreateOfferPage() {
                 <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/10" />
               </motion.div>
               <h2 className="font-serif text-2xl font-black tracking-wide text-white">Offer Published</h2>
-              <p className="mt-2 text-[11px] text-slate-300/90">Your mission is live for the Aion 2 community. May the Daevas answer your call.</p>
+              <p className="mt-2 text-xs text-slate-300/90">Your mission is live for the Aion 2 community. May the Daevas answer your call.</p>
               <div className="mt-7 flex flex-col gap-2.5">
-                <a href="/aion2" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3 text-[10px] font-black tracking-[0.18em] uppercase text-white shadow-[0_0_30px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 cursor-pointer">
+                <a href="/aion2" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_30px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 cursor-pointer">
                   <Swords className="h-3.5 w-3.5" /> Return to Lobby
                 </a>
-                <button type="button" onClick={resetOffer} className="rounded-xl border border-white/[0.12] bg-white/[0.03] px-7 py-3 text-[10px] font-black tracking-[0.18em] uppercase text-gray-300 transition-all hover:border-white/25 hover:text-white cursor-pointer">
+                <button type="button" onClick={resetOffer} className="rounded-xl border border-white/[0.12] bg-white/[0.03] px-7 py-3 text-xs font-black tracking-[0.18em] uppercase text-gray-300 transition-all hover:border-white/25 hover:text-white cursor-pointer">
                   New Offer
                 </button>
               </div>
@@ -148,13 +156,13 @@ export default function Aion2CreateOfferPage() {
             <section className="mx-auto px-5 pt-9 pb-6 sm:px-8 max-w-[1400px]">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="flex items-center gap-2 text-[10px] font-black tracking-[0.3em] text-cyan-300 uppercase">
+                  <p className="flex items-center gap-2 text-xs font-black tracking-[0.3em] text-cyan-300 uppercase">
                     <Gem className="h-3.5 w-3.5" /> Aion 2 · Offer Forge
                   </p>
                   <h1 className="mt-3 bg-gradient-to-b from-white via-cyan-50 to-cyan-400 bg-clip-text font-serif text-5xl font-black tracking-tight text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.35)] sm:text-6xl">
                     Forge Your Offer
                   </h1>
-                  <p className="mt-2 max-w-lg text-[11px] leading-relaxed text-slate-400">
+                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-400">
                     Craft a premium mission post and broadcast it to every Daeva in Atreia. Take charge of your run.
                   </p>
                 </div>
@@ -165,7 +173,7 @@ export default function Aion2CreateOfferPage() {
                     { icon: Lock, label: "Escrow Ready", color: "text-amber-300" },
                     { icon: Zap, label: "Instant Post", color: "text-purple-300" },
                   ].map((chip) => (
-                    <span key={chip.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-black/40 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-gray-300 backdrop-blur-md">
+                    <span key={chip.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-black/40 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-gray-300 backdrop-blur-md">
                       <chip.icon className={`h-3 w-3 ${chip.color}`} /> {chip.label}
                     </span>
                   ))}
@@ -184,11 +192,11 @@ export default function Aion2CreateOfferPage() {
                         <Swords className="h-4 w-4 text-cyan-300" />
                       </span>
                       <div>
-                        <p className="text-[8px] font-black tracking-[0.24em] text-gray-500 uppercase">Offer Builder</p>
+                        <p className="text-[10px] font-black tracking-[0.24em] text-gray-500 uppercase">Offer Builder</p>
                         <p className="font-serif text-base font-black capitalize text-white">{step}</p>
                       </div>
                     </div>
-                    <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[9px] font-black tracking-[0.2em] text-cyan-300 uppercase">
+                    <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3.5 py-1.5 text-[11px] font-black tracking-[0.2em] text-cyan-300 uppercase">
                       Step {stepIndex + 1}/{STEPS.length}
                     </span>
                   </div>
@@ -200,8 +208,8 @@ export default function Aion2CreateOfferPage() {
                         <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="max-h-[52vh] overflow-y-auto pr-1">
                           {AION_CATEGORIES.filter((c) => grouped[c]?.length).map((cat) => (
                             <div key={cat} className="mb-5 last:mb-0">
-                              <p className="mb-2.5 flex items-center gap-2 text-[8px] font-black tracking-[0.24em] uppercase text-amber-300/90">
-                                <Sparkles className="h-3 w-3" /> {cat}
+                              <p className="mb-2.5 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-amber-300/90">
+                                <Sparkles className="h-3.5 w-3.5" /> {cat}
                               </p>
                               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                                 {grouped[cat].map((svc) => {
@@ -210,14 +218,17 @@ export default function Aion2CreateOfferPage() {
                                     <button key={svc.id} type="button" onClick={() => setSel(svc)} className={`group relative overflow-hidden rounded-xl border px-3.5 py-3 text-left transition-all ${isActive ? "border-cyan-400/60 bg-white/[0.09] shadow-[0_0_22px_rgba(0,229,255,0.16)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
                                       {isActive && <span className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />}
                                       <span className="flex items-center justify-between">
-                                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-300" : "border-white/[0.1] bg-white/[0.03] text-gray-400"} transition-colors`}>
-                                          <Package className="h-4 w-4" />
+                                        <span className={`flex h-10 w-10 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-300" : "border-white/[0.1] bg-white/[0.03] text-gray-400"} transition-colors`}>
+                                          <Package className="h-[18px] w-[18px]" />
                                         </span>
-                                        {isActive && <Check className="h-4 w-4 text-cyan-300" />}
+                                        <span className="flex items-center gap-1.5">
+                                          {svc.video && <Play className="h-4 w-4 text-emerald-300" aria-label="Video" />}
+                                          {isActive && <Check className="h-4 w-4 text-cyan-300" />}
+                                        </span>
                                       </span>
-                                      <span className="mt-2.5 block text-[12px] font-bold text-white">{svc.name}</span>
-                                      <span className="mt-0.5 block truncate text-[9px] text-gray-500">{svc.description}</span>
-                                      <span className="mt-2 inline-block rounded bg-black/30 px-2 py-1 text-[10px] font-black text-cyan-300">{formatUsd(svc.basePriceUsd)}/pc</span>
+                                      <span className="mt-3 block text-sm font-bold text-white">{svc.name}</span>
+                                      <span className="mt-1 block truncate text-[11px] text-gray-500">{svc.description}</span>
+                                      <span className="mt-2 inline-block rounded bg-black/30 px-2.5 py-1 text-xs font-black text-cyan-300">{formatUsd(svc.basePriceUsd)}/pc</span>
                                     </button>
                                   );
                                 })}
@@ -236,37 +247,37 @@ export default function Aion2CreateOfferPage() {
                                 <Package className="h-4 w-4" />
                               </span>
                               <div>
-                                <p className="text-[12px] font-bold text-white">{sel.name}</p>
-                                <p className="text-[9px] text-gray-500">{sel.description}</p>
+                                <p className="text-sm font-bold text-white">{sel.name}</p>
+                                <p className="text-[11px] text-gray-500">{sel.description}</p>
                               </div>
                             </div>
-                            <span className="rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-black text-cyan-300">{formatUsd(sel.basePriceUsd)}/pc</span>
+                            <span className="rounded-lg bg-black/30 px-2.5 py-1 text-xs font-black text-cyan-300">{formatUsd(sel.basePriceUsd)}/pc</span>
                           </div>
 
                           <div>
-                            <p className="mb-2 text-[8px] font-black tracking-[0.24em] uppercase text-gray-400">Quantity</p>
+                            <p className="mb-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">Quantity</p>
                             <div className="flex items-center justify-between rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-3">
                               <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">-</button>
                               <div className="text-center">
                                 <span className="block text-2xl font-black tabular-nums text-white">{qty}</span>
-                                <span className="text-[8px] font-black tracking-[0.2em] uppercase text-gray-500">{sel.priceUnit || "runs"}</span>
+                                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-gray-500">{sel.priceUnit || "runs"}</span>
                               </div>
                               <button type="button" onClick={() => setQty(Math.min(100, qty + 1))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
                             </div>
                           </div>
 
                           <div>
-                            <p className="mb-2 text-[8px] font-black tracking-[0.24em] uppercase text-gray-400">Speed</p>
+                            <p className="mb-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">Speed</p>
                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                               {SPEEDS.map((sp) => {
                                 const SpeedIcon = sp.icon;
                                 const isActive = speed === sp.label;
                                 return (
                                   <button key={sp.label} type="button" onClick={() => { setSpeed(sp.label); setSpeedOpen(false); }} className={`flex flex-col items-start gap-1 rounded-xl border px-3.5 py-3 text-left transition-all cursor-pointer ${isActive ? "border-cyan-400/60 bg-cyan-500/10 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
-                                    <span className={`flex items-center gap-2 text-[11px] font-bold ${isActive ? "text-cyan-200" : "text-gray-300"}`}>
+                                    <span className={`flex items-center gap-2 text-sm font-bold ${isActive ? "text-cyan-200" : "text-gray-300"}`}>
                                       <SpeedIcon className={`h-3.5 w-3.5 ${isActive ? "text-cyan-300" : "text-gray-500"}`} /> {sp.label}
                                     </span>
-                                    <span className="text-[8px] text-gray-500">{sp.desc}</span>
+                                    <span className="text-[10px] text-gray-500">{sp.desc}</span>
                                   </button>
                                 );
                               })}
@@ -274,21 +285,21 @@ export default function Aion2CreateOfferPage() {
                           </div>
 
                           <div>
-                            <p className="mb-2 text-[8px] font-black tracking-[0.24em] uppercase text-gray-400">Payment</p>
+                            <p className="mb-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">Payment</p>
                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                               <button type="button" onClick={() => { setPayment("kinah"); setSpeedOpen(false); }} className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all cursor-pointer ${payment === "kinah" ? "border-amber-400/50 bg-amber-500/10 shadow-[0_0_18px_rgba(251,191,36,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
                                 <Coins className={`h-4 w-4 ${payment === "kinah" ? "text-amber-300" : "text-gray-500"}`} />
                                 <span>
-                                  <span className={`block text-[11px] font-bold ${payment === "kinah" ? "text-amber-200" : "text-gray-300"}`}>Kinah</span>
-                                  <span className="text-[8px] text-gray-500">In-game gold</span>
+                                  <span className={`block text-sm font-bold ${payment === "kinah" ? "text-amber-200" : "text-gray-300"}`}>Kinah</span>
+                                  <span className="text-[10px] text-gray-500">In-game gold</span>
                                 </span>
                                 {payment === "kinah" && <Check className="ml-auto h-4 w-4 text-amber-300" />}
                               </button>
                               <button type="button" onClick={() => { setPayment("cash"); setSpeedOpen(false); }} className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all cursor-pointer ${payment === "cash" ? "border-emerald-400/50 bg-emerald-500/10 shadow-[0_0_18px_rgba(52,211,153,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
                                 <Coins className={`h-4 w-4 ${payment === "cash" ? "text-emerald-300" : "text-gray-500"}`} />
                                 <span>
-                                  <span className={`block text-[11px] font-bold ${payment === "cash" ? "text-emerald-200" : "text-gray-300"}`}>Real Money</span>
-                                  <span className="text-[8px] text-gray-500">USD via cash</span>
+                                  <span className={`block text-sm font-bold ${payment === "cash" ? "text-emerald-200" : "text-gray-300"}`}>Real Money</span>
+                                  <span className="text-[10px] text-gray-500">USD via cash</span>
                                 </span>
                                 {payment === "cash" && <Check className="ml-auto h-4 w-4 text-emerald-300" />}
                               </button>
@@ -309,11 +320,11 @@ export default function Aion2CreateOfferPage() {
                             ["Total", totalLabel],
                           ].map(([k, v]) => (
                             <div key={k} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${k === "Total" ? "border-cyan-400/40 bg-cyan-500/10 shadow-[0_0_18px_rgba(0,229,255,0.12)]" : "border-white/[0.07] bg-white/[0.03]"}`}>
-                              <span className="text-[9px] font-black tracking-[0.2em] uppercase text-gray-500">{k}</span>
-                              <span className={`text-[12px] font-black ${k === "Total" ? "text-cyan-300" : "text-white"}`}>{v}</span>
+                              <span className="text-[11px] font-black tracking-[0.2em] uppercase text-gray-500">{k}</span>
+                              <span className={`text-sm font-black ${k === "Total" ? "text-cyan-300" : "text-white"}`}>{v}</span>
                             </div>
                           ))}
-                          <p className="mt-1 text-[9px] text-gray-500">Review your offer. Publishing broadcasts it to the Aion 2 lobby.</p>
+                          <p className="mt-1 text-[11px] text-gray-500">Review your offer. Publishing broadcasts it to the Aion 2 lobby.</p>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -330,7 +341,7 @@ export default function Aion2CreateOfferPage() {
                     <div className="p-6">
                       <div className="flex items-center gap-2.5">
                         <Crown className="h-4 w-4 text-amber-300" />
-                        <p className="text-[10px] font-black tracking-[0.26em] text-white uppercase">Order Summary</p>
+                        <p className="text-xs font-black tracking-[0.26em] text-white uppercase">Order Summary</p>
                       </div>
 
                       {/* mini progress */}
@@ -348,8 +359,13 @@ export default function Aion2CreateOfferPage() {
                         <div className="min-w-0">
                           {sel ? (
                             <>
-                              <p className="truncate text-[11px] font-bold text-white">{sel.name}</p>
-                              <p className="truncate text-[8px] text-gray-500">{sel.category} · {formatUsd(sel.basePriceUsd)}/pc</p>
+                              <p className="truncate text-sm font-bold text-white">{sel.name}</p>
+                              <p className="truncate text-[10px] text-gray-500">{sel.category} · {formatUsd(sel.basePriceUsd)}/pc</p>
+                              {sel.video && (
+                                <p className="mt-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-300">
+                                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> Boss Feed Active
+                                </p>
+                              )}
                             </>
                           ) : (
                             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-500">Select a service</p>
@@ -364,7 +380,7 @@ export default function Aion2CreateOfferPage() {
                           ["Speed", sel ? speed : "—"],
                           ["Payment", sel ? (payment === "cash" ? "Cash (USD)" : "Kinah") : "—"],
                         ].map(([k, v]) => (
-                          <div key={k} className="flex items-center justify-between text-[10px]">
+                          <div key={k} className="flex items-center justify-between text-xs">
                             <span className="font-black tracking-[0.18em] uppercase text-gray-500">{k}</span>
                             <span className="font-bold text-gray-300">{v}</span>
                           </div>
@@ -374,7 +390,7 @@ export default function Aion2CreateOfferPage() {
                       {/* total */}
                       <div className="mt-4 rounded-xl border border-cyan-400/30 bg-gradient-to-r from-cyan-500/10 to-purple-600/10 px-4 py-3.5">
                         <div className="flex items-end justify-between">
-                          <span className="text-[9px] font-black tracking-[0.22em] uppercase text-gray-400">Total</span>
+                          <span className="text-[11px] font-black tracking-[0.22em] uppercase text-gray-400">Total</span>
                           <span className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)]">{totalLabel}</span>
                         </div>
                       </div>
@@ -387,11 +403,11 @@ export default function Aion2CreateOfferPage() {
                               type="button"
                               onClick={advance}
                               disabled={!canNext}
-                              className={`flex items-center justify-center gap-2 rounded-xl border px-6 py-3 text-[10px] font-black tracking-[0.18em] uppercase transition-all ${canNext ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-200 shadow-[0_0_20px_rgba(0,229,255,0.12)] hover:bg-cyan-500/25 cursor-pointer" : "border-white/[0.08] bg-white/[0.04] text-gray-600 cursor-not-allowed"}`}
+                              className={`flex items-center justify-center gap-2 rounded-xl border px-6 py-3 text-xs font-black tracking-[0.18em] uppercase transition-all ${canNext ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-200 shadow-[0_0_20px_rgba(0,229,255,0.12)] hover:bg-cyan-500/25 cursor-pointer" : "border-white/[0.08] bg-white/[0.04] text-gray-600 cursor-not-allowed"}`}
                             >
                               Continue to {step === "service" ? "Details" : "Confirm"} <ArrowRight className="h-3.5 w-3.5" />
                             </button>
-                            <button type="button" onClick={regress} disabled={stepIndex === 0} className={`flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-transparent px-6 py-2.5 text-[10px] font-bold text-gray-400 transition-all ${stepIndex === 0 ? "cursor-not-allowed opacity-40" : "hover:border-white/25 hover:text-white cursor-pointer"}`}>
+                            <button type="button" onClick={regress} disabled={stepIndex === 0} className={`flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-transparent px-6 py-2.5 text-xs font-bold text-gray-400 transition-all ${stepIndex === 0 ? "cursor-not-allowed opacity-40" : "hover:border-white/25 hover:text-white cursor-pointer"}`}>
                               <ChevronLeft className="h-3.5 w-3.5" /> Back
                             </button>
                           </>
@@ -399,12 +415,12 @@ export default function Aion2CreateOfferPage() {
                           <button
                             type="button"
                             onClick={() => { setSpeedOpen(false); setPaymentOpen(false); setPublished(true); }}
-                            className="relative flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3.5 text-[11px] font-black tracking-[0.18em] uppercase text-white shadow-[0_0_34px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_50px_rgba(90,120,255,0.85)] cursor-pointer"
+                            className="relative flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3.5 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_34px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_50px_rgba(90,120,255,0.85)] cursor-pointer"
                           >
                             <Send className="h-3.5 w-3.5" /> Publish Offer
                           </button>
                         )}
-                        <a href="/aion2" className="mt-0.5 text-center text-[9px] font-bold uppercase tracking-[0.16em] text-gray-600 transition-colors hover:text-gray-400 hover:underline cursor-pointer">
+                        <a href="/aion2" className="mt-0.5 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-gray-600 transition-colors hover:text-gray-400 hover:underline cursor-pointer">
                           Cancel & return to lobby
                         </a>
                       </div>

@@ -12,6 +12,7 @@ export interface AionService {
   description: string;
   basePriceUsd: number;
   priceUnit?: string;
+  video?: string;
   express: number;
   superExpress: number;
   options?: AionServiceOption[];
@@ -59,6 +60,7 @@ export const AION_SERVICES: AionService[] = [
     description: "Raid clear. Requires Lv45 + Gear Score.",
     basePriceUsd: eur(42.92),
     priceUnit: "per clear",
+    video: "/ludra_sm.mp4",
     express: eur(8.58),
     superExpress: eur(17.17),
   },
