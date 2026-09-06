@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -57,6 +57,51 @@ const SEED_OFFERS: OfferCard[] = [
 ];
 
 
+/* ── SEQUENTIAL BG VIDEOS (1 → 2 → 3, seamless crossfade) ── */
+const BG_VIDEOS = [
+  "/aion%202%20bg%201.mp4",
+  "/aion%202%20bg%202.mp4",
+  "/aion%202%20bg%203.mp4",
+];
+
+function BgSlideshow() {
+  const [idx, setIdx] = useState(0);
+  const refs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  useEffect(() => {
+    refs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === idx) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
+  }, [idx]);
+
+  return (
+    <div className="absolute inset-0">
+      {BG_VIDEOS.map((src, i) => {
+        const prev = (idx + BG_VIDEOS.length - 1) % BG_VIDEOS.length;
+        const visible = i === idx || i === prev;
+        return (
+          <video
+            key={src}
+            ref={(el) => { refs.current[i] = el; }}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"} ${visible ? "" : "hidden"}`}
+            src={src}
+            muted
+            playsInline
+            preload="auto"
+            onEnded={() => setIdx((i + 1) % BG_VIDEOS.length)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Aion2ClubPage() {
   const [activeTab, setActiveTab] = useState("Dungeons");
   const [activeDock, setActiveDock] = useState("chat");
@@ -71,11 +116,9 @@ export default function Aion2ClubPage() {
       {/* ═══ HERO SECTION ═══ */}
       <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
         
-        {/* Background Video (with dark blue overlay) */}
+        {/* Background Video (sequential seamless crossfade) */}
         <div className="absolute inset-0 z-0">
-          <video className="w-full h-full object-cover" autoPlay muted loop playsInline>
-            <source src="/aion%202%20bg%20small.mp4" type="video/mp4" />
-          </video>
+          <BgSlideshow />
           {/* Mockup matching overlay: deep navy/purple vignette */}
           <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#050814] via-[#050814]/60 to-transparent" />

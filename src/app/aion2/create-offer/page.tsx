@@ -34,7 +34,7 @@ const STEP_HINTS: Record<Step, string> = {
   confirm: "Lock in the details before going live",
 };
 
-const FALLBACK_BG = "/aion%202%20bg%20small.mp4";
+const FALLBACK_BG = "/aion%202%20bg%201.mp4";
 
 export default function Aion2CreateOfferPage() {
   const [step, setStep] = useState<Step>("service");
