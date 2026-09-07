@@ -333,7 +333,11 @@ export default function Navbar() {
               )}
 
               {pathname !== '/community' && (
-              <div className={`flex items-center gap-5 overflow-visible ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} border-2 pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}>
+              <div className={`flex items-center gap-5 overflow-visible backdrop-blur-2xl ${
+                theme === 'light'
+                  ? 'bg-white/10 border-white/10 border-2'
+                  : 'bg-black/40 border-white/5 border-2'
+              } pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}>
                 <button
                   type="button"
                   title="View profile"
@@ -358,8 +362,10 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate">{renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}</span>
-                  {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</span> : null; })()}
+                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">
+                    {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
+                  </span>
+                  {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm ${t.color}`}>{t.label}</span> : null; })()}
                 </button>
               </div>
               )}
