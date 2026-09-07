@@ -57,33 +57,69 @@ const SEED_OFFERS: OfferCard[] = [
   },
 ];
 
-/* ── FULL GLASSY BLUE ATMOSPHERE BACKGROUND ── */
-function BlueGlassyAtmosphere() {
+/* ── GLASSY BLUE PREMIUM BACKGROUND ── */
+function BlueGlassyPremiumBg() {
   const motionOn = useFlag("uplink_bg_motion", true);
 
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
-      {/* Fully transparent base — no dark overlay */}
-      <div className="absolute inset-0 bg-transparent" />
+      {/* Base gradient — visible deep blue atmosphere */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 via-slate-900/70 to-black/90" />
 
-      {/* 3 large animated glassy orbs — cyan / blue / purple — floating */}
+      {/* Large atmospheric glows — cyan + blue + purple — blurred and visible */}
+      <div className="absolute inset-0">
+        {/* Cyan glow — top right */}
+        <div
+          className={`absolute top-[-20%] right-[-10%] w-[80%] h-[80%] rounded-full blur-3xl ${
+            motionOn ? "animate-pulse" : ""
+          }`}
+          style={{
+            background: "radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 70%)",
+            animationDuration: "8s",
+          }}
+        />
+
+        {/* Blue glow — bottom left */}
+        <div
+          className={`absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full blur-3xl ${
+            motionOn ? "animate-pulse" : ""
+          }`}
+          style={{
+            background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)",
+            animationDuration: "10s",
+          }}
+        />
+
+        {/* Purple glow — center */}
+        <div
+          className={`absolute top-[40%] left-[30%] w-[50%] h-[50%] rounded-full blur-3xl ${
+            motionOn ? "animate-pulse" : ""
+          }`}
+          style={{
+            background: "radial-gradient(circle, rgba(139, 92, 246, 0.10) 0%, transparent 70%)",
+            animationDuration: "12s",
+          }}
+        />
+      </div>
+
+      {/* Animated floating orbs — cyan/blue/purple — subtle movement */}
       <div className="absolute inset-0">
         {/* Orb 1 — cyan, top-left, slow drift */}
         <motion.div
           className="absolute rounded-full blur-3xl"
           style={{
-            width: "600px",
-            height: "600px",
-            background: "radial-gradient(circle, rgba(34, 211, 238, 0.12) 0%, transparent 70%)",
+            width: "400px",
+            height: "400px",
+            background: "radial-gradient(circle, rgba(34, 211, 238, 0.20) 0%, transparent 70%)",
           }}
           animate={{
-            x: motionOn ? [0, 60, 0, -40, 0] : [0],
-            y: motionOn ? [0, -40, 0, 60, 0] : [0],
-            scale: motionOn ? [1, 1.1, 1, 0.9, 1] : [1],
-            opacity: motionOn ? [0.6, 1, 0.7, 0.9, 0.6] : [1],
+            x: motionOn ? [0, 50, 0, -30, 0] : [0],
+            y: motionOn ? [0, -30, 0, 50, 0] : [0],
+            scale: motionOn ? [1, 1.08, 1, 0.92, 1] : [1],
+            opacity: motionOn ? [0.6, 1, 0.7, 0.85, 0.6] : [1],
           }}
           transition={{
-            duration: 18,
+            duration: 20,
             repeat: Infinity,
             ease: "linear",
           }}
@@ -94,40 +130,40 @@ function BlueGlassyAtmosphere() {
         <motion.div
           className="absolute rounded-full blur-3xl"
           style={{
-            width: "500px",
-            height: "500px",
-            background: "radial-gradient(circle, rgba(59, 130, 246, 0.10) 0%, transparent 70%)",
+            width: "350px",
+            height: "350px",
+            background: "radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%)",
           }}
           animate={{
-            x: motionOn ? [0, -50, 0, 40, 0] : [0],
-            y: motionOn ? [0, 50, 0, -30, 0] : [0],
-            scale: motionOn ? [1, 0.9, 1.05, 1, 1] : [1],
-            opacity: motionOn ? [0.5, 0.8, 0.6, 0.9, 0.5] : [1],
+            x: motionOn ? [0, -40, 0, 30, 0] : [0],
+            y: motionOn ? [0, 40, 0, -20, 0] : [0],
+            scale: motionOn ? [1, 0.92, 1.05, 1, 1] : [1],
+            opacity: motionOn ? [0.5, 0.9, 0.6, 0.8, 0.5] : [1],
           }}
           transition={{
-            duration: 22,
+            duration: 24,
             repeat: Infinity,
             ease: "linear",
           }}
           initial={{ x: 0, y: 0 }}
         />
 
-        {/* Orb 3 — purple, center-left, slower */}
+        {/* Orb 3 — purple, center-left */}
         <motion.div
           className="absolute rounded-full blur-3xl"
           style={{
-            width: "400px",
-            height: "400px",
-            background: "radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)",
+            width: "250px",
+            height: "250px",
+            background: "radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)",
           }}
           animate={{
-            x: motionOn ? [0, 30, 0, -20, 0] : [0],
-            y: motionOn ? [0, 20, 0, -30, 0] : [0],
+            x: motionOn ? [0, 25, 0, -15, 0] : [0],
+            y: motionOn ? [0, 15, 0, -25, 0] : [0],
             scale: motionOn ? [1, 1.05, 0.95, 1.1, 1] : [1],
-            opacity: motionOn ? [0.4, 0.7, 0.5, 0.8, 0.4] : [1],
+            opacity: motionOn ? [0.4, 0.8, 0.5, 0.75, 0.4] : [1],
           }}
           transition={{
-            duration: 26,
+            duration: 28,
             repeat: Infinity,
             ease: "linear",
           }}
@@ -135,51 +171,57 @@ function BlueGlassyAtmosphere() {
         />
       </div>
 
-      {/* Thin glass streaks — cyan/blue vertical lines */}
-      <div className="absolute inset-0 opacity-[0.08]">
+      {/* Glass streaks — vertical cyan lines */}
+      <div className="absolute inset-0 opacity-[0.06]">
         <div
-          className="absolute inset-y-0 left-1/4 w-[1px]"
+          className="absolute inset-y-0 left-[15%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.6), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.7), transparent)",
           }}
         />
         <div
-          className="absolute inset-y-0 left-2/4 w-[1px]"
+          className="absolute inset-y-0 left-[40%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.4), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.5), transparent)",
           }}
         />
         <div
-          className="absolute inset-y-0 left-3/4 w-[1px]"
+          className="absolute inset-y-0 left-[65%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.3), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.4), transparent)",
+          }}
+        />
+        <div
+          className="absolute inset-y-0 left-[85%] w-[1px]"
+          style={{
+            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.3), transparent)",
           }}
         />
       </div>
 
-      {/* Subtle glass grid overlay */}
+      {/* Subtle glass grid */}
       <div
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(34, 211, 238, 0.4) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(34, 211, 238, 0.4) 1px, transparent 1px)
+            linear-gradient(rgba(34, 211, 238, 0.5) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(34, 211, 238, 0.5) 1px, transparent 1px)
           `,
-          backgroundSize: "100px 100px",
+          backgroundSize: "120px 120px",
         }}
       />
 
-      {/* Top-to-bottom glass gradient for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-blue-950/20 via-transparent to-transparent" />
+      {/* Top-to-bottom gradient for readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-blue-950/40 via-transparent to-transparent" />
     </div>
   );
 }
 
-/* ── GLASSY SHARED STYLES ── */
-const GLASS_BLUE = "bg-blue-500/5 backdrop-blur-2xl border border-cyan-500/10 shadow-[0_0_30px_rgba(34,211,238,0.06)]";
-const GLASS_ACTIVE = "bg-blue-500/10 backdrop-blur-2xl border border-cyan-500/25 shadow-[0_0_40px_rgba(34,211,238,0.15)]";
+/* ── GLASSY BLUE SHARED STYLES ── */
+const GLASS_BLUE = "bg-blue-950/40 backdrop-blur-2xl border border-cyan-500/15 shadow-[0_0_30px_rgba(34,211,238,0.08)]";
+const GLASS_ACTIVE = "bg-blue-900/50 backdrop-blur-2xl border border-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.18)]";
 
-/* ── ORIGINAL Aion2ClubPage logic — kept EXACTLY as is, only background changed ── */
+/* ── ORIGINAL Aion2ClubPage logic — kept EXACTLY as is ── */
 
 export default function Aion2TestClubPage() {
   const { t } = useI18n();
@@ -191,18 +233,17 @@ export default function Aion2TestClubPage() {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden relative">
+    <div className="min-h-screen bg-slate-900/80 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden relative">
 
-      {/* ═══ FULL GLASSY BLUE ATMOSPHERE BACKGROUND ═══ */}
-      <BlueGlassyAtmosphere />
+      {/* ═══ GLASSY BLUE PREMIUM BACKGROUND ═══ */}
+      <BlueGlassyPremiumBg />
 
       {/* ═══ HERO SECTION ═══ */}
       <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden pt-16">
-        {/* Glassy blue hero background */}
+        {/* Glassy blue hero backdrop */}
         <div className="absolute inset-0">
-          <div className={`absolute inset-0 ${GLASS_BLUE}`} />
-          {/* Inner glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
+          <div className={`absolute inset-0 ${GLASS_BLUE} rounded-full blur-3xl opacity-60`} />
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/8 via-transparent to-purple-500/5" />
         </div>
 
         {/* Hero Content — kept EXACTLY as original */}
@@ -250,7 +291,7 @@ export default function Aion2TestClubPage() {
               <span className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
 
               {/* Button inner — glassy blue */}
-              <div className="relative bg-cyan-500/10 backdrop-blur-2xl px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-cyan-500/20">
+              <div className="relative bg-blue-900/50 backdrop-blur-2xl px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
                 <span className="text-xs font-black tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-cyan-200">
                   {t("hero_create")}
                 </span>
@@ -263,12 +304,12 @@ export default function Aion2TestClubPage() {
 
       {/* ═══ DIVIDER ═══ */}
       <div className="relative z-10 max-w-[1600px] mx-auto px-6 mt-12">
-        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
       </div>
 
       {/* ═══ FILTER TABS — glassy blue ═══ */}
       <section className="relative z-20 w-full flex justify-center -mt-8 mb-12">
-        <div className={`flex items-center gap-2 sm:gap-4 p-2 ${GLASS_BLUE} rounded-full border-cyan-500/10`}>
+        <div className={`flex items-center gap-2 sm:gap-4 p-2 ${GLASS_BLUE} rounded-full`}>
           {FILTER_TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             const Icon = tab.icon;
@@ -278,7 +319,7 @@ export default function Aion2TestClubPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${
                   isActive
-                    ? `${GLASS_ACTIVE} text-cyan-200 border-cyan-500/30`
+                    ? `${GLASS_ACTIVE} text-cyan-200 border-cyan-400/30`
                     : "text-slate-400 hover:text-white border border-transparent hover:bg-white/5"
                 }`}
               >
@@ -308,7 +349,7 @@ export default function Aion2TestClubPage() {
                   onClick={() => setActiveDock(item.id)}
                   className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                     active
-                      ? `${GLASS_ACTIVE} text-cyan-300 border-cyan-500/30`
+                      ? `${GLASS_ACTIVE} text-cyan-300 border-cyan-500/35`
                       : `${GLASS_BLUE} text-slate-500 border-cyan-500/5 hover:text-cyan-300 hover:border-cyan-500/20`
                   }`}
                 >
@@ -324,7 +365,7 @@ export default function Aion2TestClubPage() {
           {/* 2. Center Column: Offers — glassy blue cards */}
           <section className="min-w-0">
             {/* Header */}
-            <div className={`flex items-center justify-between mb-6 pb-4 border-b ${GLASS_BLUE} border-cyan-500/10`}>
+            <div className={`flex items-center justify-between mb-6 pb-4 border-b ${GLASS_BLUE} border-cyan-500/15`}>
               <div className="flex items-center gap-3">
                 <Sparkles className="w-4 h-4 text-cyan-400" />
                 <h3 className="text-sm font-black tracking-[0.25em] text-cyan-100 uppercase font-serif">
@@ -347,7 +388,7 @@ export default function Aion2TestClubPage() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   whileHover={{ scale: 1.01 }}
-                  className={`relative w-full h-24 rounded-2xl ${GLASS_BLUE} overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group transition-all`}
+                  className={`relative w-full h-24 rounded-2xl ${GLASS_BLUE} overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group transition-all hover:shadow-[0_0_30px_rgba(34,211,238,0.12)]`}
                 >
 
                   {/* Mockup placeholder background (Right side gradient/image) */}
@@ -357,7 +398,7 @@ export default function Aion2TestClubPage() {
 
                   <div className="relative z-10 flex items-center w-full gap-6">
                     {/* Rank/Class Icon — glassy */}
-                    <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.15)] group-hover:border-cyan-400/50 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all">
+                    <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.2)] group-hover:border-cyan-400/50 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.35)] transition-all">
                       <Star className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
                     </div>
 
@@ -390,12 +431,12 @@ export default function Aion2TestClubPage() {
                   </div>
 
                   {/* Hover glow edge */}
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent rounded-b-2xl" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent rounded-b-2xl" />
                 </motion.div>
               ))}
 
               {displayOffers.length === 0 && (
-                <div className={`text-center py-16 ${GLASS_BLUE} border border-cyan-500/10 rounded-[2rem]`}>
+                <div className={`text-center py-16 ${GLASS_BLUE} border border-cyan-500/15 rounded-[2rem]`}>
                   <Search className="w-8 h-8 text-slate-600 mx-auto mb-3" />
                   <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
                     {t("offers_empty")}
@@ -407,10 +448,10 @@ export default function Aion2TestClubPage() {
 
           {/* 3. Right Sidebar: Ongoing Missions — glassy blue */}
           <aside className="w-full">
-            <div className={`relative w-full rounded-3xl ${GLASS_BLUE} p-6 shadow-[0_10px_40px_rgba(34,211,238,0.08)]`}>
+            <div className={`relative w-full rounded-3xl ${GLASS_BLUE} p-6 shadow-[0_10px_40px_rgba(34,211,238,0.1)]`}>
 
               {/* Widget Header */}
-              <div className="flex items-center gap-3 pb-4 mb-6 border-b border-cyan-500/10">
+              <div className="flex items-center gap-3 pb-4 mb-6 border-b border-cyan-500/15">
                 <Shield className="w-4 h-4 text-cyan-400" />
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-cyan-100 font-serif">
                   {t("missions_header")}
@@ -420,10 +461,10 @@ export default function Aion2TestClubPage() {
               {/* Empty State */}
               <div className="flex flex-col items-center text-center py-10">
                 <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl" />
+                  <div className="absolute inset-0 bg-cyan-500/25 rounded-full blur-xl" />
                   {/* Simplified geometric icon */}
                   <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
-                    <path d="M50 10 L85 80 H15 Z" stroke="#22d3ee" strokeWidth="3" fill="rgba(34, 211, 238, 0.1)" />
+                    <path d="M50 10 L85 80 H15 Z" stroke="#22d3ee" strokeWidth="3" fill="rgba(34, 211, 238, 0.12)" />
                     <circle cx="50" cy="55" r="15" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4 4" />
                     <circle cx="50" cy="55" r="4" fill="#93c5fd" />
                   </svg>
@@ -440,9 +481,9 @@ export default function Aion2TestClubPage() {
       {/* ═══ BOTTOM SPACER ═══ */}
       <div className="h-20" />
 
-      {/* ═══ Bottom Nav Hint (glassy blue bar) ═══ */}
+      {/* ═══ Bottom Nav (glassy blue bar) ═══ */}
       <div className="fixed bottom-0 left-0 right-0 z-50 h-20">
-        <div className={`absolute inset-0 ${GLASS_BLUE} border-t border-cyan-500/10 flex items-center justify-center`}>
+        <div className={`absolute inset-0 ${GLASS_BLUE} border-t border-cyan-500/15 flex items-center justify-center`}>
           <div className="flex items-center gap-4">
             {["DUNGEONS", "LEVELING", "BOOSTS", "PVP"].map((tab) => (
               <span key={tab} className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-500 hover:text-cyan-300 transition-colors cursor-pointer">
@@ -450,7 +491,7 @@ export default function Aion2TestClubPage() {
               </span>
             ))}
             <span className="ml-4 text-[9px] text-slate-600 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/50 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/50 animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
               ONLINE
             </span>
           </div>
