@@ -7,7 +7,9 @@ import {
   Check, Shield, Crown, Clock, Gem, Star, Lock, Castle, Crosshair,
   FlaskConical, TrendingUp, Hash, type LucideIcon,
 } from "lucide-react";
-import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService } from "@/lib/aionServices";
+import { AION_SERVICES, AION_CATEGORIES, AionService } from "@/lib/aionServices";
+
+const fmtKinah = (usd: number) => `${Math.round(usd * 1000).toLocaleString()} KINAH`;
 
 const STEPS = ["service", "details", "confirm"] as const;
 type Step = (typeof STEPS)[number];
@@ -40,7 +42,7 @@ export default function Aion2CreateOfferPage() {
   const [step, setStep] = useState<Step>("service");
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
-  const [payment, setPayment] = useState<"kinah" | "cash">("cash");
+  const [payment, setPayment] = useState<"kinah">("kinah");
   const [speed, setSpeed] = useState("Standard");
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [speedOpen, setSpeedOpen] = useState(false);
@@ -64,16 +66,13 @@ export default function Aion2CreateOfferPage() {
   const price = sel ? sel.basePriceUsd * qty : 0;
   const canNext = !!sel;
   const stepIndex = STEPS.indexOf(step);
-  const totalLabel =
-    payment === "cash"
-      ? formatUsd(price)
-      : `${(price * 1000).toLocaleString()} KINAH`;
+  const totalLabel = `${fmtKinah(price)}`;
 
   const bgVideo = sel?.video || FALLBACK_BG;
 
   const advance = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
   const regress = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("cash"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("kinah"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); };
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#030410] text-white selection:bg-cyan-400 selection:text-black font-sans">
@@ -265,7 +264,7 @@ export default function Aion2CreateOfferPage() {
                                               <Check className="h-3.5 w-3.5 text-cyan-300" />
                                             </span>
                                           ) : (
-                                            <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300 tabular-nums">{formatUsd(svc.basePriceUsd)}</span>
+                                            <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300 tabular-nums">{fmtKinah(svc.basePriceUsd)}</span>
                                           )}
                                         </span>
                                         {variantCount > 0 ? (
@@ -279,7 +278,7 @@ export default function Aion2CreateOfferPage() {
                                           </span>
                                         ) : (
                                           <span className="mt-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
-                                            {formatUsd(svc.basePriceUsd)} <span className="text-gray-700">/</span> {svc.priceUnit ?? "pc"}
+                                            {fmtKinah(svc.basePriceUsd)} <span className="text-gray-700">/</span> {svc.priceUnit ?? "pc"}
                                           </span>
                                         )}
                                       </button>
@@ -309,7 +308,7 @@ export default function Aion2CreateOfferPage() {
                                 </div>
                               </div>
                               <div className="shrink-0 text-right">
-                                <p className="text-base font-black text-cyan-300 tabular-nums">{formatUsd(sel.basePriceUsd)}</p>
+                                <p className="text-base font-black text-cyan-300 tabular-nums">{fmtKinah(sel.basePriceUsd)}</p>
                                 <p className="text-[9px] font-black uppercase tracking-[0.14em] text-gray-500">{sel.priceUnit ?? "per pc"}</p>
                               </div>
                             </div>
@@ -357,7 +356,7 @@ export default function Aion2CreateOfferPage() {
                               <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
                                 <Coins className="h-3.5 w-3.5 text-cyan-400" /> Payment
                               </p>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-1">
                                 <button type="button" onClick={() => { setPayment("kinah"); setSpeedOpen(false); }}
                                   className={`flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-all cursor-pointer ${payment === "kinah" ? "border-amber-400/50 bg-amber-500/10 shadow-[0_0_18px_rgba(251,191,36,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
                                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${payment === "kinah" ? "border-amber-400/40 bg-amber-500/15" : "border-white/[0.1] bg-white/[0.04] text-gray-500"}`}>
@@ -368,17 +367,6 @@ export default function Aion2CreateOfferPage() {
                                     <span className="block text-[10px] text-gray-500">In-game gold</span>
                                   </span>
                                   {payment === "kinah" && <Check className="h-4 w-4 shrink-0 text-amber-300" />}
-                                </button>
-                                <button type="button" onClick={() => { setPayment("cash"); setSpeedOpen(false); }}
-                                  className={`flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-all cursor-pointer ${payment === "cash" ? "border-emerald-400/50 bg-emerald-500/10 shadow-[0_0_18px_rgba(52,211,153,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
-                                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${payment === "cash" ? "border-emerald-400/40 bg-emerald-500/15" : "border-white/[0.1] bg-white/[0.04] text-gray-500"}`}>
-                                    <Coins className={`h-4 w-4 ${payment === "cash" ? "text-emerald-300" : "text-gray-500"}`} />
-                                  </span>
-                                  <span className="min-w-0 flex-1">
-                                    <span className={`block text-sm font-bold ${payment === "cash" ? "text-emerald-200" : "text-gray-200"}`}>Real Money</span>
-                                    <span className="block text-[10px] text-gray-500">USD via cash</span>
-                                  </span>
-                                  {payment === "cash" && <Check className="h-4 w-4 shrink-0 text-emerald-300" />}
                                 </button>
                               </div>
                             </div>
@@ -394,8 +382,8 @@ export default function Aion2CreateOfferPage() {
                               ["Service", sel.name],
                               ["Quantity", `${qty} × ${sel.priceUnit || "runs"}`],
                               ["Speed", speed],
-                              ["Payment", payment === "cash" ? "Real Money · Cash" : "Kinah · In-Game"],
-                              ["Rate", `${formatUsd(sel.basePriceUsd)} / ${sel.priceUnit ?? "pc"}`],
+                              ["Payment", "Kinah · In-Game"],
+                              ["Rate", `${fmtKinah(sel.basePriceUsd)} / ${sel.priceUnit ?? "pc"}`],
                             ].map(([k, v], ix) => (
                               <div key={k} className={`flex items-center justify-between gap-4 py-3 ${ix < 4 ? "border-b border-white/[0.06]" : ""}`}>
                                 <span className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">{k}</span>
@@ -406,7 +394,7 @@ export default function Aion2CreateOfferPage() {
                           <div className="flex items-center justify-between gap-4 rounded-xl border border-cyan-400/35 bg-gradient-to-r from-cyan-500/[0.12] to-purple-600/[0.12] px-5 py-4">
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total</p>
-                              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{payment === "cash" ? "USD · Cash" : "KINAH · In-Game"}</p>
+                              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">KINAH · In-Game</p>
                             </div>
                             <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{totalLabel}</p>
                           </div>
@@ -457,7 +445,7 @@ export default function Aion2CreateOfferPage() {
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-2">
                                   <p className="truncate text-sm font-bold text-white">{sel.name}</p>
-                                  <p className="shrink-0 text-sm font-black text-cyan-300 tabular-nums">{formatUsd(sel.basePriceUsd)}<span className="ml-0.5 text-[9px] font-bold uppercase text-gray-600">/pc</span></p>
+                                  <p className="shrink-0 text-sm font-black text-cyan-300 tabular-nums">{fmtKinah(sel.basePriceUsd)}<span className="ml-0.5 text-[9px] font-bold uppercase text-gray-600">/pc</span></p>
                                 </div>
                                 <p className="mt-0.5 truncate text-[11px] text-gray-500">{sel.category}</p>
                                 {sel.video && (
@@ -483,7 +471,7 @@ export default function Aion2CreateOfferPage() {
                         {[
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
                           ["Speed", sel ? speed : "—"],
-                          ["Payment", sel ? (payment === "cash" ? "Cash · USD" : "Kinah · In-Game") : "—"],
+                          ["Payment", sel ? "Kinah · In-Game" : "—"],
                         ].map(([k, v], ix) => (
                           <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 2 ? "border-b border-white/[0.06]" : ""}`}>
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">{k}</span>
@@ -497,7 +485,7 @@ export default function Aion2CreateOfferPage() {
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{payment === "cash" ? "USD · Cash" : "KINAH · In-Game"}</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">KINAH · In-Game</p>
                           </div>
                           <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{totalLabel}</p>
                         </div>
