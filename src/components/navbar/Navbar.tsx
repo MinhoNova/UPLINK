@@ -158,8 +158,6 @@ export default function Navbar() {
     }
   }, [currentHandle, registeredUsers, session]);
 
-  if (status !== "loading" && !session) return null;
-
   // Use session user as fallback if not in registeredUsers
   const currentUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId)) || {
     id: currentUserId,
