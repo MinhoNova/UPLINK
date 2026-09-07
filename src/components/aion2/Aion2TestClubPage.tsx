@@ -196,12 +196,6 @@ export default function Aion2TestClubPage() {
       {/* ═══ FULL GLASSY BLUE ATMOSPHERE BACKGROUND ═══ */}
       <BlueGlassyAtmosphere />
 
-      {/* ═══ NAVBAR CONTAINER (glassy blue) ═══ */}
-      {/* Note: actual Navbar component is in layout.tsx — this is just visual wrapper for test page */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-24">
-        <div className={`absolute inset-0 ${GLASS_BLUE} border-b border-cyan-500/20`} />
-      </div>
-
       {/* ═══ HERO SECTION ═══ */}
       <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden pt-16">
         {/* Glassy blue hero background */}
