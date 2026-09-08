@@ -66,7 +66,7 @@ function GlassyImageBg() {
       {/* MAIN IMAGE — full screen, blurred glassy */}
       <div className="absolute inset-0">
         <Image
-          src="/aion2-bg.png"
+          src="/aion2-bg.webp"
           alt="Aion 2 fantasy background"
           width={1920}
           height={1080}
