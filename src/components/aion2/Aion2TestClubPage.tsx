@@ -75,24 +75,35 @@ export default function Aion2TestClubPage() {
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
 
       {/* ══════════════════════════════════════════════════════════
-          HERO SECTION (MATCHING MAIN HOME PAGE EXACTLY)
-          (Using Copyright-Free High-Res Aion 2 Citadel Background)
+          HERO SECTION (LUXURIOUS FROSTED GLASS & CELESTIAL GLOW)
           ══════════════════════════════════════════════════════════ */}
-      <section className="tn-hero relative w-full h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center overflow-hidden py-12 px-4">
 
-        {/* Scenic Background Artwork (Safe & Copyright-Free) */}
+        {/* Scenic Background Artwork (Vivid, Safe & Copyright-Free) */}
         <div className="absolute inset-0 z-0">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-75"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
             style={{ backgroundImage: `url('/aion2-bg-citadel.webp')` }}
           />
 
-          {/* Vignette & Gradients matching main page layout */}
-          <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050814] via-[#050814]/60 to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
+          {/* Soft natural vignette that doesn't black out the center */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/50 via-transparent to-[#050814]/90" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,8,20,0.65)_100%)]" />
 
-          {/* Living Aurora Glows */}
+          {/* Living Center Celestial Core Glow — eliminates pitch-black void */}
+          <motion.div
+            animate={motionOn ? {
+              scale: [1, 1.15, 1],
+              opacity: [0.35, 0.6, 0.35],
+            } : undefined}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] rounded-full blur-[110px] pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, rgba(56,189,248,0.35) 0%, rgba(168,85,247,0.22) 50%, transparent 75%)",
+            }}
+          />
+
+          {/* Left / Right Dual-Faction Living Aurora Glows */}
           <motion.div
             animate={motionOn ? {
               scale: [1, 1.15, 1],
@@ -117,8 +128,8 @@ export default function Aion2TestClubPage() {
           />
         </div>
 
-        {/* Hero Content (Identical structure to main page) */}
-        <div className="relative z-10 flex flex-col items-center text-center mt-12">
+        {/* Hero Content: Ultra-Translucent Frosted Glass Capsule */}
+        <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 rounded-3xl bg-[#070e28]/25 backdrop-blur-2xl border border-sky-400/20 shadow-[0_12px_45px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.18)] max-w-2xl mx-auto">
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -127,34 +138,34 @@ export default function Aion2TestClubPage() {
             className="flex flex-col items-center"
           >
             {/* FIND YOUR CREW with side lines */}
-            <div className="flex items-center gap-6 mt-4">
-              <span className="h-px w-16 bg-gradient-to-r from-transparent to-blue-400/50" />
-              <h2 className="text-sm sm:text-base font-bold tracking-[0.4em] text-blue-100 uppercase">
+            <div className="flex items-center gap-6 mt-1">
+              <span className="h-px w-16 bg-gradient-to-r from-transparent to-blue-400/60" />
+              <h2 className="text-sm sm:text-base font-bold tracking-[0.4em] text-blue-100 uppercase drop-shadow-[0_0_12px_rgba(56,189,248,0.6)]">
                 {t("hero_crew") || "FIND YOUR CREW"}
               </h2>
-              <span className="h-px w-16 bg-gradient-to-l from-transparent to-blue-400/50" />
+              <span className="h-px w-16 bg-gradient-to-l from-transparent to-blue-400/60" />
             </div>
 
             {/* DUNGEONS · RAIDS · LEVELING */}
-            <p className="mt-4 text-[11px] font-bold tracking-[0.3em] text-slate-400 uppercase">
+            <p className="mt-4 text-[11px] font-bold tracking-[0.3em] text-slate-300 uppercase">
               {((t("hero_tagline") || "DUNGEONS · RAIDS · LEVELING").split("·").map((part: string, i: number) => (
                 <span key={i}>
-                  {i > 0 && <span className="mx-2 text-purple-500/50">✦</span>}
+                  {i > 0 && <span className="mx-2 text-purple-400/80 drop-shadow-[0_0_6px_rgba(168,85,247,0.8)]">✦</span>}
                   {part.trim()}
                 </span>
               )))}
             </p>
 
             {/* Subtext */}
-            <p className="mt-2 text-xs text-slate-500 font-medium">
+            <p className="mt-2 text-xs text-slate-400 font-medium max-w-md">
               {t("hero_adventure") || "Find trusted players for your next adventure."}
             </p>
 
             {/* Vertical Accent Line */}
-            <div className="w-[1px] h-8 bg-gradient-to-b from-purple-500/50 to-transparent my-4" />
+            <div className="w-[1px] h-8 bg-gradient-to-b from-purple-500/60 to-transparent my-4" />
           </motion.div>
 
-          {/* CREATE YOUR OFFER Button */}
+          {/* CREATE YOUR OFFER Button with True Glass Translucency */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -162,17 +173,17 @@ export default function Aion2TestClubPage() {
           >
             <motion.a
               href="/aion2/create-offer"
-              className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(168,85,247,0.5)] transition-all duration-500 block"
+              className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_35px_rgba(59,130,246,0.35)] hover:shadow-[0_0_60px_rgba(168,85,247,0.6)] transition-all duration-500 block hover:scale-105 active:scale-95"
             >
               {/* Animated border gradient */}
               <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
 
-              {/* Button inner */}
-              <div className="relative bg-[#0a0f26]/90 backdrop-blur-xl px-16 py-4 rounded-full flex items-center justify-center gap-4">
-                <span className="text-xs font-black tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">
+              {/* Button inner: True Translucent Crystal Glass */}
+              <div className="relative bg-[#07112e]/55 hover:bg-[#07112e]/40 backdrop-blur-2xl px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all">
+                <span className="text-xs font-black tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-100 to-blue-200 drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">
                   {t("hero_create") || "CREATE YOUR OFFER"}
                 </span>
-                <span className="text-blue-300 group-hover:translate-x-1 transition-transform">›</span>
+                <span className="text-blue-300 group-hover:translate-x-1 transition-transform font-bold">›</span>
               </div>
             </motion.a>
           </motion.div>
