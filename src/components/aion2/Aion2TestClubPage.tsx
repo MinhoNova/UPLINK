@@ -70,7 +70,7 @@ function GlassyImageBg() {
           alt="Aion 2 fantasy background"
           width={1920}
           height={1080}
-          className="absolute inset-0 w-full h-full object-cover blur-[50px] brightness-[0.45] saturate-50"
+          className="absolute inset-0 w-full h-full object-cover blur-[40px] brightness-[0.75] saturate-80"
           priority
         />
       </div>
@@ -78,9 +78,9 @@ function GlassyImageBg() {
       {/* Heavy glass overlay — frosted glass effect over the image */}
       <div className="absolute inset-0">
         {/* Dark gradient overlay for depth and readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-slate-950/60 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-950/30 to-black/50" />
         {/* Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(2,4,10,0.85)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(2,4,10,0.55)_100%)]" />
       </div>
 
       {/* Large atmospheric glows — cyan + blue + purple — blurred and visible */}
