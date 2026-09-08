@@ -57,14 +57,31 @@ const SEED_OFFERS: OfferCard[] = [
   },
 ];
 
-/* ── GLASSY BLUE PREMIUM BACKGROUND ── */
-function BlueGlassyPremiumBg() {
+/* ── GLASSY IMAGE BACKGROUND (uploaded fantasy scene) ── */
+function GlassyImageBg() {
   const motionOn = useFlag("uplink_bg_motion", true);
 
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
-      {/* Base gradient — visible deep blue atmosphere */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 via-slate-900/70 to-black/90" />
+      {/* MAIN IMAGE — full screen, blurred glassy */}
+      <div className="absolute inset-0">
+        <Image
+          src="/aion2-bg.png"
+          alt="Aion 2 fantasy background"
+          width={1920}
+          height={1080}
+          className="absolute inset-0 w-full h-full object-cover blur-[50px] brightness-[0.45] saturate-50"
+          priority
+        />
+      </div>
+
+      {/* Heavy glass overlay — frosted glass effect over the image */}
+      <div className="absolute inset-0">
+        {/* Dark gradient overlay for depth and readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-slate-950/60 to-black/80" />
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(2,4,10,0.85)_100%)]" />
+      </div>
 
       {/* Large atmospheric glows — cyan + blue + purple — blurred and visible */}
       <div className="absolute inset-0">
@@ -74,7 +91,7 @@ function BlueGlassyPremiumBg() {
             motionOn ? "animate-pulse" : ""
           }`}
           style={{
-            background: "radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(34, 211, 238, 0.20) 0%, transparent 70%)",
             animationDuration: "8s",
           }}
         />
@@ -85,7 +102,7 @@ function BlueGlassyPremiumBg() {
             motionOn ? "animate-pulse" : ""
           }`}
           style={{
-            background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%)",
             animationDuration: "10s",
           }}
         />
@@ -96,7 +113,7 @@ function BlueGlassyPremiumBg() {
             motionOn ? "animate-pulse" : ""
           }`}
           style={{
-            background: "radial-gradient(circle, rgba(139, 92, 246, 0.10) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)",
             animationDuration: "12s",
           }}
         />
@@ -110,7 +127,7 @@ function BlueGlassyPremiumBg() {
           style={{
             width: "400px",
             height: "400px",
-            background: "radial-gradient(circle, rgba(34, 211, 238, 0.20) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(34, 211, 238, 0.25) 0%, transparent 70%)",
           }}
           animate={{
             x: motionOn ? [0, 50, 0, -30, 0] : [0],
@@ -132,7 +149,7 @@ function BlueGlassyPremiumBg() {
           style={{
             width: "350px",
             height: "350px",
-            background: "radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(59, 130, 246, 0.22) 0%, transparent 70%)",
           }}
           animate={{
             x: motionOn ? [0, -40, 0, 30, 0] : [0],
@@ -154,7 +171,7 @@ function BlueGlassyPremiumBg() {
           style={{
             width: "250px",
             height: "250px",
-            background: "radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, transparent 70%)",
           }}
           animate={{
             x: motionOn ? [0, 25, 0, -15, 0] : [0],
@@ -172,47 +189,47 @@ function BlueGlassyPremiumBg() {
       </div>
 
       {/* Glass streaks — vertical cyan lines */}
-      <div className="absolute inset-0 opacity-[0.06]">
+      <div className="absolute inset-0 opacity-[0.08]">
         <div
           className="absolute inset-y-0 left-[15%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.7), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.8), transparent)",
           }}
         />
         <div
           className="absolute inset-y-0 left-[40%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.5), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.6), transparent)",
           }}
         />
         <div
           className="absolute inset-y-0 left-[65%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.4), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.5), transparent)",
           }}
         />
         <div
           className="absolute inset-y-0 left-[85%] w-[1px]"
           style={{
-            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.3), transparent)",
+            background: "linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.4), transparent)",
           }}
         />
       </div>
 
       {/* Subtle glass grid */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(34, 211, 238, 0.5) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(34, 211, 238, 0.5) 1px, transparent 1px)
+            linear-gradient(rgba(34, 211, 238, 0.6) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(34, 211, 238, 0.6) 1px, transparent 1px)
           `,
           backgroundSize: "120px 120px",
         }}
       />
 
       {/* Top-to-bottom gradient for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-blue-950/40 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
     </div>
   );
 }
@@ -236,7 +253,7 @@ export default function Aion2TestClubPage() {
     <div className="min-h-screen bg-slate-900/80 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden relative">
 
       {/* ═══ GLASSY BLUE PREMIUM BACKGROUND ═══ */}
-      <BlueGlassyPremiumBg />
+      <GlassyImageBg />
 
       {/* ═══ HERO SECTION ═══ */}
       <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden pt-16">
