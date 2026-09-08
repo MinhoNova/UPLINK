@@ -63,17 +63,11 @@ function GlassyImageBg() {
 
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
-      {/* MAIN IMAGE — full screen, blurred glassy */}
-      <div className="absolute inset-0">
-        <Image
-          src="/aion2-bg.webp"
-          alt="Aion 2 fantasy background"
-          width={1920}
-          height={1080}
-          className="absolute inset-0 w-full h-full object-cover blur-[40px] brightness-[0.75] saturate-80"
-          priority
-        />
-      </div>
+      {/* MAIN IMAGE — full screen, blurred glassy (using div background to avoid Next.js image optimization/attachment issues) */}
+      <div
+        className="absolute inset-0 w-full h-full bg-cover bg-center blur-[40px] brightness-[0.75] saturate-80"
+        style={{ backgroundImage: "url('/aion2-bg.webp')" }}
+      />
 
       {/* Heavy glass overlay — frosted glass effect over the image */}
       <div className="absolute inset-0">
