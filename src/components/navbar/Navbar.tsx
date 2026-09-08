@@ -255,10 +255,6 @@ export default function Navbar() {
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
               {theme === 'dark' ? t('nav_dark') : t('nav_light')}
             </motion.button>
-            <motion.button title={motionOn ? t('nav_motionPause') : t('nav_motionPlay')} onClick={() => setFlag("uplink_bg_motion", !motionOn)} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all border ${motionOn ? 'bg-white/5 text-gray-400 hover:text-white border-white/10 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30' : 'bg-[#00ffff]/20 text-[#00ffff] border-[#00ffff] shadow-[0_0_12px_rgba(0,255,255,0.25)]'}`}>
-              {motionOn ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {motionOn ? t('nav_motionPause') : t('nav_motionPlay')}
-            </motion.button>
             <div className="relative" ref={langRef}>
               <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/10 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30`}>
                 <Languages className="w-4 h-4" /> {LANGS.find((l) => l.code === lang)?.short || "EN"}
