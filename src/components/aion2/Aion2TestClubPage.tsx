@@ -128,8 +128,8 @@ export default function Aion2TestClubPage() {
           />
         </div>
 
-        {/* Hero Content: Ultra-Translucent Frosted Glass Capsule */}
-        <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 rounded-3xl bg-[#070e28]/25 backdrop-blur-2xl border border-sky-400/20 shadow-[0_12px_45px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.18)] max-w-2xl mx-auto">
+        {/* Hero Content — no glass wrapper, transparent background */}
+        <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 max-w-2xl mx-auto">
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -165,7 +165,7 @@ export default function Aion2TestClubPage() {
             <div className="w-[1px] h-8 bg-gradient-to-b from-purple-500/60 to-transparent my-4" />
           </motion.div>
 
-          {/* CREATE YOUR OFFER Button with True Glass Translucency */}
+          {/* CREATE YOUR OFFER Button — transparent, no glass */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -173,14 +173,14 @@ export default function Aion2TestClubPage() {
           >
             <motion.a
               href="/aion2/create-offer"
-              className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_35px_rgba(59,130,246,0.35)] hover:shadow-[0_0_60px_rgba(168,85,247,0.6)] transition-all duration-500 block hover:scale-105 active:scale-95"
+              className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_35px_rgba(59,130,246,0.25)] hover:shadow-[0_0_55px_rgba(168,85,247,0.45)] transition-all duration-500 block hover:scale-105 active:scale-95"
             >
               {/* Animated border gradient */}
               <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
 
-              {/* Button inner: True Translucent Crystal Glass */}
-              <div className="relative bg-[#07112e]/55 hover:bg-[#07112e]/40 backdrop-blur-2xl px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all">
-                <span className="text-xs font-black tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-100 to-blue-200 drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">
+              {/* Button inner: transparent, no backdrop-blur */}
+              <div className="relative bg-transparent px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-white/12 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] transition-all">
+                <span className="text-xs font-black tracking-[0.3em] uppercase text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.4)]">
                   {t("hero_create") || "CREATE YOUR OFFER"}
                 </span>
                 <span className="text-blue-300 group-hover:translate-x-1 transition-transform font-bold">›</span>
