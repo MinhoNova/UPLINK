@@ -82,13 +82,18 @@ export default function Aion2TestClubPage() {
         {/* Scenic Background Artwork (Vivid, Safe & Copyright-Free) */}
         <div className="absolute inset-0 z-0">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-90 blur-[2px]"
             style={{ backgroundImage: `url('/AION2.png')` }}
           />
 
-          {/* Soft natural vignette that doesn't black out the center */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/50 via-transparent to-[#050814]/90" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,8,20,0.65)_100%)]" />
+          {/* Crystal blend overlay — same technique as main page (mix-blend-multiply) */}
+          <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+
+          {/* Smooth gradient overlay — continuous from top to bottom, no hard line */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/70 via-[#050814]/30 to-[#050814]/60" />
+
+          {/* Radial vignette — softer */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(5,8,20,0.55)_100%)]" />
 
           {/* Living Center Celestial Core Glow — eliminates pitch-black void */}
           <motion.div
@@ -99,7 +104,7 @@ export default function Aion2TestClubPage() {
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] rounded-full blur-[110px] pointer-events-none"
             style={{
-              background: "radial-gradient(circle, rgba(56,189,248,0.35) 0%, rgba(168,85,247,0.22) 50%, transparent 75%)",
+              background: "radial-gradient(circle, rgba(56,189,248,0.30) 0%, rgba(168,85,247,0.18) 50%, transparent 75%)",
             }}
           />
 
@@ -107,23 +112,23 @@ export default function Aion2TestClubPage() {
           <motion.div
             animate={motionOn ? {
               scale: [1, 1.15, 1],
-              opacity: [0.25, 0.45, 0.25],
+              opacity: [0.20, 0.35, 0.20],
             } : undefined}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             className="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
             style={{
-              background: "radial-gradient(circle, rgba(56,189,248,0.25) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(56,189,248,0.20) 0%, transparent 70%)",
             }}
           />
           <motion.div
             animate={motionOn ? {
               scale: [1, 1.2, 1],
-              opacity: [0.2, 0.4, 0.2],
+              opacity: [0.15, 0.30, 0.15],
             } : undefined}
             transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             className="absolute -top-[10%] -right-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
             style={{
-              background: "radial-gradient(circle, rgba(168,85,247,0.25) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(168,85,247,0.20) 0%, transparent 70%)",
             }}
           />
         </div>
