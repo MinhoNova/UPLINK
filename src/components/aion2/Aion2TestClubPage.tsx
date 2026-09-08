@@ -83,7 +83,7 @@ export default function Aion2TestClubPage() {
         <div className="absolute inset-0 z-0">
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
-            style={{ backgroundImage: `url('/aion2-bg-citadel.webp')` }}
+            style={{ backgroundImage: `url('/AION2.png')` }}
           />
 
           {/* Soft natural vignette that doesn't black out the center */}
