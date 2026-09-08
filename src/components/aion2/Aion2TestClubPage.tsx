@@ -72,66 +72,64 @@ export default function Aion2TestClubPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
+
+      {/* Scenic Background Artwork — full page height (top to bottom, no cutoff) */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat opacity-98"
+        style={{ backgroundImage: `url('/AION2.png')` }}
+      />
 
       {/* ══════════════════════════════════════════════════════════
-          HERO SECTION (LUXURIOUS FROSTED GLASS & CELESTIAL GLOW)
+          HERO SECTION
           ══════════════════════════════════════════════════════════ */}
-      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center overflow-hidden py-12 px-4">
+      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
 
-        {/* Scenic Background Artwork — show AION2.png clearly (same as reference UI where bg visible behind glass) */}
-        <div className="absolute inset-0 z-0">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-98"
-            style={{ backgroundImage: `url('/AION2.png')` }}
-          />
+        {/* Subtle dark tint — much lighter (reference UI: bg visible behind glass) */}
+        <div className="absolute inset-0 bg-[#050814]/12 mix-blend-multiply" />
 
-          {/* Subtle dark tint — much lighter than before (reference UI: bg visible, not blocked) */}
-          <div className="absolute inset-0 bg-[#050814]/12 mix-blend-multiply" />
+        {/* Smooth gradient — from top to bottom, very subtle, no hard line */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/18 via-transparent to-[#050814]/28" />
 
-          {/* Smooth gradient — from top to bottom, very subtle, no hard line */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/18 via-transparent to-[#050814]/28" />
+        {/* Soft radial vignette — lighter, edge only */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(5,8,20,0.25)_100%)]" />
 
-          {/* Soft radial vignette — lighter, edge only */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(5,8,20,0.25)_100%)]" />
+        {/* Center glow — subtle, doesn't wash out the image */}
+        <motion.div
+          animate={motionOn ? {
+            scale: [1, 1.12, 1],
+            opacity: [0.15, 0.28, 0.15],
+          } : undefined}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] rounded-full blur-[110px] pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, rgba(168,85,247,0.10) 50%, transparent 75%)",
+          }}
+        />
 
-          {/* Center glow — subtle, doesn't wash out the image */}
-          <motion.div
-            animate={motionOn ? {
-              scale: [1, 1.12, 1],
-              opacity: [0.15, 0.28, 0.15],
-            } : undefined}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] rounded-full blur-[110px] pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, rgba(168,85,247,0.10) 50%, transparent 75%)",
-            }}
-          />
-
-          {/* Left / Right aurora glows — very subtle */}
-          <motion.div
-            animate={motionOn ? {
-              scale: [1, 1.12, 1],
-              opacity: [0.08, 0.18, 0.08],
-            } : undefined}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
-            style={{
-              background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)",
-            }}
-          />
-          <motion.div
-            animate={motionOn ? {
-              scale: [1, 1.15, 1],
-              opacity: [0.06, 0.15, 0.06],
-            } : undefined}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute -top-[10%] -right-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
-            style={{
-              background: "radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)",
-            }}
-          />
-        </div>
+        {/* Left / Right aurora glows — very subtle */}
+        <motion.div
+          animate={motionOn ? {
+            scale: [1, 1.12, 1],
+            opacity: [0.08, 0.18, 0.08],
+          } : undefined}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
+          style={{
+            background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)",
+          }}
+        />
+        <motion.div
+          animate={motionOn ? {
+            scale: [1, 1.15, 1],
+            opacity: [0.06, 0.15, 0.06],
+          } : undefined}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute -top-[10%] -right-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
+          style={{
+            background: "radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)",
+          }}
+        />
 
         {/* Hero Content — no glass wrapper, transparent background */}
         <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 max-w-2xl mx-auto">
@@ -208,7 +206,7 @@ export default function Aion2TestClubPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${
+                className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${\
                   isActive
                     ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40'
                     : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
@@ -240,7 +238,7 @@ export default function Aion2TestClubPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveDock(item.id)}
-                  className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                  className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${\
                     active
                       ? 'bg-[#151c3d] text-blue-300 border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]'
                       : 'bg-[#0a0f26]/80 text-slate-500 border border-blue-900/40 hover:text-blue-300 hover:border-blue-500/30'
