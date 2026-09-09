@@ -138,6 +138,12 @@ export default function Aion2TestClubPage() {
     return open[0]?.role || "dps";
   };
 
+  const offerBgOf = (l: any) => {
+    const o = lobbyOwner(l);
+    if (!o || o.vfxSettings?.showOnBanner === false) return null;
+    return resolveLobbyBannerBg(l, o, o?.activeVfx);
+  };
+
   const alreadyApplied = (l: any) =>
     meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
 
@@ -215,7 +221,8 @@ export default function Aion2TestClubPage() {
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-contain bg-top bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/80" />
+        <div className="absolute inset-x-0 top-0 h-[170vh] bg-gradient-to-b from-transparent via-transparent to-[#050814]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
@@ -412,6 +419,7 @@ export default function Aion2TestClubPage() {
                   const applied = alreadyApplied(offer);
                   const isMine = String(offer.ownerId) === meId;
                   const goldTotal = Number(offer.totalGold || offer.goldPerRun || 0) * Math.max(1, Number(offer.runsCount || 1));
+                  const offerBg = offerBgOf(offer);
                   return (
                   <motion.div
                     key={`${offer.id}-${offer.createdAt || ""}`}
@@ -420,10 +428,26 @@ export default function Aion2TestClubPage() {
                     whileHover={{ scale: 1.005 }}
                     className="tn-light relative w-full min-h-[104px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
-                    {/* Scenic Artwork thumbnail / gradient on right */}
+                    {/* Faction VFX banner / gradient on right */}
                     <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none overflow-hidden opacity-60 group-hover:opacity-85 transition-opacity">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
+                      {offerBg ? (
+                        <>
+                          <img
+                            src={offerBg}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/70 to-transparent" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
+                        </>
+                      )}
                     </div>
 
                     {/* Creator avatar */}
