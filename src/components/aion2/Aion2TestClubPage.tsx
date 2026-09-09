@@ -74,19 +74,18 @@ export default function Aion2TestClubPage() {
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
 
-      {/* Scenic Background Artwork — full page height, no cutoff */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat opacity-98"
-        style={{ backgroundImage: `url('/AION2.png')` }}
-      />
-
-      {/* Full-page overlay — smooth gradient from top to bottom (no hard line) */}
-      <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
-
       {/* ══════════════════════════════════════════════════════════
           HERO SECTION
           ══════════════════════════════════════════════════════════ */}
-      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
+      <section className="tn-hero relative w-full h-[600px] flex items-center justify-center overflow-hidden">
+
+        {/* Scenic Background Artwork — full hero, no cutoff (same structure as main page hero) */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+          <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050814] via-[#050814]/60 to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
+        </div>
 
         {/* Center glow — subtle, doesn't wash out the image */}
         <motion.div
@@ -200,7 +199,7 @@ export default function Aion2TestClubPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${\
+                className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${
                   isActive
                     ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40'
                     : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
@@ -232,7 +231,7 @@ export default function Aion2TestClubPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveDock(item.id)}
-                  className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${\
+                  className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                     active
                       ? 'bg-[#151c3d] text-blue-300 border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]'
                       : 'bg-[#0a0f26]/80 text-slate-500 border border-blue-900/40 hover:text-blue-300 hover:border-blue-500/30'
