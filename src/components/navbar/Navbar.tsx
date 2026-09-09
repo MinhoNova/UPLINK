@@ -365,13 +365,13 @@ export default function Navbar() {
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
                   {isAdmin ? (
-                    <img src="/Ascendant.png" alt="Ascendant" title="Ascendant Rank" className="h-5 w-5 object-contain shrink-0" />
+                    <img src="/Ascendant.png" alt="Ascendant" title="Ascendant Rank" className="h-7 w-7 object-contain shrink-0" />
                   ) : (
                     (() => {
                       const stats = currentUser?.stats || {};
                       const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0);
                       const r = ranks.overall;
-                      return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-5 w-5 object-contain shrink-0" />;
+                      return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
                     })()
                   )}
                 </button>
