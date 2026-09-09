@@ -6,7 +6,8 @@ export type RankTier =
   | "Diamond"
   | "Master"
   | "Grandmaster"
-  | "LEGEND";
+  | "Legendary"
+  | "Ascendant";
 
 export const RANK_ORDER: RankTier[] = [
   "Bronze",
@@ -16,7 +17,8 @@ export const RANK_ORDER: RankTier[] = [
   "Diamond",
   "Master",
   "Grandmaster",
-  "LEGEND",
+  "Legendary",
+  "Ascendant",
 ];
 
 /** Completed runs required for each Booster rank. */
@@ -28,7 +30,8 @@ export const BOOSTER_THRESHOLDS: Record<RankTier, number> = {
   Diamond: 400,
   Master: 800,
   Grandmaster: 1500,
-  LEGEND: 2500,
+  Legendary: 2500,
+  Ascendant: 4000,
 };
 
 /** Offers/orders posted required for each Poster rank. */
@@ -40,7 +43,8 @@ export const POSTER_THRESHOLDS: Record<RankTier, number> = {
   Diamond: 150,
   Master: 300,
   Grandmaster: 550,
-  LEGEND: 1000,
+  Legendary: 1000,
+  Ascendant: 1500,
 };
 
 export const RANK_COLORS: Record<RankTier, string> = {
@@ -51,13 +55,27 @@ export const RANK_COLORS: Record<RankTier, string> = {
   Diamond: "#00ffff",
   Master: "#a78bfa",
   Grandmaster: "#ff007f",
-  LEGEND: "#ffb400",
+  Legendary: "#ffb400",
+  Ascendant: "#ffffff",
+};
+
+/** Per-rank emblem artwork from /public. */
+export const RANK_IMAGES: Record<RankTier, string> = {
+  Bronze: "/Bronze.png",
+  Silver: "/Silver.png",
+  Gold: "/Gold.png",
+  Platinum: "/Platinum.png",
+  Diamond: "/Diamond.png",
+  Master: "/Master.png",
+  Grandmaster: "/Grandmaster.png",
+  Legendary: "/Legendary.png",
+  Ascendant: "/Ascendant.png",
 };
 
 export interface RankVisual {
   tier: RankTier;
   color: string;
-  image?: string;
+  image: string;
   nextRequired?: number | null;
   progressPct: number;
 }
@@ -71,10 +89,7 @@ function visualFor(tier: RankTier, current: number, thresholds: Record<RankTier,
   const next = idx + 1 < RANK_ORDER.length ? thresholds[RANK_ORDER[idx + 1]] : null;
   const min = thresholds[tier];
   const progressPct = next == null ? 100 : Math.min(100, Math.round(((current - min) / (next - min)) * 100));
-  const visual: RankVisual = { tier, color: RANK_COLORS[tier], nextRequired: next, progressPct };
-  if (tier === "LEGEND") visual.image = "/legendary%20rank.png";
-  else if (tier === "Grandmaster") visual.image = "/diamond%20rank.png";
-  return visual;
+  return { tier, color: RANK_COLORS[tier], image: RANK_IMAGES[tier], nextRequired: next, progressPct };
 }
 
 export function getBoosterRank(runs: number): RankVisual {

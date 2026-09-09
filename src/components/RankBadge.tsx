@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { Trophy, Star, Hash } from "lucide-react";
+import { Star, Hash } from "lucide-react";
 import { getUserRanks } from "@/lib/ranks";
 
 export function getRank(totalRuns: number): { title: string; color: string; minRuns: number } {
@@ -42,7 +42,7 @@ interface RankBadgeProps {
 export default function RankBadge({ stats, ratings, compact, showCategory }: RankBadgeProps) {
   const total = stats?.total || 0;
   const ranks = getUserRanks(total, stats?.postCount || 0);
-  const rank = { title: ranks.overall.tier.toUpperCase(), color: ranks.overall.color };
+  const rank = { title: ranks.overall.tier.toUpperCase(), color: ranks.overall.color, image: ranks.overall.image };
   const avgRating = getAverageRating(ratings);
   const ratingCount = ratings?.length || 0;
   const postCount = stats?.postCount || 0;
@@ -52,6 +52,7 @@ export default function RankBadge({ stats, ratings, compact, showCategory }: Ran
   if (compact) {
     return (
       <div className="flex items-center gap-1">
+        <img src={rank.image} alt={rank.title} className="w-3 h-3 object-contain" />
         <span className="text-[7px] font-black tracking-widest" style={{ color: rank.color }}>{rank.title}</span>
         {avgRating > 0 && (
           <div className="flex items-center gap-0.5">
@@ -67,7 +68,7 @@ export default function RankBadge({ stats, ratings, compact, showCategory }: Ran
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       {/* Rank */}
       <div className="flex items-center gap-1.5">
-        <Trophy className="w-3 h-3" style={{ color: rank.color }} />
+        <img src={rank.image} alt={rank.title} className="w-3.5 h-3.5 object-contain" />
         <span className="text-[9px] font-black tracking-widest" style={{ color: rank.color }}>{rank.title}</span>
       </div>
 

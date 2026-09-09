@@ -365,16 +365,13 @@ export default function Navbar() {
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
                   {isAdmin ? (
-                    <img src="/legendary%20rank.png" alt="Legendary" title="Legendary Rank" className="h-[18px] w-auto object-contain shrink-0" />
+                    <img src="/Ascendant.png" alt="Ascendant" title="Ascendant Rank" className="h-5 w-5 object-contain shrink-0" />
                   ) : (
                     (() => {
                       const stats = currentUser?.stats || {};
                       const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0);
                       const r = ranks.overall;
-                      if (r.image) {
-                        return <img src={r.image} alt={r.tier} title={`${r.tier} Rank`} className="h-[18px] w-auto object-contain shrink-0" />;
-                      }
-                      return <span title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm border border-white/10" style={{ color: r.color, backgroundColor: `${r.color}15` }}>{r.tier}</span>;
+                      return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-5 w-5 object-contain shrink-0" />;
                     })()
                   )}
                 </button>
