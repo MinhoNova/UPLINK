@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, UserCheck, UserPlus, Ban, MessageCircle, Users, UserMinus,
 } from "lucide-react";
-import { effectiveAvatarEffect, isSecretClubTier } from "@/lib/userProfile";
+import { effectiveAvatarEffect } from "@/lib/userProfile";
 import {
   resolveProfileImage,
   resolveProfileDisplayName,
@@ -313,9 +313,14 @@ export default function PlayerProfileModal() {
               <ProfileAvatarCircle src={avatarSrc} effect={effect} size={96} />
               <div className="pb-1 flex-1 min-w-0">
                 <h3 className="text-xl font-black text-white truncate leading-tight">{displayName}</h3>
-                {isSecretClubTier(profileUser) && (
-                  <span className="inline-block mt-1.5 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-yellow-500/40 bg-yellow-500/10 text-yellow-400">
-                    Secret Club
+                {profileUser?.team?.name && (
+                  <span className="inline-block mt-1.5 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
+                    {profileUser.team.name}
+                  </span>
+                )}
+                {Array.isArray(profileUser?.team?.members) && profileUser.team.members.length > 0 && (
+                  <span className="inline-block mt-1.5 ml-1.5 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-400">
+                    {profileUser.team.members.length} member{profileUser.team.members.length === 1 ? "" : "s"}
                   </span>
                 )}
               </div>
@@ -390,6 +395,34 @@ export default function PlayerProfileModal() {
                 <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest py-2">
                   Your profile
                 </p>
+              )}
+
+              {Array.isArray(profileUser?.team?.members) && profileUser.team.members.length > 0 && (
+                <div className="mt-3 bg-white/[0.03] border border-purple-500/20 rounded-2xl p-4">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-purple-400 mb-3 flex items-center gap-1.5">
+                    <Users className="w-3 h-3" /> {profileUser.team.name || "Team"} — Roster
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {profileUser.team.members.map((m: any, i: number) => (
+                      <div
+                        key={`${m.id}-${i}`}
+                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10"
+                        title={m.name}
+                      >
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-white/5 flex items-center justify-center shrink-0">
+                          {m.avatar ? (
+                            <img src={m.avatar} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <Users className="w-3 h-3 text-gray-500" />
+                          )}
+                        </div>
+                        <span className="text-[9px] font-bold text-gray-300 truncate max-w-[110px]">
+                          {m.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </motion.div>

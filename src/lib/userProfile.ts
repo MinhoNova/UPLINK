@@ -1,12 +1,8 @@
 /** Secret Club profile helpers — subscription perks and notification routing. */
 
 export function isSecretClubTier(user: any): boolean {
-  if (!user) return false;
-  if (String(user.id) === "1497295886223544471") return true;
-  const sub = user.subscription;
-  if (!sub || sub.tier !== "secret_club") return false;
-  if (sub.endDate && Date.now() > sub.endDate) return false;
-  return true;
+  /* The site is free for everyone — all features are unlocked. */
+  return !!user;
 }
 
 /** Strip paid cosmetics when subscription is revoked or expires. */

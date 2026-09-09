@@ -726,6 +726,23 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                   </div>
                                                                )}
 
+                                                               {app.teamName ? (
+                                                                  <div
+                                                                     className="flex items-center shrink-0 gap-1 rounded-lg border border-purple-500/40 bg-purple-500/10 px-2 py-1"
+                                                                     title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
+                                                                        ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
+                                                                        : app.teamName}
+                                                                  >
+                                                                     <Users className="w-3 h-3 text-purple-400" />
+                                                                     <span className="text-[7px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[90px] truncate">
+                                                                        {app.teamName}
+                                                                     </span>
+                                                                     {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
+                                                                        <span className="text-[7px] font-black text-cyan-300">({app.teamMembers.length})</span>
+                                                                     )}
+                                                                  </div>
+                                                               ) : null}
+
                                                                <div className={`flex-1 min-w-0 rounded-lg border px-2 py-1 flex items-center ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
                                                                   <p className={`text-[11px] leading-snug line-clamp-2 break-words font-semibold w-full ${note ? 'text-gray-100' : 'text-gray-600'}`}>
                                                                      {note || "—"}

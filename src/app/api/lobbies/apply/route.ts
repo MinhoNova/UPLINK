@@ -67,6 +67,14 @@ export async function POST(req: Request) {
     applicantId: uid,
     applicantName: applicant.applicantName || auth.user.name || "Operative",
     applicantNote: sanitizeApplicantNote(applicant.applicantNote),
+    ...(() => {
+      const user = registeredUsers.find((u) => String(u.id) === uid);
+      if (!user?.team?.name) return {};
+      return {
+        teamName: String(user.team.name).slice(0, 40),
+        teamMembers: Array.isArray(user.team.members) ? user.team.members.slice(0, 5) : [],
+      };
+    })(),
   };
 
   const updatedLobby = {

@@ -61,8 +61,8 @@ export default function AdminDashboard() {
   }, [users, searchQuery]);
 
   const totalUsers = users.length;
-  const clubUsers = users.filter((u: any) => u.subscription?.tier === "secret_club").length;
-  const freeUsers = users.filter((u: any) => !u.subscription?.tier || u.subscription?.tier === "free").length;
+  const clubUsers = users.filter((u: any) => Array.isArray(u.team?.members) && u.team.members.length > 0).length;
+  const freeUsers = users.filter((u: any) => u.team?.name).length;
   const usersWithDrafts = users.filter((u: any) => u.offerDrafts?.length > 0).length;
 
   return (
@@ -115,11 +115,11 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-black text-white mt-1">{totalUsers}</p>
               </div>
               <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-4">
-                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Secret Club</p>
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">With Team</p>
                 <p className="text-2xl font-black text-yellow-400 mt-1">{clubUsers}</p>
               </div>
               <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-4">
-                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Free</p>
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Named Teams</p>
                 <p className="text-2xl font-black text-gray-400 mt-1">{freeUsers}</p>
               </div>
               <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-4">
@@ -154,7 +154,6 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {filtered.map((user: any) => {
-                    const tier = user.subscription?.tier;
                     const hasDrafts = user.offerDrafts?.length > 0;
                     const lastSeen = user.lastSeenAt
                       ? new Date(user.lastSeenAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -190,10 +189,10 @@ export default function AdminDashboard() {
                           <span className="text-[10px] text-gray-400">{lastSeen}</span>
                         </td>
                         <td className="px-4 py-3">
-                          {tier === "secret_club" ? (
-                            <span className="px-2 py-0.5 rounded-full text-yellow-400 border border-yellow-500/50 bg-yellow-500/20 font-black text-[8px] uppercase tracking-widest">CLUB</span>
+                          {user.team?.name ? (
+                            <span className="px-2 py-0.5 rounded-full text-yellow-400 border border-yellow-500/50 bg-yellow-500/20 font-black text-[8px] uppercase tracking-widest">{user.team.name}</span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-gray-500 border border-white/10 bg-white/5 font-black text-[8px] uppercase tracking-widest">FREE</span>
+                            <span className="px-2 py-0.5 rounded-full text-gray-500 border border-white/10 bg-white/5 font-black text-[8px] uppercase tracking-widest">NO TEAM</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -257,12 +256,11 @@ export default function AdminDashboard() {
                     { label: "Battle Tag", value: user.battleTag },
                     { label: "Last Known IP", value: user.lastKnownIp },
                     { label: "Last Seen", value: user.lastSeenAt ? new Date(user.lastSeenAt).toLocaleString() : "—" },
-                    { label: "Subscription Tier", value: user.subscription?.tier },
-                    { label: "Subscription End", value: user.subscription?.endDate ? new Date(user.subscription.endDate).toLocaleDateString() : "—" },
+                    { label: "Team", value: user.team?.name || "—" },
+                    { label: "Team Members", value: Array.isArray(user.team?.members) ? `${user.team.members.length} members` : "—" },
                     { label: "Avatar Effect", value: user.effect },
                     { label: "Has VFX", value: user.activeVfx ? "Yes" : "No" },
                     { label: "Profile GIF", value: user.profileGif ? "Yes" : "No" },
-                    { label: "Welcome Claimed", value: user.welcomeFreeClaimed ? "Yes" : "No" },
                     { label: "Offer Drafts", value: user.offerDrafts?.length || 0 },
                     { label: "Custom Avatar", value: user.customAvatar ? "Yes" : "No" },
                     { label: "Rank Override", value: user.rankOverride || "Auto" },

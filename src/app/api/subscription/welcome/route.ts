@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
-import { grantSecretClubSubscription, getSubscriptionDaysLeft } from "@/lib/userProfile";
 
+/**
+ * The site is free for everyone — there are no paid subscriptions.
+ * These endpoints are kept as no-ops so legacy clients/UI never error.
+ */
 export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await req.json().catch(() => ({}));
-  const action = String(body?.action || "claim_free");
+  const action = String(body?.action || "dismiss");
 
   await initTables();
   const users: any[] = (await getKV("registeredUsers")) || [];
@@ -18,38 +21,14 @@ export async function POST(req: Request) {
   }
 
   const user = users[idx];
-
-  if (action === "dismiss") {
-    users[idx] = { ...user, welcomePlansSeen: true };
-    await setKV("registeredUsers", users);
-    return NextResponse.json({ ok: true, dismissed: true });
-  }
-
-  if (action !== "claim_free") {
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  }
-
-  const claims: Record<string, number> = (await getKV("welcomeFreeClaims")) || {};
-  if (claims[String(auth.user.id)]) {
-    return NextResponse.json({ error: "Welcome offer already claimed" }, { status: 409 });
-  }
-
-  if (user.welcomeFreeClaimed) {
-    return NextResponse.json({ error: "Welcome offer already claimed" }, { status: 409 });
-  }
-
-  users[idx] = {
-    ...grantSecretClubSubscription(user, 30),
-    welcomePlansSeen: true,
-    welcomeFreeClaimed: true,
-  };
-  claims[String(auth.user.id)] = Date.now();
-  await setKV("welcomeFreeClaims", claims);
+  users[idx] = { ...user, welcomePlansSeen: true, welcomeFreeClaimed: true };
   await setKV("registeredUsers", users);
 
   return NextResponse.json({
     ok: true,
-    daysLeft: getSubscriptionDaysLeft(users[idx]),
-    endDate: users[idx].subscription?.endDate,
+    free: true,
+    daysLeft: null,
+    endDate: null,
+    message: "The site is free — all features are unlocked.",
   });
 }

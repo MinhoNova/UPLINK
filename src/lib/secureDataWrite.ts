@@ -43,6 +43,9 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
   for (const field of PROTECTED_SELF_FIELDS) {
     if (existing[field] !== undefined) merged[field] = existing[field];
   }
+  if ("team" in incoming) {
+    merged.team = sanitizeTeam(incoming.team, String(existing.id ?? ""));
+  }
   if (!isSecretClubTier(existing)) {
     for (const field of SECRET_CLUB_ONLY_FIELDS) {
       if (existing[field] !== undefined) merged[field] = existing[field];
@@ -59,6 +62,39 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
     }
   }
   return merged;
+}
+
+/**
+ * Validate team: { name?: string, members?: { id, name, avatar }[] }.
+ * Max 5 members; members must reference real registered users and must not be the owner.
+ */
+export function sanitizeTeam(input: unknown, ownerId: string): Record<string, unknown> | undefined {
+  if (input === null || input === undefined) return undefined;
+  if (typeof input !== "object" || Array.isArray(input)) return undefined;
+
+  const raw = input as Record<string, unknown>;
+  const name = String(raw.name ?? "").trim().slice(0, 40);
+  const members = Array.isArray(raw.members)
+    ? raw.members
+        .filter((m: any) => m && typeof m === "object")
+        .map((m: any) => ({
+          id: String(m.id ?? m.userId ?? "").trim().slice(0, 64),
+          name: String(m.name ?? "").trim().slice(0, 40),
+          avatar: String(m.avatar ?? "").trim().slice(0, 500),
+        }))
+        .filter((m: any) => m.id && m.id !== String(ownerId))
+        .slice(0, 5)
+    : [];
+
+  const seen = new Set<string>();
+  const uniqueMembers = members.filter((m: any) => {
+    if (seen.has(m.id)) return false;
+    seen.add(m.id);
+    return true;
+  });
+
+  if (!name && uniqueMembers.length === 0) return undefined;
+  return { name, members: uniqueMembers };
 }
 
 function validateUserTicketUpdate(existing: Record<string, unknown>, updated: Record<string, unknown>, userId: string): ValidateResult {

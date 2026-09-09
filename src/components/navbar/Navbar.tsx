@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, UserCircle } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -353,11 +353,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.location.pathname === '/') {
-                      window.dispatchEvent(new CustomEvent('open-armory-modal'));
-                    } else {
-                      window.location.href = '/';
-                    }
+                    window.location.href = '/my-profile';
                   }}
                   className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
                 >
@@ -370,6 +366,15 @@ export default function Navbar() {
                     const r = ranks.overall;
                     return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
                   })()}
+                </button>
+                <button
+                  type="button"
+                  title={t('nav_myProfile')}
+                  onClick={() => { window.location.href = '/my-profile'; }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/my-profile' ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/40' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5'}`}
+                >
+                  <UserCircle className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{t('nav_myProfile')}</span>
                 </button>
                 {isAdmin && (
                   <a href="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
