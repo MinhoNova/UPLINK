@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
-import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
+import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
 
@@ -141,7 +141,11 @@ export default function Aion2TestClubPage() {
   const offerBgOf = (l: any) => {
     const o = lobbyOwner(l);
     if (!o || o.vfxSettings?.showOnBanner === false) return null;
-    return resolveLobbyBannerBg(l, o, o?.activeVfx);
+    return (
+      resolveLobbyBannerAnimatedSrc(l, o, o?.activeVfx) ||
+      String(o?.profileGif || "") ||
+      null
+    );
   };
 
   const alreadyApplied = (l: any) =>

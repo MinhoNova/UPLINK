@@ -116,7 +116,7 @@ export default function AdminDashboard() {
   }, [users, searchQuery]);
 
   const totalUsers = users.length;
-  const clubUsers = users.filter((u: any) => Array.isArray(u.team?.members) && u.team.members.length > 0).length;
+  const clubUsers = users.filter((u: any) => Array.isArray(u.team?.members) && u.team.members.filter((m: any) => m.status !== "pending").length > 0).length;
   const freeUsers = users.filter((u: any) => u.team?.name).length;
   const usersWithDrafts = users.filter((u: any) => u.offerDrafts?.length > 0).length;
 
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
                     { label: "Last Known IP", value: user.lastKnownIp },
                     { label: "Last Seen", value: user.lastSeenAt ? new Date(user.lastSeenAt).toLocaleString() : "—" },
                     { label: "Team", value: user.team?.name || "—" },
-                    { label: "Team Members", value: Array.isArray(user.team?.members) ? `${user.team.members.length} members` : "—" },
+                    { label: "Team Members", value: Array.isArray(user.team?.members) ? `${user.team.members.filter((m: any) => m.status !== "pending").length} members` : "—" },
                     { label: "Last Team Rename", value: friendlyDate(user.team?.lastRenameAt) },
                     { label: "Avatar Effect", value: user.effect },
                     { label: "Has VFX", value: user.activeVfx ? "Yes" : "No" },

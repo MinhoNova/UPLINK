@@ -32,6 +32,7 @@ import {
 import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
 
 const TEAM_MAX = 4;
+const TEAM_MAX_MEMBERS = 3;
 const TEAM_RENAME_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function MyProfileClient() {
@@ -88,6 +89,13 @@ export default function MyProfileClient() {
     setTeamMembers(Array.isArray(me?.team?.members) ? me.team.members : []);
     setDisplayNameInput(me?.displayName || "");
   }, [me?.id, me?.team?.name]);
+
+  const teamConfirmed = useMemo(
+    () => teamMembers.filter((m: any) => m.status !== "pending").length,
+    [teamMembers]
+  );
+
+  const teamTotal = me?.team?.name || teamMembers.length > 0 ? 1 + teamConfirmed : 0;
 
   const myRanks = useMemo(() => {
     const stats = me?.stats || {};
@@ -247,8 +255,8 @@ export default function MyProfileClient() {
   }, [users, teamQuery, teamMembers, myId]);
 
   const addTeamMember = (u: any) => {
-    if (teamMembers.length >= TEAM_MAX) {
-      flash(`Max ${TEAM_MAX} team members`, "err");
+    if (teamMembers.length >= TEAM_MAX_MEMBERS) {
+      flash(`Team is full (max ${TEAM_MAX} with you)`, "err");
       return;
     }
     setTeamMembers((prev) => [
@@ -463,7 +471,7 @@ export default function MyProfileClient() {
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Posts</span>
                 </span>
                 <span className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10">
-                  <span className="text-lg font-black text-emerald-300 mr-1.5">{teamMembers.length}/{TEAM_MAX}</span>
+                  <span className="text-lg font-black text-emerald-300 mr-1.5">{teamTotal}/{TEAM_MAX}</span>
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Squad</span>
                 </span>
               </div>
@@ -597,7 +605,7 @@ export default function MyProfileClient() {
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
               <Users className="w-4 h-4 text-purple-400" />
               <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">MY TEAM</h3>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-auto">{teamMembers.length}/{TEAM_MAX}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-auto">{teamTotal}/{TEAM_MAX}</span>
             </div>
 
             {incomingInvites.length > 0 && (
@@ -640,7 +648,7 @@ export default function MyProfileClient() {
             </div>
 
             <div className="mb-4">
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Add Members (up to {TEAM_MAX})</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Add Members (up to {TEAM_MAX_MEMBERS})</p>
               <div className="flex gap-2">
                 <input
                   value={teamQuery}
@@ -680,6 +688,20 @@ export default function MyProfileClient() {
             </div>
 
             <div className="space-y-2 mb-6">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-purple-500/[0.07] border border-purple-500/25">
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-[#050814]/80 border border-purple-500/30 flex items-center justify-center shrink-0">
+                  {me?.customAvatar || me?.profileGif || me?.avatar ? (
+                    <img src={me?.customAvatar || me?.profileGif || me?.avatar} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <UserCircle2 className="w-4 h-4 text-slate-500" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-black text-white truncate block">{me?.name || me?.username || "You"}</span>
+                  <span className="text-[7px] font-black uppercase tracking-widest text-purple-300/90">Leader · You</span>
+                </div>
+                <Crown className="w-3.5 h-3.5 text-purple-300/70 shrink-0" />
+              </div>
               {teamMembers.length === 0 ? (
                 <div className="flex flex-col items-center text-center py-8">
                   <div className="relative w-14 h-14 mb-3 flex items-center justify-center">
@@ -690,7 +712,7 @@ export default function MyProfileClient() {
                     No squad yet
                   </p>
                   <p className="text-[9px] text-slate-600 mt-1 max-w-[240px]">
-                    Search usernames above to recruit up to {TEAM_MAX} players.
+                    Search usernames above to recruit up to {TEAM_MAX_MEMBERS} players.
                   </p>
                 </div>
               ) : (

@@ -72,7 +72,11 @@ export async function POST(req: Request) {
       if (!user?.team?.name) return {};
       return {
         teamName: String(user.team.name).slice(0, 40),
-        teamMembers: Array.isArray(user.team.members) ? user.team.members.slice(0, 5) : [],
+        teamMembers: Array.isArray(user.team.members)
+          ? user.team.members
+              .filter((m: any) => (m.status || "confirmed") === "confirmed")
+              .slice(0, 3)
+          : [],
       };
     })(),
   };

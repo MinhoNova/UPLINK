@@ -66,7 +66,7 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
 
 /**
  * Validate team: { name?, members?: { id, name, avatar, status, inviteNotifId }[], lastRenameAt? }.
- * Max 4 members; members must not be the owner.
+ * Max 4 total INCLUDING the owner → max 3 non-owner members; members must not be the owner.
  * Members marked "pending" are invites awaiting the player's accept.
  */
 export function sanitizeTeam(input: unknown, ownerId: string): Record<string, unknown> | undefined {
@@ -88,7 +88,7 @@ export function sanitizeTeam(input: unknown, ownerId: string): Record<string, un
             : {}),
         }))
         .filter((m: any) => m.id && m.id !== String(ownerId))
-        .slice(0, 4)
+        .slice(0, 3)
     : [];
 
   const seen = new Set<string>();

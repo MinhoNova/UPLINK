@@ -321,7 +321,7 @@ export default function PlayerProfileModal() {
                   )}
                   {Array.isArray(profileUser?.team?.members) && profileUser.team.members.length > 0 && (
                     <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-400">
-                      {profileUser.team.members.length} member{profileUser.team.members.length === 1 ? "" : "s"}
+                      {1 + profileUser.team.members.filter((m: any) => m.status !== "pending").length}/4 squad
                     </span>
                   )}
                   <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#8ea1ff]">
@@ -408,6 +408,26 @@ export default function PlayerProfileModal() {
                     <Users className="w-3 h-3" /> {profileUser.team.name || "Team"} — Roster
                   </p>
                   <div className="flex flex-wrap gap-2">
+                    <div
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30"
+                      title={`${profileUser?.name || profileUser?.username || ""} (Leader)`}
+                    >
+                      <div className="w-6 h-6 rounded-full overflow-hidden bg-white/5 flex items-center justify-center shrink-0 relative">
+                        {profileUser?.customAvatar || profileUser?.avatar || profileUser?.profileGif ? (
+                          <img
+                            src={profileUser?.customAvatar || profileUser?.avatar || profileUser?.profileGif}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="w-3 h-3 text-gray-500" />
+                        )}
+                      </div>
+                      <span className="text-[9px] font-bold text-white truncate max-w-[110px]">
+                        {profileUser?.name || profileUser?.username || "Leader"}
+                        <span className="text-purple-300/90"> · Leader</span>
+                      </span>
+                    </div>
                     {profileUser.team.members.map((m: any, i: number) => (
                       <div
                         key={`${m.id}-${i}`}

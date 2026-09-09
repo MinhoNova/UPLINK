@@ -46,3 +46,21 @@ export function resolveLobbyBannerBg(
   if (activeVfx) return resolveUserVfxBannerUrl(ownerUser, activeVfx);
   return null;
 }
+
+/** Animated source for offer banners — prefers the full GIF src over the static poster. */
+export function resolveLobbyBannerAnimatedSrc(
+  lobby: { customBg?: string; customBgPoster?: string },
+  ownerUser: any,
+  activeVfx: string | null | undefined
+): string | null {
+  const customBg = lobby?.customBg;
+  if (customBg && String(customBg).trim()) {
+    const entry = findVfxEntry(ownerUser?.userVfx, customBg);
+    return entry ? resolveVfxSrc(entry) || customBg : customBg;
+  }
+  if (activeVfx && String(activeVfx).trim()) {
+    const entry = findVfxEntry(ownerUser?.userVfx, activeVfx);
+    return entry ? resolveVfxSrc(entry) || activeVfx : activeVfx;
+  }
+  return null;
+}
