@@ -253,12 +253,6 @@ export default function Navbar() {
             }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
               ⚙️
             </motion.button>
-            {isAdmin && (
-              <a href="/admin" className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
-                <ShieldAlert className="w-4 h-4" />
-                Admin
-              </a>
-            )}
             <motion.button title={t("nav_themeTitle")} onClick={toggleTheme} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
               {theme === 'dark' ? t('nav_dark') : t('nav_light')}
@@ -371,6 +365,12 @@ export default function Navbar() {
                   </span>
                   {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm ${t.color}`}>{t.label}</span> : null; })()}
                 </button>
+                {isAdmin && (
+                  <a href="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    Admin
+                  </a>
+                )}
               </div>
               )}
             </div>
