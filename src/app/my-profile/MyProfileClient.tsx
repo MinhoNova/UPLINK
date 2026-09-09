@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
   Shield,
+  ShieldCheck,
   Sparkles,
   Users,
   Upload,
@@ -16,6 +17,7 @@ import {
   Loader2,
   UserCircle2,
   Crown,
+  X,
 } from "lucide-react";
 import { resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
