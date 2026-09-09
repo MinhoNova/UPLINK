@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send, Play,
-  Check, Shield, Crown, Clock, Gem, Star, Lock, Castle, Crosshair,
-  FlaskConical, TrendingUp, Hash, type LucideIcon,
+  Check, Shield, Crown, Gem, Lock, Castle, Crosshair,
+  FlaskConical, TrendingUp, Hash, Globe, MapPin, type LucideIcon,
 } from "lucide-react";
 import { AION_SERVICES, AION_CATEGORIES, AionService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
@@ -16,10 +16,10 @@ const fmtKinah = (usd: number) => `${Math.round(usd * 1000).toLocaleString()} KI
 const STEPS = ["service", "details", "confirm"] as const;
 type Step = (typeof STEPS)[number];
 
-const SPEEDS = [
-  { label: "Standard", desc: "Queue within 24h", icon: Clock },
-  { label: "Priority", desc: "Queue within 2h", icon: Zap },
-  { label: "Express", desc: "Immediate start", icon: Star },
+const REGIONS = [
+  { label: "EU", desc: "Europe", icon: Globe },
+  { label: "NA (EAST)", desc: "North America — East", icon: MapPin },
+  { label: "NA (WEST)", desc: "North America — West", icon: MapPin },
 ];
 
 const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: string }> = {
@@ -34,7 +34,7 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
 
 const STEP_HINTS: Record<Step, string> = {
   service: "Choose the mission you want to publish",
-  details: "Tune quantity, speed and payment",
+  details: "Tune quantity, region and payment",
   confirm: "Lock in the details before going live",
 };
 
@@ -44,9 +44,9 @@ export default function CreateOfferPage() {
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
   const [payment, setPayment] = useState<"kinah">("kinah");
-  const [speed, setSpeed] = useState("Standard");
+  const [region, setRegion] = useState("EU");
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [speedOpen, setSpeedOpen] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
   const [published, setPublished] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [pubError, setPubError] = useState("");
@@ -71,9 +71,9 @@ export default function CreateOfferPage() {
   const stepIndex = STEPS.indexOf(step);
   const totalLabel = `${fmtKinah(price)}`;
 
-  const advance = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
-  const regress = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("kinah"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); setPubError(""); };
+  const advance = () => { setRegionOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
+  const regress = () => { setRegionOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setPayment("kinah"); setRegionOpen(false); setPaymentOpen(false); setPublished(false); setPubError(""); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -99,12 +99,12 @@ export default function CreateOfferPage() {
         category,
         title: `${qty}× ${sel.name}`,
         serviceName: String(sel.name || "Mission"),
-        notes: `${sel.description || ""} · ${speed}`,
+        notes: `${sel.description || ""} · ${region}`,
         totalGold: kinahTotal,
         goldPerRun: kinahPerUnit,
         runsCount: qty,
         keyLevel: String((sel as any).keyLevel || "+10"),
-        isTimed: speed !== "Standard",
+        serverRegion: region,
         roles: category === "leveling"
           ? { tank: 0, dps: qty }
           : { tank: 0, healer: 0, dps: qty },
@@ -114,7 +114,6 @@ export default function CreateOfferPage() {
         customBg: "",
         blacklistedClasses: [],
         blockedRoles: [],
-        serverRegion: "EU",
         status: "standby",
         createdAt: Date.now(),
       };
@@ -378,21 +377,21 @@ export default function CreateOfferPage() {
 
                             <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
                               <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                <Zap className="h-3.5 w-3.5 text-cyan-400" /> Speed
+                                <Globe className="h-3.5 w-3.5 text-cyan-400" /> Region
                               </p>
                               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                                {SPEEDS.map((sp) => {
-                                  const SpeedIcon = sp.icon;
-                                  const isActive = speed === sp.label;
+                                {REGIONS.map((r) => {
+                                  const RegionIcon = r.icon;
+                                  const isActive = region === r.label;
                                   return (
-                                    <button key={sp.label} type="button" onClick={() => { setSpeed(sp.label); setSpeedOpen(false); }}
+                                    <button key={r.label} type="button" onClick={() => { setRegion(r.label); setRegionOpen(false); }}
                                       className={`relative flex items-center gap-3 rounded-xl border px-3.5 py-3.5 text-left transition-all cursor-pointer ${isActive ? "border-cyan-400/60 bg-cyan-500/10 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
                                       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-300" : "border-white/[0.1] bg-white/[0.04] text-gray-500"}`}>
-                                        <SpeedIcon className="h-4 w-4" />
+                                        <RegionIcon className="h-4 w-4" />
                                       </span>
                                       <span className="min-w-0 flex-1">
-                                        <span className={`block text-sm font-bold ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{sp.label}</span>
-                                        <span className="block text-[10px] text-gray-500">{sp.desc}</span>
+                                        <span className={`block text-sm font-bold ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{r.label}</span>
+                                        <span className="block text-[10px] text-gray-500">{r.desc}</span>
                                       </span>
                                       {isActive && <Check className="h-4 w-4 shrink-0 text-cyan-300" />}
                                     </button>
@@ -406,7 +405,7 @@ export default function CreateOfferPage() {
                                 <Coins className="h-3.5 w-3.5 text-cyan-400" /> Payment
                               </p>
                               <div className="grid grid-cols-1 gap-2 sm:grid-cols-1">
-                                <button type="button" onClick={() => { setPayment("kinah"); setSpeedOpen(false); }}
+                                <button type="button" onClick={() => { setPayment("kinah"); setRegionOpen(false); }}
                                   className={`flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-all cursor-pointer ${payment === "kinah" ? "border-amber-400/50 bg-amber-500/10 shadow-[0_0_18px_rgba(251,191,36,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
                                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${payment === "kinah" ? "border-amber-400/40 bg-amber-500/15" : "border-white/[0.1] bg-white/[0.04] text-gray-500"}`}>
                                     <Coins className={`h-4 w-4 ${payment === "kinah" ? "text-amber-300" : "text-gray-500"}`} />
@@ -430,7 +429,7 @@ export default function CreateOfferPage() {
                             {[
                               ["Service", sel.name],
                               ["Quantity", `${qty} × ${sel.priceUnit || "runs"}`],
-                              ["Speed", speed],
+                              ["Region", region],
                               ["Payment", "Kinah · In-Game"],
                               ["Rate", `${fmtKinah(sel.basePriceUsd)} / ${sel.priceUnit ?? "pc"}`],
                             ].map(([k, v], ix) => (
@@ -519,7 +518,7 @@ export default function CreateOfferPage() {
                       <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
                         {[
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
-                          ["Speed", sel ? speed : "—"],
+                          ["Region", sel ? region : "—"],
                           ["Payment", sel ? "Kinah · In-Game" : "—"],
                         ].map(([k, v], ix) => (
                           <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 2 ? "border-b border-white/[0.06]" : ""}`}>

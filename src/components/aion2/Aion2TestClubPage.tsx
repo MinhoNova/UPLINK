@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Zap, Swords, Users, Search,
-  Star, MessageSquare, ClipboardList, Coins, Radio
+  Star, MessageSquare, ClipboardList, Coins, Radio, Trash2, Check
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -41,6 +41,10 @@ export default function Aion2TestClubPage() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [applyError, setApplyError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
@@ -166,6 +170,41 @@ export default function Aion2TestClubPage() {
       setApplyError("Network error");
     } finally {
       setApplyingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!meId) { setIsAdmin(false); return; }
+    let cancelled = false;
+    fetch("/api/users/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled) setIsAdmin(d?.role === "admin"); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [meId]);
+
+  const deleteOffer = async (l: any) => {
+    if (!meId || deletingId) return;
+    setDeletingId(String(l.id));
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/lobbies/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lobbyId: l.id }),
+      });
+      if (res.ok) {
+        setLobbies((prev) => prev.filter((x: any) => String(x.id) !== String(l.id)));
+        setConfirmId(null);
+        window.dispatchEvent(new Event("data-refresh"));
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setDeleteError(d.error || "Could not delete this offer");
+      }
+    } catch {
+      setDeleteError("Network error");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -426,6 +465,11 @@ export default function Aion2TestClubPage() {
                             <span>{offer.keyLevel}</span>
                           </span>
                         )}
+                        {offer.serverRegion && (
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">
+                            {String(offer.serverRegion).toUpperCase()}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                           <Users className="w-3.5 h-3.5 text-cyan-400" />
                           {openRoles.length > 0
@@ -439,24 +483,44 @@ export default function Aion2TestClubPage() {
                       </div>
                     </div>
 
-                    {/* Apply */}
-                    <div className="relative z-10 flex-shrink-0 sm:pl-2">
+                    {/* Apply / Live / Delete */}
+                    <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                       {isMine ? (
-                        <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 text-[9px] font-black uppercase tracking-widest">
-                          <Radio className="w-3 h-3" /> Live
-                        </span>
+                        <>
+                          <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 text-[9px] font-black uppercase tracking-widest">
+                            <Radio className="w-3 h-3" /> Live
+                          </span>
+                        </>
                       ) : applied ? (
-                        <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
+                        <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
                           <Check className="w-3 h-3" /> Applied
                         </span>
                       ) : (
                         <button
                           onClick={() => applyNow(offer)}
                           disabled={!meId || applyingId === String(offer.id)}
-                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center gap-1.5"
+                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5"
                         >
                           <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
                         </button>
+                      )}
+                      {(isMine || isAdmin) && (
+                        confirmId === String(offer.id) ? (
+                          <button
+                            onClick={() => deleteOffer(offer)}
+                            disabled={deletingId === String(offer.id)}
+                            className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/15 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50"
+                          >
+                            {deletingId === String(offer.id) ? "Deleting..." : "Confirm Delete?"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => { setConfirmId(String(offer.id)); setDeleteError(""); window.setTimeout(() => setConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }}
+                            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/10 transition-all"
+                          >
+                            <Trash2 className="w-3 h-3" /> Delete
+                          </button>
+                        )
                       )}
                     </div>
                   </motion.div>
@@ -475,6 +539,9 @@ export default function Aion2TestClubPage() {
 
               {applyError && (
                 <p className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>
+              )}
+              {deleteError && (
+                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{deleteError}</p>
               )}
             </div>
           </section>
