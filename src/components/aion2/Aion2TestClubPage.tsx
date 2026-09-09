@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Zap, Swords, Users, Search,
@@ -11,7 +10,7 @@ import {
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
-import { getOwnerOngoingMissions, getJoinedOngoingMissions } from "@/lib/lobbyLifecycle";
+import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
 
 /* ── FILTER TABS ── */
@@ -29,38 +28,6 @@ const MINI_DOCK = [
   { id: "star",   icon: Star,          label: "FAVORITES" },
 ];
 
-/* ── SEED OFFERS ── */
-interface OfferCard {
-  id: string;
-  name: string;
-  category: string;
-  region: "US" | "EU";
-  playersMeta: string;
-  rewardLabel: string;
-  bgTheme: string;
-}
-
-const SEED_OFFERS: OfferCard[] = [
-  {
-    id: "seed-1",
-    name: "DUNGEON BOOST",
-    category: "Dungeons",
-    region: "US",
-    playersMeta: "4 × +10",
-    rewardLabel: "25K PER RUN",
-    bgTheme: "from-[#1a1f3c]/90 via-[#1a1f3c]/60 to-[#2c3b6b]/40",
-  },
-  {
-    id: "seed-2",
-    name: "LEVELING 1-80",
-    category: "Leveling",
-    region: "EU",
-    playersMeta: "4 × +10",
-    rewardLabel: "50K PER RUN",
-    bgTheme: "from-[#1a1f3c]/90 via-[#1a1f3c]/60 to-[#3b2c6b]/40",
-  },
-];
-
 export default function Aion2TestClubPage() {
   const { t } = useI18n();
   const { data: session } = useSession();
@@ -71,8 +38,12 @@ export default function Aion2TestClubPage() {
   const [lobbies, setLobbies] = useState<any[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
   const [signalScan, setSignalScan] = useState(true);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [applyError, setApplyError] = useState("");
 
   const meId = String((session?.user as any)?.id || "");
+  const meName = String((session?.user as any)?.name || "Operative");
 
   useEffect(() => {
     if (!meId) return;
@@ -120,10 +91,83 @@ export default function Aion2TestClubPage() {
   const missionOwner = (m: any) =>
     registeredUsers.find((u: any) => String(u.id) === String(m.ownerId)) || null;
 
+  const OPEN_TAB_CATEGORIES: Record<string, string[]> = {
+    Dungeons: ["dungeon"],
+    Leveling: ["leveling"],
+    Boosts: ["dungeon"],
+    PVP: [],
+  };
+
   const displayOffers = useMemo(
-    () => SEED_OFFERS.filter((o) => o.category.toLowerCase() === activeTab.toLowerCase()),
-    [activeTab]
+    () => {
+      const cats = OPEN_TAB_CATEGORIES[activeTab] || [];
+      return lobbies
+        .filter(isLobbyListedInPublicFeed)
+        .filter((l) => cats.includes(String(l.category || "")))
+        .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+    },
+    [lobbies, activeTab]
   );
+
+  const lobbyOwner = (l: any) =>
+    registeredUsers.find((u: any) => String(u.id) === String(l.ownerId)) || null;
+
+  const ownerPic = (l: any) => {
+    const o = lobbyOwner(l);
+    return String(o?.avatar || o?.customAvatar || l.ownerImage || "");
+  };
+
+  const ownerName = (l: any) => {
+    const o = lobbyOwner(l);
+    return String(o?.displayName || o?.name || o?.username || l.ownerDiscordName || l.serviceName || "Operative");
+  };
+
+  const openRolesOf = (l: any) => {
+    const roles = l?.roles || {};
+    return Object.entries(roles)
+      .filter(([, n]) => Number(n) > 0)
+      .map(([role, n]) => ({ role, n: Number(n) }));
+  };
+
+  const firstOpenRole = (l: any) => {
+    const open = openRolesOf(l);
+    return open[0]?.role || "dps";
+  };
+
+  const alreadyApplied = (l: any) =>
+    meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
+
+  const applyNow = async (l: any) => {
+    if (!meId || applyingId) return;
+    setApplyingId(String(l.id));
+    setApplyError("");
+    try {
+      const res = await fetch("/api/lobbies/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lobbyId: l.id,
+          applicant: {
+            id: `${meId}-main`,
+            role: firstOpenRole(l),
+            className: "",
+            applicantName: meName,
+          },
+        }),
+      });
+      if (res.ok) {
+        setAppliedIds((prev) => new Set([...prev, String(l.id)]));
+        window.dispatchEvent(new Event("data-refresh"));
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setApplyError(d.error || "Could not apply");
+      }
+    } catch {
+      setApplyError("Network error");
+    } finally {
+      setApplyingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
@@ -322,13 +366,20 @@ export default function Aion2TestClubPage() {
             {/* Offer List */}
             <div className="space-y-4">
               <AnimatePresence mode="popLayout">
-                {displayOffers.map((offer) => (
+                {displayOffers.map((offer) => {
+                  const pic = ownerPic(offer);
+                  const name = ownerName(offer);
+                  const openRoles = openRolesOf(offer);
+                  const applied = alreadyApplied(offer);
+                  const isMine = String(offer.ownerId) === meId;
+                  const goldTotal = Number(offer.totalGold || offer.goldPerRun || 0) * Math.max(1, Number(offer.runsCount || 1));
+                  return (
                   <motion.div
-                    key={offer.id}
+                    key={`${offer.id}-${offer.createdAt || ""}`}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ scale: 1.01 }}
-                    className="tn-light relative w-full h-24 rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
+                    whileHover={{ scale: 1.005 }}
+                    className="tn-light relative w-full min-h-[104px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
                     {/* Scenic Artwork thumbnail / gradient on right */}
                     <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none overflow-hidden opacity-60 group-hover:opacity-85 transition-opacity">
@@ -336,41 +387,81 @@ export default function Aion2TestClubPage() {
                       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
                     </div>
 
-                    <div className="relative z-10 flex items-center w-full gap-6">
-                      {/* Rank / Crest Icon */}
-                      <div className="w-16 h-16 rounded-full bg-[#050814]/80 border border-blue-500/30 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover:border-blue-400/60 transition-colors overflow-hidden">
-                        <Shield className="w-7 h-7 text-blue-400/80" />
+                    {/* Creator avatar */}
+                    <div className="relative z-10 flex-shrink-0">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#050814]/80 border border-cyan-500/30 flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover:border-cyan-400/60 transition-colors">
+                        {pic ? (
+                          <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        ) : (
+                          <Users className="w-6 h-6 text-cyan-400/70" />
+                        )}
                       </div>
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
+                    </div>
 
-                      {/* Offer Details */}
-                      <div className="flex-1">
-                        <h4 className="text-sm font-black tracking-widest text-white uppercase group-hover:text-blue-200 transition-colors">
-                          {offer.name}
-                        </h4>
-                        <div className="flex items-center gap-5 mt-2">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-200/80">
-                            <span>{offer.playersMeta}</span>
-                            <Users className="w-3.5 h-3.5 text-blue-400" />
-                          </div>
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/40 border border-white/10 text-[10px] font-black text-gray-300">
-                            <Image
-                              src={offer.region === "EU" ? "/flags/eu.svg" : "/flags/us.svg"}
-                              alt={offer.region}
-                              width={14}
-                              height={10}
-                              className="rounded-sm"
-                            />
-                            <span>{offer.region}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400">
-                            <Coins className="w-3 h-3" />
-                            <span>{offer.rewardLabel}</span>
-                          </div>
-                        </div>
+                    {/* Offer Details */}
+                    <div className="relative z-10 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
+                          {String(offer.category || "dungeon").toUpperCase()}
+                        </span>
+                        {isMine && (
+                          <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-blue-400/40 bg-blue-500/10 text-blue-300">
+                            Your Offer
+                          </span>
+                        )}
+                        {applied && (
+                          <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300">
+                            Applied
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="mt-1.5 text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
+                        {offer.title || `${offer.runsCount || 1}× Boost`}
+                      </h4>
+                      <p className="text-[9px] font-bold text-cyan-200/70 uppercase tracking-widest">{name}</p>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {offer.keyLevel && (
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-blue-200/80">
+                            <span>{offer.keyLevel}</span>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                          <Users className="w-3.5 h-3.5 text-cyan-400" />
+                          {openRoles.length > 0
+                            ? `OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`
+                            : "FULL"}
+                        </span>
+                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400">
+                          <Coins className="w-3 h-3" />
+                          {goldTotal.toLocaleString()} KINAH
+                        </span>
                       </div>
                     </div>
+
+                    {/* Apply */}
+                    <div className="relative z-10 flex-shrink-0 sm:pl-2">
+                      {isMine ? (
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 text-[9px] font-black uppercase tracking-widest">
+                          <Radio className="w-3 h-3" /> Live
+                        </span>
+                      ) : applied ? (
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
+                          <Check className="w-3 h-3" /> Applied
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => applyNow(offer)}
+                          disabled={!meId || applyingId === String(offer.id)}
+                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
+                        </button>
+                      )}
+                    </div>
                   </motion.div>
-                ))}
+                  );
+                })}
               </AnimatePresence>
 
               {displayOffers.length === 0 && (
@@ -380,6 +471,10 @@ export default function Aion2TestClubPage() {
                     {t("offers_empty") || "No offers in this category"}
                   </p>
                 </div>
+              )}
+
+              {applyError && (
+                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>
               )}
             </div>
           </section>

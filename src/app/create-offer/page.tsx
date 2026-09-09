@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 import {
   Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send, Play,
   Check, Shield, Crown, Clock, Gem, Star, Lock, Castle, Crosshair,
   FlaskConical, TrendingUp, Hash, type LucideIcon,
 } from "lucide-react";
 import { AION_SERVICES, AION_CATEGORIES, AionService } from "@/lib/aionServices";
+import { saveDataSmart } from "@/lib/saveDataRouter";
 
 const fmtKinah = (usd: number) => `${Math.round(usd * 1000).toLocaleString()} KINAH`;
 
@@ -37,6 +39,7 @@ const STEP_HINTS: Record<Step, string> = {
 };
 
 export default function CreateOfferPage() {
+  const { data: session } = useSession();
   const [step, setStep] = useState<Step>("service");
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
@@ -45,6 +48,8 @@ export default function CreateOfferPage() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [speedOpen, setSpeedOpen] = useState(false);
   const [published, setPublished] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [pubError, setPubError] = useState("");
 
   /* Standalone premium page — hide the global UPLINK navbar */
   useEffect(() => {
@@ -68,7 +73,60 @@ export default function CreateOfferPage() {
 
   const advance = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
   const regress = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("kinah"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("kinah"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); setPubError(""); };
+
+  const publishOffer = async () => {
+    if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
+    if (!sel) return;
+    setPublishing(true);
+    setPubError("");
+    try {
+      const me = session.user as any;
+      const live = await fetch("/api/data", { credentials: "include" })
+        .then((r) => r.json())
+        .catch(() => ({ lobbies: [] }));
+      const lobbies = Array.isArray(live.lobbies) ? live.lobbies : [];
+      const category = sel.category === "Leveling" ? "leveling" : "dungeon";
+      const kinahPerUnit = Math.round((sel.basePriceUsd || 0) * 1000);
+      const kinahTotal = kinahPerUnit * qty;
+      const lobby = {
+        id: Date.now(),
+        ownerId: String(me.id || ""),
+        ownerDiscordName: String(me.name || "Operative"),
+        ownerHandle: String(me.username || ""),
+        ownerImage: String(me.image || ""),
+        ownerEffect: "none",
+        category,
+        title: `${qty}× ${sel.name}`,
+        serviceName: String(sel.name || "Mission"),
+        notes: `${sel.description || ""} · ${speed}`,
+        totalGold: kinahTotal,
+        goldPerRun: kinahPerUnit,
+        runsCount: qty,
+        keyLevel: String((sel as any).keyLevel || "+10"),
+        isTimed: speed !== "Standard",
+        roles: category === "leveling"
+          ? { tank: 0, dps: qty }
+          : { tank: 0, healer: 0, dps: qty },
+        applicants: [],
+        invited: [],
+        accepted: [],
+        customBg: "",
+        blacklistedClasses: [],
+        blockedRoles: [],
+        serverRegion: "EU",
+        status: "standby",
+        createdAt: Date.now(),
+      };
+      const ok = await saveDataSmart({ lobbies: [...lobbies, lobby] });
+      if (!ok) { setPubError("Could not publish your offer — please try again"); return; }
+      setPublished(true);
+    } catch {
+      setPubError("Network error — please try again");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
@@ -499,13 +557,19 @@ export default function CreateOfferPage() {
                             </button>
                           </>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => { setSpeedOpen(false); setPaymentOpen(false); setPublished(true); }}
-                            className="relative flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-4 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_34px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_50px_rgba(90,120,255,0.85)] cursor-pointer"
-                          >
-                            <Send className="h-3.5 w-3.5" /> Publish Offer
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={publishOffer}
+                              disabled={publishing}
+                              className="relative flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-4 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_34px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_50px_rgba(90,120,255,0.85)] cursor-pointer disabled:opacity-60"
+                            >
+                              <Send className="h-3.5 w-3.5" /> {publishing ? "Publishing..." : "Publish Offer"}
+                            </button>
+                            {pubError && (
+                              <p className="text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{pubError}</p>
+                            )}
+                          </>
                         )}
                         <a href="/" className="mt-0.5 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-gray-600 transition-colors hover:text-gray-400 hover:underline cursor-pointer">
                           Cancel & return to lobby
