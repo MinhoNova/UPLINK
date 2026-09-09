@@ -36,8 +36,6 @@ const STEP_HINTS: Record<Step, string> = {
   confirm: "Lock in the details before going live",
 };
 
-const FALLBACK_BG = "/AION2.png";
-
 export default function CreateOfferPage() {
   const [step, setStep] = useState<Step>("service");
   const [sel, setSel] = useState<AionService | null>(null);
@@ -68,27 +66,21 @@ export default function CreateOfferPage() {
   const stepIndex = STEPS.indexOf(step);
   const totalLabel = `${fmtKinah(price)}`;
 
-  const bgVideo = sel?.video || FALLBACK_BG;
-
   const advance = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
   const regress = () => { setSpeedOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
   const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setSpeed("Standard"); setPayment("kinah"); setSpeedOpen(false); setPaymentOpen(false); setPublished(false); };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#030410] text-white selection:bg-cyan-400 selection:text-black font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
 
-      {/* ── FULL-BLEED CINEMATIC BACKGROUND (crossfades to the per-boss feed when that service is selected) ── */}
-      <motion.div
-        key={bgVideo}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeInOut" }}
-        className="fixed inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${bgVideo}')` }}
-      />
-      <div className="fixed inset-0 bg-gradient-to-b from-[#030410]/90 via-[#030410]/55 to-[#030410]/95" />
-      <div className="fixed inset-0" style={{ background: "radial-gradient(ellipse at 50% 35%, transparent 10%, rgba(3,4,16,0.85) 82%)" }} />
-      <div className="fixed inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(120,220,255,0.6) 1px, transparent 0)", backgroundSize: "30px 30px" }} />
+      {/* ── SCENIC BACKGROUND — same composition as the lobby home ── */}
+      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 bg-contain bg-top bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+        <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
+        <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
+      </div>
 
       {/* ── PREMIUM TOP BAR ── */}
       <header className="relative z-40 border-b border-white/[0.08] bg-black/45 backdrop-blur-xl">
