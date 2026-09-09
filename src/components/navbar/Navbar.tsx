@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, UserCircle } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -332,31 +332,23 @@ export default function Navbar() {
               )}
 
               {pathname !== '/community' && (
-              <div className={`flex items-center gap-5 overflow-visible backdrop-blur-2xl ${
-                theme === 'light'
-                  ? 'bg-white/10 border-white/10 border-2'
-                  : 'bg-black/40 border-white/5 border-2'
-              } pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}>
-                <button
-                  type="button"
-                  title="View profile"
-                  onClick={() => window.dispatchEvent(new CustomEvent("open-dm-profile"))}
-                  className="shrink-0 rounded-full transition-all hover:ring-2 hover:ring-[#00ffff]/40 overflow-visible"
-                >
-                  <ProfileAvatarWithEffect
-                    src={getAvatarForEffect()}
-                    effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
-                    className="w-14 h-14"
-                    fallbackName={currentUser?.name || session?.user?.name || "U"}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = '/my-profile';
-                  }}
-                  className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
-                >
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => { window.location.href = '/my-profile'; }}
+                className={`flex items-center gap-5 overflow-visible backdrop-blur-2xl cursor-pointer transition-opacity hover:opacity-90 ${
+                  theme === 'light'
+                    ? 'bg-white/10 border-white/10 border-2'
+                    : 'bg-black/40 border-white/5 border-2'
+                } pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}
+              >
+                <ProfileAvatarWithEffect
+                  src={getAvatarForEffect()}
+                  effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
+                  className="w-14 h-14"
+                  fallbackName={currentUser?.name || session?.user?.name || "U"}
+                />
+                <span className="flex items-center gap-2">
                   <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
@@ -366,18 +358,9 @@ export default function Navbar() {
                     const r = ranks.overall;
                     return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
                   })()}
-                </button>
-                <button
-                  type="button"
-                  title={t('nav_myProfile')}
-                  onClick={() => { window.location.href = '/my-profile'; }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/my-profile' ? 'bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/40' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5'}`}
-                >
-                  <UserCircle className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t('nav_myProfile')}</span>
-                </button>
+                </span>
                 {isAdmin && (
-                  <a href="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
+                  <a href="/admin" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
                     <ShieldAlert className="w-3.5 h-3.5" />
                     Admin
                   </a>
