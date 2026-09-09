@@ -72,13 +72,10 @@ async function buildReqLike(req?: Request) {
   }
 
   try {
-    const { cookies: cookiesFn, headers: headersFn } = await import("next/headers");
+    const { headers: headersFn } = await import("next/headers");
     const h = await headersFn();
     const headers = Object.fromEntries(h.entries());
-    let cookies = Object.fromEntries((await cookiesFn()).getAll().map((c) => [c.name, c.value]));
-    if (Object.keys(cookies).length === 0 && typeof headers.cookie === "string") {
-      cookies = parseCookieFn(headers.cookie);
-    }
+    const cookies = parseCookieFn(headers.cookie ?? "");
     return { cookies, headers };
   } catch {
     return { cookies: {}, headers: {} };

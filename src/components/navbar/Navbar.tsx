@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -13,6 +13,7 @@ import { useThemePreference } from "@/hooks/useThemePreference";
 import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
 import { useFlag, setFlag } from "@/lib/siteFlags";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -46,6 +47,7 @@ export default function Navbar() {
 
   const currentUserId = (session?.user as any)?.id || "";
   const currentHandle = (session?.user as any)?.username || "";
+  const isAdmin = isPrimaryAdmin(currentUserId, currentHandle);
 
   const [autoApplyEnabled, setAutoApplyEnabled] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -251,6 +253,12 @@ export default function Navbar() {
             }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
               ⚙️
             </motion.button>
+            {isAdmin && (
+              <a href="/admin" className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
+                <ShieldAlert className="w-4 h-4" />
+                Admin
+              </a>
+            )}
             <motion.button title={t("nav_themeTitle")} onClick={toggleTheme} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
               {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
               {theme === 'dark' ? t('nav_dark') : t('nav_light')}
