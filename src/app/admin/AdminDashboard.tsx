@@ -24,12 +24,14 @@ import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
 import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminVisitsPanel from "@/components/admin/AdminVisitsPanel";
+import AdminTicketsPanel from "@/components/admin/AdminTicketsPanel";
 import { RANK_ORDER, RANK_IMAGES, RANK_COLORS } from "@/lib/ranks";
 
 const TABS = [
   { id: "users", label: "Users", icon: Users },
   { id: "analytics", label: "Analytics", icon: Activity },
   { id: "audit", label: "Audit Log", icon: FileSearch },
+  { id: "tickets", label: "Tickets", icon: TicketCheck },
   { id: "ipbans", label: "IP Bans", icon: Ban },
   { id: "moderation", label: "Reports", icon: ShieldAlert },
   { id: "visits", label: "Daily Visits", icon: UserCheck },
@@ -41,6 +43,59 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [rankMsg, setRankMsg] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
+
+  const friendlyDate = (ts: number | string | undefined) => {
+    if (!ts) return "—";
+    const n = Number(ts);
+    if (!n) return "—";
+    return new Date(n).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const allowRename = async (userId: string) => {
+    try {
+      const res = await fetch("/api/admin/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const d = await res.json();
+      setActionMsg(res.ok ? "Rename cooldown cleared" : d.error || "Failed");
+      setUsers((prev: any[]) =>
+        prev.map((u) =>
+          String(u.id) === String(userId) && u.team
+            ? { ...u, team: { ...u.team, lastRenameAt: undefined } }
+            : u
+        )
+      );
+    } catch {
+      setActionMsg("Network error");
+    }
+  };
+
+  const resetIdentities = async () => {
+    try {
+      const res = await fetch("/api/admin/reset-identities", { method: "POST" });
+      const d = await res.json();
+      if (res.ok) {
+        setActionMsg(`Reset ${d.reset} custom name(s)/avatar(s) for ${d.users} users`);
+        setUsers((prev: any[]) =>
+          prev.map((u: any) => {
+            const copy = { ...u };
+            delete copy.displayName;
+            delete copy.customAvatar;
+            return copy;
+          })
+        );
+      } else {
+        setActionMsg(d.error || "Failed");
+      }
+    } catch {
+      setActionMsg("Network error");
+    }
+    setResetConfirm(false);
+  };
 
   useEffect(() => {
     fetch("/api/data").then((r) => r.json()).then((data) => {
@@ -85,6 +140,33 @@ export default function AdminDashboard() {
               </h1>
               <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">{totalUsers} registered users</p>
             </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            {resetConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Reset all custom names & avatars?</span>
+                <button
+                  onClick={resetIdentities}
+                  className="px-3 py-2 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setResetConfirm(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setResetConfirm(true)}
+                className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition"
+              >
+                Reset Names & Avatars
+              </button>
+            )}
+            {actionMsg && <p className="text-[9px] text-emerald-300 font-bold">{actionMsg}</p>}
           </div>
         </div>
 
@@ -160,21 +242,32 @@ export default function AdminDashboard() {
                       : "—";
                     return (
                       <tr key={user.id} className="border-b border-white/5 hover:bg-white/[0.02] transition">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
-                              {user.avatar ? (
-                                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <Users className="w-4 h-4 text-gray-600" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="text-sm font-bold text-white">{user.name || "—"}</div>
-                              <div className="text-[9px] text-gray-500">@{user.username || "—"}</div>
-                            </div>
-                          </div>
-                        </td>
+<td className="px-4 py-3">
+  <a
+    href={`/community/${String(user.username || "").toLowerCase()}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    title="View public profile — real Discord identity"
+    className="flex items-center gap-3 hover:opacity-90 transition"
+  >
+    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
+      {user.avatar ? (
+        <img
+          src={user.avatar}
+          alt=""
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <Users className="w-4 h-4 text-gray-600" />
+      )}
+    </div>
+    <div>
+      <div className="text-sm font-bold text-white">{user.name || "—"} <span className="text-[9px] text-gray-500 font-bold">@{user.username || ""}</span></div>
+      <div className="text-[9px] text-gray-500">{user.displayName ? `Display: ${user.displayName}` : "Discord identity"}</div>
+    </div>
+  </a>
+</td>
                         <td className="px-4 py-3">
                           <code className="text-[10px] font-mono text-gray-400 bg-white/[0.03] px-1.5 py-0.5 rounded">{user.id}</code>
                         </td>
@@ -257,6 +350,7 @@ export default function AdminDashboard() {
                     { label: "Last Seen", value: user.lastSeenAt ? new Date(user.lastSeenAt).toLocaleString() : "—" },
                     { label: "Team", value: user.team?.name || "—" },
                     { label: "Team Members", value: Array.isArray(user.team?.members) ? `${user.team.members.length} members` : "—" },
+                    { label: "Last Team Rename", value: friendlyDate(user.team?.lastRenameAt) },
                     { label: "Avatar Effect", value: user.effect },
                     { label: "Has VFX", value: user.activeVfx ? "Yes" : "No" },
                     { label: "Profile GIF", value: user.profileGif ? "Yes" : "No" },
@@ -299,11 +393,31 @@ export default function AdminDashboard() {
                           </div>
                           {rankMsg && <p className="text-[10px] text-violet-300 mt-3 font-bold">{rankMsg}</p>}
                         </div>
+
+                        {user.team?.lastRenameAt ? (
+                          <div className="mt-4 border-t border-white/5 pt-4 flex items-center justify-between gap-3">
+                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">
+                              Last Team Rename · {friendlyDate(user.team.lastRenameAt)}
+                            </p>
+                            <button
+                              onClick={() => allowRename(user.id)}
+                              className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-black transition"
+                            >
+                              Allow Rename
+                            </button>
+                          </div>
+                        ) : null}
                     </div>
                   );
                 })()}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "tickets" && (
+          <div>
+            <AdminTicketsPanel />
           </div>
         )}
 

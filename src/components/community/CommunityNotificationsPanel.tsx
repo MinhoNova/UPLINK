@@ -93,6 +93,31 @@ export default function CommunityNotificationsPanel() {
     [friends, currentUserId]
   );
 
+  const teamInvites = useMemo(
+    () =>
+      (data?.notifications || []).filter(
+        (n: any) =>
+          String(n?.type) === "team_invite" &&
+          String(n?.toUser || "").toLowerCase() === String(currentHandle || "").toLowerCase() &&
+          String(n?.fromHandle || "").toLowerCase() !== String(currentHandle || "").toLowerCase()
+      ),
+    [data?.notifications, currentHandle]
+  );
+
+  const respondTeamInvite = async (n: any, action: "accept" | "decline") => {
+    try {
+      const res = await fetch("/api/teams/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: n?.ownerId, action }),
+      });
+      if (res.ok) {
+        loadData();
+        window.dispatchEvent(new CustomEvent("data-refresh"));
+      }
+    } catch {}
+  };
+
   const getMsgKey = getDmMsgKey;
 
   useEffect(() => {
@@ -352,9 +377,9 @@ export default function CommunityNotificationsPanel() {
             className={`text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all relative ${tab === "requests" ? "bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30" : "text-gray-500 hover:text-white hover:bg-white/5"}`}
           >
             Requests
-            {pendingRequests.length > 0 && (
+            {pendingRequests.length + teamInvites.length > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center">
-                {pendingRequests.length}
+                {pendingRequests.length + teamInvites.length > 9 ? "9+" : pendingRequests.length + teamInvites.length}
               </span>
             )}
           </button>
@@ -470,10 +495,38 @@ export default function CommunityNotificationsPanel() {
 
         {tab === "requests" && (
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 min-h-0">
+            {teamInvites.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest px-1">Team invitations</p>
+                {teamInvites.map((n: any) => (
+                  <div key={n.id} className="bg-gradient-to-br from-[#5865F2]/15 to-[#5865F2]/[0.04] border border-[#5865F2]/40 rounded-2xl p-3 transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 border border-[#5865F2]/40 flex items-center justify-center shrink-0">
+                        <Users className="w-4 h-4 text-[#8ea1ff]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-black text-white/90 truncate">{n.teamName || "Team"}</p>
+                        <p className="text-[8px] text-[#8ea1ff] font-bold uppercase truncate">
+                          {n.fromUser || `@${n.fromHandle || ""}`} invited you to join
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => respondTeamInvite(n, "accept")} className="flex-1 py-2 bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 rounded-xl hover:bg-emerald-500 hover:text-black transition text-[9px] font-black uppercase flex items-center justify-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> Accept
+                      </button>
+                      <button type="button" onClick={() => respondTeamInvite(n, "decline")} className="flex-1 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition text-[9px] font-black uppercase flex items-center justify-center gap-1">
+                        <X className="w-3.5 h-3.5" /> Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {pendingRequests.length === 0 ? (
               <div className="flex flex-col items-center py-10 bg-white/[0.02] border border-dashed border-white/5 rounded-2xl">
                 <UserCheck className="w-6 h-6 text-gray-600 mb-2" />
-                <p className="text-[10px] text-gray-600 italic">No pending requests</p>
+                <p className="text-[10px] text-gray-600 italic">{teamInvites.length ? "No friend requests" : "No pending requests"}</p>
               </div>
             ) : (
               pendingRequests.map((req: any) => {
@@ -517,9 +570,9 @@ export default function CommunityNotificationsPanel() {
           className="fixed right-5 top-[5.5rem] z-[70] w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0c0c18] to-black border border-white/10 shadow-lg flex items-center justify-center hover:border-[#00ffff]/40 transition lg:hidden"
         >
           <Users className="w-5 h-5 text-[#00ffff]" />
-          {(unreadCount > 0 || pendingRequests.length > 0 || totalChatUnread > 0) && (
+          {(unreadCount > 0 || pendingRequests.length > 0 || totalChatUnread > 0 || teamInvites.length > 0) && (
             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
-              {unreadCount + pendingRequests.length + totalChatUnread > 9 ? "9+" : unreadCount + pendingRequests.length + totalChatUnread}
+              {unreadCount + pendingRequests.length + totalChatUnread + teamInvites.length > 9 ? "9+" : unreadCount + pendingRequests.length + totalChatUnread + teamInvites.length}
             </span>
           )}
         </button>

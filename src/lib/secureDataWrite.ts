@@ -65,8 +65,9 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
 }
 
 /**
- * Validate team: { name?: string, members?: { id, name, avatar }[] }.
- * Max 5 members; members must reference real registered users and must not be the owner.
+ * Validate team: { name?, members?: { id, name, avatar, status, inviteNotifId }[], lastRenameAt? }.
+ * Max 4 members; members must not be the owner.
+ * Members marked "pending" are invites awaiting the player's accept.
  */
 export function sanitizeTeam(input: unknown, ownerId: string): Record<string, unknown> | undefined {
   if (input === null || input === undefined) return undefined;
@@ -81,9 +82,13 @@ export function sanitizeTeam(input: unknown, ownerId: string): Record<string, un
           id: String(m.id ?? m.userId ?? "").trim().slice(0, 64),
           name: String(m.name ?? "").trim().slice(0, 40),
           avatar: String(m.avatar ?? "").trim().slice(0, 500),
+          status: String(m.status ?? "confirmed") === "pending" ? "pending" : "confirmed",
+          ...(Number(m.inviteNotifId) && !Number.isNaN(Number(m.inviteNotifId))
+            ? { inviteNotifId: Number(m.inviteNotifId) }
+            : {}),
         }))
         .filter((m: any) => m.id && m.id !== String(ownerId))
-        .slice(0, 5)
+        .slice(0, 4)
     : [];
 
   const seen = new Set<string>();
@@ -94,7 +99,11 @@ export function sanitizeTeam(input: unknown, ownerId: string): Record<string, un
   });
 
   if (!name && uniqueMembers.length === 0) return undefined;
-  return { name, members: uniqueMembers };
+  const team: Record<string, unknown> = { name, members: uniqueMembers };
+  if (Number(raw.lastRenameAt) && !Number.isNaN(Number(raw.lastRenameAt))) {
+    team.lastRenameAt = Number(raw.lastRenameAt);
+  }
+  return team;
 }
 
 function validateUserTicketUpdate(existing: Record<string, unknown>, updated: Record<string, unknown>, userId: string): ValidateResult {

@@ -313,16 +313,21 @@ export default function PlayerProfileModal() {
               <ProfileAvatarCircle src={avatarSrc} effect={effect} size={96} />
               <div className="pb-1 flex-1 min-w-0">
                 <h3 className="text-xl font-black text-white truncate leading-tight">{displayName}</h3>
-                {profileUser?.team?.name && (
-                  <span className="inline-block mt-1.5 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
-                    {profileUser.team.name}
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {profileUser?.team?.name && (
+                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
+                      {profileUser.team.name}
+                    </span>
+                  )}
+                  {Array.isArray(profileUser?.team?.members) && profileUser.team.members.length > 0 && (
+                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-400">
+                      {profileUser.team.members.length} member{profileUser.team.members.length === 1 ? "" : "s"}
+                    </span>
+                  )}
+                  <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#8ea1ff]">
+                    Discord: {profileUser?.username ? `@${profileUser.username}` : "—"}
                   </span>
-                )}
-                {Array.isArray(profileUser?.team?.members) && profileUser.team.members.length > 0 && (
-                  <span className="inline-block mt-1.5 ml-1.5 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-400">
-                    {profileUser.team.members.length} member{profileUser.team.members.length === 1 ? "" : "s"}
-                  </span>
-                )}
+                </div>
               </div>
             </div>
 
@@ -409,7 +414,7 @@ export default function PlayerProfileModal() {
                         className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10"
                         title={m.name}
                       >
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-white/5 flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-white/5 flex items-center justify-center shrink-0 relative">
                           {m.avatar ? (
                             <img src={m.avatar} alt="" className="w-full h-full object-cover" />
                           ) : (
@@ -418,7 +423,11 @@ export default function PlayerProfileModal() {
                         </div>
                         <span className="text-[9px] font-bold text-gray-300 truncate max-w-[110px]">
                           {m.name}
+                          {m.status === "pending" && <span className="text-amber-400/90"> ·</span>}
                         </span>
+                        {m.status === "pending" && (
+                          <span className="text-[6px] font-black uppercase text-amber-400">Pending</span>
+                        )}
                       </div>
                     ))}
                   </div>

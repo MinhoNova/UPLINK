@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, TicketCheck } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -344,6 +344,17 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
+
+              {session?.user && (
+                <a
+                  href="/support"
+                  title="Support Center"
+                  className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${pathname === '/support' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' : 'bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500 hover:text-black border border-yellow-500/30'}`}
+                >
+                  <TicketCheck className="w-4 h-4" />
+                  Support
+                </a>
+              )}
 
               {pathname === '/community' && session?.user && (
               <button onClick={() => {

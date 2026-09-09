@@ -19,6 +19,7 @@ import {
   Crown,
   X,
   ExternalLink,
+  Copy,
 } from "lucide-react";
 import { resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
@@ -30,7 +31,8 @@ import {
 } from "@/lib/clientImagePoster";
 import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
 
-const TEAM_MAX = 5;
+const TEAM_MAX = 4;
+const TEAM_RENAME_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function MyProfileClient() {
   const { data: session, status } = useSession();
@@ -49,6 +51,7 @@ export default function MyProfileClient() {
       .then((d) => {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
+        if (d.notifications) setNotifications(d.notifications);
       })
       .catch(() => {});
   }, [myId]);
@@ -77,10 +80,13 @@ export default function MyProfileClient() {
   const [teamName, setTeamName] = useState("");
   const [teamQuery, setTeamQuery] = useState("");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [displayNameInput, setDisplayNameInput] = useState("");
 
   useEffect(() => {
     setTeamName(me?.team?.name || "");
     setTeamMembers(Array.isArray(me?.team?.members) ? me.team.members : []);
+    setDisplayNameInput(me?.displayName || "");
   }, [me?.id, me?.team?.name]);
 
   const myRanks = useMemo(() => {
@@ -247,13 +253,105 @@ export default function MyProfileClient() {
     }
     setTeamMembers((prev) => [
       ...prev,
-      { id: u.id, name: u.name || u.username, avatar: u.customAvatar || u.avatar || "" },
+      {
+        id: u.id,
+        name: u.name || u.username,
+        avatar: u.avatar || u.customAvatar || "",
+        status: "pending",
+        inviteNotifId: Date.now(),
+      },
     ]);
   };
 
+  const sendTeamInviteNotification = async (memberId?: string) => {
+    try {
+      await fetch("/api/teams/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: myId, memberId: memberId || null }),
+      });
+    } catch {}
+  };
+
   const saveTeam = async () => {
-    const ok = await patchMe({ team: { name: teamName.trim(), members: teamMembers } });
-    if (ok) flash("Team saved");
+    const wantName = teamName.trim();
+    const prevName = String(me?.team?.name || "").trim();
+    const lastRenameAt = Number(me?.team?.lastRenameAt) || 0;
+    const isRename = prevName && wantName && wantName !== prevName;
+    if (isRename && lastRenameAt && Date.now() - lastRenameAt < TEAM_RENAME_COOLDOWN_MS) {
+      const daysLeft = Math.ceil((TEAM_RENAME_COOLDOWN_MS - (Date.now() - lastRenameAt)) / (24 * 60 * 60 * 1000));
+      flash(`Team rename available in ${daysLeft} day${daysLeft > 1 ? "s" : ""} — or open a support ticket`, "err");
+      return;
+    }
+    if (!wantName && teamMembers.length === 0) return;
+
+    const patch: Record<string, unknown> = {
+      team: {
+        name: wantName,
+        members: teamMembers,
+        ...(lastRenameAt ? { lastRenameAt } : {}),
+        ...(wantName !== prevName && (!prevName || !lastRenameAt) ? { lastRenameAt: Date.now() } : {}),
+      },
+    };
+
+    const ok = await patchMe(patch);
+    if (ok) {
+      window.dispatchEvent(new Event("data-refresh"));
+      refresh();
+      const pendingIds = teamMembers.filter((m: any) => m.status === "pending").map((m: any) => String(m.id));
+      for (const memberId of pendingIds) await sendTeamInviteNotification(memberId);
+      if (pendingIds.length === 0) await sendTeamInviteNotification();
+      flash("Team saved");
+    }
+  };
+
+  const incomingInvites = useMemo(
+    () =>
+      notifications.filter(
+        (n: any) =>
+          String(n?.type) === "team_invite" &&
+          String(n?.toUser || "").toLowerCase() === String(me?.username || "").toLowerCase()
+      ),
+    [notifications, me?.username]
+  );
+
+  const respondToInvite = async (notif: any, action: "accept" | "decline") => {
+    if (!notif?.ownerId) return;
+    try {
+      const res = await fetch("/api/teams/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: notif.ownerId, action }),
+      });
+      if (res.ok) {
+        const next = notifications.filter((n: any) => Number(n.id) !== Number(notif.id));
+        setNotifications(next);
+        refresh();
+        window.dispatchEvent(new Event("data-refresh"));
+        flash(action === "accept" ? "Team invite accepted" : "Team invite declined");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        flash(d.error || "Request failed", "err");
+      }
+    } catch {
+      flash("Network error", "err");
+    }
+  };
+
+  const saveDisplayName = async () => {
+    const ok = await patchMe({ displayName: displayNameInput.trim() || null });
+    if (ok) flash(displayNameInput.trim() ? "Display name saved" : "Display name reset");
+  };
+
+  const copyDiscordHandle = async () => {
+    const handle = String(me?.username || "");
+    if (!handle) return;
+    try {
+      await navigator.clipboard.writeText(handle);
+      flash("Discord handle copied");
+    } catch {
+      flash("Could not copy", "err");
+    }
   };
 
   if (status === "loading") {
@@ -295,7 +393,7 @@ export default function MyProfileClient() {
 
       <main className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-24">
         {/* ══ HERO ══ */}
-        <div className="tn-light relative w-full rounded-3xl bg-white/[0.04] backdrop-blur-3xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
+        <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
           <div className="h-[3px] w-full bg-gradient-to-r from-cyan-400/0 via-cyan-400/70 to-purple-500/60" />
           <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr_300px] gap-8 lg:gap-10 items-center">
             {/* Avatar */}
@@ -331,6 +429,15 @@ export default function MyProfileClient() {
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
                 @{(me?.username || "")}
               </p>
+              <button
+                onClick={copyDiscordHandle}
+                title="Real Discord name — click to copy"
+                className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/40 text-[#8ea1ff] hover:bg-[#5865F2]/25 transition-all text-[9px] font-black uppercase tracking-widest"
+              >
+                <span className="text-[#5865F2] font-black">D</span>
+                Discord: {me?.name || me?.username || "—"}
+                <Copy className="w-3 h-3" />
+              </button>
 
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 mt-4">
                 <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300">
@@ -399,7 +506,7 @@ export default function MyProfileClient() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Picture */}
-          <div className="tn-light relative w-full rounded-3xl bg-white/[0.04] backdrop-blur-3xl border border-cyan-500/25 p-6">
+          <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
               <UserCircle2 className="w-4 h-4 text-blue-400" />
               <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">PROFILE PICTURE</h3>
@@ -461,15 +568,65 @@ export default function MyProfileClient() {
                 <Trash2 className="w-3.5 h-3.5" /> Remove GIF
               </button>
             )}
+
+            <div className="mt-6 pt-5 border-t border-blue-900/30">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                Custom display name <span className="text-slate-700 normal-case tracking-normal">(your Discord name still shows on your public profile)</span>
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={displayNameInput}
+                  onChange={(e) => setDisplayNameInput(e.target.value)}
+                  placeholder={me?.name || "Game name"}
+                  maxLength={40}
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-400/50 text-sm font-bold placeholder:text-slate-700"
+                />
+                <button
+                  onClick={saveDisplayName}
+                  disabled={saving}
+                  className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-black font-black text-[10px] uppercase tracking-widest disabled:opacity-40 transition-all"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Team */}
-          <div className="tn-light relative w-full rounded-3xl bg-white/[0.04] backdrop-blur-3xl border border-cyan-500/25 p-6">
+          <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
               <Users className="w-4 h-4 text-purple-400" />
               <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">MY TEAM</h3>
               <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-auto">{teamMembers.length}/{TEAM_MAX}</span>
             </div>
+
+            {incomingInvites.length > 0 && (
+              <div className="mb-5 space-y-2">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Team Invitations</p>
+                {incomingInvites.map((n: any) => (
+                  <div key={n.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/30">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{n.teamName || "Team"}</p>
+                      <p className="text-[9px] text-slate-400 truncate">
+                        <span className="text-[#8ea1ff]">{n.fromUser || "@" + (n.fromHandle || "")}</span> invited you
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => respondToInvite(n, "accept")}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black transition-all text-[9px] font-black uppercase tracking-widest"
+                    >
+                      <Check className="w-3 h-3" /> Accept
+                    </button>
+                    <button
+                      onClick={() => respondToInvite(n, "decline")}
+                      className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-300 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="mb-4">
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Team Name</p>
@@ -542,7 +699,12 @@ export default function MyProfileClient() {
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-[#050814]/80 border border-white/10 flex items-center justify-center shrink-0">
                       {m.avatar ? <img src={m.avatar} className="w-full h-full object-cover" alt="" /> : <UserCircle2 className="w-4 h-4 text-slate-500" />}
                     </div>
-                    <span className="flex-1 text-xs font-bold text-white truncate">{m.name}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-white truncate block">{m.name}</span>
+                      {m.status === "pending" && (
+                        <span className="text-[7px] font-black uppercase tracking-widest text-amber-400/90">Awaiting accept</span>
+                      )}
+                    </div>
                     <button
                       onClick={() => setTeamMembers((prev) => prev.filter((x) => x.id !== m.id))}
                       className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -562,11 +724,23 @@ export default function MyProfileClient() {
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Team
             </button>
+            {(() => {
+              const lastAt = Number(me?.team?.lastRenameAt) || 0;
+              if (!lastAt) return null;
+              const left = TEAM_RENAME_COOLDOWN_MS - (Date.now() - lastAt);
+              if (left <= 0) return null;
+              const days = Math.ceil(left / (24 * 60 * 60 * 1000));
+              return (
+                <p className="mt-3 text-[8px] text-slate-500 font-bold uppercase tracking-widest text-center">
+                  Rename locked — next change in {days} day{days > 1 ? "s" : ""}
+                </p>
+              );
+            })()}
           </div>
         </div>
 
         {/* Lobby Store */}
-        <div className="tn-light relative w-full rounded-3xl bg-white/[0.04] backdrop-blur-3xl border border-cyan-500/25 p-6 mt-8">
+        <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mt-8">
           <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
             <ShieldCheck className="w-4 h-4 text-[#ff007f]" />
             <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">MY LOBBY BACKGROUNDS</h3>
