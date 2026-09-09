@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Zap, Swords, Users, Search,
-  Star, MessageSquare, ClipboardList, Coins
+  Star, MessageSquare, ClipboardList, Coins, Radio
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
+import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
+import { getOwnerOngoingMissions, getJoinedOngoingMissions } from "@/lib/lobbyLifecycle";
+import { roleIconUrl } from "@/lib/classThumb";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -59,9 +63,62 @@ const SEED_OFFERS: OfferCard[] = [
 
 export default function Aion2TestClubPage() {
   const { t } = useI18n();
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState("Dungeons");
   const [activeDock, setActiveDock] = useState("chat");
   const motionOn = useFlag("uplink_bg_motion", true);
+
+  const [lobbies, setLobbies] = useState<any[]>([]);
+  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+  const [signalScan, setSignalScan] = useState(true);
+
+  const meId = String((session?.user as any)?.id || "");
+
+  useEffect(() => {
+    if (!meId) return;
+    let cancelled = false;
+    const load = () => {
+      if (!meId) return;
+      fetch("/api/data", { credentials: "include" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (cancelled) return;
+          if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
+          if (d.lobbies) setLobbies(d.lobbies);
+          setSignalScan(false);
+        })
+        .catch(() => { if (!cancelled) setSignalScan(false); });
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("data-refresh", load);
+    const poll = setInterval(load, 8000);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", load);
+      window.removeEventListener("data-refresh", load);
+      clearInterval(poll);
+    };
+  }, [meId]);
+
+  const missions = useMemo(() => {
+    if (!meId) return [];
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const m of [
+      ...getOwnerOngoingMissions(lobbies, meId),
+      ...getJoinedOngoingMissions(lobbies, meId),
+    ]) {
+      const key = String(m.id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(m);
+    }
+    return out.slice(0, 6);
+  }, [lobbies, meId]);
+
+  const missionOwner = (m: any) =>
+    registeredUsers.find((u: any) => String(u.id) === String(m.ownerId)) || null;
 
   const displayOffers = useMemo(
     () => SEED_OFFERS.filter((o) => o.category.toLowerCase() === activeTab.toLowerCase()),
@@ -335,18 +392,106 @@ export default function Aion2TestClubPage() {
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">
                   {t("missions_header") || "ONGOING MISSIONS"}
                 </h3>
+                {meId && (
+                  <span className="ml-auto flex items-center gap-1.5">
+                    {signalScan ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    )}
+                    <span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">
+                      {signalScan ? (t("missions_scan") || "SCANNING") : "LIVE"}
+                    </span>
+                  </span>
+                )}
               </div>
 
               {/* Center Sigil Empty State */}
-              <div className="flex flex-col items-center text-center py-10">
-                <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
-                  <Shield className="w-8 h-8 text-blue-400/70 drop-shadow-[0_0_10px_rgba(59,130,246,0.9)] animate-pulse" />
+              {missions.length === 0 ? (
+                <div className="flex flex-col items-center text-center py-10">
+                  <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
+                    <Shield className="w-8 h-8 text-blue-400/70 drop-shadow-[0_0_10px_rgba(59,130,246,0.9)] animate-pulse" />
+                    {signalScan && <Radio className="absolute w-5 h-5 text-blue-300/60 animate-ping" />}
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    {signalScan
+                      ? (t("missions_scan") || "SCANNING FOR SIGNAL...")
+                      : (t("missions_empty") || "NO ACTIVE MISSIONS")}
+                  </p>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                  {t("missions_empty") || "NO ACTIVE MISSIONS"}
-                </p>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <AnimatePresence mode="popLayout">
+                    {missions.map((m) => {
+                      const owner = missionOwner(m);
+                      const vfxOn =
+                        owner && (owner.vfxSettings?.showOnOngoing !== false);
+                      const bgPoster = vfxOn
+                        ? resolveLobbyBannerBg(m, owner, owner?.activeVfx)
+                        : null;
+                      const totalRuns = m.selectedDungeons
+                        ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
+                        : m.runsCount || 1;
+                      const goldTotal = m.totalGold || (m.goldPerRun || 0) * (m.runsCount || 1);
+                      return (
+                        <motion.div
+                          key={String(m.id)}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          whileHover={{ scale: 1.01 }}
+                          className="tn-light relative w-full min-h-[124px] rounded-2xl border border-cyan-500/20 overflow-hidden flex flex-col justify-center p-3 cursor-default group shadow-[0_4px_24px_rgba(34,211,238,0.06)] hover:border-cyan-400/40 transition-all"
+                        >
+                          {bgPoster && (
+                            <div className="absolute inset-0 z-0">
+                              <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-90" loading="lazy" decoding="async" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-[#050814]/90 via-[#050814]/55 to-[#050814]/20" />
+                            </div>
+                          )}
+
+                          <div className={`relative z-10 flex items-start justify-between mb-2 ${bgPoster ? "" : ""}`}>
+                            <p className="text-lg font-black uppercase tracking-tighter leading-none text-[#00ffff] drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                              {m.category === "leveling" ? (
+                                <>
+                                  <span className="text-[10px] font-black text-white/60 align-middle">Leveling </span>
+                                  <span>{m.startLevel || "1"}-{m.endLevel || "80"}</span>
+                                </>
+                              ) : (
+                                <>{totalRuns}x {m.keyLevel || "+10"}</>
+                              )}
+                            </p>
+                            <span className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-500/30 bg-black/50 text-cyan-300">
+                              {m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
+                            </span>
+                          </div>
+
+                          <div className="relative z-10 grid grid-cols-2 gap-3">
+                            <div className="flex items-center gap-1.5">
+                              <Coins className="w-4 h-4 text-yellow-500" />
+                              <span className="text-sm font-black text-yellow-500 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                {goldTotal}K
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-[7px] font-black text-[#8a2be2] uppercase tracking-[0.15em] mr-1">Squad</span>
+                              <div className="flex -space-x-1">
+                                {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
+                                  <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
+                                    <img src={roleIconUrl(a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" />
+                                  </div>
+                                ))}
+                                {Array.from({ length: Math.max(0, 4 - (m.accepted?.length || 0)) }).map((_, i) => (
+                                  <div key={i} className="w-5 h-5 rounded-md border border-dashed border-white/10 bg-black/40" />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </aside>
 
