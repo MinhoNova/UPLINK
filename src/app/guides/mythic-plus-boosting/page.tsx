@@ -105,7 +105,7 @@ export default function MythicPlusBoostingGuide() {
             <ul className="list-disc list-inside text-gray-400 leading-relaxed space-y-1">
               <li><strong className="text-white">Gold only</strong> — no real money transactions.</li>
               <li><strong className="text-white">Auction marketplace</strong> — boosters compete for your business.</li>
-              <li><strong className="text-white">Discord integration</strong> — sync with Raider.io and coordinate runs.</li>
+              <li><strong className="text-white">Discord integration</strong> — sync characters and coordinate runs.</li>
               <li><strong className="text-white">Community reviews</strong> — see feedback before accepting a bid.</li>
             </ul>
           </section>

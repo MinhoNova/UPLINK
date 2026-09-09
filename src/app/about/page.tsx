@@ -60,7 +60,7 @@ export default function AboutPage() {
             { icon: Users, title: "Community First", desc: "Built by WoW players for WoW players. Every feature serves the community, not a bottom line." },
             { icon: Shield, title: "Safety Focused", desc: "Verification systems, reputation tracking, and transparent reviews keep the platform trustworthy." },
             { icon: Coins, title: "Free Gold Auctions", desc: "No commissions, no listing fees, no premium tiers. Blind gold auctions keep boosting fair." },
-            { icon: HeartHandshake, title: "Open & Transparent", desc: "Leaderboards, public reviews, and Raider.io integration so you know exactly who you're dealing with." },
+            { icon: HeartHandshake, title: "Open & Transparent", desc: "Leaderboards, public reviews, and community feedback so you know exactly who you're dealing with." },
           ].map((v) => (
             <div key={v.title} className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-6">
               <v.icon className="w-6 h-6 text-[#ff007f] mb-3" />

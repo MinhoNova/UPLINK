@@ -39,7 +39,7 @@ const steps = [
   {
     icon: ShieldCheck,
     title: "3. Compare Offers Privately",
-    desc: "Review each booster's profile, Raider.io score, leaderboard rank, and feedback ratings alongside their bid. All private, all informed.",
+    desc: "Review each booster's profile, score, leaderboard rank, and feedback ratings alongside their bid. All private, all informed.",
   },
   {
     icon: Handshake,

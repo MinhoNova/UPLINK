@@ -253,7 +253,6 @@ export default function AdminDashboard() {
                     { label: "Username", value: `@${user.username}` },
                     { label: "Discord ID", value: user.id },
                     { label: "Display Name", value: user.displayName || user.discordDisplayName },
-                    { label: "Battle Tag", value: user.battleTag },
                     { label: "Last Known IP", value: user.lastKnownIp },
                     { label: "Last Seen", value: user.lastSeenAt ? new Date(user.lastSeenAt).toLocaleString() : "—" },
                     { label: "Team", value: user.team?.name || "—" },

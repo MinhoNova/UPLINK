@@ -291,9 +291,6 @@
           "applicantId": "408754664428011571",
           "applicantAvatar": "https://cdn.discordapp.com/avatars/408754664428011571/7217e8889fbb89f9935a7d993ab4efc0.png",
           "applicantEffect": "none",
-          "raiderRegion": "us",
-          "raiderRealm": "Area 52",
-          "raiderName": "Demonjuxx",
           "keystone": "",
           "status": "confirmed"
         }
@@ -330,8 +327,7 @@
       "id": "711027724663128106",
       "name": "Omar Saleh",
       "username": "omarsaleh97",
-      "avatar": "https://cdn.discordapp.com/avatars/711027724663128106/52aea74b2dda2396a3bdd2bac79a7ba4.png",
-      "battleTag": "oldhome#9080"
+      "avatar": "https://cdn.discordapp.com/avatars/711027724663128106/52aea74b2dda2396a3bdd2bac79a7ba4.png"
     },
     {
       "id": "1497295886223544471",
@@ -367,7 +363,6 @@
       "name": "JuXx",
       "username": ".juxx",
       "avatar": "https://cdn.discordapp.com/avatars/408754664428011571/7217e8889fbb89f9935a7d993ab4efc0.png",
-      "battleTag": "jaxx#21102",
       "subscription": {
         "tier": "secret_club",
         "startDate": 1781118856534,

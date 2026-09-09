@@ -8,11 +8,11 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   title: "WoWLFG Addon — UPLINK WoW Group Finder",
   description:
-    "WoWLFG — Download the UPLINK World of Warcraft addon for seamless group finder integration. Browse Mythic+ groups, check Raider.io scores, and find your next run in-game.",
+    "WoWLFG — Download the UPLINK World of Warcraft addon for seamless group finder integration. Browse Mythic+ groups, check scores, and find your next run in-game.",
   openGraph: {
     title: "WoWLFG Addon — UPLINK WoW Group Finder",
     description:
-      "WoWLFG — Browse Mythic+ groups, check Raider.io scores, and find runs in-game with the UPLINK addon.",
+      "WoWLFG — Browse Mythic+ groups, check scores, and find runs in-game with the UPLINK addon.",
   },
   alternates: { canonical: `${siteUrl}/addon` },
 };
@@ -36,7 +36,7 @@ export default function AddonPage() {
         applicationCategory: "GameApplication",
         operatingSystem: "Windows, macOS",
         description:
-          "World of Warcraft addon for UPLINK group finder integration. Browse Mythic+ groups, check Raider.io scores, and find runs in-game.",
+          "World of Warcraft addon for UPLINK group finder integration. Browse Mythic+ groups, check scores, and find runs in-game.",
         url: `${siteUrl}/addon`,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       },

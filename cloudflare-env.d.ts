@@ -14,6 +14,4 @@ interface CloudflareEnv {
   NEXT_PUBLIC_LIVEKIT_URL?: string;
   LIVEKIT_API_KEY?: string;
   LIVEKIT_API_SECRET?: string;
-  BATTLENET_CLIENT_ID?: string;
-  BATTLENET_CLIENT_SECRET?: string;
 }

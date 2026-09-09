@@ -53,7 +53,7 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
   if (!char) {
     return {
       ok: false as const,
-      error: "Sync a character on UPLINK first (Armory → Raider.io), then apply from Discord.",
+      error: "Character required — add one on UPLINK first, then apply from Discord.",
     };
   }
 

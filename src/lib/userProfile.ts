@@ -147,7 +147,6 @@ export function mergeRegisteredUsersFromServer(
       customAvatar: u.customAvatar || localSelf.customAvatar,
       effect: u.effect && u.effect !== "none" ? u.effect : localSelf.effect,
       activeVfx: u.activeVfx || localSelf.activeVfx,
-      battleTag: u.battleTag || localSelf.battleTag,
       subscription: u.subscription || localSelf.subscription,
       offerDrafts: (u.offerDrafts?.length ? u.offerDrafts : localSelf.offerDrafts) || [],
     };

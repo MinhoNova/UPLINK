@@ -257,7 +257,7 @@ const AutoApplySettingsModal = ({
                                           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Select Character</label>
                                           {myCharacters.length === 0 ? (
                                              <div className="p-3 bg-white/5 rounded-xl text-center flex items-center justify-center min-h-[52px]">
-                                                <p className="text-[10px] font-black text-gray-500 uppercase">No characters linked. Sync via Raider.io first.</p>
+                                                <p className="text-[10px] font-black text-gray-500 uppercase">No characters linked yet.</p>
                                              </div>
                                           ) : (
                                              <div className="relative flex flex-col">

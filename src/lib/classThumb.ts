@@ -3,8 +3,6 @@ export function classThumbUrl(name: string): string {
   const n = name.trim();
   if (/death\s*knight/i.test(n)) return "/classes-thumb/DEATH KNIGHT.png";
   if (/demon\s*hunter/i.test(n)) return "/classes-thumb/DEMON HUNTER.png";
-  if (/raider\s*io/i.test(n)) return "/classes-thumb/RAIDER IO.png";
-  if (/battle\.?net/i.test(n)) return "/classes-thumb/Battle.net.png";
   const roleMap: Record<string, string> = { dps: "DPS", tank: "TANK", healer: "HEALER" };
   const role = roleMap[n.toLowerCase()];
   if (role) return `/classes-thumb/${role}.png`;

@@ -26,14 +26,13 @@ export const metadata: Metadata = {
     template: "%s | UPLINK",
   },
   description:
-    "Find Mythic+ groups, leveling squads, and dungeon runs for World of Warcraft. Sync Raider.io, apply to offers, and coordinate with Discord.",
+    "Find Mythic+ groups, leveling squads, and dungeon runs. Apply to offers and coordinate with Discord.",
   keywords: [
     "UPLINK",
     "WoW",
     "World of Warcraft",
     "Mythic+",
     "Mythic Plus",
-    "Raider.io",
     "LFG",
     "Dungeon",
     "Leveling",
@@ -46,13 +45,13 @@ export const metadata: Metadata = {
     siteName: "UPLINK",
     title: "UPLINK | WoW Mythic+ LFG",
     description:
-      "Tactical WoW group finder — Mythic+ offers, leveling squads, Raider.io sync, and Discord coordination.",
+      "Tactical WoW group finder — Mythic+ offers, leveling squads, and Discord coordination.",
   },
   twitter: {
     card: "summary_large_image",
     title: "UPLINK | WoW Mythic+ LFG",
     description:
-      "Find Mythic+ groups and leveling squads. Raider.io sync and Discord bot included.",
+      "Find Mythic+ groups and leveling squads. Discord bot included.",
   },
   robots: {
     index: true,

@@ -323,7 +323,7 @@ export default function MyProfileClient() {
                 )}
               </div>
               <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                {me?.battleTag || "@" + (me?.username || "")} · {(me?.stats?.total || 0)} runs completed
+                @{(me?.username || "")} · {(me?.stats?.total || 0)} runs completed
               </p>
             </div>
           </div>
