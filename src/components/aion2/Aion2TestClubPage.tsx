@@ -76,7 +76,7 @@ export default function Aion2TestClubPage() {
 
       {/* Scenic Background Artwork — full page, behind all content, never cut */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+        <div className="absolute inset-0 bg-contain bg-top bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
