@@ -1,5 +1,5 @@
-import Aion2ClubPage from "@/components/aion2/Aion2ClubPage";
+import Aion2TestClubPage from "@/components/aion2/Aion2TestClubPage";
 
 export default function HomePage() {
-  return <Aion2ClubPage />;
+  return <Aion2TestClubPage />;
 }

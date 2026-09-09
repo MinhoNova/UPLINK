@@ -36,9 +36,9 @@ const STEP_HINTS: Record<Step, string> = {
   confirm: "Lock in the details before going live",
 };
 
-const FALLBACK_BG = "/aion%202%20bg%201.mp4";
+const FALLBACK_BG = "/AION2.png";
 
-export default function Aion2CreateOfferPage() {
+export default function CreateOfferPage() {
   const [step, setStep] = useState<Step>("service");
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
@@ -78,14 +78,13 @@ export default function Aion2CreateOfferPage() {
     <div className="relative min-h-screen overflow-x-hidden bg-[#030410] text-white selection:bg-cyan-400 selection:text-black font-sans">
 
       {/* ── FULL-BLEED CINEMATIC BACKGROUND (crossfades to the per-boss feed when that service is selected) ── */}
-      <motion.video
+      <motion.div
         key={bgVideo}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeInOut" }}
-        className="fixed inset-0 h-full w-full object-cover"
-        src={bgVideo}
-        autoPlay muted loop playsInline preload="metadata"
+        className="fixed inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url('${bgVideo}')` }}
       />
       <div className="fixed inset-0 bg-gradient-to-b from-[#030410]/90 via-[#030410]/55 to-[#030410]/95" />
       <div className="fixed inset-0" style={{ background: "radial-gradient(ellipse at 50% 35%, transparent 10%, rgba(3,4,16,0.85) 82%)" }} />
@@ -94,7 +93,7 @@ export default function Aion2CreateOfferPage() {
       {/* ── PREMIUM TOP BAR ── */}
       <header className="relative z-40 border-b border-white/[0.08] bg-black/45 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-5 sm:px-8 py-4">
-          <a href="/aion2" className="group flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.03] px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-200 backdrop-blur-md transition-all hover:border-cyan-300/50 hover:text-white cursor-pointer">
+          <a href="/" className="group flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.03] px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-200 backdrop-blur-md transition-all hover:border-cyan-300/50 hover:text-white cursor-pointer">
             <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" /> Back to Lobby
           </a>
 
@@ -150,7 +149,7 @@ export default function Aion2CreateOfferPage() {
               <h2 className="font-serif text-2xl font-black tracking-wide text-white">Offer Published</h2>
               <p className="mt-2 text-xs text-slate-300/90">Your mission is live for the Aion 2 community. May the Daevas answer your call.</p>
               <div className="mt-7 flex flex-col gap-2.5">
-                <a href="/aion2" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_30px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 cursor-pointer">
+                <a href="/" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_30px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 cursor-pointer">
                   <Swords className="h-3.5 w-3.5" /> Return to Lobby
                 </a>
                 <button type="button" onClick={resetOffer} className="rounded-xl border border-white/[0.12] bg-white/[0.03] px-7 py-3 text-xs font-black tracking-[0.18em] uppercase text-gray-300 transition-all hover:border-white/25 hover:text-white cursor-pointer">
@@ -516,7 +515,7 @@ export default function Aion2CreateOfferPage() {
                             <Send className="h-3.5 w-3.5" /> Publish Offer
                           </button>
                         )}
-                        <a href="/aion2" className="mt-0.5 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-gray-600 transition-colors hover:text-gray-400 hover:underline cursor-pointer">
+                        <a href="/" className="mt-0.5 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-gray-600 transition-colors hover:text-gray-400 hover:underline cursor-pointer">
                           Cancel & return to lobby
                         </a>
                         <div className="mt-2 flex items-center justify-center gap-2 text-[9px] font-bold uppercase tracking-[0.16em] text-gray-600">

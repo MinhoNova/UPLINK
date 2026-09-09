@@ -165,7 +165,7 @@ export default function Aion2TestClubPage() {
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <motion.a
-              href="/aion2/create-offer"
+              href="/create-offer"
               className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_35px_rgba(59,130,246,0.25)] hover:shadow-[0_0_55px_rgba(168,85,247,0.45)] transition-all duration-500 block hover:scale-105 active:scale-95"
             >
               {/* Animated border gradient */}
