@@ -769,7 +769,7 @@ const ArmoryModal = ({
                                                     <div className="relative z-10 flex items-center w-full min-h-[56px] px-3 py-2 gap-3">
                                                        <div className="flex-shrink-0 flex items-center gap-2">
                                                           <AvatarWithEffect src={item.ownerImage} effect={item.ownerEffect} className="w-12 h-12" userId={item.ownerId} />
-                                                          {ownerUser ? <RankBadge stats={ownerUser.stats} ratings={ownerUser.ratings} compact /> : null}
+                                                          {ownerUser ? <RankBadge stats={ownerUser.stats} ratings={ownerUser.ratings} compact rankOverride={ownerUser.rankOverride} /> : null}
                                                        </div>
                                                        <div className="flex flex-col items-center justify-center shrink-0">
                                                           <div className="flex items-center gap-1 text-yellow-500 font-black text-base leading-none">

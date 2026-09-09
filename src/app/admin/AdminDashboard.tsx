@@ -24,6 +24,7 @@ import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
 import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminVisitsPanel from "@/components/admin/AdminVisitsPanel";
+import { RANK_ORDER, RANK_IMAGES, RANK_COLORS } from "@/lib/ranks";
 
 const TABS = [
   { id: "users", label: "Users", icon: Users },
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [rankMsg, setRankMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/data").then((r) => r.json()).then((data) => {
@@ -232,6 +234,21 @@ export default function AdminDashboard() {
                 {(() => {
                   const user = users.find((u: any) => u.id === expandedUserId);
                   if (!user) return null;
+                  const applyRank = async (tier: string | null) => {
+                    try {
+                      const res = await fetch("/api/admin/rank", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: user.id, rank: tier }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) return setRankMsg(`Error: ${data.error || "failed"}`);
+                      setRankMsg(`Rank set to ${data.rank || "auto"}`);
+                      setUsers((prev: any[]) => prev.map((u: any) => (String(u.id) === String(user.id) ? (tier ? { ...u, rankOverride: tier } : (() => { const { rankOverride: _r, ...rest } = u; return rest; })()) : u)));
+                    } catch {
+                      setRankMsg("Network error");
+                    }
+                  };
                   const fields = [
                     { label: "Name", value: user.name },
                     { label: "Username", value: `@${user.username}` },
@@ -248,6 +265,7 @@ export default function AdminDashboard() {
                     { label: "Welcome Claimed", value: user.welcomeFreeClaimed ? "Yes" : "No" },
                     { label: "Offer Drafts", value: user.offerDrafts?.length || 0 },
                     { label: "Custom Avatar", value: user.customAvatar ? "Yes" : "No" },
+                    { label: "Rank Override", value: user.rankOverride || "Auto" },
                     { label: "VFX List", value: user.userVfx?.length ? `${user.userVfx.length} items` : "—" },
                   ];
                   return (
@@ -261,6 +279,29 @@ export default function AdminDashboard() {
                           </div>
                         ))}
                       </div>
+                        <div className="mt-6 border-t border-white/5 pt-5">
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-3">Rank Override</p>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => applyRank(null)}
+                              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition ${!user.rankOverride ? 'bg-violet-600/30 text-violet-200 border-violet-500/40' : 'bg-white/[0.03] text-gray-400 border-white/10 hover:bg-white/10'}`}
+                            >
+                              Auto
+                            </button>
+                            {RANK_ORDER.map((tier) => (
+                              <button
+                                key={tier}
+                                onClick={() => applyRank(tier)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition ${user.rankOverride === tier ? 'bg-violet-600/30 text-violet-200 border-violet-500/40' : 'bg-white/[0.03] text-gray-400 border-white/10 hover:bg-white/10'}`}
+                                style={user.rankOverride === tier ? {} : { color: RANK_COLORS[tier] }}
+                              >
+                                <img src={RANK_IMAGES[tier]} alt="" className="w-3.5 h-3.5 object-contain" />
+                                {tier}
+                              </button>
+                            ))}
+                          </div>
+                          {rankMsg && <p className="text-[10px] text-violet-300 mt-3 font-bold">{rankMsg}</p>}
+                        </div>
                     </div>
                   );
                 })()}

@@ -369,7 +369,7 @@ export default function Navbar() {
                   ) : (
                     (() => {
                       const stats = currentUser?.stats || {};
-                      const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0);
+                      const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0, currentUser?.rankOverride);
                       const r = ranks.overall;
                       return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
                     })()

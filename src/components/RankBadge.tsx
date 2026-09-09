@@ -37,11 +37,12 @@ interface RankBadgeProps {
   ratings?: number[];
   compact?: boolean;
   showCategory?: 'leveling' | 'dungeon';
+  rankOverride?: string | null;
 }
 
-export default function RankBadge({ stats, ratings, compact, showCategory }: RankBadgeProps) {
+export default function RankBadge({ stats, ratings, compact, showCategory, rankOverride }: RankBadgeProps) {
   const total = stats?.total || 0;
-  const ranks = getUserRanks(total, stats?.postCount || 0);
+  const ranks = getUserRanks(total, stats?.postCount || 0, rankOverride);
   const rank = { title: ranks.overall.tier.toUpperCase(), color: ranks.overall.color, image: ranks.overall.image };
   const avgRating = getAverageRating(ratings);
   const ratingCount = ratings?.length || 0;

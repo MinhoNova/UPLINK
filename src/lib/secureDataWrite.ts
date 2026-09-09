@@ -29,6 +29,7 @@ const PROTECTED_SELF_FIELDS = [
   "lastKnownIp",
   "lastSeenAt",
   "stats",
+  "rankOverride",
 ] as const;
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 

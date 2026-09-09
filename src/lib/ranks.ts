@@ -114,9 +114,12 @@ export interface UserRanks {
   overall: RankVisual;
 }
 
-export function getUserRanks(runs: number, posts: number): UserRanks {
+export function getUserRanks(runs: number, posts: number, override?: string | null): UserRanks {
   const booster = getBoosterRank(runs);
   const poster = getPosterRank(posts);
-  const overall = tierIndex(poster.tier) >= tierIndex(booster.tier) ? poster : booster;
+  let overall = tierIndex(poster.tier) >= tierIndex(booster.tier) ? poster : booster;
+  if (override && RANK_ORDER.includes(override as RankTier)) {
+    overall = { ...visualFor(override as RankTier, Infinity, BOOSTER_THRESHOLDS), progressPct: 100, nextRequired: null };
+  }
   return { booster, poster, overall };
 }
