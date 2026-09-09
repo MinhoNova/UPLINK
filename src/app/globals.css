@@ -40,6 +40,12 @@ body {
   overflow-x: hidden;
 }
 
+/* Dot-net grid overlay — same motif as Offer Forge premium page */
+.aion-dotnet {
+  background-image: radial-gradient(circle at 1px 1px, rgba(150, 220, 255, 0.55) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
 /* Hide Next.js Dev Overlay & Indicators */
 nextjs-portal, 
 [data-nextjs-dialog-overlay], 

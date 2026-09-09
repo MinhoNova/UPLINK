@@ -134,6 +134,7 @@ export default function Aion2TestClubPage() {
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
+        <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
 
       {/* ══════════════════════════════════════════════════════════

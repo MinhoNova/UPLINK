@@ -18,6 +18,7 @@ import {
   UserCircle2,
   Crown,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
@@ -88,6 +89,11 @@ export default function MyProfileClient() {
   }, [me]);
 
   const myVfx: any[] = me?.userVfx || [];
+
+  const activeEntry = myVfx.find((e: any) => resolveVfxSrc(e) === me?.activeVfx) || null;
+  const activePreview = activeEntry ? resolveVfxBannerUrl(activeEntry) : null;
+
+  const publicUrl = `/community/${String(me?.username || "").toLowerCase()}`;
 
   const flash = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type });
@@ -270,13 +276,14 @@ export default function MyProfileClient() {
   const rank = myRanks.overall;
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 relative overflow-hidden">
-      {/* Ambient glows */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
-          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 70%)" }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
-          style={{ background: "radial-gradient(circle, rgba(168,85,247,0.10) 0%, transparent 70%)" }} />
+    <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
+      {/* Scenic artwork + dot-net — same composition as the lobby home && Offer Forge */}
+      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
+        <div className="absolute inset-0 bg-cover bg-center sm:bg-contain sm:bg-top sm:bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+        <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
+        <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
 
       {/* Toast */}
@@ -286,35 +293,50 @@ export default function MyProfileClient() {
         </div>
       )}
 
-      <main className="relative z-10 max-w-[1400px] mx-auto px-6 pt-28 pb-24">
-        {/* Hero card */}
-        <div className="tn-light relative w-full rounded-3xl bg-white/[0.04] backdrop-blur-3xl border border-cyan-500/25 p-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)] mb-8 overflow-hidden">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="relative shrink-0">
-              <div className="w-28 h-28 rounded-full bg-[#050814]/80 border border-blue-500/40 flex items-center justify-center overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.25)]">
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <UserCircle2 className="w-14 h-14 text-blue-400/70" />
+      <main className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-24">
+        {/* ══ HERO ══ */}
+        <div className="tn-light relative w-full rounded-3xl bg-white/[0.04] backdrop-blur-3xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
+          <div className="h-[3px] w-full bg-gradient-to-r from-cyan-400/0 via-cyan-400/70 to-purple-500/60" />
+          <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr_300px] gap-8 lg:gap-10 items-center">
+            {/* Avatar */}
+            <div className="relative w-fit mx-auto lg:mx-0">
+              <div className="relative">
+                <div className="absolute -inset-4 rounded-full bg-blue-500/20 blur-2xl animate-pulse" />
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#050814]/80 border-2 border-blue-500/40 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.3)]">
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserCircle2 className="w-14 h-14 text-blue-400/70" />
+                  )}
+                </div>
+                <img
+                  src={rank.image}
+                  alt={rank.tier}
+                  title={`${rank.tier} — Booster: ${Number(me?.stats?.total) || 0} runs · Poster: ${Number(me?.stats?.postCount) || 0} posts`}
+                  className="absolute -bottom-1 -right-1 w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.35)]"
+                />
+                {me?.profileGif && (
+                  <span className="absolute top-1 right-1 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
+                    <Sparkles className="w-3 h-3 text-emerald-300" />
+                  </span>
                 )}
               </div>
-              {me?.profileGif && (
-                <span className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
-                  <Sparkles className="w-3 h-3 text-emerald-300" />
-                </span>
-              )}
             </div>
 
-            <div className="flex-1 text-center md:text-left min-w-0">
+            {/* Identity + stats */}
+            <div className="min-w-0 text-center lg:text-left flex flex-col justify-center">
               <h1 className="font-serif text-2xl sm:text-3xl font-black tracking-[0.18em] uppercase text-blue-50">
                 {(me?.displayName || me?.name || session?.user?.name || "Operative").toUpperCase()}
               </h1>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-3">
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
+                @{(me?.username || "")}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 mt-4">
                 <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300">
                   <Crown className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-black uppercase tracking-widest">{rank.tier}</span>
                 </span>
-                <img src={rank.image} alt={rank.tier} title={`${rank.tier} — Booster: ${Number(me?.stats?.total) || 0} runs · Poster: ${Number(me?.stats?.postCount) || 0} posts`} className="h-8 w-8 object-contain" />
                 {me?.team?.name && (
                   <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300">
                     <Users className="w-3.5 h-3.5" />
@@ -322,9 +344,55 @@ export default function MyProfileClient() {
                   </span>
                 )}
               </div>
-              <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                @{(me?.username || "")} · {(me?.stats?.total || 0)} runs completed
-              </p>
+
+              {/* Quick stats */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 mt-5">
+                <span className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                  <span className="text-lg font-black text-cyan-300 mr-1.5">{Number(me?.stats?.total) || 0}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Runs</span>
+                </span>
+                <span className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                  <span className="text-lg font-black text-purple-300 mr-1.5">{Number(me?.stats?.postCount) || 0}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Posts</span>
+                </span>
+                <span className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10">
+                  <span className="text-lg font-black text-emerald-300 mr-1.5">{teamMembers.length}/{TEAM_MAX}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Squad</span>
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-6">
+                <a
+                  href={publicUrl}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-500/30 text-cyan-200 hover:from-cyan-500/25 hover:to-purple-500/25 hover:border-cyan-400/50 transition-all font-black text-[10px] uppercase tracking-widest"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Public Profile
+                </a>
+              </div>
+            </div>
+
+            {/* Live preview of active lobby background */}
+            <div className="w-full lg:h-full">
+              {activePreview ? (
+                <div className="relative w-full h-full min-h-[180px] rounded-2xl border-2 border-emerald-500/50 overflow-hidden shadow-[0_0_25px_rgba(16,185,129,0.25)] lg:self-stretch">
+                  <img src={activePreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050814]/85 via-transparent to-transparent" />
+                  <span className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500 text-black font-black text-[9px] uppercase tracking-widest">
+                    <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                    Live Background
+                  </span>
+                  <span className="absolute bottom-3 left-3 right-3 text-[9px] font-black uppercase tracking-widest text-white/90">
+                    Previewing on your offers
+                  </span>
+                </div>
+              ) : (
+                <div className="w-full h-full min-h-[180px] rounded-2xl border border-dashed border-cyan-500/30 bg-black/30 flex flex-col items-center justify-center text-center p-6">
+                  <Shield className="w-7 h-7 text-cyan-400/60 mb-3" />
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">No live background</p>
+                  <p className="text-[9px] text-slate-600 mt-1 max-w-[220px]">Add one below — it previews here and on every offer you post.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -456,9 +524,18 @@ export default function MyProfileClient() {
 
             <div className="space-y-2 mb-6">
               {teamMembers.length === 0 ? (
-                <p className="py-6 text-center text-[10px] font-bold uppercase tracking-widest text-slate-600">
-                  No team members yet — recruit up to {TEAM_MAX} players
-                </p>
+                <div className="flex flex-col items-center text-center py-8">
+                  <div className="relative w-14 h-14 mb-3 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-purple-500/15 rounded-full blur-xl" />
+                    <Users className="w-7 h-7 text-purple-400/60" />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    No squad yet
+                  </p>
+                  <p className="text-[9px] text-slate-600 mt-1 max-w-[240px]">
+                    Search usernames above to recruit up to {TEAM_MAX} players.
+                  </p>
+                </div>
               ) : (
                 teamMembers.map((m) => (
                   <div key={m.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5">
@@ -543,6 +620,9 @@ export default function MyProfileClient() {
               </div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                 No backgrounds yet — add your first one
+              </p>
+              <p className="text-[9px] text-slate-600 mt-1">
+                It will appear in your hero preview above and on every offer you post.
               </p>
             </motion.div>
           ) : (
