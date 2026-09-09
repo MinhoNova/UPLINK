@@ -363,7 +363,11 @@ export default function Navbar() {
                   <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
-                  {(() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm ${t.color}`}>{t.label}</span> : null; })()}
+                  {isAdmin ? (
+                    <img src="/legendary%20rank.png" alt="Legendary" title="Legendary Rank" className="h-[18px] w-auto object-contain shrink-0" />
+                  ) : (
+                    (() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm ${t.color}`}>{t.label}</span> : null; })()
+                  )}
                 </button>
                 {isAdmin && (
                   <a href="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
