@@ -74,18 +74,18 @@ export default function Aion2TestClubPage() {
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
 
+      {/* Scenic Background Artwork — full page, behind all content, never cut */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+        <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
+      </div>
+
       {/* ══════════════════════════════════════════════════════════
           HERO SECTION
           ══════════════════════════════════════════════════════════ */}
-      <section className="tn-hero relative w-full h-[600px] flex items-center justify-center overflow-hidden">
-
-        {/* Scenic Background Artwork — full hero, no cutoff (same structure as main page hero) */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
-          <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050814] via-[#050814]/60 to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
-        </div>
+      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
 
         {/* Center glow — subtle, doesn't wash out the image */}
         <motion.div
