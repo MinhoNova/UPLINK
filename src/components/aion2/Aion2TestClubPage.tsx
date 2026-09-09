@@ -74,25 +74,19 @@ export default function Aion2TestClubPage() {
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
 
-      {/* Scenic Background Artwork — full page height (top to bottom, no cutoff) */}
+      {/* Scenic Background Artwork — full page height, no cutoff */}
       <div
         className="absolute inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat opacity-98"
         style={{ backgroundImage: `url('/AION2.png')` }}
       />
 
+      {/* Full-page overlay — smooth gradient from top to bottom (no hard line) */}
+      <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
+
       {/* ══════════════════════════════════════════════════════════
           HERO SECTION
           ══════════════════════════════════════════════════════════ */}
       <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
-
-        {/* Subtle dark tint — much lighter (reference UI: bg visible behind glass) */}
-        <div className="absolute inset-0 bg-[#050814]/12 mix-blend-multiply" />
-
-        {/* Smooth gradient — from top to bottom, very subtle, no hard line */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/18 via-transparent to-[#050814]/28" />
-
-        {/* Soft radial vignette — lighter, edge only */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(5,8,20,0.25)_100%)]" />
 
         {/* Center glow — subtle, doesn't wash out the image */}
         <motion.div
@@ -280,7 +274,7 @@ export default function Aion2TestClubPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.01 }}
-                    className="tn-light relative w-full h-24 rounded-full bg-[#0a0f26] border border-blue-900/40 overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all"
+                    className="tn-light relative w-full h-24 rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex items-center pr-2 pl-4 cursor-pointer group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
                     {/* Scenic Artwork thumbnail / gradient on right */}
                     <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none overflow-hidden opacity-60 group-hover:opacity-85 transition-opacity">
@@ -349,7 +343,7 @@ export default function Aion2TestClubPage() {
 
           {/* 3. Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
-            <div className="tn-light relative w-full rounded-3xl bg-[#0a0f26]/80 backdrop-blur-xl border border-blue-900/40 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+            <div className="tn-light relative w-full rounded-3xl bg-white/[0.06] backdrop-blur-3xl border border-cyan-500/25 p-6 shadow-[0_8px_32px_rgba(34,211,238,0.06)] hover:shadow-[0_12px_40px_rgba(34,211,238,0.10)] hover:bg-white/[0.08] transition-all">
               {/* Widget Header */}
               <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
                 <Shield className="w-4 h-4 text-blue-400" />
