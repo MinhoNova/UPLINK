@@ -364,16 +364,12 @@ export default function Navbar() {
                   <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
-                  {isAdmin ? (
-                    <img src="/Ascendant.png" alt="Ascendant" title="Ascendant Rank" className="h-7 w-7 object-contain shrink-0" />
-                  ) : (
-                    (() => {
-                      const stats = currentUser?.stats || {};
-                      const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0, currentUser?.rankOverride);
-                      const r = ranks.overall;
-                      return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
-                    })()
-                  )}
+                  {(() => {
+                    const stats = currentUser?.stats || {};
+                    const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0, currentUser?.rankOverride || (isAdmin ? "Ascendant" : null));
+                    const r = ranks.overall;
+                    return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
+                  })()}
                 </button>
                 {isAdmin && (
                   <a href="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
