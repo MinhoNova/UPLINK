@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -14,7 +14,7 @@ import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
 import { useFlag, setFlag } from "@/lib/siteFlags";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
-import { getUserRanks, RANK_ORDER } from "@/lib/ranks";
+import { getUserRanks } from "@/lib/ranks";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -86,7 +86,18 @@ export default function Navbar() {
     fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => {
-        if (data.registeredUsers) setRegisteredUsers(data.registeredUsers);
+        if (data.registeredUsers) {
+          setRegisteredUsers(data.registeredUsers);
+          const mine = (data.registeredUsers as any[]).find((u: any) => String(u.id) === String(currentUserId));
+          if (mine) {
+            try {
+              localStorage.setItem(
+                `uplink_rank_cache_${currentUserId}`,
+                JSON.stringify({ stats: mine.stats || {}, override: mine.rankOverride ?? null })
+              );
+            } catch { /* ignore */ }
+          }
+        }
         if (data.notifications) {
           const mine = data.notifications.filter((n: any) => String(n.targetId) === String(currentUserId));
           setNotifications(mine);
@@ -168,6 +179,28 @@ export default function Navbar() {
     avatar: session?.user?.image,
     username: (session?.user as any)?.username
   };
+
+  // Stable rank: use last-known stats/override from cache until /api/data arrives,
+  // so the rank emblem never flashes a placeholder (Bronze) before real data loads.
+  const rankData = useMemo(() => {
+    const live = currentUser || {};
+    let cached: { stats?: any; override?: string | null } | null = null;
+    try {
+      const raw = typeof window === "undefined" ? null : localStorage.getItem(`uplink_rank_cache_${currentUserId}`);
+      cached = raw ? JSON.parse(raw) : null;
+    } catch { /* ignore */ }
+    const hasLiveStats = live.stats && typeof live.stats === "object" && Object.keys(live.stats).length > 0;
+    const stats = hasLiveStats ? live.stats : (cached?.stats || {});
+    const override = live.rankOverride !== undefined
+      ? live.rankOverride
+      : (cached?.override != null ? cached.override : (isAdmin ? "Ascendant" : null));
+    const ranks = getUserRanks(
+      Number(stats.total) || 0,
+      Number(stats.postCount) || 0,
+      override
+    );
+    return { ranks, stats };
+  }, [currentUser, currentUserId, isAdmin]);
 
   const getUserTier = (userId: string) => {
     return "secret_club";
@@ -353,9 +386,8 @@ export default function Navbar() {
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
                   {(() => {
-                    const stats = currentUser?.stats || {};
-                    const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0, currentUser?.rankOverride || (isAdmin ? "Ascendant" : null));
-                    const r = ranks.overall;
+                    const r = rankData.ranks.overall;
+                    const stats = rankData.stats;
                     return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
                   })()}
                 </span>
