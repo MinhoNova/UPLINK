@@ -219,10 +219,17 @@ export default function Aion2TestClubPage() {
 
       {/* Scenic Background Artwork — full page, behind all content, never cut */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-contain bg-top bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+        <div
+          className="absolute inset-0 bg-contain bg-top bg-no-repeat"
+          style={{
+            backgroundImage: `url('/AION2.png')`,
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+            maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+          }}
+        />
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/80" />
-        <div className="absolute inset-x-0 top-0 h-[170vh] bg-gradient-to-b from-transparent via-transparent to-[#050814]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-[#050814]/35 to-[#050814]/95" />
+        <div className="absolute inset-x-0 top-0 h-[230vh] bg-[linear-gradient(to_bottom,transparent_0%,rgba(5,8,20,0.3)_70vh,rgba(5,8,20,0.75)_120vh,rgba(5,8,20,0.97)_175vh,#050814_215vh)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
@@ -428,8 +435,8 @@ export default function Aion2TestClubPage() {
                     whileHover={{ scale: 1.005 }}
                     className="tn-light relative w-full min-h-[104px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
-                    {/* Faction VFX banner / gradient on right */}
-                    <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none overflow-hidden opacity-60 group-hover:opacity-85 transition-opacity">
+                    {/* Faction VFX banner / gradient — full card */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
                       {offerBg ? (
                         <>
                           <img
@@ -440,13 +447,13 @@ export default function Aion2TestClubPage() {
                             decoding="async"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/70 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/75 to-[#050814]/10" />
                         </>
                       ) : (
-                        <>
+                        <div className="absolute right-0 top-0 bottom-0 w-2/5">
                           <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
                           <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
-                        </>
+                        </div>
                       )}
                     </div>
 
