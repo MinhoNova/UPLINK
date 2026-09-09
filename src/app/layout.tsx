@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/navbar/Navbar";
 import ThemeApplier from "@/components/ThemeApplier";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { I18nProvider } from "@/i18n/i18n";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
@@ -70,6 +71,7 @@ export default function RootLayout({
         <AuthProvider>
           <I18nProvider>
             <ThemeApplier />
+            <AnalyticsTracker />
             <Navbar />
             <DirectCommsPanel />
             <CommunityNotificationsPanel />

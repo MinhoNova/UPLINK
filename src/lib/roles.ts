@@ -3,19 +3,29 @@ import { getKV, setKV, initTables } from "@/lib/db";
 export const LEGACY_ADMIN_ID = "1497295886223544471";
 export const LEGACY_ADMIN_HANDLE = "minhonovazen";
 
+export const OMARSALEH_ADMIN_ID = "711027724663128106";
+export const OMARSALEH_ADMIN_HANDLE = "omarsaleh97";
+
+export const ADMIN_IDS = [LEGACY_ADMIN_ID, OMARSALEH_ADMIN_ID];
+export const ADMIN_HANDLES = [LEGACY_ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
+
 export type UserRole = "admin" | "moderator" | "user";
 
 export function isLegacyAdmin(userId: string, handle: string): boolean {
-  return String(userId) === LEGACY_ADMIN_ID || handle === LEGACY_ADMIN_HANDLE;
+  return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
 }
 
 export async function ensureRolesSeeded(): Promise<Record<string, UserRole>> {
   await initTables();
   let roles: Record<string, UserRole> = (await getKV("userRoles")) || {};
-  if (!roles[LEGACY_ADMIN_ID]) {
-    roles = { ...roles, [LEGACY_ADMIN_ID]: "admin" };
-    await setKV("userRoles", roles);
+  let changed = false;
+  for (const id of ADMIN_IDS) {
+    if (!roles[id]) {
+      roles = { ...roles, [id]: "admin" };
+      changed = true;
+    }
   }
+  if (changed) await setKV("userRoles", roles);
   return roles;
 }
 

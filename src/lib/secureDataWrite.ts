@@ -6,12 +6,18 @@ import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 export const ADMIN_ID = "1497295886223544471";
 export const ADMIN_HANDLE = "minhonovazen";
 
+export const OMARSALEH_ADMIN_ID = "711027724663128106";
+export const OMARSALEH_ADMIN_HANDLE = "omarsaleh97";
+
+const ADMIN_IDS = [ADMIN_ID, OMARSALEH_ADMIN_ID];
+const ADMIN_HANDLES = [ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
+
 const BLOCKED_KEYS = new Set(["directMessages", "readMessages", "deliveredMessages", "friends"]);
 const ADMIN_ONLY_KEYS = new Set(["bannedUsers", "bannedIps"]);
 
 /** Strip admin from ban lists — admin account must never be suspended. */
 export function stripAdminFromBanList(handles: string[]): string[] {
-  return handles.filter((h) => h !== ADMIN_HANDLE && h !== "minhonovazen");
+  return handles.filter((h) => !ADMIN_HANDLES.includes(h) && h !== "minhonovazen");
 }
 
 const PROTECTED_SELF_FIELDS = [
@@ -26,7 +32,7 @@ const PROTECTED_SELF_FIELDS = [
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 
 export function isAdminUser(userId: string, handle: string) {
-  return String(userId) === ADMIN_ID || handle === ADMIN_HANDLE;
+  return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
 }
 
 /** Strip fields users must not change via bulk /api/data writes. */

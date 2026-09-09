@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server";
 import { getKV, setKV } from "@/lib/db";
+import { getAppSession } from "@/lib/authEnv";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-function todayKey() {
+function dayStamp() {
   const d = new Date();
-  return `analytics:pv:${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function todayKey() {
+  return `analytics:pv:${dayStamp()}`;
 }
 
 function uniqueKey() {
-  const d = new Date();
-  return `analytics:uv:${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `analytics:uv:${dayStamp()}`;
+}
+
+function visitsKey() {
+  return `analytics:visits:${dayStamp()}`;
 }
 
 export async function POST(req: Request) {
@@ -36,6 +44,27 @@ export async function POST(req: Request) {
     const atKey = "analytics:pv:alltime";
     const atCount = ((await getKV(atKey)) as number) || 0;
     await setKV(atKey, atCount + 1);
+
+    // per-player daily visits (only for logged-in users)
+    const session = await getAppSession(req).catch(() => null);
+    if (session?.user?.id && session.user.username) {
+      const key = visitsKey();
+      const map: Record<string, any> = ((await getKV(key)) as Record<string, any>) || {};
+      const now = Date.now();
+      const prev = map[session.user.id] || { count: 0, firstSeenAt: now, lastSeenAt: now, ips: [] };
+      const next = {
+        id: session.user.id,
+        username: session.user.username,
+        name: (session.user.name as string) || "",
+        avatar: (session.user.image as string) || "",
+        count: (prev.count || 0) + 1,
+        firstSeenAt: prev.firstSeenAt || now,
+        lastSeenAt: now,
+        ips: Array.isArray(prev.ips) && prev.ips.length >= 5 ? prev.ips : [...(prev.ips || []), ip],
+      };
+      map[session.user.id] = next;
+      await setKV(key, map);
+    }
 
     return NextResponse.json({ ok: true });
   } catch {

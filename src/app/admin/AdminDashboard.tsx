@@ -17,11 +17,13 @@ import {
   Hash,
   TicketCheck,
   ShieldX,
+  UserCheck,
 } from "lucide-react";
 import AdminAnalyticsPanel from "@/components/admin/AdminAnalyticsPanel";
 import AdminAuditPanel from "@/components/admin/AdminAuditPanel";
 import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
+import AdminVisitsPanel from "@/components/admin/AdminVisitsPanel";
 
 const TABS = [
   { id: "users", label: "Users", icon: Users },
@@ -29,6 +31,7 @@ const TABS = [
   { id: "audit", label: "Audit Log", icon: FileSearch },
   { id: "ipbans", label: "IP Bans", icon: Ban },
   { id: "moderation", label: "Reports", icon: ShieldAlert },
+  { id: "visits", label: "Daily Visits", icon: UserCheck },
 ];
 
 export default function AdminDashboard() {
@@ -291,6 +294,12 @@ export default function AdminDashboard() {
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">Community Reports</h2>
             <AdminModerationPanel />
+          </div>
+        )}
+
+        {activeTab === "visits" && (
+          <div>
+            <AdminVisitsPanel />
           </div>
         )}
       </div>
