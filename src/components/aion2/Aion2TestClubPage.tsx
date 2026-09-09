@@ -33,7 +33,6 @@ interface OfferCard {
   region: "US" | "EU";
   playersMeta: string;
   rewardLabel: string;
-  scenicImage: string;
   bgTheme: string;
 }
 
@@ -45,7 +44,6 @@ const SEED_OFFERS: OfferCard[] = [
     region: "US",
     playersMeta: "4 × +10",
     rewardLabel: "25K PER RUN",
-    scenicImage: "/aion2-card-citadel.webp",
     bgTheme: "from-[#1a1f3c]/90 via-[#1a1f3c]/60 to-[#2c3b6b]/40",
   },
   {
@@ -55,7 +53,6 @@ const SEED_OFFERS: OfferCard[] = [
     region: "EU",
     playersMeta: "4 × +10",
     rewardLabel: "50K PER RUN",
-    scenicImage: "/aion2-card-dragon.webp",
     bgTheme: "from-[#1a1f3c]/90 via-[#1a1f3c]/60 to-[#3b2c6b]/40",
   },
 ];
@@ -277,25 +274,14 @@ export default function Aion2TestClubPage() {
                   >
                     {/* Scenic Artwork thumbnail / gradient on right */}
                     <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none overflow-hidden opacity-60 group-hover:opacity-85 transition-opacity">
-                      <Image
-                        src={offer.scenicImage}
-                        alt={offer.name}
-                        fill
-                        className="object-cover object-center"
-                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
                       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
                     </div>
 
                     <div className="relative z-10 flex items-center w-full gap-6">
                       {/* Rank / Crest Icon */}
                       <div className="w-16 h-16 rounded-full bg-[#050814]/80 border border-blue-500/30 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover:border-blue-400/60 transition-colors overflow-hidden">
-                        <Image
-                          src="/aion2-rank-crest.webp"
-                          alt="Crest"
-                          width={44}
-                          height={44}
-                          className="object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]"
-                        />
+                        <Shield className="w-7 h-7 text-blue-400/80" />
                       </div>
 
                       {/* Offer Details */}
@@ -355,13 +341,7 @@ export default function Aion2TestClubPage() {
               <div className="flex flex-col items-center text-center py-10">
                 <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
                   <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
-                  <Image
-                    src="/aion2-mission-sigil.webp"
-                    alt="Mission Sigil"
-                    width={48}
-                    height={48}
-                    className="object-contain drop-shadow-[0_0_10px_rgba(59,130,246,0.9)] animate-pulse"
-                  />
+                  <Shield className="w-8 h-8 text-blue-400/70 drop-shadow-[0_0_10px_rgba(59,130,246,0.9)] animate-pulse" />
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                   {t("missions_empty") || "NO ACTIVE MISSIONS"}

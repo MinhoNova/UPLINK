@@ -22,7 +22,6 @@ export const AION_CLASSES_LIST: AionClass[] = [
     icon: Zap,
     color: "#34d399",
     glow: "rgba(52,211,153,0.4)",
-    video: "/Ranger%20small.mp4",
   },
   {
     id: "assassin",
