@@ -11,6 +11,7 @@ import { isUserBanned, bannedResponse } from '@/lib/banCheck';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
+import { applyRankAwards } from '@/lib/rankAwards';
 
 export async function GET(req: Request) {
   try {
@@ -103,7 +104,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: validation.error }, { status: 403 });
     }
 
-    for (const [key, value] of Object.entries(validation.sanitized)) {
+    let sanitized = validation.sanitized;
+
+    if (Array.isArray(sanitized.lobbies) && Array.isArray(existing.registeredUsers)) {
+      const outcome = applyRankAwards(
+        (existing.lobbies as any[]) || [],
+        sanitized.lobbies as any[],
+        existing.registeredUsers as any[],
+        auth.user.id
+      );
+      if (outcome.awarded.boosterRuns > 0 || outcome.awarded.posterPosts > 0) {
+        if (Array.isArray(sanitized.registeredUsers)) {
+          const awardedMap = new Map(outcome.users.map((u: any) => [String(u.id), u]));
+          (sanitized.registeredUsers as any[]).forEach((clientUser: any, idx: number) => {
+            const awarded = awardedMap.get(String(clientUser.id));
+            if (awarded) {
+              (sanitized.registeredUsers as any[])[idx] = {
+                ...awarded,
+                ...clientUser,
+                stats: awarded.stats,
+              };
+            }
+          });
+        } else {
+          sanitized = { ...sanitized, registeredUsers: outcome.users };
+        }
+        sanitized = { ...sanitized, lobbies: outcome.lobbies };
+      }
+    }
+
+    for (const [key, value] of Object.entries(sanitized)) {
       let toWrite = value;
       if (key === "tickets" && Array.isArray(value)) {
         toWrite = pruneExpiredTickets(value).tickets;

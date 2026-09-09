@@ -499,40 +499,13 @@ const ManageModal = ({
 
                                            {effectiveStatus === 'unpaid' && targetLobby.paymentProof && targetLobby.payoutStatus !== 'paid' && (currentUserId === targetLobby.ownerId || isAdmin) && (
                                               <motion.button onClick={() => {
-                                                 const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', completedAt: Date.now() };
-                                                 setTargetLobby(updated);
-                                                 const updatedLobbies = lobbies.map(l => l.id === targetLobby.id ? updated : l);
-                                                 setLobbies(updatedLobbies);
-                                                 saveGlobalData({ lobbies: updatedLobbies });
-
-                                                const updatedUsers = [...registeredUsers];
-                                                const kLevel = parseInt(targetLobby.keyLevel?.replace('+', '') || '0');
-                                                const keyLabel = targetLobby.keyLevel || (kLevel > 0 ? `+${kLevel}` : '');
-                                                const rangeLabel = targetLobby.startLevel && targetLobby.endLevel ? `${targetLobby.startLevel}-${targetLobby.endLevel}` : '';
-                                                const allMemberIds = [targetLobby.ownerId, ...(targetLobby?.accepted || []).map((m: any) => m.applicantId || m.userId)];
-                                                allMemberIds.forEach((memberId: string) => {
-                                                   const uIdx = updatedUsers.findIndex(u => String(u.id) === String(memberId));
-                                                   if (uIdx !== -1) {
-                                                      const stats = { ...(updatedUsers[uIdx].stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 }), levelingTotal: updatedUsers[uIdx].stats?.levelingTotal || 0, dungeonTotal: updatedUsers[uIdx].stats?.dungeonTotal || 0, perKeyLevel: { ...(updatedUsers[uIdx].stats?.perKeyLevel || {}) }, perLevelRange: { ...(updatedUsers[uIdx].stats?.perLevelRange || {}) } };
-                                                      stats.total += 1;
-                                                      if (kLevel >= 20) stats.k20 += 1;
-                                                      else if (kLevel >= 15) stats.k15 += 1;
-                                                      else if (kLevel >= 10) stats.k10 += 1;
-                                                      else if (kLevel >= 5) stats.k5 += 1;
-                                                      if (targetLobby.category === 'dungeon') {
-                                                         stats.dungeonTotal += 1;
-                                                         if (keyLabel) stats.perKeyLevel[keyLabel] = (stats.perKeyLevel[keyLabel] || 0) + 1;
-                                                      } else if (targetLobby.category === 'leveling') {
-                                                         stats.levelingTotal += 1;
-                                                         if (rangeLabel) stats.perLevelRange[rangeLabel] = (stats.perLevelRange[rangeLabel] || 0) + 1;
-                                                      }
-                                                      updatedUsers[uIdx] = { ...updatedUsers[uIdx], stats };
-                                                   }
-                                                });
-                                                setRegisteredUsers(updatedUsers);
-                                                handleUpdateLobby(updated);
-                                                saveGlobalData({ registeredUsers: updatedUsers });
-                                                addToast("Payment Confirmed! Player stats updated.", "success");
+const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', completedAt: Date.now() };
+                                                  setTargetLobby(updated);
+                                                  const updatedLobbies = lobbies.map(l => l.id === targetLobby.id ? updated : l);
+                                                  setLobbies(updatedLobbies);
+                                                  saveGlobalData({ lobbies: updatedLobbies });
+                                                  handleUpdateLobby(updated);
+                                                  addToast("Payment Confirmed! Player stats updated.", "success");
                                                 playSound('reward');
                                              }} className="h-11 px-7 bg-green-500 text-black rounded-xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_25px_rgba(34,197,94,0.3)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
                                                 <Coins className="w-4 h-4" /> CONFIRM PAYOUT

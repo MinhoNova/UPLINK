@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { Trophy, Star, Hash } from "lucide-react";
+import { getUserRanks } from "@/lib/ranks";
 
 export function getRank(totalRuns: number): { title: string; color: string; minRuns: number } {
   if (totalRuns >= 1000) return { title: "ELITE", color: "#ff007f", minRuns: 1000 };
@@ -40,7 +41,8 @@ interface RankBadgeProps {
 
 export default function RankBadge({ stats, ratings, compact, showCategory }: RankBadgeProps) {
   const total = stats?.total || 0;
-  const rank = getRank(total);
+  const ranks = getUserRanks(total, stats?.postCount || 0);
+  const rank = { title: ranks.overall.tier.toUpperCase(), color: ranks.overall.color };
   const avgRating = getAverageRating(ratings);
   const ratingCount = ratings?.length || 0;
   const postCount = stats?.postCount || 0;

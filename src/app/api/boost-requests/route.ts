@@ -3,6 +3,7 @@ import { requireSession, requireOptionalSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { storeUserMediaFile } from "@/lib/userMediaStorage";
 import { getImageMetadata, normalizeLobbyVfx } from "@/lib/imageProcess";
+import { normalizeStats } from "@/lib/rankAwards";
 
 export async function GET(req: Request) {
   const auth = await requireOptionalSession(req);
@@ -91,6 +92,14 @@ export async function POST(req: Request) {
     }
     requests.unshift(newRequest);
     await setKV("boostRequests", requests);
+
+    const users: any[] = (await getKV("registeredUsers")) || [];
+    const me = users.find((u: any) => String(u.id) === String(auth.user.id));
+    if (me) {
+      me.stats = { ...normalizeStats(me.stats), postCount: (me.stats?.postCount || 0) + 1 };
+      await setKV("registeredUsers", users);
+    }
+
     return NextResponse.json({ success: true, request: newRequest });
   }
 

@@ -14,6 +14,7 @@ import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
 import { useFlag, setFlag } from "@/lib/siteFlags";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
+import { getUserRanks, RANK_ORDER } from "@/lib/ranks";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -366,7 +367,15 @@ export default function Navbar() {
                   {isAdmin ? (
                     <img src="/legendary%20rank.png" alt="Legendary" title="Legendary Rank" className="h-[18px] w-auto object-contain shrink-0" />
                   ) : (
-                    (() => { const t = getUserTierLabel(currentUserId); return t ? <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm ${t.color}`}>{t.label}</span> : null; })()
+                    (() => {
+                      const stats = currentUser?.stats || {};
+                      const ranks = getUserRanks(Number(stats.total) || 0, Number(stats.postCount) || 0);
+                      const r = ranks.overall;
+                      if (r.image) {
+                        return <img src={r.image} alt={r.tier} title={`${r.tier} Rank`} className="h-[18px] w-auto object-contain shrink-0" />;
+                      }
+                      return <span title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest backdrop-blur-sm border border-white/10" style={{ color: r.color, backgroundColor: `${r.color}15` }}>{r.tier}</span>;
+                    })()
                   )}
                 </button>
                 {isAdmin && (

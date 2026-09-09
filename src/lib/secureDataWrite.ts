@@ -28,6 +28,7 @@ const PROTECTED_SELF_FIELDS = [
   "welcomePlansSeen",
   "lastKnownIp",
   "lastSeenAt",
+  "stats",
 ] as const;
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 
@@ -146,12 +147,22 @@ export function validateRegisteredUsers(
 
   const existingById = new Map(existing.map((u: any) => [String(u.id), u]));
   const sanitized = (incoming as any[]).map((user) => {
-    if (String(user.id) !== String(userId)) return user;
+    if (String(user.id) !== String(userId)) {
+      const ex = existingById.get(String(user.id));
+      const { stats: _stats, ...rest } = user;
+      return { ...rest, ...(ex && ex.stats ? { stats: ex.stats } : {}) };
+    }
     const ex = existingById.get(String(userId));
     if (!ex) return user;
     return sanitizeSelfUserRecord(ex as Record<string, unknown>, user as Record<string, unknown>);
   });
   const incomingById = new Map(sanitized.map((u: any) => [String(u.id), u]));
+
+  const stripStats = (u: any) => {
+    if (!u || typeof u !== "object") return u;
+    const { stats: _stats, ...rest } = u;
+    return rest;
+  };
 
   for (const user of sanitized) {
     const ex = existingById.get(String(user.id));
@@ -159,7 +170,7 @@ export function validateRegisteredUsers(
       if (String(user.id) !== String(userId)) return { ok: false, error: "Cannot register other users" };
       continue;
     }
-    if (String(user.id) !== String(userId) && JSON.stringify(user) !== JSON.stringify(ex)) {
+    if (String(user.id) !== String(userId) && JSON.stringify(stripStats(user)) !== JSON.stringify(stripStats(ex))) {
       return { ok: false, error: "Cannot modify other users" };
     }
   }
