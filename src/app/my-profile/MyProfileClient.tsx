@@ -471,11 +471,6 @@ export default function MyProfileClient() {
                   title={`${rank.tier} — Booster: ${Number(me?.stats?.total) || 0} runs · Poster: ${Number(me?.stats?.postCount) || 0} posts`}
                   className="absolute -bottom-1 -right-1 w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.35)]"
                 />
-                {me?.profileGif && (
-                  <span className="absolute top-1 right-1 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
-                    <Sparkles className="w-3 h-3 text-emerald-300" />
-                  </span>
-                )}
               </div>
             </div>
 
