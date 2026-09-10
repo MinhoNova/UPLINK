@@ -93,7 +93,6 @@ export default function CreateOfferPage() {
         serviceName: String(sel.name || "Mission"),
         notes: `${sel.description || ""} · ${region}`,
         runsCount: qty,
-        keyLevel: String((sel as any).keyLevel || "+10"),
         serverRegion: region,
         roles: category === "leveling"
           ? { tank: 0, dps: qty }

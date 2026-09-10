@@ -1,6 +1,6 @@
 ﻿"use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Radio, Phone, Zap, ShieldCheck, CircleDollarSign, Star, Lock, ArrowDown } from "lucide-react";
+import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Radio, Phone, Zap, ShieldCheck, CircleDollarSign, Star, Lock } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
@@ -123,14 +123,7 @@ const ManageModal = ({
     theme,
     AvatarWithEffect,
     isAdmin,
-    DUNGEONS,
   } = usePage();
-
-  const resolveApplicantDungeon = (app: any) => {
-    const key = app.keystone || app.dungeon || "";
-    if (!key) return null;
-    return DUNGEONS.find((d) => d.name === key || d.short === key) || null;
-  };
 
   const sortApplicants = (apps: any[]) =>
     [...apps].sort((a, b) => {
@@ -662,13 +655,10 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                             app.applicantName || app.name || "Applicant"
                                                          );
                                                          const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
-                                                         const dungeon = resolveApplicantDungeon(app);
-                                                         const keyLvl = app.applicantKeyLevel || app.keyLevel || "";
-                                                         const dropLvl = app.applicantDropLevel || app.dropLevel || "";
-                                                         const ioScore = app.roleScores?.[app.role] ?? app.score ?? 0;
-                                                         const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
-                                                         const dungeonShort = dungeon?.short || (dungeon?.name ? dungeon.name.slice(0, 2).toUpperCase() : "");
-                                                         return (
+const aionClass = app.aionClass || app.className || app.class || "";
+                                                          const aionLevel = app.level || app.applicantLevel || "";
+                                                          const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
+                                                          return (
                                                          <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 group hover:border-[#00ffff]/30 transition-all">
                                                             <div className="flex items-center gap-1.5 min-h-[40px]">
                                                                <div className="flex flex-col items-center shrink-0 w-[42px]">
@@ -684,8 +674,8 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
 
                                                                <div className="flex items-center shrink-0" style={{ width: 54 }}>
                                                                   <img
-                                                                     src={classThumbUrl(app.class)}
-                                                                     alt={app.class || "Class"}
+                                                                     src={classThumbUrl(aionClass)}
+                                                                     alt={aionClass || "Class"}
                                                                      className={`w-9 h-9 object-contain drop-shadow-md ${classIconClass()}`}
                                                                   />
                                                                   <img
@@ -696,34 +686,16 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                </div>
 
                                                                <div className="flex items-center gap-2 shrink-0">
-                                                                  <div className="text-center min-w-[34px]">
-                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">IO</p>
-                                                                     <p className="text-sm font-black text-orange-400 tabular-nums leading-tight">{ioScore}</p>
+                                                                  <div className="text-center min-w-[58px] max-w-[90px]">
+                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">Class</p>
+                                                                     <p className="text-[10px] font-black text-cyan-300 leading-tight truncate">{aionClass || "—"}</p>
                                                                   </div>
-                                                                  <div className="text-center min-w-[28px]">
-                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">iLvl</p>
-                                                                     <p className="text-sm font-black text-[#c084fc] tabular-nums leading-tight">{app.ilvl || "—"}</p>
+                                                                  <div className="text-center min-w-[32px]">
+                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">Lvl</p>
+                                                                     <p className="text-sm font-black text-[#c084fc] tabular-nums leading-tight">{aionLevel || "—"}</p>
                                                                   </div>
                                                                   <div className="w-3 h-3 rounded-full bg-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.55)] shrink-0" />
                                                                </div>
-
-                                                               {dungeon ? (
-                                                                  <div className="flex items-center gap-1.5 shrink-0 rounded-lg border border-[#00ffff]/30 bg-black/50 px-1.5 py-1">
-                                                                     <img src={dungeon.img} alt={dungeonShort} className="w-10 h-10 rounded-md object-cover border border-white/20 shrink-0" />
-                                                                     <span className="text-sm font-black text-[#00ffff] uppercase leading-none tracking-wider drop-shadow-[0_0_8px_rgba(0,255,255,0.35)]">{dungeonShort}</span>
-                                                                     {keyLvl ? <span className="text-base font-black text-yellow-300 tabular-nums leading-none">+{keyLvl}</span> : null}
-                                                                     {dropLvl ? (
-                                                                        <span className="inline-flex items-center gap-0.5 text-base font-black text-[#00eaff] tabular-nums leading-none drop-shadow-[0_0_6px_rgba(0,234,255,0.4)]">
-                                                                           <ArrowDown className="w-4 h-4 stroke-[3]" />
-                                                                           {dropLvl}
-                                                                        </span>
-                                                                     ) : null}
-                                                                  </div>
-                                                               ) : (
-                                                                  <div className="shrink-0 min-w-[64px] rounded-lg border border-dashed border-white/10 px-2 py-1 flex items-center justify-center">
-                                                                     <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">No Key</p>
-                                                                  </div>
-                                                               )}
 
                                                                {app.teamName ? (
                                                                   <div
@@ -845,11 +817,13 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                <div className="min-w-0 flex-1">
                                                                   <div className="flex items-center gap-2 mb-0.5">
                                                                      <span className="text-xs font-black text-white uppercase truncate">{run.dungeonFull || run.dungeon}</span>
-                                                                     <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 font-black">+{run.mythic_level}</span>
+                                                                     <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 font-black">
+                                                                        {run.mythic_level ? `Lv ${run.mythic_level}` : "CLEAR"}
+                                                                     </span>
                                                                   </div>
                                                                   <div className="flex items-center gap-2 text-[7px] font-black uppercase tracking-widest">
-                                                                     <span className={`flex items-center gap-1 ${(run.num_keystone_upgrades || 0) > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                                        {(run.num_keystone_upgrades || 0) > 0 ? 'TIMED' : 'UNTIMED'}
+                                                                     <span className={`flex items-center gap-1 ${(run.num_keystone_upgrades || 0) > 0 ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                                        {(run.num_keystone_upgrades || 0) > 0 ? 'CLEARED' : 'COMPLETED'}
                                                                      </span>
                                                                      {run.clear_time_ms && (
                                                                         <span className="text-gray-400">{Math.floor(run.clear_time_ms / 60000)}m {Math.floor((run.clear_time_ms % 60000) / 1000)}s</span>

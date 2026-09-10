@@ -1,12 +1,18 @@
+import { aionClassRole } from "@/lib/aionClassMeta";
+
 /** Lightweight 32×32 PNG thumbnails — avoid multi-MB SVG decode in lists. */
 export function classThumbUrl(name: string): string {
-  const n = name.trim();
-  if (/death\s*knight/i.test(n)) return "/classes-thumb/DEATH KNIGHT.png";
-  if (/demon\s*hunter/i.test(n)) return "/classes-thumb/DEMON HUNTER.png";
-  const roleMap: Record<string, string> = { dps: "DPS", tank: "TANK", healer: "HEALER" };
-  const role = roleMap[n.toLowerCase()];
-  if (role) return `/classes-thumb/${role}.png`;
-  return `/classes-thumb/${n.toUpperCase()}.png`;
+  const n = (name || "").trim();
+  if (!n) return "/classes-thumb/DPS.png";
+  const roleMap: Record<string, string> = {
+    dps: "DPS",
+    tank: "TANK",
+    healer: "HEALER",
+  };
+  const lower = n.toLowerCase();
+  if (roleMap[lower]) return `/classes-thumb/${roleMap[lower]}.png`;
+  const role = roleMap[aionClassRole(n)] || "DPS";
+  return `/classes-thumb/${role}.png`;
 }
 
 export function roleIconUrl(role: string): string {

@@ -6,6 +6,12 @@ import { withdrawApplicantFromOfferFamily } from "@/lib/lobbyLifecycle";
 import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { getClientIp } from "@/lib/requestIp";
+import {
+  sanitizeAionClass,
+  sanitizeAionLevel,
+  sanitizeAionCpAp,
+  aionClassRole,
+} from "@/lib/aionClassMeta";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
   return String(member.applicantId || member.userId || member.id || "");
@@ -63,6 +69,10 @@ export async function POST(req: Request) {
     applicantId: uid,
     applicantName: applicant.applicantName || auth.user.name || "Operative",
     applicantNote: sanitizeApplicantNote(applicant.applicantNote),
+    aionClass: sanitizeAionClass(applicant.aionClass || applicant.className || applicant.class),
+    level: sanitizeAionLevel(applicant.level ?? applicant.applicantLevel),
+    cpAp: sanitizeAionCpAp(applicant.cpAp ?? applicant.applicantCpAp),
+    role: aionClassRole(applicant.aionClass || applicant.className || applicant.class),
     ...(() => {
       const user = registeredUsers.find((u) => String(u.id) === uid);
       if (!user?.team?.name) return {};

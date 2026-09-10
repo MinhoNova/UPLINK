@@ -1,4 +1,4 @@
-import { Swords, Sword, Shield, Wand2, Flashlight, Sparkles, Flame, Ghost, Zap } from "lucide-react";
+import { Swords, Sword, Shield, Wand2, Sparkles, Flame, Ghost, Zap } from "lucide-react";
 
 export interface AionClass {
   id: string;
@@ -92,25 +92,5 @@ export const AION_CLASSES_LIST: AionClass[] = [
     icon: Wand2,
     color: "#22d3ee",
     glow: "rgba(34,211,238,0.4)",
-  },
-  {
-    id: "gunner",
-    name: "Gunner",
-    role: "Ranged DPS",
-    tagline: "Twin pistols and heavy artillery from range.",
-    talent: "Bullet Hail: unleashes a barrage of enchanted rounds.",
-    icon: Flashlight,
-    color: "#f472b6",
-    glow: "rgba(244,114,182,0.4)",
-  },
-  {
-    id: "songweaver",
-    name: "Songweaver",
-    role: "Magic DPS / Support",
-    tagline: "Weaves the melody of battle into magic.",
-    talent: "Melody of Wrath: songs that burn your enemies.",
-    icon: Sparkles,
-    color: "#e879f9",
-    glow: "rgba(232,121,249,0.4)",
   },
 ];

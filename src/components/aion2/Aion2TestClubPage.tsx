@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Radio, Trash2, Check, Layers
+  Radio, Trash2, Check, Layers, X
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -14,6 +14,12 @@ import { resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
+import {
+  AION2_CLASSES,
+  AION2_ROLE_LABEL,
+  aionClassRole,
+  AION2_LEVEL_MAX,
+} from "@/lib/aionClassMeta";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -35,6 +41,10 @@ export default function Aion2TestClubPage() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [applyError, setApplyError] = useState("");
+  const [applyTarget, setApplyTarget] = useState<any>(null);
+  const [applyAionClass, setApplyAionClass] = useState("");
+  const [applyLevel, setApplyLevel] = useState("60");
+  const [applyNote, setApplyNote] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -127,11 +137,6 @@ export default function Aion2TestClubPage() {
       .map(([role, n]) => ({ role, n: Number(n) }));
   };
 
-  const firstOpenRole = (l: any) => {
-    const open = openRolesOf(l);
-    return open[0]?.role || "dps";
-  };
-
   const offerBgOf = (l: any) => {
     const o = lobbyOwner(l);
     if (!o || o.vfxSettings?.showOnBanner === false) return null;
@@ -145,8 +150,10 @@ export default function Aion2TestClubPage() {
   const alreadyApplied = (l: any) =>
     meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
 
-  const applyNow = async (l: any) => {
-    if (!meId || applyingId) return;
+  const submitApply = async () => {
+    const l = applyTarget;
+    if (!meId || !l || applyingId) return;
+    if (!applyAionClass) { setApplyError("Pick your class first"); return; }
     setApplyingId(String(l.id));
     setApplyError("");
     try {
@@ -157,14 +164,21 @@ export default function Aion2TestClubPage() {
           lobbyId: l.id,
           applicant: {
             id: `${meId}-main`,
-            role: firstOpenRole(l),
-            className: "",
+            role: aionClassRole(applyAionClass),
+            className: applyAionClass,
+            aionClass: applyAionClass,
+            level: Number(applyLevel) || 1,
+            applicantNote: applyNote,
             applicantName: meName,
           },
         }),
       });
       if (res.ok) {
         setAppliedIds((prev) => new Set([...prev, String(l.id)]));
+        setApplyTarget(null);
+        setApplyAionClass("");
+        setApplyNote("");
+        setApplyLevel("60");
         window.dispatchEvent(new Event("data-refresh"));
       } else {
         const d = await res.json().catch(() => ({}));
@@ -443,11 +457,6 @@ export default function Aion2TestClubPage() {
                         {name}
                       </p>
                       <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        {offer.keyLevel && (
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-blue-200/80">
-                            <span>{offer.keyLevel}</span>
-                          </span>
-                        )}
                         {offer.serverRegion && (
                           <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">
                             {String(offer.serverRegion).toUpperCase()}
@@ -470,7 +479,7 @@ export default function Aion2TestClubPage() {
                         </span>
                       ) : (
                         <button
-                          onClick={() => applyNow(offer)}
+                          onClick={() => { setApplyTarget(offer); setApplyError(""); }}
                           disabled={!meId || applyingId === String(offer.id)}
                           className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5"
                         >
@@ -597,7 +606,7 @@ export default function Aion2TestClubPage() {
                                 </>
                               ) : (
                                 <>
-                                  <span className="mr-1 text-[#00ffff]">{totalRuns}x</span> {m.keyLevel || "+10"}
+                                  <span className="mr-1 text-[#00ffff]">{totalRuns}x</span> RUN
                                 </>
                               )}
                             </p>
@@ -611,11 +620,6 @@ export default function Aion2TestClubPage() {
                               {m.serverRegion && (
                                 <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">
                                   {String(m.serverRegion).toUpperCase()}
-                                </span>
-                              )}
-                              {m.keyLevel && (
-                                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-300">
-                                  {m.keyLevel}
                                 </span>
                               )}
                             </div>
@@ -644,6 +648,105 @@ export default function Aion2TestClubPage() {
 
         </div>
       </main>
+
+      {/* ── APPLY TO OFFER MODAL ── */}
+      <AnimatePresence>
+        {applyTarget && (
+          <motion.div
+            key="apply-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => !applyingId && setApplyTarget(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="tn-light relative w-full max-w-md rounded-3xl border border-cyan-500/25 bg-[#0a0f26]/95 p-6 shadow-[0_0_60px_rgba(0,229,255,0.18)]"
+            >
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.24em] text-cyan-300">Signal Request</p>
+                  <h3 className="mt-1 text-base font-black uppercase tracking-wide text-white truncate">
+                    {applyTarget.title || `${applyTarget.runsCount || 1}× Boost`}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => !applyingId && setApplyTarget(null)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 transition-all hover:border-white/25 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="mt-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Your class</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {AION2_CLASSES.map((c) => {
+                  const isActive = applyAionClass === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setApplyAionClass(c)}
+                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_16px_rgba(0,229,255,0.15)]" : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]"}`}
+                    >
+                      <span className={`text-xs font-black tracking-wide ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span>
+                      <span className={`text-[8px] font-black tracking-widest ${isActive ? "text-cyan-300" : "text-gray-500"}`}>
+                        {AION2_ROLE_LABEL[aionClassRole(c)] || aionClassRole(c).toUpperCase()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Level</p>
+                  <input
+                    type="number"
+                    min={1}
+                    max={AION2_LEVEL_MAX}
+                    value={applyLevel}
+                    onChange={(e) => setApplyLevel(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm font-black text-white outline-none transition-all focus:border-cyan-400/50"
+                  />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Note (optional)</p>
+                  <input
+                    type="text"
+                    maxLength={200}
+                    value={applyNote}
+                    onChange={(e) => setApplyNote(e.target.value)}
+                    placeholder="Gear, availability..."
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none transition-all focus:border-cyan-400/50"
+                  />
+                </div>
+              </div>
+
+              {applyError && (
+                <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>
+              )}
+
+              <div className="mt-5 flex items-center gap-2">
+                <button
+                  onClick={submitApply}
+                  disabled={!applyAionClass || applyingId}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:from-[#08a3c4] hover:to-[#5b4ddb] disabled:opacity-50"
+                >
+                  <Swords className="w-3.5 h-3.5" /> {applyingId ? "Submitting..." : "Send Application"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

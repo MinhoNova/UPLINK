@@ -105,7 +105,7 @@ export default function OngoingMissionsPanel({
                 const totalRuns = l.selectedDungeons
                   ? (Object.values(l.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
                   : l.runsCount || 1;
-                return `${totalRuns}x ${l.keyLevel || "+10"}`;
+                return `${totalRuns}x RUN`;
               })()
             )}
           </p>

@@ -247,19 +247,15 @@ export const AION_CLASSES = [
   "Ranger",
   "Sorcerer",
   "Spiritmaster",
-  "Chanter",
   "Cleric",
-  "Gunner",
-  "Aethertech",
-  "Songweaver",
+  "Chanter",
 ];
 
 export const AION_CLASS_GROUPS = {
   Warrior: ["Templar", "Gladiator"],
   Scout: ["Assassin", "Ranger"],
   Mage: ["Sorcerer", "Spiritmaster"],
-  Priest: ["Chanter", "Cleric"],
-  Techist: ["Gunner", "Aethertech", "Songweaver"],
+  Priest: ["Cleric", "Chanter"],
 };
 
 export function formatUsd(n: number): string {
