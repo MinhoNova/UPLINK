@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
+import { useRouter } from "next/navigation";
 import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
@@ -20,7 +21,6 @@ import {
   aionClassRole,
   AION2_LEVEL_MAX,
 } from "@/lib/aionClassMeta";
-import OfferManager from "@/components/OfferManager";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -33,6 +33,7 @@ const FILTER_TABS = [
 export default function Aion2TestClubPage() {
   const { t } = useI18n();
   const { data: session } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("All");
   const motionOn = useFlag("uplink_bg_motion", true);
 
@@ -43,7 +44,6 @@ export default function Aion2TestClubPage() {
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [applyError, setApplyError] = useState("");
   const [applyTarget, setApplyTarget] = useState<any>(null);
-  const [manageTarget, setManageTarget] = useState<any>(null);
   const [applyAionClass, setApplyAionClass] = useState("");
   const [applyLevel, setApplyLevel] = useState("60");
   const [applyNote, setApplyNote] = useState("");
@@ -477,7 +477,7 @@ export default function Aion2TestClubPage() {
                     <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                       {isMine ? (
                         <button
-                          onClick={() => { setManageTarget(offer); setApplyError(""); }}
+                          onClick={() => router.push(`/manage/${offer.id}`)}
                           className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] flex items-center justify-center gap-1.5"
                         >
                           <Radio className="w-3 h-3" /> Manage
@@ -756,18 +756,6 @@ export default function Aion2TestClubPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ── OFFER MANAGER PANEL ── */}
-      <OfferManager
-        open={!!manageTarget}
-        onClose={() => setManageTarget(null)}
-        lobby={manageTarget}
-        lobbies={lobbies}
-        setLobbies={setLobbies}
-        registeredUsers={registeredUsers}
-        currentUserId={meId}
-        meName={meName}
-      />
 
     </div>
   );
