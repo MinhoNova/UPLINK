@@ -10,6 +10,7 @@ import {
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
+import { resolveNameColor } from "@/lib/profileImage";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
 
@@ -110,7 +111,7 @@ export default function Aion2TestClubPage() {
 
   const ownerPic = (l: any) => {
     const o = lobbyOwner(l);
-    return String(o?.avatar || o?.customAvatar || l.ownerImage || "");
+    return String(o?.profileGif || o?.customAvatar || o?.avatar || l.ownerImage || "");
   };
 
   const ownerName = (l: any) => {
@@ -369,8 +370,10 @@ export default function Aion2TestClubPage() {
             <div className="space-y-4">
               <AnimatePresence mode="popLayout">
                 {displayOffers.map((offer) => {
+                  const owner = lobbyOwner(offer);
                   const pic = ownerPic(offer);
                   const name = ownerName(offer);
+                  const ownerColor = resolveNameColor(owner);
                   const openRoles = openRolesOf(offer);
                   const applied = alreadyApplied(offer);
                   const isMine = String(offer.ownerId) === meId;
@@ -407,7 +410,7 @@ export default function Aion2TestClubPage() {
 
                     {/* Creator avatar */}
                     <div className="relative z-10 flex-shrink-0">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#050814]/80 border border-cyan-500/30 flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover:border-cyan-400/60 transition-colors">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors">
                         {pic ? (
                           <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         ) : (
@@ -423,11 +426,6 @@ export default function Aion2TestClubPage() {
                         <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
                           {String(offer.category || "dungeon").toUpperCase()}
                         </span>
-                        {isMine && (
-                          <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-blue-400/40 bg-blue-500/10 text-blue-300">
-                            Your Offer
-                          </span>
-                        )}
                         {applied && (
                           <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300">
                             Applied
@@ -437,7 +435,12 @@ export default function Aion2TestClubPage() {
                       <h4 className="mt-1.5 text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
                         {offer.title || `${offer.runsCount || 1}× Boost`}
                       </h4>
-                      <p className="text-[9px] font-bold text-cyan-200/70 uppercase tracking-widest">{name}</p>
+                      <p
+                        className="text-[9px] font-bold text-cyan-200/70 uppercase tracking-widest"
+                        style={ownerColor ? { color: ownerColor, textShadow: `0 0 12px ${ownerColor}66` } : undefined}
+                      >
+                        {name}
+                      </p>
                       <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                         {offer.keyLevel && (
                           <span className="flex items-center gap-1.5 text-xs font-bold text-blue-200/80">

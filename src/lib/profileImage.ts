@@ -18,6 +18,13 @@ export function resolveProfileImage(user: any, fallbackName = "U"): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || fallbackName)}&background=0b1020&color=00ffff&size=128`;
 }
 
+/** Hex color the user picked for their display name — null when unset/invalid. */
+export function resolveNameColor(user: any): string | null {
+  const c = String(user?.nameColor || "").trim();
+  if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) return c;
+  return null;
+}
+
 /** Display name only — never Discord username/handle. */
 export function resolveProfileDisplayName(user: any, fallback = "Member"): string {
   return user?.displayName || user?.name || user?.discordDisplayName || fallback;

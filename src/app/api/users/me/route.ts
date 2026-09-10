@@ -36,7 +36,7 @@ export async function PATCH(req: Request) {
   for (const field of PROTECTED_SELF_FIELDS) {
     if (existing[field] !== undefined) merged[field] = existing[field];
   }
-  for (const field of ["profileGif", "profileGifThumb", "customAvatar", "banner"] as const) {
+  for (const field of ["profileGif", "profileGifThumb", "customAvatar", "banner", "nameColor"] as const) {
     if (field in incoming && (incoming[field] === null || incoming[field] === "")) {
       delete merged[field];
     }

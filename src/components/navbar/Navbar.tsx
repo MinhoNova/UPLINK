@@ -8,7 +8,7 @@ import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play,
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
-import { resolveProfileImage } from "@/lib/profileImage";
+import { resolveProfileImage, resolveNameColor } from "@/lib/profileImage";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
@@ -393,9 +393,19 @@ export default function Navbar() {
                   fallbackName={currentUser?.name || session?.user?.name || "U"}
                 />
                 <span className="flex items-center gap-2">
-                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#67e8f9] via-[#a5b4fc] to-[#818cf8] bg-clip-text text-transparent">
-                    {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
-                  </span>
+                  {(() => {
+                    const nm = currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative');
+                    const c = resolveNameColor(currentUser);
+                    return c ? (
+                      <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate" style={{ color: c, textShadow: `0 0 16px ${c}66` }}>
+                        {nm}
+                      </span>
+                    ) : (
+                      <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#67e8f9] via-[#a5b4fc] to-[#818cf8] bg-clip-text text-transparent">
+                        {renderDualColorName(nm)}
+                      </span>
+                    );
+                  })()}
                   {(() => {
                     const r = rankData.ranks.overall;
                     const stats = rankData.stats;

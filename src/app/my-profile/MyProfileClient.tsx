@@ -34,6 +34,7 @@ import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
 const TEAM_MAX = 4;
 const TEAM_MAX_MEMBERS = 3;
 const TEAM_RENAME_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+const NAME_COLOR_PRESETS = ["#00ffff", "#38bdf8", "#a78bfa", "#818cf8", "#ff007f", "#ffd700", "#34d399", "#fb7185", "#ffffff"];
 
 export default function MyProfileClient() {
   const { data: session, status } = useSession();
@@ -83,11 +84,16 @@ export default function MyProfileClient() {
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [displayNameInput, setDisplayNameInput] = useState("");
+  const [nameColor, setNameColor] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerBusy, setBannerBusy] = useState(false);
 
   useEffect(() => {
     setTeamName(me?.team?.name || "");
     setTeamMembers(Array.isArray(me?.team?.members) ? me.team.members : []);
     setDisplayNameInput(me?.displayName || "");
+    setNameColor(me?.nameColor || "");
+    setBannerUrl(me?.banner || "");
   }, [me?.id, me?.team?.name]);
 
   const teamConfirmed = useMemo(
@@ -190,6 +196,46 @@ export default function MyProfileClient() {
   const removeGif = async () => {
     await patchMe({ profileGif: null, profileGifThumb: null });
     flash("Profile GIF removed");
+  };
+
+  const handleBannerFile = async (file: File) => {
+    if (file.size > 8 * 1024 * 1024) {
+      flash("File too large (max 8MB)", "err");
+      return;
+    }
+    setBannerBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      fd.append("field", "banner");
+      const res = await fetch("/api/user/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        flash(data.error || "Upload failed", "err");
+        return;
+      }
+      const ok = await patchMe({ banner: data.url });
+      if (ok) flash("Banner updated — shows on your community profile too");
+    } catch {
+      flash("Upload failed", "err");
+    } finally {
+      setBannerBusy(false);
+    }
+  };
+
+  const removeBanner = async () => {
+    await patchMe({ banner: null });
+    flash("Banner removed");
+  };
+
+  const saveNameColor = async () => {
+    const c = nameColor.trim();
+    if (c && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) {
+      flash("Enter a valid hex color like #00ffff", "err");
+      return;
+    }
+    const ok = await patchMe({ nameColor: c || null });
+    if (ok) flash(c ? "Name color applied everywhere" : "Name color reset");
   };
 
   const handleVfxFile = async (file: File) => {
@@ -402,8 +448,14 @@ export default function MyProfileClient() {
       <main className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-24">
         {/* ══ HERO ══ */}
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
+          {me?.banner && (
+            <>
+              <img src={me.banner} alt="" className="absolute inset-0 w-full h-[260px] object-cover object-center" loading="lazy" decoding="async" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/60 via-[#070a1c]/75 to-[#070a1c]" />
+            </>
+          )}
           <div className="h-[3px] w-full bg-gradient-to-r from-cyan-400/0 via-cyan-400/70 to-purple-500/60" />
-          <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr_300px] gap-8 lg:gap-10 items-center">
+          <div className="relative p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr_300px] gap-8 lg:gap-10 items-center">
             {/* Avatar */}
             <div className="relative w-fit mx-auto lg:mx-0">
               <div className="relative">
@@ -431,7 +483,10 @@ export default function MyProfileClient() {
 
             {/* Identity + stats */}
             <div className="min-w-0 text-center lg:text-left flex flex-col justify-center">
-              <h1 className="font-serif text-2xl sm:text-3xl font-black tracking-[0.18em] uppercase text-blue-50">
+              <h1
+                className="font-serif text-2xl sm:text-3xl font-black tracking-[0.18em] uppercase"
+                style={me?.nameColor ? { color: me.nameColor, textShadow: `0 0 20px ${me.nameColor}88` } : { color: "#eff6ff" }}
+              >
                 {(me?.displayName || me?.name || session?.user?.name || "Operative").toUpperCase()}
               </h1>
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
@@ -596,6 +651,97 @@ export default function MyProfileClient() {
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 </button>
+              </div>
+            </div>
+
+            {/* Banner */}
+            <div className="mt-6 pt-5 border-t border-blue-900/30">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                Profile banner <span className="text-slate-700 normal-case tracking-normal">(GIF or image — shows on your community profile, like Facebook)</span>
+              </p>
+              <div className="w-full h-16 rounded-xl overflow-hidden border border-cyan-500/25 bg-black/40 relative mb-3">
+                {bannerUrl ? (
+                  <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-600">No banner</div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-all text-[10px] font-black uppercase tracking-widest text-blue-200">
+                  <Upload className="w-3.5 h-3.5" />
+                  {bannerBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Upload Banner"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={bannerBusy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) void handleBannerFile(f);
+                    }}
+                  />
+                </label>
+                {bannerUrl && (
+                  <button
+                    onClick={removeBanner}
+                    disabled={bannerBusy}
+                    className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition-all text-[10px] font-black uppercase tracking-widest"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Name Color */}
+            <div className="mt-6 pt-5 border-t border-blue-900/30">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">
+                Name color <span className="text-slate-700 normal-case tracking-normal">(applies to navbar, offers and community — everywhere)</span>
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {NAME_COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNameColor(c)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${nameColor.toLowerCase() === c ? "border-white scale-110 shadow-[0_0_12px_rgba(255,255,255,0.35)]" : "border-white/15 hover:scale-105"}`}
+                    style={{ backgroundColor: c }}
+                    title={c}
+                  />
+                ))}
+                <button
+                  onClick={() => setNameColor("")}
+                  disabled={!nameColor}
+                  title="Reset color"
+                  className={`w-8 h-8 rounded-full border border-white/15 bg-white/5 flex items-center justify-center text-slate-400 disabled:opacity-40 hover:text-white transition-all ${nameColor ? "" : "opacity-40"}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={nameColor}
+                  onChange={(e) => setNameColor(e.target.value)}
+                  placeholder="#00ffff"
+                  maxLength={7}
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-400/50 text-sm font-black text-white placeholder:text-slate-700"
+                />
+                <button
+                  onClick={saveNameColor}
+                  disabled={saving || !nameColor.trim()}
+                  className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-black font-black text-[10px] uppercase tracking-widest disabled:opacity-40 transition-all"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Preview</p>
+                <p
+                  className="text-xl font-black uppercase tracking-widest truncate"
+                  style={nameColor.trim() ? { color: nameColor.trim(), textShadow: `0 0 18px ${nameColor.trim()}88` } : undefined}
+                >
+                  {(displayNameInput.trim() || me?.name || session?.user?.name || "Operative")}
+                </p>
               </div>
             </div>
           </div>

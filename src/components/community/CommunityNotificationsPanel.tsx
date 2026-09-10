@@ -7,7 +7,7 @@ import {
   X, Users, UserCheck, Search, Check, CheckCheck, Swords, DoorClosed,
 } from "lucide-react";
 import PostActivityFeed, { usePostActivity } from "@/components/community/PostActivityFeed";
-import { resolveProfileImage, profileImgClass, resolveProfileDisplayName } from "@/lib/profileImage";
+import { resolveProfileImage, profileImgClass, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
 import DmThreadView from "@/components/chat/DmThreadView";
 import { getDmMsgKey, computeDmUnreadCounts, buildDmContactList, getAcceptedFriendIds, type DmMessage } from "@/lib/dmHelpers";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
@@ -319,7 +319,7 @@ export default function CommunityNotificationsPanel() {
               />
             </button>
             <div className="flex-1 min-w-0">
-              <h3 className="font-black text-sm text-white truncate">{resolveProfileDisplayName(selectedChatUser)}</h3>
+              <h3 className="font-black text-sm text-white truncate" style={resolveNameColor(selectedChatUser) ? { color: resolveNameColor(selectedChatUser)!, textShadow: "0 0 10px " + resolveNameColor(selectedChatUser) + "55" } : undefined}>{resolveProfileDisplayName(selectedChatUser)}</h3>
               <p className="text-[8px] text-[#00ffff] font-black uppercase tracking-widest">Direct Message</p>
             </div>
           </>
@@ -433,6 +433,7 @@ export default function CommunityNotificationsPanel() {
                 chatUserList.map((user: any) => {
                   const img = resolveProfileImage(user);
                   const displayName = resolveProfileDisplayName(user);
+                  const color = resolveNameColor(user);
                   return (
                     <div
                       key={user.id}
@@ -451,7 +452,7 @@ export default function CommunityNotificationsPanel() {
                         <img src={img} alt="" className={profileImgClass(img, "w-full h-full rounded-full")} />
                       </button>
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sm font-black text-white/90 truncate">{displayName}</p>
+                        <p className="text-sm font-black text-white/90 truncate" style={color ? { color, textShadow: `0 0 10px ${color}55` } : undefined}>{displayName}</p>
                         {unreadCounts[user.username] > 0 ? (
                           <p className="text-[8px] text-[#00ffff] font-bold uppercase tracking-widest">Unread</p>
                         ) : friendIdSet.has(String(user.id)) ? (
@@ -532,6 +533,7 @@ export default function CommunityNotificationsPanel() {
               pendingRequests.map((req: any) => {
                 const fromUser = registeredUsers.find((u: any) => String(u.id) === String(req.requester));
                 const img = resolveProfileImage(fromUser);
+                const color = resolveNameColor(fromUser);
                 return (
                   <div key={req.id} className="bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 hover:border-[#00ffff]/30 rounded-2xl p-3 transition-all">
                     <div className="flex items-center gap-3 mb-3">
@@ -539,7 +541,7 @@ export default function CommunityNotificationsPanel() {
                         <img src={img} alt="" className={profileImgClass(img)} />
                       </button>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-black text-white/90 truncate">{fromUser?.name || "Unknown"}</p>
+                        <p className="text-xs font-black text-white/90 truncate" style={color ? { color, textShadow: `0 0 10px ${color}55` } : undefined}>{fromUser ? resolveProfileDisplayName(fromUser) : "Unknown"}</p>
                         <p className="text-[8px] text-[#00ffff] font-bold uppercase">Wants to connect</p>
                       </div>
                     </div>

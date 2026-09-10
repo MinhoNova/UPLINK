@@ -11,7 +11,7 @@ import {
   Trash2, Swords, AlertTriangle, X, Loader2,
   Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
-import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName } from "@/lib/profileImage";
+import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -118,6 +118,7 @@ export default function CommunityPage() {
     return {
       name: u ? resolveProfileDisplayName(u) : null,
       avatar: u ? resolveProfileImage(u) : null,
+      color: u ? resolveNameColor(u) : null,
     };
   };
 
@@ -125,6 +126,13 @@ export default function CommunityPage() {
     const d = getUserDisplay(userId);
     const name = d.name || storedName;
     if (!name) return <span className="text-gray-500">Member</span>;
+    if (d.color) {
+      return (
+        <span className="font-black truncate block" style={{ color: d.color, textShadow: `0 0 12px ${d.color}55` }}>
+          {name}
+        </span>
+      );
+    }
     return <>{name}</>;
   };
 
@@ -487,7 +495,7 @@ export default function CommunityPage() {
                         />
                       </div>
                     </button>
-                    <h2 className="text-base sm:text-lg font-black text-white tracking-wider truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] pb-1">
+                    <h2 className="text-base sm:text-lg font-black tracking-wider truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] pb-1" style={myProfile?.nameColor ? { color: myProfile.nameColor, textShadow: `0 0 14px ${myProfile.nameColor}77` } : { color: "#fff" }}>
                       {myProfile?.displayName || myProfile?.name || session.user.name}
                     </h2>
                   </div>

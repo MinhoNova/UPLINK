@@ -10,6 +10,7 @@ import { effectiveAvatarEffect } from "@/lib/userProfile";
 import {
   resolveProfileImage,
   resolveProfileDisplayName,
+  resolveNameColor,
   isAnimatedImageUrl,
   profileImgClass,
 } from "@/lib/profileImage";
@@ -221,6 +222,7 @@ export default function PlayerProfileModal() {
   const effect = profileUser ? effectiveAvatarEffect(profileUser, profileUser.effect) : "none";
   const bannerSrc = profileUser?.banner || "";
   const displayName = profileUser ? resolveProfileDisplayName(profileUser) : "";
+  const nameColor = profileUser ? resolveNameColor(profileUser) : null;
 
   if (status !== "authenticated") return null;
 
@@ -312,7 +314,7 @@ export default function PlayerProfileModal() {
             <div className="px-5 -mt-12 relative z-10 flex items-end gap-3">
               <ProfileAvatarCircle src={avatarSrc} effect={effect} size={96} />
               <div className="pb-1 flex-1 min-w-0">
-                <h3 className="text-xl font-black text-white truncate leading-tight">{displayName}</h3>
+                <h3 className="text-xl font-black text-white truncate leading-tight" style={nameColor ? { color: nameColor, textShadow: `0 0 14px ${nameColor}77` } : undefined}>{displayName}</h3>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   {profileUser?.team?.name && (
                     <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
