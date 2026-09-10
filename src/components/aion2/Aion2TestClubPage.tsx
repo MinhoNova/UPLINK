@@ -432,7 +432,7 @@ export default function Aion2TestClubPage() {
                           <Users className="w-6 h-6 text-cyan-400/70" />
                         )}
                       </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
+                      <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
                     </div>
 
                     {/* Offer Details */}
