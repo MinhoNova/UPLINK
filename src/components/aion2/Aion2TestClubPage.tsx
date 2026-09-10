@@ -20,6 +20,7 @@ import {
   aionClassRole,
   AION2_LEVEL_MAX,
 } from "@/lib/aionClassMeta";
+import OfferManager from "@/components/OfferManager";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -42,6 +43,7 @@ export default function Aion2TestClubPage() {
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [applyError, setApplyError] = useState("");
   const [applyTarget, setApplyTarget] = useState<any>(null);
+  const [manageTarget, setManageTarget] = useState<any>(null);
   const [applyAionClass, setApplyAionClass] = useState("");
   const [applyLevel, setApplyLevel] = useState("60");
   const [applyNote, setApplyNote] = useState("");
@@ -471,9 +473,16 @@ export default function Aion2TestClubPage() {
                       </div>
                     </div>
 
-                    {/* Apply / Live / Delete */}
+                    {/* Apply / Manage / Delete */}
                     <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
-                      {applied ? (
+                      {isMine ? (
+                        <button
+                          onClick={() => { setManageTarget(offer); setApplyError(""); }}
+                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] flex items-center justify-center gap-1.5"
+                        >
+                          <Radio className="w-3 h-3" /> Manage
+                        </button>
+                      ) : applied ? (
                         <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
                           <Check className="w-3 h-3" /> Applied
                         </span>
@@ -747,6 +756,18 @@ export default function Aion2TestClubPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── OFFER MANAGER PANEL ── */}
+      <OfferManager
+        open={!!manageTarget}
+        onClose={() => setManageTarget(null)}
+        lobby={manageTarget}
+        lobbies={lobbies}
+        setLobbies={setLobbies}
+        registeredUsers={registeredUsers}
+        currentUserId={meId}
+        meName={meName}
+      />
 
     </div>
   );
