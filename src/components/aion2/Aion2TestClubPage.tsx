@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
@@ -51,10 +52,11 @@ export default function Aion2TestClubPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
+  const [hoverCard, setHoverCard] = useState<{ userId: string; rect: { top: number; left: number; bottom: number } | null; owner: any; pic: string | null } | null>(null);
   const hoverHideTimer = useRef<number | null>(null);
   const scheduleHide = () => {
     if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current);
-    hoverHideTimer.current = window.setTimeout(() => setHoveredUserId(null), 250);
+    hoverHideTimer.current = window.setTimeout(() => { setHoveredUserId(null); setHoverCard(null); }, 250);
   };
   const cancelHide = () => {
     if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current);
@@ -234,6 +236,7 @@ export default function Aion2TestClubPage() {
 
   const openDm = (userId: string) => {
     setHoveredUserId(null);
+    setHoverCard(null);
     window.dispatchEvent(new CustomEvent("open-dm-chat", { detail: { userId } }));
   };
 
@@ -532,7 +535,13 @@ export default function Aion2TestClubPage() {
                     <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
                       <div
                         className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer"
-                        onMouseEnter={() => { cancelHide(); if (owner?.id) setHoveredUserId(String(owner.id)); }}
+                        onMouseEnter={(e) => {
+                          cancelHide();
+                          if (!owner?.id) return;
+                          const r = e.currentTarget.getBoundingClientRect();
+                          setHoveredUserId(String(owner.id));
+                          setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic });
+                        }}
                         onMouseLeave={scheduleHide}
                       >
                         {pic ? (
@@ -542,98 +551,6 @@ export default function Aion2TestClubPage() {
                         )}
                       </div>
                       <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
-
-                      {hoveredUserId === String(owner?.id || "") && owner && (
-                        <div
-                          className="absolute bottom-full left-0 mb-3 w-72 rounded-2xl border border-cyan-500/30 bg-[#070b1a]/95 backdrop-blur-2xl shadow-[0_8px_40px_rgba(34,211,238,0.2)] p-4 z-50 pointer-events-auto"
-                          onMouseEnter={cancelHide}
-                          onMouseLeave={scheduleHide}
-                        >
-                          <div className="flex items-center gap-3 mb-2.5">
-                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shrink-0">
-                              {pic ? (
-                                <img src={pic} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center"><Users className="w-5 h-5 text-cyan-400/70" /></div>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[11px] font-black text-white uppercase truncate tracking-widest">
-                                {ownerName(offer)}
-                              </p>
-                              <RankBadge
-                                stats={owner?.stats}
-                                ratings={owner?.ratings}
-                                rankOverride={owner?.rankOverride}
-                              />
-                            </div>
-                          </div>
-
-                          {(() => {
-                            const oid = String(owner?.id || "");
-                            const friendStatus = oid ? getFriendStatus(oid) : "none";
-                            if (oid === meId) return null;
-                            return (
-                              <div className="flex items-center gap-1.5">
-                                {friendStatus === "friends" && (
-                                  <button
-                                    type="button"
-                                    onClick={() => unfriend(oid)}
-                                    className="group/fbtn flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all"
-                                  >
-                                    <UserCheck className="w-3 h-3 group-hover/fbtn:hidden" />
-                                    <UserMinus className="w-3 h-3 hidden group-hover/fbtn:inline-block" />
-                                    <span className="group-hover/fbtn:hidden">Friends</span>
-                                    <span className="hidden group-hover/fbtn:inline">Unfriend</span>
-                                  </button>
-                                )}
-                                {friendStatus === "none" && (
-                                  <button
-                                    type="button"
-                                    disabled={isUserBlocked(oid)}
-                                    onClick={() => sendFriendRequest(oid)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40"
-                                  >
-                                    <UserPlus className="w-3 h-3" /> Add Friend
-                                  </button>
-                                )}
-                                {friendStatus === "pending_sent" && (
-                                  <span className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
-                                    Pending
-                                  </span>
-                                )}
-                                {friendStatus === "pending_received" && (
-                                  <button
-                                    type="button"
-                                    onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }}
-                                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-green-500/15 border border-green-500/35 text-green-400 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition"
-                                  >
-                                    <UserPlus className="w-3 h-3" /> Accept
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => openDm(oid)}
-                                  className="flex items-center justify-center w-9 h-9 rounded-xl border border-[#ff007f]/30 bg-[#ff007f]/10 text-[#ff007f] hover:bg-[#ff007f]/20 transition-all"
-                                  title="Send message"
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleBlock(oid)}
-                                  title={isUserBlocked(oid) ? "Unblock" : "Block"}
-                                  className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${
-                                    isUserBlocked(oid) ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-400" : "bg-white/5 border-white/10 text-red-400 hover:bg-red-500/15 hover:border-red-500/40"
-                                  }`}
-                                >
-                                  <Ban className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      )}
                     </div>
 
                     {/* Offer Details */}
@@ -948,6 +865,116 @@ export default function Aion2TestClubPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── HOVER PROFILE CARD (portal — floats above everything) ── */}
+      {typeof document !== "undefined" && hoverCard && hoverCard.rect && hoverCard.owner && hoveredUserId === hoverCard.userId && (
+        createPortal(
+          (() => {
+            const rect = hoverCard.rect!;
+            const owner = hoverCard.owner;
+            const cardPic = hoverCard.pic;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const popW = 288;
+            const spaceAbove = rect.top;
+            const showAbove = spaceAbove > vh * 0.32;
+            const left = Math.max(10, Math.min(rect.left, vw - popW - 10));
+            const top = showAbove ? rect.top - 12 : rect.bottom + 12;
+            const oid = String(owner.id || "");
+            const friendStatus = oid ? getFriendStatus(oid) : "none";
+            return (
+              <div
+                style={{ position: "fixed", top, left, width: popW, transform: showAbove ? "translateY(-100%)" : undefined, zIndex: 9999 }}
+                className="tn-light rounded-2xl border border-cyan-500/30 bg-[#070b1a]/95 backdrop-blur-2xl shadow-[0_12px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(34,211,238,0.2)] p-4 pointer-events-auto"
+                onMouseEnter={cancelHide}
+                onMouseLeave={scheduleHide}
+              >
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shrink-0">
+                    {cardPic ? (
+                      <img src={cardPic} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><Users className="w-5 h-5 text-cyan-400/70" /></div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-black text-white uppercase truncate tracking-widest">
+                      {ownerName(owner)}
+                    </p>
+                    <RankBadge
+                      stats={owner?.stats}
+                      ratings={owner?.ratings}
+                      rankOverride={owner?.rankOverride}
+                    />
+                  </div>
+                </div>
+
+                {oid === meId ? (
+                  <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">This is you</p>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    {friendStatus === "friends" && (
+                      <button
+                        type="button"
+                        onClick={() => unfriend(oid)}
+                        className="group/fbtn flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all"
+                      >
+                        <UserCheck className="w-3 h-3 group-hover/fbtn:hidden" />
+                        <UserMinus className="w-3 h-3 hidden group-hover/fbtn:inline-block" />
+                        <span className="group-hover/fbtn:hidden">Friends</span>
+                        <span className="hidden group-hover/fbtn:inline">Unfriend</span>
+                      </button>
+                    )}
+                    {friendStatus === "none" && (
+                      <button
+                        type="button"
+                        disabled={isUserBlocked(oid)}
+                        onClick={() => sendFriendRequest(oid)}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40"
+                      >
+                        <UserPlus className="w-3 h-3" /> Add Friend
+                      </button>
+                    )}
+                    {friendStatus === "pending_sent" && (
+                      <span className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
+                        Pending
+                      </span>
+                    )}
+                    {friendStatus === "pending_received" && (
+                      <button
+                        type="button"
+                        onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-green-500/15 border border-green-500/35 text-green-400 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition"
+                      >
+                        <UserPlus className="w-3 h-3" /> Accept
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => openDm(oid)}
+                      className="flex items-center justify-center w-9 h-9 rounded-xl border border-[#ff007f]/30 bg-[#ff007f]/10 text-[#ff007f] hover:bg-[#ff007f]/20 transition-all"
+                      title="Send message"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleBlock(oid)}
+                      title={isUserBlocked(oid) ? "Unblock" : "Block"}
+                      className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${
+                        isUserBlocked(oid) ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-400" : "bg-white/5 border-white/10 text-red-400 hover:bg-red-500/15 hover:border-red-500/40"
+                      }`}
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })(),
+          document.body
+        )
+      )}
 
     </div>
   );
