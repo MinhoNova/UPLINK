@@ -12,6 +12,7 @@ import {
   Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
 import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
+import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -128,7 +129,7 @@ export default function CommunityPage() {
     if (!name) return <span className="text-gray-500">Member</span>;
     if (d.color) {
       return (
-        <span className="font-black truncate block" style={{ color: d.color, textShadow: `0 0 12px ${d.color}55` }}>
+        <span className="font-black truncate block" style={{ ...toNameStyle(d.color), textShadow: `0 0 12px ${nameGlowColor(d.color)}55` }}>
           {name}
         </span>
       );
@@ -495,7 +496,7 @@ export default function CommunityPage() {
                         />
                       </div>
                     </button>
-                    <h2 className="text-base sm:text-lg font-black tracking-wider truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] pb-1" style={myProfile?.nameColor ? { color: myProfile.nameColor, textShadow: `0 0 14px ${myProfile.nameColor}77` } : { color: "#fff" }}>
+                    <h2 className="text-base sm:text-lg font-black tracking-wider truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] pb-1" style={myProfile?.nameColor ? { ...toNameStyle(myProfile.nameColor), textShadow: `0 0 14px ${nameGlowColor(myProfile.nameColor)}77` } : { color: "#fff" }}>
                       {myProfile?.displayName || myProfile?.name || session.user.name}
                     </h2>
                   </div>

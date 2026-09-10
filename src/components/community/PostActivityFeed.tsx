@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, Loader2, MessageCircle, Heart } from "lucide-react";
 import { resolveProfileImage, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
+import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 
 export type PostActivityItem = {
   id: string;
@@ -143,7 +144,7 @@ export default function PostActivityFeed({
               </button>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-black text-white/90 leading-snug">
-                  <span style={actor.color ? { color: actor.color, textShadow: `0 0 10px ${actor.color}55` } : undefined} className={actor.color ? "" : "text-[#00ffff]"}>{actor.name}</span>
+                  <span style={actor.color ? { ...toNameStyle(actor.color), textShadow: `0 0 10px ${nameGlowColor(actor.color)}55` } : undefined} className={actor.color ? "" : "text-[#00ffff]"}>{actor.name}</span>
                   {item.type === "comment" ? (
                     <span className="text-gray-400 font-bold"> commented</span>
                   ) : (

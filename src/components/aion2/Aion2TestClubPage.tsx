@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
-import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { resolveNameColor } from "@/lib/profileImage";
+import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
 
@@ -131,15 +131,7 @@ export default function Aion2TestClubPage() {
     return open[0]?.role || "dps";
   };
 
-  const offerBgOf = (l: any) => {
-    const o = lobbyOwner(l);
-    if (!o || o.vfxSettings?.showOnBanner === false) return null;
-    return (
-      resolveLobbyBannerAnimatedSrc(l, o, o?.activeVfx) ||
-      String(o?.profileGif || "") ||
-      null
-    );
-  };
+  const offerBgOf = (_l: any) => null;
 
   const alreadyApplied = (l: any) =>
     meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
@@ -437,7 +429,7 @@ export default function Aion2TestClubPage() {
                       </h4>
                       <p
                         className="text-[9px] font-bold text-cyan-200/70 uppercase tracking-widest"
-                        style={ownerColor ? { color: ownerColor, textShadow: `0 0 12px ${ownerColor}66` } : undefined}
+                        style={ownerColor ? { ...toNameStyle(ownerColor), textShadow: `0 0 12px ${nameGlowColor(ownerColor)}66` } : undefined}
                       >
                         {name}
                       </p>
@@ -526,7 +518,7 @@ export default function Aion2TestClubPage() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10">
                   <Shield className="w-4 h-4 text-blue-300" />
                 </span>
-                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">
+                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">
                   {t("missions_header") || "ONGOING MISSIONS"}
                 </h3>
                 {meId && (
@@ -562,11 +554,7 @@ export default function Aion2TestClubPage() {
                   <AnimatePresence mode="popLayout">
                     {missions.map((m) => {
                       const owner = missionOwner(m);
-                      const vfxOn =
-                        owner && (owner.vfxSettings?.showOnOngoing !== false);
-                      const bgPoster = vfxOn
-                        ? resolveLobbyBannerBg(m, owner, owner?.activeVfx)
-                        : null;
+                      const bgPoster = null;
                       const totalRuns = m.selectedDungeons
                         ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
                         : m.runsCount || 1;

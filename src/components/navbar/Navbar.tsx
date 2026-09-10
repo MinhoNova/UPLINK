@@ -9,6 +9,7 @@ import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { resolveProfileImage, resolveNameColor } from "@/lib/profileImage";
+import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
 import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
@@ -406,7 +407,7 @@ export default function Navbar() {
                     const nm = currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative');
                     const c = resolveNameColor(currentUser);
                     return c ? (
-                      <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate" style={{ color: c, textShadow: `0 0 16px ${c}66` }}>
+                      <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate" style={{ ...toNameStyle(c), textShadow: `0 0 16px ${nameGlowColor(c)}66` }}>
                         {nm}
                       </span>
                     ) : (

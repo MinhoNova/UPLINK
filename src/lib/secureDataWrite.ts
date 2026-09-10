@@ -55,6 +55,7 @@ const PROTECTED_SELF_FIELDS = [
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 const SELF_IMAGE_URL_FIELDS = ["customAvatar", "profileGif", "profileGifThumb", "banner"] as const;
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const GRADIENT_COLOR_RE = /^linear-gradient\(90deg,\s*#[0-9a-fA-F]{3,6},\s*#[0-9a-fA-F]{3,6}\)$/;
 
 /** Only allow http(s) URLs for image fields — blocks data:/javascript: storage. */
 export function sanitizeUrlField(value: unknown, max = 800): string | undefined {
@@ -68,7 +69,7 @@ export function sanitizeUrlField(value: unknown, max = 800): string | undefined 
 export function sanitizeHexColor(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const s = value.trim();
-  if (!HEX_COLOR_RE.test(s)) return undefined;
+  if (!HEX_COLOR_RE.test(s) && !GRADIENT_COLOR_RE.test(s)) return undefined;
   return s;
 }
 

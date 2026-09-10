@@ -141,7 +141,7 @@ export default function CreateOfferPage() {
               <Swords className="h-4 w-4 text-cyan-300" />
             </span>
             <div className="leading-none">
-              <p className="font-serif text-lg font-black tracking-[0.14em] bg-gradient-to-r from-white via-cyan-100 to-sky-400 bg-clip-text text-transparent">AION 2</p>
+              <p className="text-lg font-black tracking-[0.14em] bg-gradient-to-r from-white via-cyan-100 to-sky-400 bg-clip-text text-transparent">AION 2</p>
               <p className="mt-1 text-[10px] font-black tracking-[0.3em] text-amber-300/90 uppercase">Offer Forge</p>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function CreateOfferPage() {
                 <Check className="h-9 w-9 text-emerald-300" />
                 <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/10" />
               </motion.div>
-              <h2 className="font-serif text-2xl font-black tracking-wide text-white">Offer Published</h2>
+              <h2 className=" text-2xl font-black tracking-wide text-white">Offer Published</h2>
               <p className="mt-2 text-xs text-slate-300/90">Your mission is live for the Aion 2 community. May the Daevas answer your call.</p>
               <div className="mt-7 flex flex-col gap-2.5">
                 <a href="/" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] via-[#41389f] to-[#7923aa] px-7 py-3 text-xs font-black tracking-[0.18em] uppercase text-white shadow-[0_0_30px_rgba(90,120,255,0.5)] transition-all hover:-translate-y-0.5 cursor-pointer">
@@ -213,7 +213,7 @@ export default function CreateOfferPage() {
                   <p className="flex items-center gap-2 text-xs font-black tracking-[0.3em] text-cyan-300 uppercase">
                     <Gem className="h-3.5 w-3.5" /> Aion 2 · Offer Forge
                   </p>
-                  <h1 className="mt-3 bg-gradient-to-b from-white via-cyan-50 to-cyan-400 bg-clip-text font-serif text-5xl font-black tracking-tight text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.35)] sm:text-6xl">
+                  <h1 className="mt-3 bg-gradient-to-b from-white via-cyan-50 to-cyan-400 bg-clip-text  text-5xl font-black tracking-tight text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.35)] sm:text-6xl">
                     Forge Your Offer
                   </h1>
                   <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-400">
@@ -247,7 +247,7 @@ export default function CreateOfferPage() {
                       </span>
                       <div>
                         <p className="text-[9px] font-black tracking-[0.3em] text-cyan-300/80 uppercase">Offer Builder</p>
-                        <p className="font-serif text-lg font-black capitalize text-white">{step}</p>
+                        <p className="text-lg font-black capitalize text-white">{step}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -410,7 +410,7 @@ export default function CreateOfferPage() {
                           </div>
                           <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-4">
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Runs total</p>
-                            <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel.priceUnit || "runs"}</span></p>
+                            <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel.priceUnit || "runs"}</span></p>
                           </div>
                           <p className="text-[11px] text-gray-500">Review your offer. Publishing broadcasts it to the Aion 2 lobby.</p>
                         </motion.div>
@@ -500,7 +500,7 @@ export default function CreateOfferPage() {
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Runs Total</p>
                             <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty} total runs</p>
                           </div>
-                          <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel ? sel.priceUnit || "runs" : "runs"}</span></p>
+                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel ? sel.priceUnit || "runs" : "runs"}</span></p>
                         </div>
                       </div>
 

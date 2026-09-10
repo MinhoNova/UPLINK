@@ -18,10 +18,12 @@ export function resolveProfileImage(user: any, fallbackName = "U"): string {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || fallbackName)}&background=0b1020&color=00ffff&size=128`;
 }
 
-/** Hex color the user picked for their display name — null when unset/invalid. */
+/** Color the user picked for their display name — hex, gradient, or null when unset/invalid. */
 export function resolveNameColor(user: any): string | null {
   const c = String(user?.nameColor || "").trim();
+  if (!c) return null;
   if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) return c;
+  if (c.startsWith("linear-gradient") && /#[0-9a-fA-F]{3,6}/.test(c)) return c;
   return null;
 }
 

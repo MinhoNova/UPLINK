@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Copy,
 } from "lucide-react";
+import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
 import {
@@ -34,7 +35,6 @@ import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
 const TEAM_MAX = 4;
 const TEAM_MAX_MEMBERS = 3;
 const TEAM_RENAME_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
-const NAME_COLOR_PRESETS = ["#00ffff", "#38bdf8", "#a78bfa", "#818cf8", "#ff007f", "#ffd700", "#34d399", "#fb7185", "#ffffff"];
 
 export default function MyProfileClient() {
   const { data: session, status } = useSession();
@@ -230,7 +230,7 @@ export default function MyProfileClient() {
 
   const saveNameColor = async () => {
     const c = nameColor.trim();
-    if (c && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) {
+    if (c && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c) && !/^linear-gradient\(90deg,\s*#[0-9a-fA-F]{3,6},\s*#[0-9a-fA-F]{3,6}\)$/.test(c)) {
       flash("Enter a valid hex color like #00ffff", "err");
       return;
     }
@@ -450,8 +450,9 @@ export default function MyProfileClient() {
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
           {me?.banner && (
             <>
-              <img src={me.banner} alt="" className="absolute inset-0 w-full h-[260px] object-cover object-center" loading="lazy" decoding="async" />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/60 via-[#070a1c]/75 to-[#070a1c]" />
+              <img src={me.banner} alt="" className="absolute inset-0 w-full h-full object-cover object-center" loading="lazy" decoding="async" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#050814]/85 via-[#050814]/45 to-[#050814]/20" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/30 via-transparent to-[#050814]/60" />
             </>
           )}
           <div className="h-[3px] w-full bg-gradient-to-r from-cyan-400/0 via-cyan-400/70 to-purple-500/60" />
@@ -484,21 +485,18 @@ export default function MyProfileClient() {
             {/* Identity + stats */}
             <div className="min-w-0 text-center lg:text-left flex flex-col justify-center">
               <h1
-                className="font-serif text-2xl sm:text-3xl font-black tracking-[0.18em] uppercase"
-                style={me?.nameColor ? { color: me.nameColor, textShadow: `0 0 20px ${me.nameColor}88` } : { color: "#eff6ff" }}
+                className="text-2xl sm:text-3xl font-black tracking-[0.18em] uppercase"
+                style={me?.nameColor ? { ...toNameStyle(me.nameColor), textShadow: `0 0 20px ${nameGlowColor(me.nameColor)}88` } : { color: "#eff6ff" }}
               >
                 {(me?.displayName || me?.name || session?.user?.name || "Operative").toUpperCase()}
               </h1>
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
-                @{(me?.username || "")}
-              </p>
               <button
                 onClick={copyDiscordHandle}
-                title="Real Discord name — click to copy"
-                className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/40 text-[#8ea1ff] hover:bg-[#5865F2]/25 transition-all text-[9px] font-black uppercase tracking-widest"
+                title="Click to copy Discord username"
+                className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/40 text-[#8ea1ff] hover:bg-[#5865F2]/25 transition-all px-2.5 py-1"
               >
-                <span className="text-[#5865F2] font-black">D</span>
-                Discord: {me?.name || me?.username || "—"}
+                <span className="text-[#5865F2] font-black text-[10px]">D</span>
+                <span className="text-[10px] font-bold">@{me?.username || me?.name || "—"}</span>
                 <Copy className="w-3 h-3" />
               </button>
 
@@ -572,7 +570,7 @@ export default function MyProfileClient() {
           <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
               <UserCircle2 className="w-4 h-4 text-blue-400" />
-              <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">PROFILE PICTURE</h3>
+              <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">PROFILE PICTURE</h3>
             </div>
 
             <div className="flex items-center gap-5 mb-6">
@@ -697,51 +695,27 @@ export default function MyProfileClient() {
             {/* Name Color */}
             <div className="mt-6 pt-5 border-t border-blue-900/30">
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">
-                Name color <span className="text-slate-700 normal-case tracking-normal">(applies to navbar, offers and community — everywhere)</span>
+                Name color <span className="text-slate-700 normal-case tracking-normal">(gradient or solid — applies everywhere)</span>
               </p>
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                {NAME_COLOR_PRESETS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setNameColor(c)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${nameColor.toLowerCase() === c ? "border-white scale-110 shadow-[0_0_12px_rgba(255,255,255,0.35)]" : "border-white/15 hover:scale-105"}`}
-                    style={{ backgroundColor: c }}
-                    title={c}
-                  />
-                ))}
-                <button
-                  onClick={() => setNameColor("")}
-                  disabled={!nameColor}
-                  title="Reset color"
-                  className={`w-8 h-8 rounded-full border border-white/15 bg-white/5 flex items-center justify-center text-slate-400 disabled:opacity-40 hover:text-white transition-all ${nameColor ? "" : "opacity-40"}`}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  value={nameColor}
-                  onChange={(e) => setNameColor(e.target.value)}
-                  placeholder="#00ffff"
-                  maxLength={7}
-                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-400/50 text-sm font-black text-white placeholder:text-slate-700"
-                />
-                <button
-                  onClick={saveNameColor}
-                  disabled={saving || !nameColor.trim()}
-                  className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-black font-black text-[10px] uppercase tracking-widest disabled:opacity-40 transition-all"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                </button>
-              </div>
+              <GradientColorPicker value={nameColor} onChange={setNameColor} />
               <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Preview</p>
                 <p
                   className="text-xl font-black uppercase tracking-widest truncate"
-                  style={nameColor.trim() ? { color: nameColor.trim(), textShadow: `0 0 18px ${nameColor.trim()}88` } : undefined}
+                  style={nameColor.trim() ? { ...toNameStyle(nameColor.trim()), textShadow: `0 0 18px ${nameGlowColor(nameColor.trim())}88` } : undefined}
                 >
-                  {(displayNameInput.trim() || me?.name || session?.user?.name || "Operative")}
+                  {(displayNameInput.trim() || me?.username || me?.name || session?.user?.name || "Operative")}
                 </p>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={saveNameColor}
+                  disabled={saving || !nameColor.trim()}
+                  className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-black font-black text-[10px] uppercase tracking-widest disabled:opacity-40 transition-all flex items-center gap-2"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Save Color
+                </button>
               </div>
             </div>
           </div>
@@ -750,7 +724,7 @@ export default function MyProfileClient() {
           <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6">
             <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
               <Users className="w-4 h-4 text-purple-400" />
-              <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">MY TEAM</h3>
+              <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">MY TEAM</h3>
               <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-auto">{teamTotal}/{TEAM_MAX}</span>
             </div>
 
@@ -911,7 +885,7 @@ export default function MyProfileClient() {
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mt-8">
           <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
             <ShieldCheck className="w-4 h-4 text-[#ff007f]" />
-            <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">MY LOBBY BACKGROUNDS</h3>
+            <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">MY LOBBY BACKGROUNDS</h3>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-auto">
               Animated backgrounds appear on your offers & lobby
             </span>
