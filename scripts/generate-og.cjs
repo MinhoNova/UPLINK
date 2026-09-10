@@ -43,7 +43,7 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
   <text x="600" y="450" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="rgba(255,255,255,0.55)">Find groups · Sync Raider.io · Discord coordination</text>
   <rect x="470" y="540" width="110" height="42" rx="21" fill="rgba(245,158,11,0.12)" stroke="rgba(245,158,11,0.5)" stroke-width="1"/>
   <text x="525" y="567" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="800" letter-spacing="4" fill="#fbbf24">BETA</text>
-  <text x="640" y="567" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" letter-spacing="3" fill="rgba(0,255,255,0.75)">uplinklfg.com</text>
+  <text x="640" y="567" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" letter-spacing="3" fill="rgba(0,255,255,0.75)">aion2lfg.com</text>
 </svg>`;
 
 sharp(Buffer.from(svg))

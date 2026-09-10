@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
-const productionUrl = "https://uplinklfg.com";
+const productionUrl = "https://aion2lfg.com";
 
 const nextConfig: NextConfig = {
   // NextAuth reads NEXTAUTH_URL in the client bundle; without this it defaults to localhost:3000.

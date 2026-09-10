@@ -11,7 +11,7 @@ export default {
     ctx.waitUntil(
       (async () => {
         // Auto-news (RSS + meta report)
-        const siteUrl = env.NEXT_PUBLIC_SITE_URL || "https://uplinklfg.com";
+        const siteUrl = env.NEXT_PUBLIC_SITE_URL || "https://aion2lfg.com";
         const baseUrl = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
         fetch(`${baseUrl}/api/news/auto-generate`, {
           method: "POST",
