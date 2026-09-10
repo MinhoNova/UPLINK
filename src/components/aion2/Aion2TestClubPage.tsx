@@ -381,7 +381,7 @@ export default function Aion2TestClubPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.005 }}
-                    className="tn-light relative w-full min-h-[104px] rounded-full bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
+                    className="tn-light relative w-full min-h-[104px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
                     {/* Faction VFX banner / gradient — full card */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
@@ -460,13 +460,7 @@ export default function Aion2TestClubPage() {
 
                     {/* Apply / Live / Delete */}
                     <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
-                      {isMine ? (
-                        <>
-                          <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 text-[9px] font-black uppercase tracking-widest">
-                            <Radio className="w-3 h-3" /> Live
-                          </span>
-                        </>
-                      ) : applied ? (
+                      {applied ? (
                         <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
                           <Check className="w-3 h-3" /> Applied
                         </span>
