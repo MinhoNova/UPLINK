@@ -11,18 +11,16 @@ export async function POST() {
   let reset = 0;
 
   const next = users.map((u) => {
-    const hadCustom = u.displayName || u.customAvatar;
     const copy = { ...u };
-    if (copy.displayName) {
-      delete copy.displayName;
-      reset++;
+    let changed = false;
+    for (const field of ["displayName", "customAvatar", "nameColor", "profileGif", "profileGifThumb"] as const) {
+      if (Object.prototype.hasOwnProperty.call(copy, field)) {
+        delete copy[field];
+        changed = true;
+      }
     }
-    if (copy.customAvatar) {
-      delete copy.customAvatar;
-      reset++;
-    }
-    if (hadCustom) return copy;
-    return u;
+    if (changed) reset++;
+    return changed ? copy : u;
   });
 
   await setKV("registeredUsers", next);

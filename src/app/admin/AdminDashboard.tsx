@@ -87,6 +87,9 @@ export default function AdminDashboard() {
             const copy = { ...u };
             delete copy.displayName;
             delete copy.customAvatar;
+            delete copy.nameColor;
+            delete copy.profileGif;
+            delete copy.profileGifThumb;
             return copy;
           })
         );

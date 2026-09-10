@@ -1,0 +1,284 @@
+
+┌─────────────────────────────┐
+│ OpenNext — Cloudflare build │
+└─────────────────────────────┘
+
+WARN OpenNext is not fully compatible with Windows.
+WARN For optimal performance, it is recommended to use Windows Subsystem for Linux (WSL).
+WARN While OpenNext may function on Windows, it could encounter unpredictable failures during runtime.
+App directory: C:\Users\omars\Downloads\UPLINK
+Next.js version : 16.2.9
+@opennextjs/cloudflare version: 1.19.11
+@opennextjs/aws version: 4.0.2
+WARN workerd compatibility_date: 2025-03-01, consider updating your wrangler config to a more recent date to benefit from the latest features and fixes.
+
+┌─────────────────────────────────┐
+│ OpenNext — Building Next.js app │
+└─────────────────────────────────┘
+
+Using secrets defined in .dev.vars
+▲ Next.js 16.2.9 (webpack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+⚠ Compiled with warnings in 11.0s
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/auto-generate/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/auto-generate/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/api/news/route.ts
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/api/news/route.ts
+
+./src/app/news/[id]/page.tsx
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/news/[id]/page.tsx
+
+./src/app/news/[id]/page.tsx
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/news/[id]/page.tsx
+
+./src/app/news/[id]/page.tsx
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/news/[id]/page.tsx
+
+./src/app/news/[id]/page.tsx
+Attempted import error: 'news' is not exported from '@/db/schema' (imported as 'news').
+
+Import trace for requested module:
+./src/app/news/[id]/page.tsx
+
+  Skipping validation of types
+  Finished TypeScript config validation in 70ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/78) ...
+  Generating static pages using 11 workers (19/78) 
+  Generating static pages using 11 workers (38/78) 
+  Generating static pages using 11 workers (58/78) 
+✓ Generating static pages using 11 workers (78/78) in 3.4s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ○ /addon
+├ ƒ /admin
+├ ƒ /api/admin/audit
+├ ƒ /api/admin/banned-ips
+├ ƒ /api/admin/check-subscription
+├ ƒ /api/admin/moderation/posts
+├ ƒ /api/admin/moderation/reports
+├ ƒ /api/admin/rank
+├ ƒ /api/admin/rename
+├ ƒ /api/admin/reset-identities
+├ ƒ /api/admin/roles
+├ ƒ /api/admin/subscription
+├ ƒ /api/admin/user-bans
+├ ƒ /api/admin/visits
+├ ƒ /api/analytics/view
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/boost-requests
+├ ƒ /api/chat/lounge
+├ ƒ /api/community/activity
+├ ƒ /api/community/check-access
+├ ƒ /api/community/comment-reactions
+├ ƒ /api/community/comments
+├ ƒ /api/community/posts
+├ ƒ /api/community/posts/pin
+├ ƒ /api/community/reactions
+├ ƒ /api/community/reports
+├ ƒ /api/community/video-upload
+├ ƒ /api/cron/refresh-meta
+├ ƒ /api/data
+├ ƒ /api/discord/broadcast
+├ ƒ /api/discord/interactions
+├ ƒ /api/discord/notify-invite
+├ ƒ /api/discord/setup-roles
+├ ƒ /api/discord/sync-member
+├ ƒ /api/dm
+├ ƒ /api/friends
+├ ƒ /api/health/auth
+├ ƒ /api/health/auth/discord
+├ ƒ /api/health/auth/session
+├ ƒ /api/health/d1
+├ ƒ /api/livekit
+├ ƒ /api/lobbies
+├ ƒ /api/lobbies/apply
+├ ƒ /api/lobbies/delete
+├ ƒ /api/lobbies/split-exit
+├ ƒ /api/lobby-bg
+├ ƒ /api/news
+├ ƒ /api/news/auto-generate
+├ ƒ /api/notifications
+├ ƒ /api/reviews
+├ ƒ /api/subscription/request
+├ ƒ /api/subscription/welcome
+├ ƒ /api/teams/invite
+├ ƒ /api/teams/respond
+├ ƒ /api/user/lobby-vfx
+├ ƒ /api/user/media
+├ ƒ /api/user/profile-gif-thumb
+├ ƒ /api/user/upload
+├ ƒ /api/users/me
+├ ○ /boosts
+├ ○ /citypunks
+├ ○ /community
+├ ƒ /community/[handle]
+├ ƒ /community/post/[id]
+├ ○ /contact
+├ ○ /create-offer
+├ ○ /gold-auction
+├ ○ /guides
+├ ○ /guides/mythic-plus-boosting
+├ ○ /icon
+├ ƒ /manage/[id]
+├ ƒ /my-profile
+├ ○ /news
+├ ƒ /news/[id]
+├ ƒ /news/dungeons
+├ ƒ /news/leveling
+├ ○ /privacy
+├ ○ /reviews
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ○ /support
+└ ○ /terms
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+┌──────────────────────────────┐
+│ OpenNext — Generating bundle │
+└──────────────────────────────┘
+
+Bundling middleware function...
+Bundling static assets...
+Bundling cache assets...
+Building server function: default...
+Applying code patches: 8.722s
+# copyPackageTemplateFiles
+[35m⚙️ Bundling the OpenNext server...
+[0m
+[35mWorker saved in `.open-next\worker.js` 🚀
+[0m
+OpenNext build complete.
