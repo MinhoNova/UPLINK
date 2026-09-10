@@ -8,6 +8,7 @@ import {
   getOwnerOngoingMissions,
   isEmbeddedFootArchive,
 } from "@/lib/lobbyLifecycle";
+import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
 
 type Props = {
   lobbies: any[];
@@ -72,7 +73,11 @@ export default function OngoingMissionsPanel({
       onClick={() => onOpenMission(String(l.id))}
     >
       {(() => {
-        const bgPoster = null;
+        const ownerUser = registeredUsers.find((u: any) => u.id === l.ownerId);
+        const vfxOn = ownerUser && getVfxSettings(ownerUser).showOnOngoing;
+        const bgPoster = vfxOn
+          ? resolveLobbyBannerBg(l, ownerUser, ownerUser?.activeVfx)
+          : null;
         return bgPoster ? (
           <div className="absolute inset-0 z-0">
             <img src={bgPoster} className="w-full h-full object-cover opacity-100" alt="" loading="lazy" decoding="async" />

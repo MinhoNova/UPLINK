@@ -110,9 +110,6 @@ export default function MyProfileClient() {
 
   const myVfx: any[] = me?.userVfx || [];
 
-  const activeEntry = myVfx.find((e: any) => resolveVfxSrc(e) === me?.activeVfx) || null;
-  const activePreview = activeEntry ? resolveVfxBannerUrl(activeEntry) : null;
-
   const publicUrl = `/community/${String(me?.username || "").toLowerCase()}`;
 
   const flash = (msg: string, type: "ok" | "err" = "ok") => {
@@ -456,7 +453,7 @@ export default function MyProfileClient() {
             </>
           )}
           <div className="h-[3px] w-full bg-gradient-to-r from-cyan-400/0 via-cyan-400/70 to-purple-500/60" />
-          <div className="relative p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr_300px] gap-8 lg:gap-10 items-center">
+          <div className="relative p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 lg:gap-10 items-center">
             {/* Avatar */}
             <div className="relative w-fit mx-auto lg:mx-0">
               <div className="relative">
@@ -538,29 +535,6 @@ export default function MyProfileClient() {
                   View Public Profile
                 </a>
               </div>
-            </div>
-
-            {/* Live preview of active lobby background */}
-            <div className="w-full lg:h-full">
-              {activePreview ? (
-                <div className="relative w-full h-full min-h-[180px] rounded-2xl border-2 border-emerald-500/50 overflow-hidden shadow-[0_0_25px_rgba(16,185,129,0.25)] lg:self-stretch">
-                  <img src={activePreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#050814]/85 via-transparent to-transparent" />
-                  <span className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500 text-black font-black text-[9px] uppercase tracking-widest">
-                    <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
-                    Live Background
-                  </span>
-                  <span className="absolute bottom-3 left-3 right-3 text-[9px] font-black uppercase tracking-widest text-white/90">
-                    Previewing on your offers
-                  </span>
-                </div>
-              ) : (
-                <div className="w-full h-full min-h-[180px] rounded-2xl border border-dashed border-cyan-500/30 bg-black/30 flex flex-col items-center justify-center text-center p-6">
-                  <Shield className="w-7 h-7 text-cyan-400/60 mb-3" />
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">No live background</p>
-                  <p className="text-[9px] text-slate-600 mt-1 max-w-[220px]">Add one below — it previews here and on every offer you post.</p>
-                </div>
-              )}
             </div>
           </div>
         </div>

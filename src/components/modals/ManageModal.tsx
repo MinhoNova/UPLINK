@@ -361,7 +361,14 @@ const ManageModal = ({
                            {/* DYNAMIC ACTIVE BACKGROUND */}
                             {(() => {
                                const ownerUser = registeredUsers.find((u) => String(u.id) === String(targetLobby.ownerId));
-                               const bgUrl = targetLobby.customBg || null;
+                               const activeVfx = ownerUser?.activeVfx;
+                               const bgUrl = targetLobby.customBg || (
+                                  getUserTier(targetLobby.ownerId) === "secret_club" &&
+                                  getVfxSettings(ownerUser).showOnModal &&
+                                  activeVfx
+                                     ? activeVfx
+                                     : null
+                               );
                                return bgUrl ? (
                                  <div className="absolute inset-0 z-0 opacity-10">
                                     <img src={bgUrl} key={bgUrl} className="w-full h-full object-cover" alt="" />

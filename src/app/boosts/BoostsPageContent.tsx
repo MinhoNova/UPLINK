@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, Coins, Loader2, Plus, ImagePlus, X, Upload, Link2, Target
 } from "lucide-react";
-import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
+import { resolveVfxSrc, resolveVfxBannerUrl, resolveLobbyBannerBg } from "@/lib/vfxAssets";
 import BoostRequestModal from "@/components/modals/BoostRequestModal";
 
 type Bid = {
@@ -159,6 +159,8 @@ export default function BoostsPageContent() {
   const getOwnerUser = (r: BoostRequest) => registeredUsers.find((u) => String(u.id) === String(r.userId));
   const resolveBg = (r: BoostRequest) => {
     if (r.customBg) return r.customBg;
+    const owner = getOwnerUser(r);
+    if (owner?.activeVfx) return resolveLobbyBannerBg({}, owner, owner.activeVfx);
     return null;
   };
 
@@ -421,7 +423,7 @@ function BoostCard({
                   {userVfx.map((entry: any, i: number) => {
                     const src = resolveVfxSrc(entry);
                     const preview = resolveVfxBannerUrl(entry);
-                    const isActive = r.customBg === src;
+                    const isActive = r.customBg === src || (!r.customBg && ownerUser?.activeVfx === src);
                     return (
                       <div
                         key={i}
