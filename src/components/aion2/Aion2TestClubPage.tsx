@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Radio, Trash2, Check, Layers, X
+  Radio, Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -51,6 +51,16 @@ export default function Aion2TestClubPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
+  const hoverHideTimer = useRef<number | null>(null);
+  const scheduleHide = () => {
+    if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current);
+    hoverHideTimer.current = window.setTimeout(() => setHoveredUserId(null), 250);
+  };
+  const cancelHide = () => {
+    if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current);
+    hoverHideTimer.current = null;
+  };
+  const [friends, setFriends] = useState<any[]>([]);
 
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
@@ -65,6 +75,7 @@ export default function Aion2TestClubPage() {
         .then((d) => {
           if (cancelled) return;
           if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
+          if (d.friends) setFriends(d.friends);
           if (d.lobbies) setLobbies(d.lobbies);
           setSignalScan(false);
         })
@@ -151,6 +162,100 @@ export default function Aion2TestClubPage() {
 
   const alreadyApplied = (l: any) =>
     meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
+
+  /* ── PROFILE CARD ACTIONS (friend / dm / block) ── */
+  const getFriendStatus = (userId2: string) => {
+    const entry = friends.find(
+      (f: any) =>
+        (f.requester === meId && f.target === userId2) ||
+        (f.requester === userId2 && f.target === meId)
+    );
+    if (!entry) return "none";
+    if (entry.status === "accepted") return "friends";
+    if (entry.status === "pending" && entry.requester === meId) return "pending_sent";
+    if (entry.status === "pending" && entry.target === meId) return "pending_received";
+    return "none";
+  };
+
+  const sendFriendRequest = async (targetId: string) => {
+    if (!meId || String(targetId) === meId) return;
+    try {
+      const res = await fetch("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "request", targetId }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setFriends((prev: any[]) => [...(prev || []), result.friend]);
+      }
+    } catch {}
+  };
+
+  const unfriend = async (targetId: string) => {
+    if (!meId) return;
+    try {
+      const res = await fetch("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", targetId }),
+      });
+      if (res.ok) {
+        setFriends((prev: any[]) =>
+          (prev || []).filter(
+            (f: any) =>
+              !(f.status === "accepted" && ((f.requester === meId && f.target === targetId) || (f.requester === targetId && f.target === meId)))
+          )
+        );
+      }
+    } catch {}
+  };
+
+  const toggleBlock = async (targetId: string) => {
+    if (!meId) return;
+    const users = [...registeredUsers];
+    const meIdx = users.findIndex((u: any) => String(u.id) === String(meId));
+    if (meIdx === -1) return;
+    const blocked = Array.isArray(users[meIdx].blocked) ? [...users[meIdx].blocked.map(String)] : [];
+    const exists = blocked.includes(String(targetId));
+    users[meIdx] = {
+      ...users[meIdx],
+      blocked: exists ? blocked.filter((id) => id !== String(targetId)) : [...blocked, String(targetId)],
+    };
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: users[meIdx] }),
+      });
+      if (res.ok) setRegisteredUsers(users);
+    } catch {}
+  };
+
+  const openDm = (userId: string) => {
+    setHoveredUserId(null);
+    window.dispatchEvent(new CustomEvent("open-dm-chat", { detail: { userId } }));
+  };
+
+  const handleFriendAccept = async (reqId: string) => {
+    try {
+      const res = await fetch("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept", targetId: reqId }),
+      });
+      if (res.ok) {
+        setFriends((prev: any[]) =>
+          (prev || []).map((f: any) => (String(f.id) === String(reqId) ? { ...f, status: "accepted" } : f))
+        );
+      }
+    } catch {}
+  };
+
+  const isUserBlocked = (userId: string) => {
+    const me = registeredUsers.find((u: any) => String(u.id) === String(meId));
+    return Array.isArray(me?.blocked) && me.blocked.map(String).includes(String(userId));
+  };
 
   const submitApply = async () => {
     const l = applyTarget;
@@ -424,11 +529,11 @@ export default function Aion2TestClubPage() {
                     </div>
 
                     {/* Creator avatar */}
-                    <div className="relative z-10 flex-shrink-0">
+                    <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
                       <div
                         className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer"
-                        onMouseEnter={() => { if (owner?.id) setHoveredUserId(String(owner.id)); }}
-                        onMouseLeave={() => setHoveredUserId(null)}
+                        onMouseEnter={() => { cancelHide(); if (owner?.id) setHoveredUserId(String(owner.id)); }}
+                        onMouseLeave={scheduleHide}
                       >
                         {pic ? (
                           <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
@@ -439,7 +544,11 @@ export default function Aion2TestClubPage() {
                       <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
 
                       {hoveredUserId === String(owner?.id || "") && owner && (
-                        <div className="absolute left-0 top-full mt-2 sm:left-full sm:top-0 sm:ml-3 w-64 rounded-2xl border border-cyan-500/30 bg-[#070b1a]/95 backdrop-blur-2xl shadow-[0_8px_40px_rgba(34,211,238,0.2)] p-4 z-30 pointer-events-none">
+                        <div
+                          className="absolute bottom-full left-0 mb-3 w-72 rounded-2xl border border-cyan-500/30 bg-[#070b1a]/95 backdrop-blur-2xl shadow-[0_8px_40px_rgba(34,211,238,0.2)] p-4 z-50 pointer-events-auto"
+                          onMouseEnter={cancelHide}
+                          onMouseLeave={scheduleHide}
+                        >
                           <div className="flex items-center gap-3 mb-2.5">
                             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shrink-0">
                               {pic ? (
@@ -459,10 +568,70 @@ export default function Aion2TestClubPage() {
                               />
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 text-[8px] font-bold text-gray-500 uppercase tracking-widest">
-                            <Users className="w-3 h-3 text-cyan-400" />
-                            Booster · Poster · Reviewer
-                          </div>
+
+                          {(() => {
+                            const oid = String(owner?.id || "");
+                            const friendStatus = oid ? getFriendStatus(oid) : "none";
+                            if (oid === meId) return null;
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                {friendStatus === "friends" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => unfriend(oid)}
+                                    className="group/fbtn flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all"
+                                  >
+                                    <UserCheck className="w-3 h-3 group-hover/fbtn:hidden" />
+                                    <UserMinus className="w-3 h-3 hidden group-hover/fbtn:inline-block" />
+                                    <span className="group-hover/fbtn:hidden">Friends</span>
+                                    <span className="hidden group-hover/fbtn:inline">Unfriend</span>
+                                  </button>
+                                )}
+                                {friendStatus === "none" && (
+                                  <button
+                                    type="button"
+                                    disabled={isUserBlocked(oid)}
+                                    onClick={() => sendFriendRequest(oid)}
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40"
+                                  >
+                                    <UserPlus className="w-3 h-3" /> Add Friend
+                                  </button>
+                                )}
+                                {friendStatus === "pending_sent" && (
+                                  <span className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
+                                    Pending
+                                  </span>
+                                )}
+                                {friendStatus === "pending_received" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }}
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-green-500/15 border border-green-500/35 text-green-400 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition"
+                                  >
+                                    <UserPlus className="w-3 h-3" /> Accept
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => openDm(oid)}
+                                  className="flex items-center justify-center w-9 h-9 rounded-xl border border-[#ff007f]/30 bg-[#ff007f]/10 text-[#ff007f] hover:bg-[#ff007f]/20 transition-all"
+                                  title="Send message"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleBlock(oid)}
+                                  title={isUserBlocked(oid) ? "Unblock" : "Block"}
+                                  className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${
+                                    isUserBlocked(oid) ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-400" : "bg-white/5 border-white/10 text-red-400 hover:bg-red-500/15 hover:border-red-500/40"
+                                  }`}
+                                >
+                                  <Ban className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
