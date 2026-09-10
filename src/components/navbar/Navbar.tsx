@@ -216,11 +216,11 @@ export default function Navbar() {
 
   const renderDualColorName = (name: string) => {
     const parts = name.split(" ");
-    if (parts.length < 2) return <span className="bg-gradient-to-r from-[#00ffff] to-[#ff007f] bg-clip-text text-transparent">{name}</span>;
+    if (parts.length < 2) return <span className="bg-gradient-to-r from-[#67e8f9] to-[#818cf8] bg-clip-text text-transparent">{name}</span>;
     return (
       <span>
-        <span className="bg-gradient-to-r from-[#00ffff] to-[#c4b5fd] bg-clip-text text-transparent">{parts.slice(0, -1).join(" ")}</span>{" "}
-        <span className="bg-gradient-to-r from-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">{parts[parts.length - 1]}</span>
+        <span className="bg-gradient-to-r from-[#67e8f9] to-[#a5b4fc] bg-clip-text text-transparent">{parts.slice(0, -1).join(" ")}</span>{" "}
+        <span className="bg-gradient-to-r from-[#a5b4fc] to-[#818cf8] bg-clip-text text-transparent">{parts[parts.length - 1]}</span>
       </span>
     );
   };
@@ -393,7 +393,7 @@ export default function Navbar() {
                   fallbackName={currentUser?.name || session?.user?.name || "U"}
                 />
                 <span className="flex items-center gap-2">
-                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#00ffff] via-[#c4b5fd] to-[#ff007f] bg-clip-text text-transparent">
+                  <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#67e8f9] via-[#a5b4fc] to-[#818cf8] bg-clip-text text-transparent">
                     {renderDualColorName(currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative'))}
                   </span>
                   {(() => {

@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
-  Shield, Sparkles, Zap, Swords, Users, Search,
-  Star, MessageSquare, ClipboardList, Coins, Radio, Trash2, Check
+  Shield, Sparkles, Swords, Users, Search,
+  Radio, Trash2, Check, Layers
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -15,24 +15,16 @@ import { roleIconUrl } from "@/lib/classThumb";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
-  { label: "DUNGEONS", key: "Dungeons", icon: Shield },
-  { label: "LEVELING", key: "Leveling", icon: Sparkles },
-  { label: "BOOSTS",   key: "Boosts",   icon: Zap },
-  { label: "PVP",      key: "PVP",      icon: Swords },
-];
-
-/* ── MINI DOCK ── */
-const MINI_DOCK = [
-  { id: "chat",   icon: MessageSquare, label: "CHAT" },
-  { id: "quests", icon: ClipboardList, label: "QUESTS" },
-  { id: "star",   icon: Star,          label: "FAVORITES" },
+  { label: "ALL",       key: "All",       icon: Layers },
+  { label: "DUNGEONS",  key: "Dungeons",  icon: Shield },
+  { label: "LEVELING",  key: "Leveling",  icon: Sparkles },
+  { label: "PVP",       key: "PVP",       icon: Swords },
 ];
 
 export default function Aion2TestClubPage() {
   const { t } = useI18n();
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState("Dungeons");
-  const [activeDock, setActiveDock] = useState("chat");
+  const [activeTab, setActiveTab] = useState("All");
   const motionOn = useFlag("uplink_bg_motion", true);
 
   const [lobbies, setLobbies] = useState<any[]>([]);
@@ -95,19 +87,19 @@ export default function Aion2TestClubPage() {
   const missionOwner = (m: any) =>
     registeredUsers.find((u: any) => String(u.id) === String(m.ownerId)) || null;
 
-  const OPEN_TAB_CATEGORIES: Record<string, string[]> = {
+  const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = {
+    All: null,
     Dungeons: ["dungeon"],
     Leveling: ["leveling"],
-    Boosts: ["dungeon"],
     PVP: [],
   };
 
   const displayOffers = useMemo(
     () => {
-      const cats = OPEN_TAB_CATEGORIES[activeTab] || [];
+      const cats = OPEN_TAB_CATEGORIES[activeTab] ?? null;
       return lobbies
         .filter(isLobbyListedInPublicFeed)
-        .filter((l) => cats.includes(String(l.category || "")))
+        .filter((l) => cats === null || cats.includes(String(l.category || "")))
         .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
     },
     [lobbies, activeTab]
@@ -344,80 +336,33 @@ export default function Aion2TestClubPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          FILTER TABS (MATCHING MAIN PAGE EXACTLY)
-          ══════════════════════════════════════════════════════════ */}
-      <section className="relative z-20 w-full flex justify-center -mt-8 mb-12">
-        <div className="flex items-center gap-2 sm:gap-4 p-2 bg-[#050814]/60 backdrop-blur-md rounded-full border border-blue-900/30">
-          {FILTER_TABS.map((tab) => {
-            const isActive = activeTab === tab.key;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-3 px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${
-                  isActive
-                    ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40'
-                    : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
-                <span>{tab.label}</span>
-                {isActive && (
-                  <span className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-12 h-[2px] bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,1)] rounded-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════
           MAIN CONTENT GRID
           ══════════════════════════════════════════════════════════ */}
       <main className="max-w-[1600px] mx-auto px-6 pb-24 relative z-20">
-        <div className="grid grid-cols-[auto_1fr_340px] gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-8">
 
-          {/* 1. Left Mini Sidebar (Floating Tools) */}
-          <aside className="hidden lg:flex flex-col gap-4 mt-12">
-            {MINI_DOCK.map((item) => {
-              const active = activeDock === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveDock(item.id)}
-                  className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                    active
-                      ? 'bg-[#151c3d] text-blue-300 border border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.3)]'
-                      : 'bg-[#0a0f26]/80 text-slate-500 border border-blue-900/40 hover:text-blue-300 hover:border-blue-500/30'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {active && (
-                    <span className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-                  )}
-                </button>
-              );
-            })}
-          </aside>
-
-          {/* 2. Center Column: Offers */}
+          {/* Center Column: Offers */}
           <section className="min-w-0">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-blue-900/30">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-black tracking-[0.25em] text-blue-100 uppercase font-serif">
-                  {t("offers_header") || "AVAILABLE OFFERS"}
-                </h3>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[9px] font-bold tracking-widest text-emerald-300 uppercase">
-                  {t("offers_online") || "NEW OFFERS ONLINE"}
-                </span>
-              </div>
+            {/* Filter Tabs — aligned above the offer cards */}
+            <div className="flex items-center gap-2 p-1.5 mb-6 w-fit max-w-full overflow-x-auto bg-[#0a0f26]/70 backdrop-blur-md rounded-full border border-blue-900/40 shadow-[0_4px_24px_rgba(34,211,238,0.06)]">
+              {FILTER_TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${
+                      isActive
+                        ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40'
+                        : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Offer List */}
@@ -429,7 +374,6 @@ export default function Aion2TestClubPage() {
                   const openRoles = openRolesOf(offer);
                   const applied = alreadyApplied(offer);
                   const isMine = String(offer.ownerId) === meId;
-                  const goldTotal = Number(offer.totalGold || offer.goldPerRun || 0) * Math.max(1, Number(offer.runsCount || 1));
                   const offerBg = offerBgOf(offer);
                   return (
                   <motion.div
@@ -437,7 +381,7 @@ export default function Aion2TestClubPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.005 }}
-                    className="tn-light relative w-full min-h-[104px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
+                    className="tn-light relative w-full min-h-[104px] rounded-full bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
                     {/* Faction VFX banner / gradient — full card */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
@@ -511,10 +455,6 @@ export default function Aion2TestClubPage() {
                             ? `OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`
                             : "FULL"}
                         </span>
-                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-400">
-                          <Coins className="w-3 h-3" />
-                          {goldTotal.toLocaleString()} KINAH
-                        </span>
                       </div>
                     </div>
 
@@ -583,10 +523,12 @@ export default function Aion2TestClubPage() {
 
           {/* 3. Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
-            <div className="tn-light relative w-full rounded-3xl bg-white/[0.06] backdrop-blur-3xl border border-cyan-500/25 p-6 shadow-[0_8px_32px_rgba(34,211,238,0.06)] hover:shadow-[0_12px_40px_rgba(34,211,238,0.10)] hover:bg-white/[0.08] transition-all">
+            <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               {/* Widget Header */}
-              <div className="flex items-center gap-3 pb-4 mb-6 border-b border-blue-900/30">
-                <Shield className="w-4 h-4 text-blue-400" />
+              <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10">
+                  <Shield className="w-4 h-4 text-blue-300" />
+                </span>
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100 font-serif">
                   {t("missions_header") || "ONGOING MISSIONS"}
                 </h3>
@@ -631,55 +573,64 @@ export default function Aion2TestClubPage() {
                       const totalRuns = m.selectedDungeons
                         ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
                         : m.runsCount || 1;
-                      const goldTotal = m.totalGold || (m.goldPerRun || 0) * (m.runsCount || 1);
+                      const shown = (m.accepted || []).length
+                      const open = Math.max(0, 4 - shown);
                       return (
                         <motion.div
                           key={String(m.id)}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           whileHover={{ scale: 1.01 }}
-                          className="tn-light relative w-full min-h-[124px] rounded-2xl border border-cyan-500/20 overflow-hidden flex flex-col justify-center p-3 cursor-default group shadow-[0_4px_24px_rgba(34,211,238,0.06)] hover:border-cyan-400/40 transition-all"
+                          className="tn-light relative w-full min-h-[104px] rounded-2xl border border-cyan-500/20 overflow-hidden flex flex-col justify-center px-4 py-3 cursor-default group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:border-cyan-400/40 transition-all"
                         >
                           {bgPoster && (
                             <div className="absolute inset-0 z-0">
-                              <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-90" loading="lazy" decoding="async" />
-                              <div className="absolute inset-0 bg-gradient-to-r from-[#050814]/90 via-[#050814]/55 to-[#050814]/20" />
+                              <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-55" loading="lazy" decoding="async" />
+                              <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/75 via-[#050814]/55 to-[#050814]/80" />
                             </div>
                           )}
 
-                          <div className={`relative z-10 flex items-start justify-between mb-2 ${bgPoster ? "" : ""}`}>
-                            <p className="text-lg font-black uppercase tracking-tighter leading-none text-[#00ffff] drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                          <div className="relative z-10 flex items-start justify-between gap-2">
+                            <p className="text-base font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
                               {m.category === "leveling" ? (
                                 <>
-                                  <span className="text-[10px] font-black text-white/60 align-middle">Leveling </span>
-                                  <span>{m.startLevel || "1"}-{m.endLevel || "80"}</span>
+                                  <span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">Leveling</span>
+                                  <span className="text-[#00ffff]">{m.startLevel || "1"}-{m.endLevel || "80"}</span>
                                 </>
                               ) : (
-                                <>{totalRuns}x {m.keyLevel || "+10"}</>
+                                <>
+                                  <span className="mr-1 text-[#00ffff]">{totalRuns}x</span> {m.keyLevel || "+10"}
+                                </>
                               )}
                             </p>
-                            <span className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-500/30 bg-black/50 text-cyan-300">
+                            <span className="shrink-0 px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-500/30 bg-black/50 text-cyan-300">
                               {m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
                             </span>
                           </div>
 
-                          <div className="relative z-10 grid grid-cols-2 gap-3">
-                            <div className="flex items-center gap-1.5">
-                              <Coins className="w-4 h-4 text-yellow-500" />
-                              <span className="text-sm font-black text-yellow-500 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                                {goldTotal}K
-                              </span>
+                          <div className="relative z-10 mt-2.5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                              {m.serverRegion && (
+                                <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">
+                                  {String(m.serverRegion).toUpperCase()}
+                                </span>
+                              )}
+                              {m.keyLevel && (
+                                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-300">
+                                  {m.keyLevel}
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center justify-end gap-1">
-                              <span className="text-[7px] font-black text-[#8a2be2] uppercase tracking-[0.15em] mr-1">Squad</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[7px] font-black text-slate-400 uppercase tracking-[0.15em] mr-0.5">Squad {shown}/4</span>
                               <div className="flex -space-x-1">
                                 {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
                                   <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
                                     <img src={roleIconUrl(a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" />
                                   </div>
                                 ))}
-                                {Array.from({ length: Math.max(0, 4 - (m.accepted?.length || 0)) }).map((_, i) => (
-                                  <div key={i} className="w-5 h-5 rounded-md border border-dashed border-white/10 bg-black/40" />
+                                {Array.from({ length: Math.max(0, open) }).map((_, i) => (
+                                  <div key={i} className="w-5 h-5 rounded-md border border-dashed border-white/15 bg-black/40" />
                                 ))}
                               </div>
                             </div>

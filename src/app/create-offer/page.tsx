@@ -11,8 +11,6 @@ import {
 import { AION_SERVICES, AION_CATEGORIES, AionService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 
-const fmtKinah = (usd: number) => `${Math.round(usd * 1000).toLocaleString()} KINAH`;
-
 const STEPS = ["service", "details", "confirm"] as const;
 type Step = (typeof STEPS)[number];
 
@@ -34,7 +32,7 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
 
 const STEP_HINTS: Record<Step, string> = {
   service: "Choose the mission you want to publish",
-  details: "Tune quantity, region and payment",
+  details: "Tune quantity and region",
   confirm: "Lock in the details before going live",
 };
 
@@ -43,9 +41,7 @@ export default function CreateOfferPage() {
   const [step, setStep] = useState<Step>("service");
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
-  const [payment, setPayment] = useState<"kinah">("kinah");
   const [region, setRegion] = useState("EU");
-  const [paymentOpen, setPaymentOpen] = useState(false);
   const [regionOpen, setRegionOpen] = useState(false);
   const [published, setPublished] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -66,14 +62,12 @@ export default function CreateOfferPage() {
     return g;
   }, []);
 
-  const price = sel ? sel.basePriceUsd * qty : 0;
   const canNext = !!sel;
   const stepIndex = STEPS.indexOf(step);
-  const totalLabel = `${fmtKinah(price)}`;
 
-  const advance = () => { setRegionOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex + 1]); };
-  const regress = () => { setRegionOpen(false); setPaymentOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setPayment("kinah"); setRegionOpen(false); setPaymentOpen(false); setPublished(false); setPubError(""); };
+  const advance = () => { setRegionOpen(false); setStep(STEPS[stepIndex + 1]); };
+  const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -87,8 +81,6 @@ export default function CreateOfferPage() {
         .catch(() => ({ lobbies: [] }));
       const lobbies = Array.isArray(live.lobbies) ? live.lobbies : [];
       const category = sel.category === "Leveling" ? "leveling" : "dungeon";
-      const kinahPerUnit = Math.round((sel.basePriceUsd || 0) * 1000);
-      const kinahTotal = kinahPerUnit * qty;
       const lobby = {
         id: Date.now(),
         ownerId: String(me.id || ""),
@@ -100,8 +92,6 @@ export default function CreateOfferPage() {
         title: `${qty}× ${sel.name}`,
         serviceName: String(sel.name || "Mission"),
         notes: `${sel.description || ""} · ${region}`,
-        totalGold: kinahTotal,
-        goldPerRun: kinahPerUnit,
         runsCount: qty,
         keyLevel: String((sel as any).keyLevel || "+10"),
         serverRegion: region,
@@ -312,7 +302,7 @@ export default function CreateOfferPage() {
                                               <Check className="h-3.5 w-3.5 text-cyan-300" />
                                             </span>
                                           ) : (
-                                            <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300 tabular-nums">{fmtKinah(svc.basePriceUsd)}</span>
+                                            <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300">{svc.priceUnit ?? "pc"}</span>
                                           )}
                                         </span>
                                         {variantCount > 0 ? (
@@ -326,7 +316,7 @@ export default function CreateOfferPage() {
                                           </span>
                                         ) : (
                                           <span className="mt-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
-                                            {fmtKinah(svc.basePriceUsd)} <span className="text-gray-700">/</span> {svc.priceUnit ?? "pc"}
+                                            {svc.priceUnit ?? "per pc"}
                                           </span>
                                         )}
                                       </button>
@@ -356,7 +346,7 @@ export default function CreateOfferPage() {
                                 </div>
                               </div>
                               <div className="shrink-0 text-right">
-                                <p className="text-base font-black text-cyan-300 tabular-nums">{fmtKinah(sel.basePriceUsd)}</p>
+                                <p className="text-base font-black text-cyan-300">{sel.priceUnit ?? "per pc"}</p>
                                 <p className="text-[9px] font-black uppercase tracking-[0.14em] text-gray-500">{sel.priceUnit ?? "per pc"}</p>
                               </div>
                             </div>
@@ -399,25 +389,6 @@ export default function CreateOfferPage() {
                                 })}
                               </div>
                             </div>
-
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                <Coins className="h-3.5 w-3.5 text-cyan-400" /> Payment
-                              </p>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-1">
-                                <button type="button" onClick={() => { setPayment("kinah"); setRegionOpen(false); }}
-                                  className={`flex items-center gap-3 rounded-xl border px-4 py-4 text-left transition-all cursor-pointer ${payment === "kinah" ? "border-amber-400/50 bg-amber-500/10 shadow-[0_0_18px_rgba(251,191,36,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
-                                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${payment === "kinah" ? "border-amber-400/40 bg-amber-500/15" : "border-white/[0.1] bg-white/[0.04] text-gray-500"}`}>
-                                    <Coins className={`h-4 w-4 ${payment === "kinah" ? "text-amber-300" : "text-gray-500"}`} />
-                                  </span>
-                                  <span className="min-w-0 flex-1">
-                                    <span className={`block text-sm font-bold ${payment === "kinah" ? "text-amber-200" : "text-gray-200"}`}>Kinah</span>
-                                    <span className="block text-[10px] text-gray-500">In-game gold</span>
-                                  </span>
-                                  {payment === "kinah" && <Check className="h-4 w-4 shrink-0 text-amber-300" />}
-                                </button>
-                              </div>
-                            </div>
                           </motion.div>
                         );
                       })()}
@@ -426,25 +397,20 @@ export default function CreateOfferPage() {
                       {step === "confirm" && sel && (
                         <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="flex flex-col gap-4">
                           <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-2.5">
-                            {[
-                              ["Service", sel.name],
-                              ["Quantity", `${qty} × ${sel.priceUnit || "runs"}`],
-                              ["Region", region],
-                              ["Payment", "Kinah · In-Game"],
-                              ["Rate", `${fmtKinah(sel.basePriceUsd)} / ${sel.priceUnit ?? "pc"}`],
-                            ].map(([k, v], ix) => (
+{[
+                          ["Service", sel.name],
+                          ["Quantity", `${qty} × ${sel.priceUnit || "runs"}`],
+                          ["Region", region],
+                        ].map(([k, v], ix) => (
                               <div key={k} className={`flex items-center justify-between gap-4 py-3 ${ix < 4 ? "border-b border-white/[0.06]" : ""}`}>
                                 <span className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">{k}</span>
                                 <span className="truncate text-sm font-bold text-white">{v}</span>
                               </div>
                             ))}
                           </div>
-                          <div className="flex items-center justify-between gap-4 rounded-xl border border-cyan-400/35 bg-gradient-to-r from-cyan-500/[0.12] to-purple-600/[0.12] px-5 py-4">
-                            <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total</p>
-                              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">KINAH · In-Game</p>
-                            </div>
-                            <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{totalLabel}</p>
+                          <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-4">
+                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Runs total</p>
+                            <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel.priceUnit || "runs"}</span></p>
                           </div>
                           <p className="text-[11px] text-gray-500">Review your offer. Publishing broadcasts it to the Aion 2 lobby.</p>
                         </motion.div>
@@ -491,10 +457,10 @@ export default function CreateOfferPage() {
                                 <CatIcon className={`h-5 w-5 ${meta.color}`} />
                               </span>
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="truncate text-sm font-bold text-white">{sel.name}</p>
-                                  <p className="shrink-0 text-sm font-black text-cyan-300 tabular-nums">{fmtKinah(sel.basePriceUsd)}<span className="ml-0.5 text-[9px] font-bold uppercase text-gray-600">/pc</span></p>
-                                </div>
+<div className="flex items-start justify-between gap-2">
+                  <p className="truncate text-sm font-bold text-white">{sel.name}</p>
+                  <p className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">{sel.priceUnit ?? "pc"}</p>
+                </div>
                                 <p className="mt-0.5 truncate text-[11px] text-gray-500">{sel.category}</p>
                                 {sel.video && (
                                   <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-300">
@@ -516,10 +482,9 @@ export default function CreateOfferPage() {
 
                       {/* detail rows */}
                       <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
-                        {[
+{[
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
                           ["Region", sel ? region : "—"],
-                          ["Payment", sel ? "Kinah · In-Game" : "—"],
                         ].map(([k, v], ix) => (
                           <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 2 ? "border-b border-white/[0.06]" : ""}`}>
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">{k}</span>
@@ -532,10 +497,10 @@ export default function CreateOfferPage() {
                       <div className="mt-4 overflow-hidden rounded-xl border border-cyan-400/35 bg-gradient-to-r from-cyan-500/[0.12] to-purple-600/[0.12]">
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">KINAH · In-Game</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Runs Total</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty} total runs</p>
                           </div>
-                          <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{totalLabel}</p>
+                          <p className="font-serif text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel ? sel.priceUnit || "runs" : "runs"}</span></p>
                         </div>
                       </div>
 
