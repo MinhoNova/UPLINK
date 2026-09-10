@@ -10,6 +10,7 @@ import {
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
+import RankBadge from "@/components/RankBadge";
 import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
@@ -49,6 +50,7 @@ export default function Aion2TestClubPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
 
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
@@ -425,8 +427,8 @@ export default function Aion2TestClubPage() {
                     <div className="relative z-10 flex-shrink-0">
                       <div
                         className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer"
-                        onMouseEnter={() => { if (owner?.id) window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId: String(owner.id) } })); }}
-                        onClick={() => { if (owner?.id) window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId: String(owner.id) } })); }}
+                        onMouseEnter={() => { if (owner?.id) setHoveredUserId(String(owner.id)); }}
+                        onMouseLeave={() => setHoveredUserId(null)}
                       >
                         {pic ? (
                           <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
@@ -435,6 +437,34 @@ export default function Aion2TestClubPage() {
                         )}
                       </div>
                       <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
+
+                      {hoveredUserId === String(owner?.id || "") && owner && (
+                        <div className="absolute left-0 top-full mt-2 sm:left-full sm:top-0 sm:ml-3 w-64 rounded-2xl border border-cyan-500/30 bg-[#070b1a]/95 backdrop-blur-2xl shadow-[0_8px_40px_rgba(34,211,238,0.2)] p-4 z-30 pointer-events-none">
+                          <div className="flex items-center gap-3 mb-2.5">
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shrink-0">
+                              {pic ? (
+                                <img src={pic} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center"><Users className="w-5 h-5 text-cyan-400/70" /></div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-black text-white uppercase truncate tracking-widest">
+                                {ownerName(offer)}
+                              </p>
+                              <RankBadge
+                                stats={owner?.stats}
+                                ratings={owner?.ratings}
+                                rankOverride={owner?.rankOverride}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[8px] font-bold text-gray-500 uppercase tracking-widest">
+                            <Users className="w-3 h-3 text-cyan-400" />
+                            Booster · Poster · Reviewer
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Offer Details */}
