@@ -25,6 +25,7 @@ import AdminIpBanPanel from "@/components/admin/AdminIpBanPanel";
 import AdminModerationPanel from "@/components/admin/AdminModerationPanel";
 import AdminVisitsPanel from "@/components/admin/AdminVisitsPanel";
 import AdminTicketsPanel from "@/components/admin/AdminTicketsPanel";
+import AdminUserBanPanel from "@/components/admin/AdminUserBanPanel";
 import { RANK_ORDER, RANK_IMAGES, RANK_COLORS } from "@/lib/ranks";
 
 const TABS = [
@@ -32,6 +33,7 @@ const TABS = [
   { id: "analytics", label: "Analytics", icon: Activity },
   { id: "audit", label: "Audit Log", icon: FileSearch },
   { id: "tickets", label: "Tickets", icon: TicketCheck },
+  { id: "userbans", label: "User Bans", icon: ShieldX },
   { id: "ipbans", label: "IP Bans", icon: Ban },
   { id: "moderation", label: "Reports", icon: ShieldAlert },
   { id: "visits", label: "Daily Visits", icon: UserCheck },
@@ -407,6 +409,30 @@ export default function AdminDashboard() {
                             </button>
                           </div>
                         ) : null}
+
+                        <div className="mt-4 border-t border-white/5 pt-4 flex items-center justify-between gap-3">
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Account Status</p>
+                          <button
+                            onClick={async () => {
+                              const reason = window.prompt("Ban reason (optional):");
+                              if (reason === null) return;
+                              try {
+                                const res = await fetch("/api/admin/user-bans", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "ban", userId: user.id, reason: reason.trim() || undefined }),
+                                });
+                                const d = await res.json();
+                                setActionMsg(res.ok ? `Banned @${user.username || user.name}` : d.error || "Ban failed");
+                              } catch {
+                                setActionMsg("Network error");
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white text-[9px] font-black uppercase tracking-widest transition"
+                          >
+                            Ban User
+                          </button>
+                        </div>
                     </div>
                   );
                 })()}
@@ -432,6 +458,13 @@ export default function AdminDashboard() {
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">Audit Log</h2>
             <AdminAuditPanel />
+          </div>
+        )}
+
+        {activeTab === "userbans" && (
+          <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
+            <h2 className="text-base font-black text-white mb-4">User Ban Management</h2>
+            <AdminUserBanPanel />
           </div>
         )}
 

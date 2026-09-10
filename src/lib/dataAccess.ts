@@ -14,6 +14,7 @@ export function filterDataForUser(
   const filtered: Record<string, unknown> = { ...data };
 
   delete filtered.bannedUsers;
+  delete filtered.bannedUserIds;
   delete filtered.bannedIps;
   delete filtered.applications;
 

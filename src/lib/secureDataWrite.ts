@@ -10,14 +10,35 @@ export const OMARSALEH_ADMIN_ID = "711027724663128106";
 export const OMARSALEH_ADMIN_HANDLE = "omarsaleh97";
 
 const ADMIN_IDS = [ADMIN_ID, OMARSALEH_ADMIN_ID];
-const ADMIN_HANDLES = [ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
+export const ADMIN_HANDLES = [ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
 
 const BLOCKED_KEYS = new Set(["directMessages", "readMessages", "deliveredMessages", "friends"]);
-const ADMIN_ONLY_KEYS = new Set(["bannedUsers", "bannedIps"]);
+const ADMIN_ONLY_KEYS = new Set(["bannedUsers", "bannedUserIds", "bannedIps"]);
 
 /** Strip admin from ban lists — admin account must never be suspended. */
 export function stripAdminFromBanList(handles: string[]): string[] {
   return handles.filter((h) => !ADMIN_HANDLES.includes(h) && h !== "minhonovazen");
+}
+
+export type BanIdRecord = { id: string; handle?: string; reason?: string; at?: number };
+
+/** Strip admin + malformed entries from the userId ban records list. */
+export function sanitizeBannedIdRecords(input: unknown[]): BanIdRecord[] {
+  const out: BanIdRecord[] = [];
+  for (const raw of Array.isArray(input) ? input : []) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const id = String(r.id ?? "").trim().slice(0, 64);
+    if (!id) continue;
+    if (ADMIN_IDS.includes(id)) continue;
+    out.push({
+      id,
+      handle: typeof r.handle === "string" ? r.handle.trim().slice(0, 40) : undefined,
+      reason: typeof r.reason === "string" ? r.reason.trim().slice(0, 200) : undefined,
+      at: Number.isFinite(Number(r.at)) ? Number(r.at) : Date.now(),
+    });
+  }
+  return out;
 }
 
 const PROTECTED_SELF_FIELDS = [
@@ -32,6 +53,24 @@ const PROTECTED_SELF_FIELDS = [
   "rankOverride",
 ] as const;
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
+const SELF_IMAGE_URL_FIELDS = ["customAvatar", "profileGif", "profileGifThumb", "banner"] as const;
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/** Only allow http(s) URLs for image fields — blocks data:/javascript: storage. */
+export function sanitizeUrlField(value: unknown, max = 800): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const s = value.trim();
+  if (!s) return undefined;
+  if (!/^https?:\/\//i.test(s)) return undefined;
+  return s.slice(0, max);
+}
+
+export function sanitizeHexColor(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const s = value.trim();
+  if (!HEX_COLOR_RE.test(s)) return undefined;
+  return s;
+}
 
 export function isAdminUser(userId: string, handle: string) {
   return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
@@ -45,6 +84,25 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
   }
   if ("team" in incoming) {
     merged.team = sanitizeTeam(incoming.team, String(existing.id ?? ""));
+  }
+  if ("nameColor" in merged) {
+    if (merged.nameColor === null || merged.nameColor === "") {
+      merged.nameColor = undefined;
+    } else {
+      const c = sanitizeHexColor(merged.nameColor);
+      if (c === undefined) delete merged.nameColor;
+      else merged.nameColor = c;
+    }
+  }
+  if ("displayName" in merged && merged.displayName != null) {
+    merged.displayName = String(merged.displayName).trim().slice(0, 40) || undefined;
+  }
+  for (const field of SELF_IMAGE_URL_FIELDS) {
+    if (field in merged) {
+      const url = sanitizeUrlField(merged[field]);
+      if (url === undefined) delete merged[field];
+      else merged[field] = url;
+    }
   }
   if (!isSecretClubTier(existing)) {
     for (const field of SECRET_CLUB_ONLY_FIELDS) {
@@ -504,6 +562,9 @@ export async function validateDataWrites(
       case "bannedUsers":
         if (!Array.isArray(value)) return { ok: false, error: "Invalid bannedUsers" };
         result = { ok: true, value: stripAdminFromBanList(value as string[]) };
+        break;
+      case "bannedUserIds":
+        result = { ok: true, value: sanitizeBannedIdRecords(value as unknown[]) };
         break;
       case "applications":
         if (!isAdmin) return { ok: false, error: "Admin only" };

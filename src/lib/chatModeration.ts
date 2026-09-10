@@ -1,6 +1,7 @@
 import { getKV, setKV, initTables } from "@/lib/db";
 import { logAudit } from "@/lib/auditLog";
 import { isAdminUser } from "@/lib/secureDataWrite";
+import { addUserBan } from "@/lib/banCheck";
 import { touchUserLastIp } from "@/lib/userLastIp";
 
 /** Max DMs in a short burst before cooldown. */
@@ -56,11 +57,7 @@ async function suspendForChatSpam(
 ): Promise<void> {
   if (isAdminUser(userId, handle)) return;
 
-  await initTables();
-  const banned: string[] = (await getKV("bannedUsers")) || [];
-  if (!banned.includes(handle)) {
-    await setKV("bannedUsers", [...banned, handle]);
-  }
+  await addUserBan({ id: userId, handle, reason: "Repeated DM spam" });
 
   await logAudit({
     action: "chat.spam.suspend",

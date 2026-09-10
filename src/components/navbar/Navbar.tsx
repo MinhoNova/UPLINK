@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, TicketCheck } from "lucide-react";
+import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, ShieldX, TicketCheck, LifeBuoy } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -44,6 +44,8 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [dmUnreadCount, setDmUnreadCount] = useState(0);
+  const [suspended, setSuspended] = useState(false);
+  const [suspendedReason, setSuspendedReason] = useState("");
   const notifRef = useRef<HTMLDivElement>(null);
 
   const currentUserId = (session?.user as any)?.id || "";
@@ -86,6 +88,12 @@ export default function Navbar() {
     fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
       .then((data) => {
+        if ((data as any)?.suspended) {
+          setSuspended(true);
+          setSuspendedReason((data as any)?.error || "");
+          return;
+        }
+        setSuspended(false);
         if (data.registeredUsers) {
           setRegisteredUsers(data.registeredUsers);
           const mine = (data.registeredUsers as any[]).find((u: any) => String(u.id) === String(currentUserId));
@@ -230,6 +238,7 @@ export default function Navbar() {
   };
 
   return (
+    <>
     <motion.nav animate={{ y: navVisible ? 0 : -96 }} className={`fixed top-0 w-full z-50 h-24 flex items-center ${theme === 'light' ? 'bg-white/50 text-black' : 'bg-transparent text-white'}`}>
       <div className="max-w-[1600px] mx-auto px-6 w-full flex items-center justify-between">
           <a href="/" aria-label="UPLINK — Home" className="flex items-center gap-4 cursor-pointer">
@@ -429,5 +438,34 @@ export default function Navbar() {
         </div>
       </div>
     </motion.nav>
+
+    {suspended && (
+      <div className="fixed inset-0 z-[9999] bg-[#05050a] flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-6">
+            <ShieldX className="w-10 h-10 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-black uppercase tracking-tight text-white mb-2">
+            Account Suspended
+          </h1>
+          <p className="text-sm text-red-300/80 font-bold mb-6">
+            حسابك موقوف — لسه غير مسموح بالتعديل أو المحادثة.
+          </p>
+          <p className="text-xs text-gray-500 leading-relaxed mb-8">
+            {suspendedReason ||
+              "Your account has been suspended. Contact support if you believe this is a mistake."}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <a
+              href="/support"
+              className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-widest hover:bg-white/10 transition inline-flex items-center gap-2"
+            >
+              <LifeBuoy className="w-4 h-4" /> Contact Support
+            </a>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

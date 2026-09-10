@@ -2,11 +2,19 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { validateRegisteredUsers, isAdminUser } from "@/lib/secureDataWrite";
+import { getBanInfo } from "@/lib/banCheck";
 
 const PROTECTED_SELF_FIELDS = ["id", "username", "subscription"] as const;
 
 export async function GET(req: Request) {
   const auth = await requireSession(req);
+  if (!auth.ok && auth.suspended && auth.user) {
+    const info = await getBanInfo(auth.user.username, auth.user.id);
+    return NextResponse.json(
+      { role: "user", profile: null, banned: true, reason: info?.reason || undefined },
+      { status: 403 }
+    );
+  }
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   await initTables();
@@ -18,7 +26,15 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   const auth = await requireSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if (!auth.ok) {
+    if (auth.suspended) {
+      return NextResponse.json(
+        { error: auth.error, suspended: true, banned: true },
+        { status: 403 }
+      );
+    }
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
 
   const body = await req.json();
   const incoming = body?.profile;

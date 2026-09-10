@@ -3,11 +3,11 @@ import { getKVPairs, setKV, initTables } from '@/lib/db';
 import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
-import { isAdminUser, stripAdminFromBanList, validateDataWrites } from '@/lib/secureDataWrite';
+import { isAdminUser, stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
 import { filterDataForUser } from '@/lib/dataAccess';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
-import { isUserBanned, bannedResponse } from '@/lib/banCheck';
+import { isUserBanned, bannedResponse, getBanInfo } from '@/lib/banCheck';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
@@ -24,7 +24,8 @@ export async function GET(req: Request) {
     if (ipBlock) return ipBlock;
 
     if (await isUserBanned(auth.user.username, auth.user.id)) {
-      return bannedResponse();
+      const info = await getBanInfo(auth.user.username, auth.user.id);
+      return bannedResponse(info?.reason);
     }
 
     await initTables();
@@ -35,6 +36,13 @@ export async function GET(req: Request) {
       if (cleaned.length !== (data.bannedUsers as string[]).length) {
         data.bannedUsers = cleaned;
         await setKV("bannedUsers", cleaned);
+      }
+    }
+    if (Array.isArray(data.bannedUserIds)) {
+      const cleaned = sanitizeBannedIdRecords(data.bannedUserIds as unknown[]);
+      if (cleaned.length !== (data.bannedUserIds as unknown[]).length) {
+        data.bannedUserIds = cleaned;
+        await setKV("bannedUserIds", cleaned);
       }
     }
     if (Array.isArray(data.lobbies)) {
@@ -69,7 +77,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("Error reading from D1:", error);
     return NextResponse.json(
-      { lobbies: [], goldOffers: [], notifications: [], registeredUsers: [], characters: [], applications: [], bannedUsers: [] },
+      { lobbies: [], goldOffers: [], notifications: [], registeredUsers: [], characters: [], applications: [], bannedUsers: [], bannedUserIds: [] },
       { status: 500 }
     );
   }
@@ -86,7 +94,8 @@ export async function POST(req: Request) {
     if (ipBlock) return ipBlock;
 
     if (await isUserBanned(auth.user.username, auth.user.id)) {
-      return bannedResponse();
+      const info = await getBanInfo(auth.user.username, auth.user.id);
+      return bannedResponse(info?.reason);
     }
 
     const clientIp = getClientIp(req);
@@ -139,7 +148,7 @@ export async function POST(req: Request) {
         toWrite = pruneExpiredTickets(value).tickets;
       }
       await setKV(key, toWrite);
-      if (key === "bannedUsers") {
+      if (key === "bannedUsers" || key === "bannedUserIds") {
         await logAudit({
           action: "admin.bannedUsers",
           userId: auth.user.id,

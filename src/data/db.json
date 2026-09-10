@@ -488,6 +488,7 @@
   ],
   "applications": [],
   "bannedUsers": [],
+  "bannedUserIds": [],
   "friends": [],
   "readMessages": {
     "minhonovazen": {

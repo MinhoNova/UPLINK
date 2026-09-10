@@ -20,6 +20,8 @@ const ACTION_LABELS: Record<string, string> = {
   "dm.delete": "DM deleted",
   "upload.avatar": "Avatar upload",
   "admin.bannedUsers": "Ban list updated",
+  "admin.userBan": "User banned",
+  "admin.userUnban": "User unbanned",
   "admin.ipBan": "IP banned",
   "admin.ipUnban": "IP unbanned",
   "onboarding.ipBan": "Onboarding abuse — IP banned",
