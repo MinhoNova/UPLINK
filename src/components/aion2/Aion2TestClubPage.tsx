@@ -11,8 +11,6 @@ import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
-import { resolveNameColor } from "@/lib/profileImage";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { roleIconUrl } from "@/lib/classThumb";
 import {
@@ -389,12 +387,10 @@ export default function Aion2TestClubPage() {
                 {displayOffers.map((offer) => {
                   const owner = lobbyOwner(offer);
                   const pic = ownerPic(offer);
-                  const name = ownerName(offer);
-                  const ownerColor = resolveNameColor(owner);
-                  const openRoles = openRolesOf(offer);
-                  const applied = alreadyApplied(offer);
                   const isMine = String(offer.ownerId) === meId;
                   const offerBg = offerBgOf(offer);
+                  const openRoles = openRolesOf(offer);
+                  const applied = alreadyApplied(offer);
                   return (
                   <motion.div
                     key={`${offer.id}-${offer.createdAt || ""}`}
@@ -427,7 +423,11 @@ export default function Aion2TestClubPage() {
 
                     {/* Creator avatar */}
                     <div className="relative z-10 flex-shrink-0">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors">
+                      <div
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer"
+                        onMouseEnter={() => { if (owner?.id) window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId: String(owner.id) } })); }}
+                        onClick={() => { if (owner?.id) window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId: String(owner.id) } })); }}
+                      >
                         {pic ? (
                           <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         ) : (
@@ -452,12 +452,6 @@ export default function Aion2TestClubPage() {
                       <h4 className="mt-1.5 text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
                         {offer.title || `${offer.runsCount || 1}× Boost`}
                       </h4>
-                      <p
-                        className="text-[9px] font-bold text-cyan-200/70 uppercase tracking-widest"
-                        style={ownerColor ? { ...toNameStyle(ownerColor), textShadow: `0 0 12px ${nameGlowColor(ownerColor)}66` } : undefined}
-                      >
-                        {name}
-                      </p>
                       <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                         {offer.serverRegion && (
                           <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">
@@ -473,16 +467,9 @@ export default function Aion2TestClubPage() {
                       </div>
                     </div>
 
-                    {/* Apply / Manage / Delete */}
+                    {/* Apply / Delete */}
                     <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
-                      {isMine ? (
-                        <button
-                          onClick={() => router.push(`/manage/${offer.id}`)}
-                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] flex items-center justify-center gap-1.5"
-                        >
-                          <Radio className="w-3 h-3" /> Manage
-                        </button>
-                      ) : applied ? (
+                      {applied ? (
                         <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
                           <Check className="w-3 h-3" /> Applied
                         </span>
@@ -597,7 +584,8 @@ export default function Aion2TestClubPage() {
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           whileHover={{ scale: 1.01 }}
-                          className="tn-light relative w-full min-h-[104px] rounded-2xl border border-cyan-500/20 overflow-hidden flex flex-col justify-center px-4 py-3 cursor-default group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:border-cyan-400/40 transition-all"
+                          onClick={() => router.push(`/manage/${String(m.id)}`)}
+                          className="tn-light relative w-full min-h-[104px] rounded-2xl border border-cyan-500/20 overflow-hidden flex flex-col justify-center px-4 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:border-cyan-400/40 hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all"
                         >
                           {bgPoster && (
                             <div className="absolute inset-0 z-0">
@@ -619,9 +607,14 @@ export default function Aion2TestClubPage() {
                                 </>
                               )}
                             </p>
-                            <span className="shrink-0 px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-500/30 bg-black/50 text-cyan-300">
-                              {m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
-                            </span>
+                            <div className="shrink-0 flex items-center gap-1.5">
+                              <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-500/30 bg-black/50 text-cyan-300">
+                                {m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
+                              </span>
+                              <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">
+                                Open Thread ›
+                              </span>
+                            </div>
                           </div>
 
                           <div className="relative z-10 mt-2.5 flex items-center justify-between gap-2">

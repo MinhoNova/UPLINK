@@ -1,5 +1,7 @@
 "use client";
 
+import { roleIconUrl } from "@/lib/classThumb";
+
 const roleIconScale = (role?: string) => (String(role || '').toLowerCase() === 'healer' ? 1.22 : 1.08);
 
 const ClassRoleIcons = ({
@@ -23,18 +25,20 @@ const ClassRoleIcons = ({
 }) => {
    const normalizedClass = (className || 'WARRIOR').toUpperCase();
    const normalizedRole = (role || 'dps').toUpperCase();
+   const classSrc = /^[A-Z0-9 '-]+$/.test(normalizedClass) ? `/classes-thumb/${normalizedClass}.png` : "";
 
    return (
       <div className="flex items-center shrink-0" style={{ width: (size * 2) - overlap }}>
          <img
-            src={`/classes/${normalizedClass}.svg`}
+            src={classSrc || roleIconUrl(normalizedClass)}
             alt={className || "Class"}
             className={`object-contain relative z-10 drop-shadow-lg ${classImgClassName}`}
             style={{ width: size, height: size }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = roleIconUrl(normalizedClass); }}
          />
          <div className="relative group shrink-0" style={{ width: size, height: size, marginLeft: -overlap }}>
             <img
-               src={`/classes/${normalizedRole}.svg`}
+               src={roleIconUrl(normalizedRole)}
                alt={role || "Role"}
                className={`w-full h-full object-contain drop-shadow-lg ${roleImgClassName}`}
                style={{ transform: `scale(${roleIconScale(role)})`, transformOrigin: 'center' }}

@@ -1,6 +1,6 @@
 ﻿"use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Radio, Phone, Zap, ShieldCheck, CircleDollarSign, Star, Lock } from "lucide-react";
+import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Zap, ShieldCheck, CircleDollarSign, Star } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
@@ -854,55 +854,7 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                   {/* RIGHT COLUMN: COMS & PAYMENT PROOF */}
                                    <div className="lg:col-span-6 flex flex-col gap-6 min-h-0">
 
-                                     {/* VOICE CHANNEL SECTION */}
-                                     {(() => {
-                                        const voiceOpen = isVoiceLobbyOpen(targetLobby);
-                                        const canJoinVoice = userCanAccessVoice(targetLobby, currentUserId);
-                                        const lockLabel = voiceLobbyLockLabel(targetLobby);
-                                        return (
-                                     <div className={`flex flex-col rounded-[2.5rem] p-6 mb-4 border transition-all ${voiceOpen && canJoinVoice ? 'bg-white/[0.02] border-white/5' : 'bg-black/40 border-white/[0.03] opacity-80'}`}>
-                                         <div className="flex items-center justify-between gap-4">
-                                            <h3 className={`text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-3 ${voiceOpen && canJoinVoice ? 'text-[#00ffff]' : 'text-gray-600'}`}>
-                                               {voiceOpen && canJoinVoice ? (
-                                                  <Radio className={`w-5 h-5 ${voiceToken ? 'animate-pulse text-[#00ffff]' : 'text-[#00ffff]/70'}`} />
-                                               ) : (
-                                                  <Lock className="w-5 h-5 text-gray-600" />
-                                               )}
-                                               Voice Link
-                                            </h3>
-                                            {voiceToken ? (
-                                                <VoiceRoomContent roomName={targetLobby.title} onDisconnect={() => setVoiceToken(null)} inline users={registeredUsers} currentUserId={currentUserId} currentUserAvatar={session?.user?.image || ''} />
-                                            ) : voiceOpen && canJoinVoice ? (
-                                                  <motion.button 
-                                                     whileHover={{ scale: 1.05 }}
-                                                     whileTap={{ scale: 0.95 }}
-                                                     onClick={() => handleJoinVoice(targetLobby.id)}
-                                                     disabled={isJoiningVoice}
-                                                     className={`px-6 py-2.5 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center gap-2 ${isJoiningVoice ? 'bg-white/5 text-gray-500' : 'bg-[#00ffff] text-black shadow-[0_0_20px_rgba(0,255,255,0.3)] hover:shadow-[0_0_30px_rgba(0,255,255,0.5)]'}`}
-                                                  >
-                                                     {isJoiningVoice ? <Zap className="w-3 h-3 animate-spin" /> : <Phone className="w-3 h-3" />}
-                                                     {isJoiningVoice ? 'Establishing...' : 'Join Channel'}
-                                                  </motion.button>
-                                            ) : (
-                                                  <div
-                                                     title={lockLabel}
-                                                     className="px-6 py-2.5 rounded-xl font-black uppercase text-[9px] tracking-widest flex items-center gap-2 bg-white/[0.03] text-gray-600 border border-white/10 cursor-not-allowed select-none"
-                                                  >
-                                                     <Lock className="w-3 h-3" />
-                                                     {lockLabel}
-                                                  </div>
-                                            )}
-                                         </div>
-                                         {!voiceOpen && (
-                                            <p className="mt-3 text-[8px] font-bold uppercase tracking-widest text-gray-600">
-                                               Voice unlocks when the squad is full and the mission is in progress.
-                                            </p>
-                                         )}
-                                     </div>
-                                        );
-                                     })()}
-
-                                     {/* SECURE CHAT */}
+{/* SECURE CHAT */}
                                       <div className="flex flex-col bg-black/60 border-2 border-white/5 rounded-[3.5rem] overflow-hidden shadow-2xl relative" style={{ height: '620px' }}>
                                          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar" style={{ minHeight: 0 }}>
                                             {familyMessages.length === 0 ? (
