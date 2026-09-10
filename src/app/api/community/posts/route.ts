@@ -8,6 +8,7 @@ import { getKV, initTables } from "@/lib/db";
 import { canViewPost } from "@/lib/postVisibility";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
+import { sanitizePlainText, sanitizeImageUrl } from "@/lib/sanitizer";
 
 const MAX_DAILY_POSTS = 10;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -131,9 +132,28 @@ export async function POST(req: NextRequest) {
     ? visibilityRaw
     : "public";
 
-  if (!content?.trim() && !imageUrl && !file?.size) return NextResponse.json({ error: "Content or image required" }, { status: 400 });
-
-  const tags = tagsRaw ? JSON.parse(tagsRaw) : [];
+  const cleanContent = sanitizePlainText(content, 2000);
+  const safeImageUrl = imageUrl ? sanitizeImageUrl(imageUrl) : "";
+  if (!cleanContent && !safeImageUrl && !file?.size) {
+    return NextResponse.json({ error: "Content or image required" }, { status: 400 });
+  }
+  const tags = Array.isArray(tagsRaw)
+    ? tagsRaw
+    : tagsRaw
+      ? (() => {
+          try {
+            return JSON.parse(tagsRaw);
+          } catch {
+            return [];
+          }
+        })()
+      : [];
+  const sanitizedTags = Array.isArray(tags)
+    ? tags
+        .map((t) => sanitizePlainText(t, 30))
+        .filter(Boolean)
+        .slice(0, 5)
+    : [];
   let imagePath: string | null = null;
   const currentUserId = (session.user as any).id;
   const startOfDay = new Date();
@@ -161,9 +181,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Handle URL image (download + compress)
-  if (!imagePath && imageUrl) {
+  if (!imagePath && safeImageUrl) {
     try {
-      const resp = await fetch(imageUrl, {
+      const resp = await fetch(safeImageUrl, {
         headers: { "User-Agent": "UPLINK/1.0" },
       });
       if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
@@ -171,7 +191,7 @@ export async function POST(req: NextRequest) {
       const remoteType = resp.headers.get("content-type") || "";
       if (!remoteType.startsWith("image/")) throw new Error("URL is not an image");
       if (buffer.byteLength > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
-      imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif(?:$|\?)/i.test(imageUrl));
+      imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif(?:$|\?)/i.test(safeImageUrl));
     } catch (e) {
       console.error("Failed to download image from URL:", e);
       return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
@@ -191,9 +211,9 @@ export async function POST(req: NextRequest) {
       userId: (session.user as any).id,
       userName: authorFields.userName,
       userImage: authorFields.userImage,
-      content: content.trim(),
+      content: cleanContent,
       image: imagePath,
-      tags: JSON.stringify(tags),
+      tags: JSON.stringify(sanitizedTags),
       visibility,
       createdAt: Date.now(),
     }).returning();

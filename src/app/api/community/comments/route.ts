@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { comments, posts } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 import { getKV, initTables } from "@/lib/db";
+import { sanitizePlainText } from "@/lib/sanitizer";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
 export async function GET(req: NextRequest) {
   const db = await getDb();
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
 
   const { postId, content, parentId } = await req.json();
   if (!postId || !content?.trim()) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  const cleanContent = sanitizePlainText(content, 1000);
 
   const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
   if (post.length === 0) return NextResponse.json({ error: "Post not found" }, { status: 404 });
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
     userId: (session.user as any).id,
     userName: authorFields.userName,
     userImage: authorFields.userImage,
-    content: content.trim(),
+    content: cleanContent,
     createdAt: Date.now(),
   }).returning();
 

@@ -9,6 +9,7 @@ import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { DM_REACTION_EMOJIS, type DmMessage, recipientBlockedSender } from "@/lib/dmHelpers";
+import { sanitizePlainText, sanitizeImageUrl } from "@/lib/sanitizer";
 
 const MAX_TEXT_LENGTH = 2000;
 const MAX_MESSAGES_PER_HOUR = 120;
@@ -54,11 +55,13 @@ export async function POST(req: Request) {
 
   if (action === "send") {
     const to = String(body?.to || "").trim();
-    const text = String(body?.text || "").trim();
-    const image = body?.image ? String(body.image).trim() : "";
+    const rawText = String(body?.text || "").trim();
+    const rawImage = body?.image ? String(body.image).trim() : "";
+    const text = sanitizePlainText(rawText, MAX_TEXT_LENGTH);
+    const image = sanitizeImageUrl(rawImage);
     if (!to) return NextResponse.json({ error: "Missing recipient" }, { status: 400 });
     if (!text && !image) return NextResponse.json({ error: "Missing message content" }, { status: 400 });
-    if (text.length > MAX_TEXT_LENGTH) {
+    if (rawText.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
     if (!registeredUsers.some((u) => u.username === to)) {
@@ -112,9 +115,10 @@ export async function POST(req: Request) {
 
   if (action === "edit") {
     const timestamp = Number(body?.timestamp);
-    const text = String(body?.text || "").trim();
+    const rawText = String(body?.text || "").trim();
+    const text = sanitizePlainText(rawText, MAX_TEXT_LENGTH);
     if (!timestamp || !text) return NextResponse.json({ error: "Missing timestamp or text" }, { status: 400 });
-    if (text.length > MAX_TEXT_LENGTH) {
+    if (rawText.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
 

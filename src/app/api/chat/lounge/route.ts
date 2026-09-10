@@ -15,6 +15,7 @@ import {
   resolveProfileDisplayName,
   resolveProfileImage,
 } from "@/lib/profileImage";
+import { sanitizePlainText, sanitizeShortText, sanitizeImageUrl } from "@/lib/sanitizer";
 
 const KV_KEY = "clubLoungeChat";
 const MAX_MESSAGES = 200;
@@ -60,7 +61,7 @@ function parseReplyTo(body: any, messages: CommunityChatMessage[]): CommunityCha
     id: parent.id,
     userId: String(parent.userId),
     userName: String(parent.userName || raw.userName || "Member"),
-    text: replySnippet(parent.text || raw.text || ""),
+    text: sanitizeShortText(replySnippet(parent.text || raw.text || ""), 80),
   };
 }
 
@@ -115,8 +116,8 @@ export async function POST(req: Request) {
   const rl = await rateLimitByUser(userId!, "club_lounge", 30, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down — too many messages." }, { status: 429 });
 
-  const text = String(body?.text || "").trim().slice(0, MAX_TEXT);
-  const image = String(body?.image || "").trim().slice(0, 2048);
+  const text = sanitizePlainText(body?.text, MAX_TEXT);
+  const image = sanitizeImageUrl(body?.image);
   if (!text && !image) return NextResponse.json({ error: "Message required" }, { status: 400 });
 
   const replyTo = parseReplyTo(body, messages);
