@@ -11,7 +11,7 @@ import {
 import { AION_SERVICES, AION_CATEGORIES, DUNGEON_PICKER, AionService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 
-const STEPS = ["dungeon", "details", "confirm"] as const;
+const STEPS = ["service", "dungeon", "details"] as const;
 type Step = (typeof STEPS)[number];
 
 const REGIONS = [
@@ -31,133 +31,190 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
 };
 
 const STEP_HINTS: Record<Step, string> = {
-  dungeon: "Flip through the dungeons and tap the one you want",
-  details: "Tune quantity and region",
-  confirm: "Lock in the details before going live",
+  service: "Pick the offer you want to post",
+  dungeon: "Flip through the dungeons and pick one",
+  details: "Tune quantity and region — final step",
 };
 
-/* ── Dungeon carousel — mobile-style app switcher ─────────────────────────── */
-function DungeonCarousel({
+/* ── Dungeon flip — iOS app-switcher style, full portrait images ──────────── */
+function DungeonFlip({
   items,
-  selectedId,
+  initialId,
   onPick,
 }: {
   items: AionService[];
-  selectedId: string | null;
+  initialId: string | null;
   onPick: (s: AionService) => void;
 }) {
-  const [idx, setIdx] = useState(0);
-  const touchX = useRef<number | null>(null);
+  const CARD_W = typeof window !== "undefined" ? Math.min(280, Math.max(210, Math.round(window.innerWidth * 0.26))) : 250;
+  const CARD_H = Math.round(CARD_W * (1619 / 972));
+  const PITCH = 62;
+
+  const [idx, setIdx] = useState(() => Math.max(0, items.findIndex((s) => s.id === initialId)));
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef<number | null>(null);
+  const movedRef = useRef(false);
 
   const go = (dir: number) => {
     setIdx((i) => (i + dir + items.length) % items.length);
   };
+  const jumpTo = (i: number) => setIdx(i);
 
-  const select = () => {
-    const item = items[idx];
-    if (item) onPick(item);
+  const onPointerDown = (e: React.PointerEvent) => {
+    startX.current = e.clientX;
+    movedRef.current = false;
+    setDragging(true);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (startX.current == null) return;
+    const dx = e.clientX - startX.current;
+    setDrag(dx);
+    if (Math.abs(dx) > 14) movedRef.current = true;
+  };
+  const onPointerUp = () => {
+    if (startX.current == null) return;
+    if (drag < -52) go(1);
+    else if (drag > 52) go(-1);
+    startX.current = null;
+    setDrag(0);
+    setDragging(false);
+    window.setTimeout(() => { movedRef.current = false; }, 0);
   };
 
-  const CARD_W = 232;
-  const GAP = 18;
+  const active = items[idx];
 
   return (
-    <div
-      className="relative mt-6 select-none"
-      onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-      onTouchEnd={(e) => {
-        if (touchX.current == null) return;
-        const dx = e.changedTouches[0].clientX - touchX.current;
-        if (Math.abs(dx) > 48) go(dx < 0 ? 1 : -1);
-        touchX.current = null;
-      }}
-    >
-      <div className="overflow-hidden py-2">
-        <div
-          className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{
-            transform: `translateX(calc(50% - ${CARD_W / 2}px - ${idx * (CARD_W + GAP)}px))`,
-          }}
-        >
-          {items.map((s, i) => {
-            const center = i === idx;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => { if (!center) setIdx(i); else select(); }}
-                className={`group relative shrink-0 overflow-hidden rounded-2xl border transition-all duration-300 ${
-                  center
-                    ? "border-cyan-400/70 bg-black/50 shadow-[0_0_34px_rgba(0,229,255,0.28)]"
-                    : "border-white/10 bg-black/40 opacity-60 hover:opacity-90"
-                }`}
-                style={{ width: CARD_W, marginRight: GAP }}
-              >
-                <img
-                  src={s.img}
-                  alt={s.name}
-                  className="h-36 w-full object-cover"
-                  draggable={false}
-                  loading="lazy"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                <span
-                  className={`absolute bottom-2 left-3 right-10 truncate text-sm font-black uppercase tracking-wider ${center ? "text-cyan-100" : "text-gray-300"}`}
-                >
-                  {s.name}
-                </span>
-                <span className={`absolute bottom-2 right-3 rounded-md px-1.5 py-0.5 text-[9px] font-black ${center ? "bg-cyan-400 text-black" : "bg-white/15 text-gray-300"}`}>
-                  {Number(s.basePriceKina).toFixed(2)}M
-                </span>
-                {selectedId === s.id && (
-                  <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black text-emerald-300 uppercase">
-                    <Check className="h-3 w-3" /> Selected
+    <div className="mt-4 select-none">
+      <div
+        className="relative"
+        style={{ height: CARD_H + 60 }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        {/* center guide glow */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/10 blur-2xl" />
+
+        {/* backdrops */}
+        {Array.from({ length: Math.min(4, items.length) }).map((_, k) => (
+          <div
+            key={k}
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-white/[0.03]"
+            style={{ width: CARD_W, height: CARD_H, marginLeft: PITCH * (k + 1), zIndex: -k - 1 }}
+          />
+        ))}
+
+        {items.map((s, i) => {
+          const d = i - idx;
+          const x = d * PITCH + drag;
+          const scale = d === 0 ? 1 : Math.max(0.86, 1 - Math.abs(d) * 0.07);
+          const z = 30 - Math.abs(d);
+          const opacity = Math.abs(d) > 2 ? 0 : Math.abs(d) === 2 ? 0.35 : Math.abs(d) === 1 ? 0.75 : 1;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => { if (movedRef.current) return; if (d === 0) onPick(s); else jumpTo(i); }}
+              className="absolute left-1/2 top-1/2 overflow-hidden rounded-2xl border bg-black/70 shadow-[0_18px_50px_rgba(0,0,0,0.65)]"
+              style={{
+                width: CARD_W,
+                height: CARD_H,
+                zIndex: z,
+                transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`,
+                transformOrigin: "center",
+                opacity,
+                transition: dragging ? "none" : "transform 380ms cubic-bezier(0.22,1,0.36,1), opacity 380ms ease",
+                pointerEvents: d === 0 ? "auto" : "auto",
+                borderColor: d === 0 ? "rgba(0,229,255,0.6)" : "rgba(255,255,255,0.08)",
+                boxShadow: d === 0 ? "0 0 44px rgba(0,229,255,0.22), 0 18px 50px rgba(0,0,0,0.65)" : "0 18px 50px rgba(0,0,0,0.65)",
+              }}
+            >
+              <img
+                src={s.img}
+                alt={s.name}
+                className="h-full w-full object-cover"
+                draggable={false}
+                loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
+                <p className={`truncate text-sm font-black uppercase tracking-wider ${d === 0 ? "text-cyan-100" : "text-gray-300"}`}>{s.name}</p>
+                <p className="mt-0.5 flex items-center gap-1.5">
+                  <span className="rounded-md bg-black/50 px-1.5 py-0.5 text-[10px] font-black text-amber-300">
+                    {Number(s.basePriceKina).toFixed(2)}M KINAH
                   </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{s.priceUnit ?? "per pc"}</span>
+                </p>
+              </div>
+              {d === 0 && (
+                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-cyan-400/60 bg-black/60 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-cyan-300 backdrop-blur">
+                  <Check className="h-3 w-3" /> Selected
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* arrows */}
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          className="absolute left-1 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
+          aria-label="Previous dungeon"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          className="absolute right-1 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
+          aria-label="Next dungeon"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
 
-      {/* arrows */}
-      <button
-        type="button"
-        onClick={() => go(-1)}
-        className="absolute left-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
-        aria-label="Previous dungeon"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => go(1)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
-        aria-label="Next dungeon"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
-
       {/* dots */}
-      <div className="mt-3 flex items-center justify-center gap-1.5">
+      <div className="mt-2 flex items-center justify-center gap-1.5">
         {items.map((_, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => setIdx(i)}
+            onClick={() => jumpTo(i)}
             className={`h-1.5 rounded-full transition-all cursor-pointer ${i === idx ? "w-6 bg-cyan-400 shadow-[0_0_8px_rgba(0,229,255,0.6)]" : "w-1.5 bg-white/25 hover:bg-white/50"}`}
             aria-label={`Go to ${items[i].name}`}
           />
         ))}
       </div>
+
+      {/* select strip */}
+      {active && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-white">{active.name}</p>
+            <p className="truncate text-[11px] text-gray-500">{active.description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onPick(active)}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-cyan-400/50 bg-cyan-500/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-cyan-200 transition-all hover:bg-cyan-500/25 cursor-pointer"
+          >
+            Select <Check className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function CreateOfferPage() {
   const { data: session } = useSession();
-  const [step, setStep] = useState<Step>("dungeon");
+  const [step, setStep] = useState<Step>("service");
+  const [activeCat, setActiveCat] = useState("Dungeons");
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
   const [region, setRegion] = useState("EU");
@@ -184,9 +241,16 @@ export default function CreateOfferPage() {
   const canNext = !!sel;
   const stepIndex = STEPS.indexOf(step);
 
-  const advance = () => { setRegionOpen(false); setStep(STEPS[stepIndex + 1]); };
+  const advance = () => {
+    setRegionOpen(false);
+    if (step === "service") {
+      setStep(sel?.img ? "dungeon" : "details");
+    } else {
+      setStep(STEPS[stepIndex + 1]);
+    }
+  };
   const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("dungeon"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -378,9 +442,100 @@ export default function CreateOfferPage() {
 
                   <div className="p-5 sm:p-6">
                     <AnimatePresence mode="wait">
-                      {/* STEP 1 — DUNGEON PICKER */}
-                      {step === "dungeon" && (
+                      {/* STEP 1 — PICK YOUR OFFER */}
+                      {step === "service" && (
                         <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-[170px_1fr]">
+                            {/* category rail — on the side */}
+                            <div className="flex gap-1.5 overflow-x-auto md:flex-col md:overflow-visible">
+                              {AION_CATEGORIES.filter((c) => grouped[c]?.length).map((cat) => {
+                                const meta = CATEGORY_META[cat];
+                                const CatIcon = meta.icon;
+                                const isActiveCat = activeCat === cat;
+                                return (
+                                  <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => setActiveCat(cat)}
+                                    className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-[0.12em] transition-all cursor-pointer ${
+                                      isActiveCat
+                                        ? "border-cyan-400/60 bg-cyan-500/[0.1] text-white shadow-[0_0_18px_rgba(0,229,255,0.14)]"
+                                        : "border-white/[0.08] bg-white/[0.02] text-gray-500 hover:border-white/[0.18] hover:text-gray-300"
+                                    }`}
+                                  >
+                                    <CatIcon className={`h-3.5 w-3.5 shrink-0 ${isActiveCat ? meta.color : "text-gray-500"}`} />
+                                    <span className="min-w-0 truncate md:flex-1">{cat}</span>
+                                    <span className={`ml-auto hidden rounded-full px-1.5 py-0.5 text-[8px] font-bold md:inline ${isActiveCat ? "bg-cyan-400/20 text-cyan-300" : "bg-white/[0.06] text-gray-600"}`}>
+                                      {grouped[cat].length}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* services of the active category */}
+                            <div className="max-h-[52vh] overflow-y-auto pr-1.5">
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {grouped[activeCat]?.map((svc) => {
+                                  const meta = CATEGORY_META[svc.category] ?? CATEGORY_META.Raids;
+                                  const CatIcon = meta.icon;
+                                  const isActive = sel?.id === svc.id;
+                                  const variantCount = (svc.options?.length ?? 0) + (svc.extras?.length ?? 0);
+                                  return (
+                                    <button
+                                      key={svc.id}
+                                      type="button"
+                                      onClick={() => { setSel(svc); setStep(svc.img ? "dungeon" : "details"); }}
+                                      className={`group relative rounded-xl border p-4 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/[0.08] shadow-[0_0_26px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}
+                                    >
+                                      {isActive && <span className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />}
+                                      <span className="flex items-start justify-between gap-3">
+                                        <span className="flex min-w-0 items-start gap-3">
+                                          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"} transition-colors`}>
+                                            <CatIcon className={`h-5 w-5 ${isActive ? "text-cyan-300" : meta.color}`} />
+                                          </span>
+                                          <span className="min-w-0">
+                                            <span className="flex items-center gap-1.5">
+                                              <span className="truncate text-sm font-bold text-white">{svc.name}</span>
+                                              {svc.video && <Play className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-label="Video" />}
+                                            </span>
+                                            <span className="mt-0.5 block truncate text-[11px] text-gray-500">{svc.description}</span>
+                                          </span>
+                                        </span>
+                                        {isActive ? (
+                                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cyan-400/60 bg-cyan-500/20">
+                                            <Check className="h-3.5 w-3.5 text-cyan-300" />
+                                          </span>
+                                        ) : (
+                                          <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300">{svc.priceUnit ?? "pc"}</span>
+                                        )}
+                                      </span>
+                                      {variantCount > 0 ? (
+                                        <span className="mt-3 flex flex-wrap items-center gap-1.5">
+                                          {[...(svc.options ?? []), ...(svc.extras ?? [])].slice(0, 2).map((o) => (
+                                            <span key={o.label} className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-400">{o.label}</span>
+                                          ))}
+                                          {variantCount > 2 && (
+                                            <span className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-500">+{variantCount - 2} more</span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="mt-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
+                                          {svc.priceUnit ?? "per pc"}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* STEP 2 — DUNGEON FLIP */}
+                      {step === "dungeon" && (
+                        <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
                           <div className="flex items-center gap-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded-md border border-cyan-400/40 bg-cyan-500/10">
                               <Castle className="h-3.5 w-3.5 text-cyan-300" />
@@ -389,98 +544,24 @@ export default function CreateOfferPage() {
                             <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
                           </div>
 
-                          <DungeonCarousel
+                          <DungeonFlip
                             items={DUNGEON_PICKER}
-                            selectedId={sel?.id ?? null}
-                            onPick={(svc) => { setSel(svc); }}
+                            initialId={sel?.id ?? null}
+                            onPick={(svc) => { setSel(svc); setStep("details"); }}
                           />
 
-                          <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
-                            Tap a dungeon to select it — swipe or use the arrows to flip
+                          <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
+                            Flip left / right to browse — tap the front card to select it
                           </p>
-
-                          <div className="mt-6 flex items-center gap-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.14] bg-white/[0.04]">
-                              <Swords className="h-3.5 w-3.5 text-gray-300" />
-                            </span>
-                            <span className="text-xs font-black tracking-[0.24em] uppercase text-gray-300">or another service</span>
-                            <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
-                          </div>
-
-                          <div className="mt-3 max-h-[40vh] overflow-y-auto pr-1.5">
-                            {AION_CATEGORIES.filter((c) => c !== "Dungeons" && grouped[c]?.length).map((cat) => {
-                              const meta = CATEGORY_META[cat];
-                              const CatIcon = meta.icon;
-                              return (
-                                <div key={cat} className="mb-5 last:mb-0">
-                                  <div className="mb-2.5 flex items-center gap-2">
-                                    <span className={`flex h-6 w-6 items-center justify-center rounded-md border ${meta.tile}`}>
-                                      <CatIcon className={`h-3.5 w-3.5 ${meta.color}`} />
-                                    </span>
-                                    <span className={`text-xs font-black tracking-[0.24em] uppercase ${meta.color}`}>{cat}</span>
-                                    <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold text-gray-500">{grouped[cat].length}</span>
-                                    <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
-                                  </div>
-                                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                    {grouped[cat].map((svc) => {
-                                      const isActive = sel?.id === svc.id;
-                                      const variantCount = (svc.options?.length ?? 0) + (svc.extras?.length ?? 0);
-                                      return (
-                                        <button key={svc.id} type="button" onClick={() => setSel(svc)}
-                                          className={`group relative rounded-xl border p-4 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/[0.08] shadow-[0_0_26px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}>
-                                          {isActive && <span className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />}
-                                          <span className="flex items-start justify-between gap-3">
-                                            <span className="flex min-w-0 items-start gap-3">
-                                              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"} transition-colors`}>
-                                                <CatIcon className={`h-5 w-5 ${isActive ? "text-cyan-300" : meta.color}`} />
-                                              </span>
-                                              <span className="min-w-0">
-                                                <span className="flex items-center gap-1.5">
-                                                  <span className="truncate text-sm font-bold text-white">{svc.name}</span>
-                                                  {svc.video && <Play className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-label="Video" />}
-                                                </span>
-                                                <span className="mt-0.5 block truncate text-[11px] text-gray-500">{svc.description}</span>
-                                              </span>
-                                            </span>
-                                            {isActive ? (
-                                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cyan-400/60 bg-cyan-500/20">
-                                                <Check className="h-3.5 w-3.5 text-cyan-300" />
-                                              </span>
-                                            ) : (
-                                              <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300">{svc.priceUnit ?? "pc"}</span>
-                                            )}
-                                          </span>
-                                          {variantCount > 0 ? (
-                                            <span className="mt-3 flex flex-wrap items-center gap-1.5">
-                                              {[...(svc.options ?? []), ...(svc.extras ?? [])].slice(0, 2).map((o) => (
-                                                <span key={o.label} className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-400">{o.label}</span>
-                                              ))}
-                                              {variantCount > 2 && (
-                                                <span className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-500">+{variantCount - 2} more</span>
-                                              )}
-                                            </span>
-                                          ) : (
-                                            <span className="mt-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
-                                              {svc.priceUnit ?? "per pc"}
-                                            </span>
-                                          )}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
                         </motion.div>
                       )}
 
-                      {/* STEP 2 — DETAILS */}
+                      {/* STEP 3 — DETAILS (final) */}
                       {step === "details" && sel && (() => {
                         const meta = CATEGORY_META[sel.category] ?? CATEGORY_META.Raids;
                         const CatIcon = meta.icon;
                         return (
-                          <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="flex flex-col gap-5">
+                          <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="flex flex-col gap-5">
                             <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-4 py-3.5">
                               <div className="flex min-w-0 items-center gap-3">
                                 <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${meta.tile}`}>
@@ -539,28 +620,7 @@ export default function CreateOfferPage() {
                         );
                       })()}
 
-                      {/* STEP 3 — CONFIRM */}
-                      {step === "confirm" && sel && (
-                        <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="flex flex-col gap-4">
-                          <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-2.5">
-{[
-                          ["Service", sel.name],
-                          ["Quantity", `${qty} × ${sel.priceUnit || "runs"}`],
-                          ["Region", region],
-                        ].map(([k, v], ix) => (
-                              <div key={k} className={`flex items-center justify-between gap-4 py-3 ${ix < 4 ? "border-b border-white/[0.06]" : ""}`}>
-                                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">{k}</span>
-                                <span className="truncate text-sm font-bold text-white">{v}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-4">
-                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Runs total</p>
-                            <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel.priceUnit || "runs"}</span></p>
-                          </div>
-                          <p className="text-[11px] text-gray-500">Review your offer. Publishing broadcasts it to the Aion 2 lobby.</p>
-                        </motion.div>
-                      )}
+                      {/* STEP 3 — CONFIRM (removed; details is the final step) */}
                     </AnimatePresence>
                   </div>
 </section>
@@ -652,7 +712,7 @@ export default function CreateOfferPage() {
 
                       {/* actions */}
                       <div className="mt-5 flex flex-col gap-2">
-                        {step !== "confirm" ? (
+                        {step !== "details" ? (
                           <>
                             <button
                               type="button"
@@ -660,7 +720,7 @@ export default function CreateOfferPage() {
                               disabled={!canNext}
                               className={`flex items-center justify-center gap-2 rounded-xl border px-6 py-3.5 text-xs font-black tracking-[0.18em] uppercase transition-all ${canNext ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-200 shadow-[0_0_20px_rgba(0,229,255,0.12)] hover:bg-cyan-500/25 cursor-pointer" : "border-white/[0.08] bg-white/[0.04] text-gray-600 cursor-not-allowed"}`}
                             >
-                              {step === "dungeon" ? "Continue to Details" : "Continue to Confirm"} <ArrowRight className="h-3.5 w-3.5" />
+                              {step === "dungeon" ? "Continue to Details" : sel?.img ? "Continue to Dungeon" : "Continue to Details"} <ArrowRight className="h-3.5 w-3.5" />
                             </button>
                             <button type="button" onClick={regress} disabled={stepIndex === 0} className={`flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-transparent px-6 py-3 text-xs font-bold text-gray-400 transition-all ${stepIndex === 0 ? "cursor-not-allowed opacity-40" : "hover:border-white/25 hover:text-white cursor-pointer"}`}>
                               <ChevronLeft className="h-3.5 w-3.5" /> Back
