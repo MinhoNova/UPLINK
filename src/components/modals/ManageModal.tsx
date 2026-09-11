@@ -817,25 +817,25 @@ const aionLevel = app.level || app.applicantLevel || "";
                                                                            <span className="tabular-nums">{postStatCount}</span> {postStatLabel}
                                                                         </span>
                                                                      </div>
-                                                                     {/* row 1b — big class portrait centered on the banner + item level beside it */}
-                                                                     <div className="flex items-center justify-center gap-3 sm:gap-4 mt-0.5 rounded-xl border border-white/10 bg-black/40 px-3 py-1.5">
-<img
+{/* row 1b — class portrait centered on the banner + item level beside it */}
+                                                                      <div className="flex items-center justify-center gap-2 sm:gap-2.5 mt-0.5">
+                                                                         <img
                                                                             src={classThumbUrl(aionClass || app.role || "dps")}
                                                                             alt={aionClass || app.role || "Class"}
                                                                             title={aionClass || app.role || "Class"}
-                                                                            className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_14px_rgba(139,92,246,0.4)] rounded-lg"
+                                                                            className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-[0_0_10px_rgba(139,92,246,0.35)]"
                                                                             loading="lazy"
                                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(aionClass || app.role || "C")}&background=0b1020&color=00ffff&size=128`; }}
                                                                          />
-                                                                        <div className="flex flex-col items-center leading-none gap-1">
-                                                                           <span className="text-3xl sm:text-4xl font-black text-white tabular-nums drop-shadow-[0_0_12px_rgba(0,255,255,0.35)]">
-                                                                              {aionLevel || "—"}
-                                                                           </span>
-                                                                           <span className="text-[7px] font-black uppercase tracking-[0.25em] text-violet-300">
-                                                                              Item Level
-                                                                           </span>
-                                                                        </div>
-                                                                     </div>
+                                                                         <div className="flex items-center gap-1 leading-none">
+                                                                            <span className="text-xl sm:text-2xl font-black text-white tabular-nums drop-shadow-[0_0_10px_rgba(0,255,255,0.3)]">
+                                                                               {aionLevel || "—"}
+                                                                            </span>
+                                                                            <span className="text-[7px] font-black uppercase tracking-[0.25em] text-violet-300">
+                                                                               Item Level
+                                                                            </span>
+                                                                         </div>
+                                                                      </div>
                                                                      {/* row 2 — reviews */}
                                                                      <div className="flex items-center justify-center gap-1.5">
                                                                         <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
