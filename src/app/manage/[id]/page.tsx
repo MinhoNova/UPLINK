@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldAlert, CheckCircle2, Bell } from "lucide-react";
+import { ShieldAlert, CheckCircle2, Bell, Plane } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { LiveKitRoom, RoomAudioRenderer, useTracks, useLocalParticipant } from "@livekit/components-react";
 import { Track } from "livekit-client";

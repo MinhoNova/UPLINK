@@ -214,6 +214,7 @@ export default function BoostsPageContent() {
                   bgSaving={bgSaving}
                   onSetBgUrl={() => handleSetBg(r.id, bgCustomUrl)}
                   onUploadBg={(f) => handleUploadBg(r.id, f)}
+                  bgPickerRef={bgPickerRef}
                   registeredUsers={registeredUsers}
                 />
               ))}
@@ -271,6 +272,7 @@ export default function BoostsPageContent() {
                   bgSaving={bgSaving}
                   onSetBgUrl={() => handleSetBg(r.id, bgCustomUrl)}
                   onUploadBg={(f) => handleUploadBg(r.id, f)}
+                  bgPickerRef={bgPickerRef}
                   registeredUsers={registeredUsers}
                 />
               );
@@ -298,7 +300,7 @@ function BoostCard({
   onCancel, onAccept,
   bgPickerId, onOpenBgPicker, onCloseBgPicker, onSelectVfx,
   bgCustomUrl, setBgCustomUrl, bgSaving, onSetBgUrl, onUploadBg,
-  registeredUsers,
+  registeredUsers, bgPickerRef,
 }: {
   r: BoostRequest; isOwner: boolean; currentUserId: string;
   bgUrl: string | null;
@@ -311,7 +313,7 @@ function BoostCard({
   onSelectVfx?: (url: string) => void;
   bgCustomUrl?: string; setBgCustomUrl?: (v: string) => void; bgSaving?: boolean;
   onSetBgUrl?: () => void; onUploadBg?: (file: File) => void;
-  registeredUsers: any[];
+  registeredUsers: any[]; bgPickerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const title = r.type === "leveling"
     ? `Leveling ${r.startLevel} → ${r.endLevel}`

@@ -10,6 +10,7 @@ import { getImageMetadata, normalizeProfileImage, extractGifPoster } from "@/lib
 import { storeUserMediaFile } from "@/lib/userMediaStorage";
 import { fetchExternalImageBuffer } from "@/lib/fetchExternalImage";
 import { validateSafeGifUrl } from "@/lib/safeRemoteUrl";
+import { isAnimatedImageUrl } from "@/lib/profileImage";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const MAX_DIM = 512;
