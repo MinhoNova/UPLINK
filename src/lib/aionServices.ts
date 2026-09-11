@@ -3,6 +3,8 @@
 export interface AionServiceOption {
   label: string;
   priceKina: number;
+  variants?: AionServiceOption[];
+  img?: string;
 }
 
 export interface AionService {
@@ -105,15 +107,69 @@ export const AION_SERVICES: AionService[] = [
     id: "expeditions",
     name: "Expeditions",
     category: "Dungeons",
-    description: "Krao Cave, Draupnir, Urugugu Canyon, Vakron's, Fire Temple, Ferocious Horn Den, Dead Dramata's Nest. Conquest variants available.",
-    basePriceKina: kinah(5.21),
+    description: "All Season 1 expeditions · Normal & Hard difficulties.",
+    basePriceKina: kinah(6.5),
     priceUnit: "per dungeon",
     express: kinah(1.04),
     superExpress: kinah(2.08),
     img: "/dungeons/expedition.png",
     options: [
-      { label: "Conquest", priceKina: 0 },
-      { label: "Conquest Hard", priceKina: kinah(2.61) },
+      {
+        label: "Krao Cave",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(6.5) },
+          { label: "Hard", priceKina: kinah(9.75) },
+        ],
+      },
+      {
+        label: "Draupnir",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(6.5) },
+          { label: "Hard", priceKina: kinah(9.75) },
+        ],
+      },
+      {
+        label: "Urugugu Canyon",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(7.5) },
+          { label: "Hard", priceKina: kinah(11.25) },
+        ],
+      },
+      {
+        label: "Vakron Floating Island",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(7.5) },
+          { label: "Hard", priceKina: kinah(11.25) },
+        ],
+      },
+      {
+        label: "Fire Temple",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(9) },
+          { label: "Hard", priceKina: kinah(13.5) },
+        ],
+      },
+      {
+        label: "Ferocious Horn Den",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(15) },
+          { label: "Hard", priceKina: kinah(22.5) },
+        ],
+      },
+      {
+        label: "Dead Dramata Nest",
+        priceKina: 0,
+        variants: [
+          { label: "Normal", priceKina: kinah(50) },
+          { label: "Hard", priceKina: kinah(75) },
+        ],
+      },
     ],
   },
   {

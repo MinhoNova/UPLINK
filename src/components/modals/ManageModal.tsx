@@ -9,7 +9,7 @@ import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileIma
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { classThumbUrl } from "@/lib/classThumb";
 import { getAverageRating } from "@/components/RankBadge";
-import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
+import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
 interface ManageModalProps {
   isOpen: boolean;
@@ -420,6 +420,17 @@ const ManageModal = ({
                                                  </motion.button>
                                              )}
 
+                                             {(!targetLobby.status || targetLobby.status === 'standby') && !targetLobby.missionStartTime && !squadRolesFilled(targetLobby.roles) && (
+                                                <motion.button onClick={() => {
+                                                   const upd = manualStartMission(targetLobby);
+                                                   setTargetLobby(upd);
+                                                   handleUpdateLobby(upd);
+                                                   addToast(squadRolesFilled(targetLobby.roles) ? "Mission started!" : "Mission started with a partial squad.", "success");
+                                                }} className="h-11 px-5 bg-green-500/15 text-green-400 border border-green-500/40 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_25px_rgba(34,197,94,0.18)] flex items-center gap-2 hover:bg-green-500 hover:text-black active:scale-95 transition-all">
+                                                   <Zap className="w-4 h-4" /> START {!squadRolesFilled(targetLobby.roles) ? "· PARTIAL SQUAD" : ""}
+                                                </motion.button>
+                                             )}
+
                                              {canOwnerCancelLobby(targetLobby) && (
                                                 <motion.button onClick={() => {
                                                    if (!canOwnerCancelLobby(targetLobby)) {
@@ -447,7 +458,7 @@ const ManageModal = ({
                                                   )}
                                                </>
                                               )}
-                                            {effectiveStatus === 'in_progress' && squadRolesFilled(targetLobby.roles) && !isFootArchive && (
+                                            {effectiveStatus === 'in_progress' && (squadRolesFilled(targetLobby.roles) || currentUserId === targetLobby.ownerId || isAdmin) && !isFootArchive && (
                                                <>
                                                   {targetLobby.category === 'leveling' ? (
                                                     canVoteMissionComplete(targetLobby, currentUserId) ? (

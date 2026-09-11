@@ -207,10 +207,14 @@ function OptionFlip({
   options,
   onSelect,
   onBack,
+  title = "Select Difficulty / Type",
+  backLabel = "Back to Services",
 }: {
   options: AionServiceOption[];
   onSelect: (opt: AionServiceOption) => void;
   onBack: () => void;
+  title?: string;
+  backLabel?: string;
 }) {
   const CARD_W = 220;
   const CARD_H = 150;
@@ -254,9 +258,9 @@ function OptionFlip({
         onClick={onBack}
         className="mb-3 flex items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400 hover:border-white/25 hover:text-white transition-all cursor-pointer"
       >
-        <ChevronLeft className="h-3.5 w-3.5" /> Back to Services
+        <ChevronLeft className="h-3.5 w-3.5" /> {backLabel}
       </button>
-      <p className="text-[10px] font-black tracking-[0.24em] uppercase text-cyan-300/80 mb-3 text-center">Select Difficulty / Type</p>
+      <p className="text-[10px] font-black tracking-[0.24em] uppercase text-cyan-300/80 mb-3 text-center">{title}</p>
       <div
         className="relative"
         style={{ height: CARD_H + 50 }}
@@ -292,10 +296,13 @@ function OptionFlip({
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-purple-900/30 to-black/60" />
               <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
                 <p className={`text-sm font-black uppercase tracking-wider ${d === 0 ? "text-cyan-100" : "text-gray-300"}`}>{opt.label}</p>
-                {opt.priceKina > 0 && (
+                {opt.variants && opt.variants.length > 0 ? (
+                  <p className="mt-1.5 text-[10px] font-bold text-amber-300">
+                    {opt.variants.map((v) => `${v.label} ${v.priceKina.toFixed(2)}M`).join("  ·  ")}
+                  </p>
+                ) : opt.priceKina > 0 ? (
                   <p className="mt-1.5 text-[11px] font-bold text-amber-300">{opt.priceKina.toFixed(2)}M KINAH</p>
-                )}
-                {opt.priceKina === 0 && (
+                ) : (
                   <p className="mt-1.5 text-[11px] font-bold text-emerald-400">BASE PRICE</p>
                 )}
               </div>
@@ -338,7 +345,13 @@ function OptionFlip({
         <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-4 py-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-white">{active.label}</p>
-            <p className="truncate text-[11px] text-gray-500">{active.priceKina > 0 ? `+${active.priceKina.toFixed(2)}M Kinah on top` : "Included in base price"}</p>
+            <p className="truncate text-[11px] text-gray-500">
+              {active.variants && active.variants.length > 0
+                ? `${active.variants.map((v) => `${v.label} ${v.priceKina.toFixed(2)}M`).join(" · ")}`
+                : active.priceKina > 0
+                ? `+${active.priceKina.toFixed(2)}M Kinah on top`
+                : "Included in base price"}
+            </p>
           </div>
           <button
             type="button"
@@ -366,9 +379,11 @@ export default function CreateOfferPage() {
   const [pubError, setPubError] = useState("");
   const [showOptions, setShowOptions] = useState(false);
   const [pickedOption, setPickedOption] = useState<AionServiceOption | null>(null);
+  const [pickedVariant, setPickedVariant] = useState<AionServiceOption | null>(null);
   const [pricePerRun, setPricePerRun] = useState(0);
   const [maxBoosters, setMaxBoosters] = useState(1);
   const [requiredClasses, setRequiredClasses] = useState<string[]>([]);
+  const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
 
   /* Standalone premium page — hide the global UPLINK navbar */
   useEffect(() => {
@@ -386,12 +401,23 @@ export default function CreateOfferPage() {
   }, []);
 
   useEffect(() => {
+    fetch("/api/data", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d && typeof d.marketPrices === "object") setMarketPrices(d.marketPrices);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (sel) {
-      setPricePerRun(sel.basePriceKina);
+      const market = marketPrices[sel.name];
+      setPricePerRun(market && market > 0 ? market : sel.basePriceKina);
       setShowOptions(false);
       setPickedOption(null);
+      setPickedVariant(null);
     }
-  }, [sel?.id]);
+  }, [sel?.id, marketPrices]);
 
   const canNext = !!sel;
   const stepIndex = STEPS.indexOf(step);
@@ -401,7 +427,7 @@ export default function CreateOfferPage() {
     setStep("details");
   };
   const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPickedVariant(null); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -425,12 +451,13 @@ export default function CreateOfferPage() {
         category,
         title: `${qty}× ${sel.name}`,
         serviceName: String(sel.name || "Mission"),
-        notes: `${sel.description || ""} · ${region}${pickedOption ? ` · ${pickedOption.label}` : ""}`,
+        notes: `${sel.description || ""} · ${region}${pickedOption ? ` · ${pickedOption.label}` : ""}${pickedVariant ? ` · ${pickedVariant.label}` : ""}`,
         runsCount: qty,
         pricePerRun,
         maxBoosters,
         requiredClasses: requiredClasses.length > 0 ? requiredClasses : undefined,
-        selectedOption: pickedOption?.label || undefined,
+        selectedOption: pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
+        selectedOptionGroup: pickedVariant ? pickedOption?.label || undefined : undefined,
         serverRegion: region,
         roles: requiredClasses.length > 0
           ? requiredClasses.reduce((acc: Record<string, number>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
@@ -614,13 +641,32 @@ export default function CreateOfferPage() {
                                 </div>
                               </div>
                               <OptionFlip
-                                options={sel.options!}
-                                onBack={() => { setShowOptions(false); setSel(null); }}
-                                onSelect={(opt) => {
-                                  setPickedOption(opt);
-                                  setPricePerRun(sel.basePriceKina + opt.priceKina);
-                                  setStep("details");
+                                options={pickedOption && pickedOption.variants?.length ? pickedOption.variants : sel.options!}
+                                onBack={() => {
+                                  if (pickedOption && pickedOption.variants?.length) {
+                                    setPickedOption(null);
+                                    setPickedVariant(null);
+                                  } else {
+                                    setShowOptions(false);
+                                    setSel(null);
+                                  }
                                 }}
+                                onSelect={(opt) => {
+                                  if (opt.variants && opt.variants.length > 0) {
+                                    setPickedOption(opt);
+                                    setPickedVariant(null);
+                                  } else if (pickedOption && pickedOption.variants?.length) {
+                                    setPickedVariant(opt);
+                                    setPricePerRun(opt.priceKina);
+                                    setStep("details");
+                                  } else {
+                                    setPickedOption(opt);
+                                    setPricePerRun(sel.basePriceKina + opt.priceKina);
+                                    setStep("details");
+                                  }
+                                }}
+                                title={pickedOption && pickedOption.variants?.length ? `Select ${pickedOption.label} Difficulty` : "Select Option"}
+                                backLabel={pickedOption && pickedOption.variants?.length ? "Back to Options" : "Back to Services"}
                               />
                             </div>
                           ) : (
@@ -817,7 +863,9 @@ export default function CreateOfferPage() {
                                 <span className="text-sm font-bold text-gray-400 shrink-0">M Kinah</span>
                               </div>
                               <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
-                                Average market price — you can edit it
+                                {marketPrices[sel.name] && marketPrices[sel.name] > 0
+                                  ? `Auto-filled from recent completed runs (market) — you can edit it`
+                                  : "Average market price — you can edit it"}
                               </p>
                             </div>
 
@@ -969,7 +1017,7 @@ export default function CreateOfferPage() {
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"} · {pickedOption?.label || "Base"}</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"}{pickedVariant ? ` · ${pickedOption?.label} ${pickedVariant.label}` : pickedOption ? ` · ${pickedOption.label}` : " · Base"}</p>
                           </div>
                           <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? (pricePerRun * qty).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
                         </div>

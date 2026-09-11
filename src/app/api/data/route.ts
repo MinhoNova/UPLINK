@@ -12,6 +12,7 @@ import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards } from '@/lib/rankAwards';
+import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
 
 /* Short in-process cache so the 8s homepage/thread polls don't re-read D1 + re-serialize on every tick. */
 const DATA_CACHE_TTL_MS = 2000;
@@ -92,6 +93,7 @@ export async function GET(req: Request) {
     }
 
     const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
+    scoped.marketPrices = getMarketAverageByService(data.marketHistory);
     const body = JSON.stringify(scoped);
     dataCache.set(cacheKey, { at: Date.now(), body });
     pruneCache();
@@ -164,6 +166,22 @@ export async function POST(req: Request) {
           sanitized = { ...sanitized, registeredUsers: outcome.users };
         }
         sanitized = { ...sanitized, lobbies: outcome.lobbies };
+      }
+    }
+
+    if (Array.isArray(sanitized.lobbies) && Array.isArray(existing.lobbies)) {
+      const prevById = new Map((existing.lobbies as any[]).map((l: any) => [String(l.id), l]));
+      for (const n of sanitized.lobbies as any[]) {
+        const p = prevById.get(String(n.id));
+        if (
+          n &&
+          n.payoutStatus === "paid" &&
+          (!p || p.payoutStatus !== "paid") &&
+          n.serviceName &&
+          Number(n.pricePerRun) > 0
+        ) {
+          await recordMarketCompletion(n.serviceName, Number(n.pricePerRun));
+        }
       }
     }
 

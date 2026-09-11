@@ -954,6 +954,16 @@ function finalizeSquadJoin(lobby: any, accepted: any[], roles: Record<string, nu
   };
 }
 
+/** Owner may start the run even when the squad isn't full yet. */
+export function manualStartMission(lobby: any): any {
+  const now = Date.now();
+  return {
+    ...lobby,
+    status: "in_progress",
+    missionStartTime: lobby.missionStartTime || now,
+  };
+}
+
 /** Owner invite: reserve squad slot, show player in accepted roster while pending. */
 export function inviteApplicantToLobby(lobby: any, applicant: any, notifId: number): any {
   const key = memberIdentityKey(applicant);
