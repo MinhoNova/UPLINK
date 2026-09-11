@@ -915,6 +915,7 @@ export default function ManagePage() {
             onError={() => { setVoiceToken(null); setVoiceServerUrl(null); localStorage.removeItem("uplink_voice_lobby"); addToast("Voice connection failed. Try again.", "error"); }}
             onDisconnected={() => { setVoiceToken(null); setVoiceServerUrl(null); localStorage.removeItem("uplink_voice_lobby"); }}>
             <ManageContent
+              dataLoaded={dataLoaded}
               targetLobby={targetLobby}
               onClose={() => router.push("/")}
               lobbies={lobbies}
@@ -960,6 +961,7 @@ export default function ManagePage() {
           </LiveKitRoom>
         ) : (
           <ManageContent
+            dataLoaded={dataLoaded}
             targetLobby={targetLobby}
             onClose={() => router.push("/")}
             lobbies={lobbies}
@@ -1064,6 +1066,7 @@ export default function ManagePage() {
 }
 
 const ManageContent = ({
+  dataLoaded,
   targetLobby,
   onClose,
   lobbies,

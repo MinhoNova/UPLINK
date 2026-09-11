@@ -45,6 +45,7 @@ export default function MyProfileClient() {
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
   const myId = String((session?.user as any)?.id || "");
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const refresh = useCallback(() => {
     if (!myId) return;
@@ -54,6 +55,7 @@ export default function MyProfileClient() {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
         if (d.notifications) setNotifications(d.notifications);
+        setDataLoaded(true);
       })
       .catch(() => {});
   }, [myId]);
@@ -417,6 +419,14 @@ export default function MyProfileClient() {
     return (
       <div className="min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
         <p className="text-xs uppercase tracking-widest text-slate-500">Sign in to view your profile</p>
+      </div>
+    );
+  }
+
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
       </div>
     );
   }

@@ -57,12 +57,12 @@ const SELF_IMAGE_URL_FIELDS = ["customAvatar", "profileGif", "profileGifThumb", 
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const GRADIENT_COLOR_RE = /^linear-gradient\(90deg,\s*#[0-9a-fA-F]{3,6},\s*#[0-9a-fA-F]{3,6}\)$/;
 
-/** Only allow http(s) URLs for image fields — blocks data:/javascript: storage. */
+/** Only allow http(s) URLs or same-origin relative paths for image fields — blocks data:/javascript: and protocol-relative storage. */
 export function sanitizeUrlField(value: unknown, max = 800): string | undefined {
   if (typeof value !== "string") return undefined;
   const s = value.trim();
   if (!s) return undefined;
-  if (!/^https?:\/\//i.test(s)) return undefined;
+  if (!/^(?:https?:\/\/|\/(?!\/))/i.test(s)) return undefined;
   return s.slice(0, max);
 }
 
