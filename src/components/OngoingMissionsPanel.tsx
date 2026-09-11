@@ -9,6 +9,7 @@ import {
   isEmbeddedFootArchive,
 } from "@/lib/lobbyLifecycle";
 import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
+import { classThumbUrl } from "@/lib/classThumb";
 
 type Props = {
   lobbies: any[];
@@ -16,7 +17,7 @@ type Props = {
   registeredUsers: any[];
   completedThreadsCount: number;
   theme: string;
-  roleIconUrl: (role: string) => string;
+  roleIconUrl?: (role: string) => string;
   getVfxSettings: (user: any) => {
     showOnBanner: boolean;
     showOnOngoing: boolean;
@@ -48,7 +49,6 @@ export default function OngoingMissionsPanel({
   registeredUsers,
   completedThreadsCount,
   theme,
-  roleIconUrl,
   getVfxSettings,
   onOpenMission,
   alignWithOfferBanners = false,
@@ -163,7 +163,7 @@ export default function OngoingMissionsPanel({
                 className="w-6 h-6 rounded-lg border border-white/10 bg-black flex items-center justify-center shadow-lg overflow-hidden transition-transform hover:-translate-y-1"
               >
                 <img
-                  src={roleIconUrl(a.role || "dps")}
+                  src={classThumbUrl(a.class || a.aionClass || a.role || "dps")}
                   width={20}
                   height={20}
                   className="w-5 h-5 object-contain"

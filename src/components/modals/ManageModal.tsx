@@ -11,15 +11,6 @@ import { classThumbUrl } from "@/lib/classThumb";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
-/* ── TEMP ROLE EMOJIS (replace class/role thumbnails until real art ships) ── */
-const ROLE_EMOJI: Record<string, string> = {
-  tank: "🛡️",
-  healer: "✚",
-  dps: "⚔️",
-};
-const CLASS_EMOJI_FALLBACK = "🎖️";
-const roleEmoji = (role?: string) => ROLE_EMOJI[String(role || "").toLowerCase()] || "🔹";
-
 interface ManageModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -802,65 +793,68 @@ const aionLevel = app.level || app.applicantLevel || "";
 {/* details — middle */}
                                                                  <div className="relative z-10 flex-1 min-w-0 flex flex-col gap-1.5 py-0.5">
                                                                     {/* row 1 — name (left) vs category posts (right, opposite the name) */}
-                                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                                       <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
-                                                                       <span className="text-[10px] text-cyan-300" title={app.role || "Role"}>
-                                                                          {roleEmoji(app.role)}
-                                                                       </span>
-                                                                       {aionClass ? (
-                                                                          <img
-                                                                             src={classThumbUrl(aionClass)}
-                                                                             alt={aionClass}
-                                                                             title={aionClass}
-                                                                             className="w-4 h-4 object-contain rounded-sm"
-                                                                             loading="lazy"
-                                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                          />
-                                                                       ) : null}
-                                                                       <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300">
-                                                                          Lv {aionLevel || "—"}
-                                                                       </span>
-                                                                       {app.teamName ? (
-                                                                          <span
-                                                                             className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[110px] truncate"
-                                                                             title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
-                                                                                ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
-                                                                                : app.teamName}
-                                                                          >
-                                                                             <Users className="w-3 h-3 text-purple-400" />
-                                                                             {app.teamName}
-                                                                             {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
-                                                                                <span className="text-cyan-300">({app.teamMembers.length})</span>
-                                                                             )}
-                                                                          </span>
-                                                                       ) : null}
-                                                                       <span
-                                                                          className="ml-auto flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap"
-                                                                          title={`${postStatCount} ${postStatLabel.toLowerCase()} on site`}
-                                                                       >
-                                                                          <Zap className="w-3 h-3 text-[#00ffff]" />
-                                                                          <span className="tabular-nums">{postStatCount}</span> {postStatLabel}
-                                                                       </span>
-                                                                    </div>
-                                                                    {/* row 2 — reviews */}
-                                                                    <div className="flex items-center gap-1.5">
-                                                                       <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                                                                       {ratingCount > 0 ? (
-                                                                          <span className="text-[10px] font-black text-yellow-300 tracking-wide">
-                                                                             {rating10.toFixed(1)} <span className="text-gray-500">/ 10</span>
-                                                                             <span className="text-gray-500 font-semibold"> ({ratingCount})</span>
-                                                                          </span>
-                                                                       ) : (
-                                                                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">No reviews</span>
-                                                                       )}
-                                                                    </div>
-                                                                    {/* row 3 — note */}
-                                                                    <div className={`mt-1 rounded-lg border px-2 py-1 ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/10 bg-white/[0.02]'}`}>
-                                                                       <p className={`text-[10px] leading-snug line-clamp-2 break-words font-semibold ${note ? 'text-gray-100' : 'text-gray-600'}`}>
-                                                                          {note || "—"}
-                                                                       </p>
-                                                                    </div>
-                                                                 </div>
+<div className="flex items-center gap-1.5 flex-wrap">
+                                                                        <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
+                                                                        {app.teamName ? (
+                                                                           <span
+                                                                              className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[110px] truncate"
+                                                                              title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
+                                                                                 ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
+                                                                                 : app.teamName}
+                                                                           >
+                                                                              <Users className="w-3 h-3 text-purple-400" />
+                                                                              {app.teamName}
+                                                                              {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
+                                                                                 <span className="text-cyan-300">({app.teamMembers.length})</span>
+                                                                              )}
+                                                                           </span>
+                                                                        ) : null}
+                                                                        <span
+                                                                           className="ml-auto flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap"
+                                                                           title={`${postStatCount} ${postStatLabel.toLowerCase()} on site`}
+                                                                        >
+                                                                           <Zap className="w-3 h-3 text-[#00ffff]" />
+                                                                           <span className="tabular-nums">{postStatCount}</span> {postStatLabel}
+                                                                        </span>
+                                                                     </div>
+                                                                     {/* row 1b — big class portrait centered on the banner + item level beside it */}
+                                                                     <div className="flex items-center justify-center gap-3 sm:gap-4 mt-0.5 rounded-xl border border-white/10 bg-black/40 px-3 py-1.5">
+<img
+                                                                            src={classThumbUrl(aionClass || app.role || "dps")}
+                                                                            alt={aionClass || app.role || "Class"}
+                                                                            title={aionClass || app.role || "Class"}
+                                                                            className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_14px_rgba(139,92,246,0.4)] rounded-lg"
+                                                                            loading="lazy"
+                                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(aionClass || app.role || "C")}&background=0b1020&color=00ffff&size=128`; }}
+                                                                         />
+                                                                        <div className="flex flex-col items-center leading-none gap-1">
+                                                                           <span className="text-3xl sm:text-4xl font-black text-white tabular-nums drop-shadow-[0_0_12px_rgba(0,255,255,0.35)]">
+                                                                              {aionLevel || "—"}
+                                                                           </span>
+                                                                           <span className="text-[7px] font-black uppercase tracking-[0.25em] text-violet-300">
+                                                                              Item Level
+                                                                           </span>
+                                                                        </div>
+                                                                     </div>
+                                                                     {/* row 2 — reviews */}
+                                                                     <div className="flex items-center justify-center gap-1.5">
+                                                                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                                                        {ratingCount > 0 ? (
+                                                                           <span className="text-[10px] font-black text-yellow-300 tracking-wide">
+                                                                              {rating10.toFixed(1)} <span className="text-gray-500">/ 10</span>
+                                                                              <span className="text-gray-500 font-semibold"> ({ratingCount})</span>
+                                                                           </span>
+                                                                        ) : (
+                                                                           <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">No reviews</span>
+                                                                        )}
+                                                                     </div>
+                                                                     {/* row 3 — note (auto-sized to the text; empty when there is no note) */}
+                                                                     <div className={`mt-1 rounded-lg border px-2 py-1 ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/10 bg-white/[0.02]'}`}>
+                                                                        <p className={`text-[10px] leading-snug break-words whitespace-pre-line font-semibold ${note ? 'text-gray-100' : 'text-gray-600'}`}>
+                                                                           {note}
+                                                                        </p>
+                                                                     </div>
+                                                                  </div>
    
 {/* actions — right */}
                                                                  <div className="relative z-10 flex-shrink-0 flex items-center">

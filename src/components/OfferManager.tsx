@@ -6,7 +6,7 @@ import {
   X, Users, Swords, MessageSquare, Shield, Check, Trash2,
   Radio, Send, Clock,
 } from "lucide-react";
-import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
+import { classThumbUrl } from "@/lib/classThumb";
 import {
   resolveProfileImage,
   resolveProfileDisplayName,
@@ -393,7 +393,7 @@ export default function OfferManager({
                               {mName}
                             </p>
                             <div className="mt-1 flex items-center gap-1.5">
-                              <img src={roleIconUrl(member.role || "dps")} alt="" title={member.role || "dps"} className="h-4 w-4 object-contain" />
+                              <img src={classThumbUrl(member.class || member.aionClass || member.role || "dps")} alt="" title={member.class || member.aionClass || member.role || "dps"} className="h-4 w-4 object-contain" />
                               <span className="text-[9px] font-black uppercase tracking-wider text-gray-300">
                                 {String(member.role || "dps").toUpperCase()}
                               </span>

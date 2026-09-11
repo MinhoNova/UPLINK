@@ -1,6 +1,6 @@
 "use client";
 
-import { roleIconUrl } from "@/lib/classThumb";
+import { classThumbUrl, roleIconUrl } from "@/lib/classThumb";
 
 const roleIconScale = (role?: string) => (String(role || '').toLowerCase() === 'healer' ? 1.22 : 1.08);
 
@@ -25,7 +25,7 @@ const ClassRoleIcons = ({
 }) => {
    const normalizedClass = (className || 'WARRIOR').toUpperCase();
    const normalizedRole = (role || 'dps').toUpperCase();
-   const classSrc = /^[A-Z0-9 '-]+$/.test(normalizedClass) ? `/classes-thumb/${normalizedClass}.png` : "";
+   const classSrc = classThumbUrl(normalizedClass);
 
    return (
       <div className="flex items-center shrink-0" style={{ width: (size * 2) - overlap }}>

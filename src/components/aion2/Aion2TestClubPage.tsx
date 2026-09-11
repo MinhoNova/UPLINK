@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import RankBadge from "@/components/RankBadge";
 import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
-import { roleIconUrl } from "@/lib/classThumb";
+import { classThumbUrl } from "@/lib/classThumb";
 import {
   AION2_CLASSES,
   AION2_ROLE_LABEL,
@@ -782,7 +782,7 @@ export default function Aion2TestClubPage() {
                               <div className="flex -space-x-1">
                                 {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
                                   <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
-                                    <img src={roleIconUrl(a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" title={a.class || a.aionClass || a.role || "dps"} />
+                                    <img src={classThumbUrl(a.class || a.aionClass || a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" title={a.class || a.aionClass || a.role || "dps"} />
                                   </div>
                                 ))}
                                 {Array.from({ length: Math.max(0, open) }).map((_, i) => (

@@ -24,7 +24,7 @@ import { acceptedExcludingMember, appendOfferFamilyMessage, cancelLobbyInvite, c
 import { effectiveAvatarEffect, effectiveProfileGif, isSecretClubTier, mergeRegisteredUsersFromServer, resolveNotificationRecipient } from "@/lib/userProfile";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { roleIconUrl } from "@/lib/classThumb";
+import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
 
 const EFFECTS: Record<string, string> = { none: "", electric_circle: "" };
 const EFFECT_IMG: Record<string, string> = {};
@@ -223,7 +223,7 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
     <div className="w-24 h-32 p-1.5 cursor-pointer relative" style={{ perspective: 1000 }} onClick={() => setIsFlipped(!isFlipped)}>
       <motion.div className="relative w-full h-full" animate={{ rotateY: isFlipped ? 180 : 0 }} transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }} style={{ transformStyle: "preserve-3d" }}>
         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-white/10 rounded-2xl shadow-lg" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-          <img src={roleIconUrl(role)} title={role} className="w-12 h-12 object-contain mb-1" />
+          <img src={accepted ? classThumbUrl(accepted.class || accepted.aionClass || role) : roleIconUrl(role)} title={accepted ? (accepted.class || accepted.aionClass || role) : role} className="w-12 h-12 object-contain mb-1" />
           {accepted && <span className="text-[9px] uppercase font-black text-green-400 mt-1 tracking-widest animate-pulse">INVITED</span>}
         </div>
         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-black/20 border border-[#ff007f]/50 rounded-2xl p-1.5 shadow-[0_0_20px_rgba(255,0,127,0.3)]" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>

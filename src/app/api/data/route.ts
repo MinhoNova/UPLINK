@@ -13,6 +13,18 @@ import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards } from '@/lib/rankAwards';
 
+/* Short in-process cache so the 8s homepage/thread polls don't re-read D1 + re-serialize on every tick. */
+const DATA_CACHE_TTL_MS = 2000;
+const dataCache = new Map<string, { at: number; body: string }>();
+
+function pruneCache() {
+  if (dataCache.size < 64) return;
+  const now = Date.now();
+  for (const [k, v] of dataCache) {
+    if (now - v.at > DATA_CACHE_TTL_MS) dataCache.delete(k);
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const auth = await requireSession(req);
@@ -26,6 +38,14 @@ export async function GET(req: Request) {
     if (await isUserBanned(auth.user.username, auth.user.id)) {
       const info = await getBanInfo(auth.user.username, auth.user.id);
       return bannedResponse(info?.reason);
+    }
+
+    const cacheKey = `data:${auth.user.id}`;
+    const cached = dataCache.get(cacheKey);
+    if (cached && Date.now() - cached.at < DATA_CACHE_TTL_MS) {
+      return new NextResponse(cached.body, {
+        headers: { "Content-Type": "application/json", "X-Data-Cache": "hit" },
+      });
     }
 
     await initTables();
@@ -72,8 +92,13 @@ export async function GET(req: Request) {
     }
 
     const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
+    const body = JSON.stringify(scoped);
+    dataCache.set(cacheKey, { at: Date.now(), body });
+    pruneCache();
     touchUserLastIp(auth.user.id, getClientIp(req)).catch(() => {});
-    return NextResponse.json(scoped);
+    return new NextResponse(body, {
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error reading from D1:", error);
     return NextResponse.json(
@@ -160,6 +185,7 @@ export async function POST(req: Request) {
         });
       }
     }
+    dataCache.clear();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error writing to D1:", error);
