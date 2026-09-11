@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send, Play,
-  Check, Shield, Crown, Gem, Lock, Castle, Crosshair,
+  Check, Shield, Crown, Gem, Lock, Castle, Crosshair, Users,
   FlaskConical, TrendingUp, Hash, Globe, MapPin, ChevronRight, type LucideIcon,
 } from "lucide-react";
-import { AION_SERVICES, AION_CATEGORIES, DUNGEON_PICKER, AionService } from "@/lib/aionServices";
+import { AION_SERVICES, AION_CATEGORIES, DUNGEON_PICKER, AION_CLASSES, AionService, AionServiceOption } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 
 const STEPS = ["service", "details"] as const;
@@ -202,6 +202,157 @@ function DungeonFlip({
   );
 }
 
+/* ── Option Flip — sub-option card selector (same style, smaller) ───────── */
+function OptionFlip({
+  options,
+  onSelect,
+  onBack,
+}: {
+  options: AionServiceOption[];
+  onSelect: (opt: AionServiceOption) => void;
+  onBack: () => void;
+}) {
+  const CARD_W = 220;
+  const CARD_H = 150;
+  const PITCH = 48;
+
+  const [idx, setIdx] = useState(0);
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef<number | null>(null);
+  const movedRef = useRef(false);
+
+  const go = (dir: number) => setIdx((i) => (i + dir + options.length) % options.length);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    startX.current = e.clientX;
+    movedRef.current = false;
+    setDragging(true);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (startX.current == null) return;
+    setDrag(e.clientX - startX.current);
+    if (Math.abs(e.clientX - startX.current) > 14) movedRef.current = true;
+  };
+  const onPointerUp = () => {
+    if (startX.current == null) return;
+    if (drag < -52) go(1);
+    else if (drag > 52) go(-1);
+    startX.current = null;
+    setDrag(0);
+    setDragging(false);
+    window.setTimeout(() => { movedRef.current = false; }, 0);
+  };
+
+  const active = options[idx];
+
+  return (
+    <div className="mt-4 select-none">
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-3 flex items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400 hover:border-white/25 hover:text-white transition-all cursor-pointer"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" /> Back to Services
+      </button>
+      <p className="text-[10px] font-black tracking-[0.24em] uppercase text-cyan-300/80 mb-3 text-center">Select Difficulty / Type</p>
+      <div
+        className="relative"
+        style={{ height: CARD_H + 50 }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        {options.map((opt, i) => {
+          const d = i - idx;
+          const x = d * PITCH + drag;
+          const scale = d === 0 ? 1 : Math.max(0.88, 1 - Math.abs(d) * 0.06);
+          const z = 30 - Math.abs(d);
+          const opacity = Math.abs(d) > 2 ? 0 : Math.abs(d) === 2 ? 0.35 : Math.abs(d) === 1 ? 0.75 : 1;
+          return (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => { if (movedRef.current) return; if (d === 0) onSelect(opt); else setIdx(i); }}
+              className="absolute left-1/2 top-1/2 overflow-hidden rounded-xl border bg-black/70 shadow-[0_12px_35px_rgba(0,0,0,0.55)]"
+              style={{
+                width: CARD_W,
+                height: CARD_H,
+                zIndex: z,
+                transform: `translate(-50%, -50%) translateX(${x}px) scale(${scale})`,
+                transformOrigin: "center",
+                opacity,
+                transition: dragging ? "none" : "transform 320ms cubic-bezier(0.22,1,0.36,1), opacity 320ms ease",
+                borderColor: d === 0 ? "rgba(0,229,255,0.5)" : "rgba(255,255,255,0.08)",
+                boxShadow: d === 0 ? "0 0 30px rgba(0,229,255,0.18), 0 12px 35px rgba(0,0,0,0.55)" : "0 12px 35px rgba(0,0,0,0.55)",
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-purple-900/30 to-black/60" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                <p className={`text-sm font-black uppercase tracking-wider ${d === 0 ? "text-cyan-100" : "text-gray-300"}`}>{opt.label}</p>
+                {opt.priceKina > 0 && (
+                  <p className="mt-1.5 text-[11px] font-bold text-amber-300">{opt.priceKina.toFixed(2)}M KINAH</p>
+                )}
+                {opt.priceKina === 0 && (
+                  <p className="mt-1.5 text-[11px] font-bold text-emerald-400">BASE PRICE</p>
+                )}
+              </div>
+              {d === 0 && (
+                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-cyan-400/60 bg-black/60 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-cyan-300 backdrop-blur">
+                  <Check className="h-3 w-3" /> Selected
+                </span>
+              )}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); go(-1); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute left-1 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer z-[50]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); go(1); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute right-1 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer z-[50]"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="mt-2 flex items-center justify-center gap-1.5">
+        {options.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setIdx(i)}
+            className={`h-1.5 rounded-full transition-all cursor-pointer ${i === idx ? "w-5 bg-cyan-400 shadow-[0_0_8px_rgba(0,229,255,0.6)]" : "w-1.5 bg-white/25 hover:bg-white/50"}`}
+          />
+        ))}
+      </div>
+      {active && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-white">{active.label}</p>
+            <p className="truncate text-[11px] text-gray-500">{active.priceKina > 0 ? `+${active.priceKina.toFixed(2)}M Kinah on top` : "Included in base price"}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSelect(active)}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-cyan-400/50 bg-cyan-500/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-cyan-200 transition-all hover:bg-cyan-500/25 cursor-pointer"
+          >
+            Select <Check className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CreateOfferPage() {
   const { data: session } = useSession();
   const [step, setStep] = useState<Step>("service");
@@ -213,6 +364,11 @@ export default function CreateOfferPage() {
   const [published, setPublished] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [pubError, setPubError] = useState("");
+  const [showOptions, setShowOptions] = useState(false);
+  const [pickedOption, setPickedOption] = useState<AionServiceOption | null>(null);
+  const [pricePerRun, setPricePerRun] = useState(0);
+  const [maxBoosters, setMaxBoosters] = useState(1);
+  const [requiredClasses, setRequiredClasses] = useState<string[]>([]);
 
   /* Standalone premium page — hide the global UPLINK navbar */
   useEffect(() => {
@@ -229,6 +385,14 @@ export default function CreateOfferPage() {
     return g;
   }, []);
 
+  useEffect(() => {
+    if (sel) {
+      setPricePerRun(sel.basePriceKina);
+      setShowOptions(false);
+      setPickedOption(null);
+    }
+  }, [sel?.id]);
+
   const canNext = !!sel;
   const stepIndex = STEPS.indexOf(step);
 
@@ -237,7 +401,7 @@ export default function CreateOfferPage() {
     setStep("details");
   };
   const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -261,12 +425,18 @@ export default function CreateOfferPage() {
         category,
         title: `${qty}× ${sel.name}`,
         serviceName: String(sel.name || "Mission"),
-        notes: `${sel.description || ""} · ${region}`,
+        notes: `${sel.description || ""} · ${region}${pickedOption ? ` · ${pickedOption.label}` : ""}`,
         runsCount: qty,
+        pricePerRun,
+        maxBoosters,
+        requiredClasses: requiredClasses.length > 0 ? requiredClasses : undefined,
+        selectedOption: pickedOption?.label || undefined,
         serverRegion: region,
-        roles: category === "leveling"
-          ? { tank: 0, dps: qty }
-          : { tank: 0, healer: 0, dps: qty },
+        roles: requiredClasses.length > 0
+          ? requiredClasses.reduce((acc: Record<string, number>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
+          : category === "leveling"
+            ? { tank: 0, dps: qty }
+            : { tank: 0, healer: 0, dps: qty },
         applicants: [],
         invited: [],
         accepted: [],
@@ -432,6 +602,28 @@ export default function CreateOfferPage() {
                       {/* STEP 1 — PICK YOUR OFFER */}
                       {step === "service" && (
                         <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
+                          {showOptions && sel ? (
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-4 py-3">
+                                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${(CATEGORY_META[sel.category] ?? CATEGORY_META.Raids).tile}`}>
+                                  {(() => { const CatIcon = (CATEGORY_META[sel.category] ?? CATEGORY_META.Raids).icon; return <CatIcon className={`h-5 w-5 ${(CATEGORY_META[sel.category] ?? CATEGORY_META.Raids).color}`} />; })()}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-bold text-white">{sel.name}</p>
+                                  <p className="truncate text-[11px] text-gray-500">{sel.description}</p>
+                                </div>
+                              </div>
+                              <OptionFlip
+                                options={sel.options!}
+                                onBack={() => { setShowOptions(false); setSel(null); }}
+                                onSelect={(opt) => {
+                                  setPickedOption(opt);
+                                  setPricePerRun(sel.basePriceKina + opt.priceKina);
+                                  setStep("details");
+                                }}
+                              />
+                            </div>
+                          ) : (
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-[170px_1fr]">
                             {/* category rail — on the side */}
                             <div className="flex gap-1.5 overflow-x-auto md:flex-col md:overflow-visible">
@@ -466,7 +658,14 @@ export default function CreateOfferPage() {
                                 <DungeonFlip
                                   items={DUNGEON_PICKER}
                                   initialId={sel?.id ?? null}
-                                  onPick={(svc) => { setSel(svc); setStep("details"); }}
+                                  onPick={(svc) => {
+                                    setSel(svc);
+                                    if (svc.options && svc.options.length > 0) {
+                                      setShowOptions(true);
+                                    } else {
+                                      setStep("details");
+                                    }
+                                  }}
                                 />
                                 <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
                                   Flip to browse — tap to select
@@ -484,7 +683,14 @@ export default function CreateOfferPage() {
                                       <button
                                         key={svc.id}
                                         type="button"
-                                        onClick={() => { setSel(svc); setStep("details"); }}
+                                        onClick={() => {
+                                          setSel(svc);
+                                          if (svc.options && svc.options.length > 0) {
+                                            setShowOptions(true);
+                                          } else {
+                                            setStep("details");
+                                          }
+                                        }}
                                         className={`group relative rounded-xl border p-4 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/[0.08] shadow-[0_0_26px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}
                                       >
                                         {isActive && <span className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />}
@@ -530,6 +736,7 @@ export default function CreateOfferPage() {
                               </div>
                             )}
                           </div>
+                        )}
                         </motion.div>
                       )}
 
@@ -592,6 +799,84 @@ export default function CreateOfferPage() {
                                   );
                                 })}
                               </div>
+                            </div>
+
+                            {/* PRICE PER RUN */}
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                <Coins className="h-3.5 w-3.5 text-amber-300" /> Price per {sel.priceUnit?.replace("per ", "") || "run"} (Kinah)
+                              </p>
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={pricePerRun}
+                                  onChange={(e) => setPricePerRun(parseFloat(e.target.value) || 0)}
+                                  className="flex-1 rounded-lg border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-lg font-black text-white focus:border-cyan-400/50 focus:outline-none transition-colors"
+                                />
+                                <span className="text-sm font-bold text-gray-400 shrink-0">M Kinah</span>
+                              </div>
+                              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
+                                Average market price — you can edit it
+                              </p>
+                            </div>
+
+                            {/* BOOSTERS COUNT */}
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                <Users className="h-3.5 w-3.5 text-cyan-400" /> Number of Boosters
+                              </p>
+                              <div className="flex items-center justify-between gap-4">
+                                <button type="button" onClick={() => setMaxBoosters(Math.max(1, maxBoosters - 1))} className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">-</button>
+                                <div className="text-center">
+                                  <span className="block text-3xl font-black tabular-nums text-white">{maxBoosters}</span>
+                                  <span className="text-[10px] font-black tracking-[0.2em] uppercase text-gray-500">Players</span>
+                                </div>
+                                <button type="button" onClick={() => setMaxBoosters(Math.min(10, maxBoosters + 1))} className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
+                              </div>
+                            </div>
+
+                            {/* REQUIRED CLASS SLOTS */}
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                <Shield className="h-3.5 w-3.5 text-cyan-400" /> Required Classes (up to 4)
+                              </p>
+                              <div className="grid grid-cols-4 gap-2">
+                                {AION_CLASSES.map((cls) => {
+                                  const isSelected = requiredClasses.includes(cls);
+                                  const imgName = cls === "Spiritmaster" ? "Elementalist" : cls;
+                                  return (
+                                    <button
+                                      key={cls}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isSelected) {
+                                          setRequiredClasses(requiredClasses.filter((c) => c !== cls));
+                                        } else if (requiredClasses.length < 4) {
+                                          setRequiredClasses([...requiredClasses, cls]);
+                                        }
+                                      }}
+                                      className={`relative flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all cursor-pointer ${isSelected ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}
+                                    >
+                                      <img
+                                        src={`/classes/${imgName}.png`}
+                                        alt={cls}
+                                        className="h-10 w-10 object-contain"
+                                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                                      />
+                                      <span className={`text-[8px] font-black uppercase tracking-wider ${isSelected ? "text-cyan-300" : "text-gray-400"}`}>{cls}</span>
+                                      {isSelected && (
+                                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-cyan-400">
+                                          <Check className="h-3 w-3 text-black" />
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
+                                {requiredClasses.length}/4 selected — accepted players fill these slots
+                              </p>
                             </div>
                           </motion.div>
                         );
@@ -666,10 +951,13 @@ export default function CreateOfferPage() {
                       {/* detail rows */}
                       <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
 {[
+                          ["Price", sel ? `${pricePerRun.toFixed(2)}M Kinah` : "—"],
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
+                          ["Boosters", sel ? `${maxBoosters} player${maxBoosters > 1 ? "s" : ""}` : "—"],
+                          ["Classes", sel ? (requiredClasses.length > 0 ? requiredClasses.join(", ") : "Any") : "—"],
                           ["Region", sel ? region : "—"],
                         ].map(([k, v], ix) => (
-                          <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 2 ? "border-b border-white/[0.06]" : ""}`}>
+                          <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 4 ? "border-b border-white/[0.06]" : ""}`}>
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">{k}</span>
                             <span className={`text-xs font-bold ${sel ? "text-gray-200" : "text-gray-600"}`}>{v}</span>
                           </div>
@@ -680,10 +968,10 @@ export default function CreateOfferPage() {
                       <div className="mt-4 overflow-hidden rounded-xl border border-cyan-400/35 bg-gradient-to-r from-cyan-500/[0.12] to-purple-600/[0.12]">
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Runs Total</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty} total runs</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"} · {pickedOption?.label || "Base"}</p>
                           </div>
-                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{qty}× <span className="text-base text-cyan-300">{sel ? sel.priceUnit || "runs" : "runs"}</span></p>
+                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? (pricePerRun * qty).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
                         </div>
                       </div>
 
@@ -707,7 +995,7 @@ export default function CreateOfferPage() {
                           <>
                             <button
                               type="button"
-                              onClick={() => { setStep("service"); setSel(null); }}
+                              onClick={() => { setStep("service"); setSel(null); setShowOptions(false); setPickedOption(null); }}
                               className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-6 py-3 text-xs font-bold text-gray-300 transition-all hover:border-white/25 hover:text-white cursor-pointer"
                             >
                               <ChevronLeft className="h-3.5 w-3.5" /> Back to Services
