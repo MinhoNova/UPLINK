@@ -319,13 +319,13 @@ export default function Navbar() {
               <Zap className="w-4 h-4" /> {getUserTier(currentUserId) === "free" ? t('nav_locked') : autoFeaturesLocked ? t('nav_inOffer') : autoApplyEnabled ? t('nav_autoOn') : t('nav_autoOff')}
             </motion.button>
             <motion.button title="Auto-Apply Settings" onClick={() => {
-              if (getUserTier(currentUserId) === "free") return;
+              if (!currentUserId) return;
               if (window.location.pathname === '/') {
                 window.dispatchEvent(new CustomEvent('toggle-auto-apply-settings'));
               } else {
                 window.location.href = '/';
               }
-            }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
+            }} className="px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5">
               ⚙️
             </motion.button>
             <div className="relative" ref={langRef}>
