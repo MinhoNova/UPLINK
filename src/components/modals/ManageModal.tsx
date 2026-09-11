@@ -5,10 +5,18 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
-import { classThumbUrl, classIconClass, roleIconClass, roleIconUrl } from "@/lib/classThumb";
-import { resolveProfileDisplayName, resolveProfileImage, profileImgClass } from "@/lib/profileImage";
+import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
+
+/* ── TEMP ROLE EMOJIS (replace class/role thumbnails until real art ships) ── */
+const ROLE_EMOJI: Record<string, string> = {
+  tank: "🛡️",
+  healer: "✚",
+  dps: "⚔️",
+};
+const CLASS_EMOJI_FALLBACK = "🎖️";
+const roleEmoji = (role?: string) => ROLE_EMOJI[String(role || "").toLowerCase()] || "🔹";
 
 interface ManageModalProps {
   isOpen: boolean;
@@ -658,94 +666,109 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
 const aionClass = app.aionClass || app.className || app.class || "";
                                                           const aionLevel = app.level || app.applicantLevel || "";
                                                           const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
-                                                          return (
-                                                         <div key={app.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 group hover:border-[#00ffff]/30 transition-all">
-                                                            <div className="flex items-center gap-1.5 min-h-[40px]">
-                                                               <div className="flex flex-col items-center shrink-0 w-[42px]">
-                                                                  <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-[#00ffff]/25 bg-black/40">
-                                                                     <img
-                                                                        src={profileImg}
-                                                                        alt=""
-                                                                        className={profileImgClass(profileImg)}
-                                                                     />
-                                                                  </div>
-                                                                  <p className="mt-0.5 text-[6px] font-black text-white truncate max-w-[68px] leading-tight text-center">{renderDualColorName(displayName)}</p>
-                                                               </div>
+return (
+                                                          <div key={app.id} className="relative w-full rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden group hover:border-[#00ffff]/30 transition-all flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-2.5 py-2">
+                                                             {/* player banner backdrop (like lobby offer) */}
+                                                             <div className="absolute inset-0 pointer-events-none opacity-70">
+                                                                {profileImg ? (
+                                                                   <>
+                                                                      <img
+                                                                         src={profileImg}
+                                                                         alt=""
+                                                                         className="absolute inset-0 w-full h-full object-cover"
+                                                                         loading="lazy"
+                                                                         decoding="async"
+                                                                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                      />
+                                                                      <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/80 to-[#050814]/20" />
+                                                                   </>
+                                                                ) : (
+                                                                   <div className="absolute right-0 top-0 bottom-0 w-2/5">
+                                                                      <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
+                                                                      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
+                                                                   </div>
+                                                                )}
+                                                             </div>
 
-                                                               <div className="flex items-center shrink-0" style={{ width: 54 }}>
-                                                                  <img
-                                                                     src={classThumbUrl(aionClass)}
-                                                                     alt={aionClass || "Class"}
-                                                                     className={`w-9 h-9 object-contain drop-shadow-md ${classIconClass()}`}
-                                                                  />
-                                                                  <img
-                                                                     src={roleIconUrl(app.role)}
-                                                                     alt={app.role || "Role"}
-                                                                     className={`w-9 h-9 object-contain drop-shadow-md -ml-3 ${roleIconClass(app.role, "lg")}`}
-                                                                  />
-                                                               </div>
+                                                             {/* player avatar — left, like the lobby banner */}
+                                                             <div className="relative z-10 flex-shrink-0">
+                                                                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)]">
+                                                                   {profileImg ? (
+                                                                      <img
+                                                                         src={profileImg}
+                                                                         alt=""
+                                                                         className="w-full h-full object-cover"
+                                                                         loading="lazy"
+                                                                         decoding="async"
+                                                                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                      />
+                                                                   ) : (
+                                                                      <Users className="w-6 h-6 text-cyan-400/70" />
+                                                                   )}
+                                                                </div>
+                                                             </div>
 
-                                                               <div className="flex items-center gap-2 shrink-0">
-                                                                  <div className="text-center min-w-[58px] max-w-[90px]">
-                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">Class</p>
-                                                                     <p className="text-[10px] font-black text-cyan-300 leading-tight truncate">{aionClass || "—"}</p>
-                                                                  </div>
-                                                                  <div className="text-center min-w-[32px]">
-                                                                     <p className="text-[7px] text-gray-400 uppercase font-black leading-none">Lvl</p>
-                                                                     <p className="text-sm font-black text-[#c084fc] tabular-nums leading-tight">{aionLevel || "—"}</p>
-                                                                  </div>
-                                                                  <div className="w-3 h-3 rounded-full bg-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.55)] shrink-0" />
-                                                               </div>
+                                                             {/* details — middle */}
+                                                             <div className="relative z-10 flex-1 min-w-0">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                   <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
+                                                                   <span className="text-[10px] text-cyan-300" title={app.role || "Role"}>
+                                                                      {roleEmoji(app.role)}
+                                                                   </span>
+                                                                   <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
+                                                                      {aionClass || "—"}
+                                                                   </span>
+                                                                   <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300">
+                                                                      Lv {aionLevel || "—"}
+                                                                   </span>
+                                                                   {app.teamName ? (
+                                                                      <span
+                                                                         className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[110px] truncate"
+                                                                         title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
+                                                                            ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
+                                                                            : app.teamName}
+                                                                      >
+                                                                         <Users className="w-3 h-3 text-purple-400" />
+                                                                         {app.teamName}
+                                                                         {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
+                                                                            <span className="text-cyan-300">({app.teamMembers.length})</span>
+                                                                         )}
+                                                                      </span>
+                                                                   ) : null}
+                                                                </div>
+                                                                <div className={`mt-1.5 rounded-lg border px-2 py-1 ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/10 bg-white/[0.02]'}`}>
+                                                                   <p className={`text-[10px] leading-snug line-clamp-2 break-words font-semibold ${note ? 'text-gray-100' : 'text-gray-600'}`}>
+                                                                      {note || "—"}
+                                                                   </p>
+                                                                </div>
+                                                             </div>
 
-                                                               {app.teamName ? (
-                                                                  <div
-                                                                     className="flex items-center shrink-0 gap-1 rounded-lg border border-purple-500/40 bg-purple-500/10 px-2 py-1"
-                                                                     title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
-                                                                        ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
-                                                                        : app.teamName}
-                                                                  >
-                                                                     <Users className="w-3 h-3 text-purple-400" />
-                                                                     <span className="text-[7px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[90px] truncate">
-                                                                        {app.teamName}
-                                                                     </span>
-                                                                     {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
-                                                                        <span className="text-[7px] font-black text-cyan-300">({app.teamMembers.length})</span>
-                                                                     )}
-                                                                  </div>
-                                                               ) : null}
-
-                                                               <div className={`flex-1 min-w-0 rounded-lg border px-2 py-1 flex items-center ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/8 bg-white/[0.02]'}`}>
-                                                                  <p className={`text-[11px] leading-snug line-clamp-2 break-words font-semibold w-full ${note ? 'text-gray-100' : 'text-gray-600'}`}>
-                                                                     {note || "—"}
-                                                                  </p>
-                                                               </div>
-
-                                                               <div className="flex items-center shrink-0 ml-1">
-                                                                  {ownerAutoAcceptActive ? (
-                                                                     <span className="px-2 py-1 rounded-lg text-[7px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap">Auto</span>
-                                                                  ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
-                                                                     <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
-                                                                        const upd = lobbies.map(l => l.id === targetLobby.id ? { ...l, applicants: (l.applicants || []).map((a: any) => String(a.id) === String(app.id) ? { ...a, invitedAt: undefined, inviteExpiresAt: undefined, inviteNotifId: undefined } : a) } : l);
-                                                                        const notifId = app.inviteNotifId;
-                                                                        const updNotifs = notifId ? notifications.filter(n => n.id !== notifId) : notifications;
-                                                                        setLobbies(upd); setTargetLobby(upd.find(l => l.id === targetLobby.id)); setNotifications(updNotifs);
-                                                                        saveGlobalData({ lobbies: upd, notifications: updNotifs });
-                                                                        addToast("Invite cancelled.", "info");
-                                                                     }} />
-                                                                  ) : (
-                                                                     <motion.button
-                                                                        onClick={() => handleAccept(app)}
-                                                                        whileHover={{ scale: 1.04 }}
-                                                                        whileTap={{ scale: 0.97 }}
-                                                                        className="px-3 py-1.5 bg-green-500 text-black font-black rounded-lg hover:bg-green-400 transition-all text-[8px] uppercase tracking-wide whitespace-nowrap"
-                                                                     >
-                                                                        Invite
-                                                                     </motion.button>
-                                                                  )}
-                                                               </div>
-                                                            </div>
-                                                         </div>
-                                                      ); })
+                                                             {/* actions — right */}
+                                                             <div className="relative z-10 flex-shrink-0">
+                                                                {ownerAutoAcceptActive ? (
+                                                                   <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap">Auto</span>
+                                                                ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
+                                                                   <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
+                                                                      const upd = lobbies.map(l => l.id === targetLobby.id ? { ...l, applicants: (l.applicants || []).map((a: any) => String(a.id) === String(app.id) ? { ...a, invitedAt: undefined, inviteExpiresAt: undefined, inviteNotifId: undefined } : a) } : l);
+                                                                      const notifId = app.inviteNotifId;
+                                                                      const updNotifs = notifId ? notifications.filter(n => n.id !== notifId) : notifications;
+                                                                      setLobbies(upd); setTargetLobby(upd.find(l => l.id === targetLobby.id)); setNotifications(updNotifs);
+                                                                      saveGlobalData({ lobbies: upd, notifications: updNotifs });
+                                                                      addToast("Invite cancelled.", "info");
+                                                                   }} />
+                                                                ) : (
+                                                                   <motion.button
+                                                                      onClick={() => handleAccept(app)}
+                                                                      whileHover={{ scale: 1.04 }}
+                                                                      whileTap={{ scale: 0.97 }}
+                                                                      className="px-4 py-2 bg-green-500 text-black font-black rounded-xl hover:bg-green-400 transition-all text-[9px] uppercase tracking-wide whitespace-nowrap shadow-[0_0_18px_rgba(34,197,94,0.25)]"
+                                                                   >
+                                                                      Invite
+                                                                   </motion.button>
+                                                                )}
+                                                             </div>
+                                                          </div>
+                                                       ); })
                                                    ) : (
                                                       <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
                                                          <Users className="w-12 h-12 mb-2" />
