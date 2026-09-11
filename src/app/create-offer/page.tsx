@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send, Play,
   Check, Shield, Crown, Gem, Lock, Castle, Crosshair,
-  FlaskConical, TrendingUp, Hash, Globe, MapPin, type LucideIcon,
+  FlaskConical, TrendingUp, Hash, Globe, MapPin, ChevronRight, type LucideIcon,
 } from "lucide-react";
-import { AION_SERVICES, AION_CATEGORIES, AionService } from "@/lib/aionServices";
+import { AION_SERVICES, AION_CATEGORIES, DUNGEON_PICKER, AionService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 
-const STEPS = ["service", "details", "confirm"] as const;
+const STEPS = ["dungeon", "details", "confirm"] as const;
 type Step = (typeof STEPS)[number];
 
 const REGIONS = [
@@ -31,14 +31,133 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
 };
 
 const STEP_HINTS: Record<Step, string> = {
-  service: "Choose the mission you want to publish",
+  dungeon: "Flip through the dungeons and tap the one you want",
   details: "Tune quantity and region",
   confirm: "Lock in the details before going live",
 };
 
+/* ── Dungeon carousel — mobile-style app switcher ─────────────────────────── */
+function DungeonCarousel({
+  items,
+  selectedId,
+  onPick,
+}: {
+  items: AionService[];
+  selectedId: string | null;
+  onPick: (s: AionService) => void;
+}) {
+  const [idx, setIdx] = useState(0);
+  const touchX = useRef<number | null>(null);
+
+  const go = (dir: number) => {
+    setIdx((i) => (i + dir + items.length) % items.length);
+  };
+
+  const select = () => {
+    const item = items[idx];
+    if (item) onPick(item);
+  };
+
+  const CARD_W = 232;
+  const GAP = 18;
+
+  return (
+    <div
+      className="relative mt-6 select-none"
+      onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => {
+        if (touchX.current == null) return;
+        const dx = e.changedTouches[0].clientX - touchX.current;
+        if (Math.abs(dx) > 48) go(dx < 0 ? 1 : -1);
+        touchX.current = null;
+      }}
+    >
+      <div className="overflow-hidden py-2">
+        <div
+          className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{
+            transform: `translateX(calc(50% - ${CARD_W / 2}px - ${idx * (CARD_W + GAP)}px))`,
+          }}
+        >
+          {items.map((s, i) => {
+            const center = i === idx;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => { if (!center) setIdx(i); else select(); }}
+                className={`group relative shrink-0 overflow-hidden rounded-2xl border transition-all duration-300 ${
+                  center
+                    ? "border-cyan-400/70 bg-black/50 shadow-[0_0_34px_rgba(0,229,255,0.28)]"
+                    : "border-white/10 bg-black/40 opacity-60 hover:opacity-90"
+                }`}
+                style={{ width: CARD_W, marginRight: GAP }}
+              >
+                <img
+                  src={s.img}
+                  alt={s.name}
+                  className="h-36 w-full object-cover"
+                  draggable={false}
+                  loading="lazy"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                <span
+                  className={`absolute bottom-2 left-3 right-10 truncate text-sm font-black uppercase tracking-wider ${center ? "text-cyan-100" : "text-gray-300"}`}
+                >
+                  {s.name}
+                </span>
+                <span className={`absolute bottom-2 right-3 rounded-md px-1.5 py-0.5 text-[9px] font-black ${center ? "bg-cyan-400 text-black" : "bg-white/15 text-gray-300"}`}>
+                  {Number(s.basePriceKina).toFixed(2)}M
+                </span>
+                {selectedId === s.id && (
+                  <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black text-emerald-300 uppercase">
+                    <Check className="h-3 w-3" /> Selected
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* arrows */}
+      <button
+        type="button"
+        onClick={() => go(-1)}
+        className="absolute left-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
+        aria-label="Previous dungeon"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => go(1)}
+        className="absolute right-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
+        aria-label="Next dungeon"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+
+      {/* dots */}
+      <div className="mt-3 flex items-center justify-center gap-1.5">
+        {items.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setIdx(i)}
+            className={`h-1.5 rounded-full transition-all cursor-pointer ${i === idx ? "w-6 bg-cyan-400 shadow-[0_0_8px_rgba(0,229,255,0.6)]" : "w-1.5 bg-white/25 hover:bg-white/50"}`}
+            aria-label={`Go to ${items[i].name}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function CreateOfferPage() {
   const { data: session } = useSession();
-  const [step, setStep] = useState<Step>("service");
+  const [step, setStep] = useState<Step>("dungeon");
   const [sel, setSel] = useState<AionService | null>(null);
   const [qty, setQty] = useState(1);
   const [region, setRegion] = useState("EU");
@@ -67,7 +186,7 @@ export default function CreateOfferPage() {
 
   const advance = () => { setRegionOpen(false); setStep(STEPS[stepIndex + 1]); };
   const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); };
+  const resetOffer = () => { setStep("dungeon"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -259,72 +378,100 @@ export default function CreateOfferPage() {
 
                   <div className="p-5 sm:p-6">
                     <AnimatePresence mode="wait">
-                      {/* STEP 1 — SERVICE */}
-                      {step === "service" && (
-                        <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="max-h-[52vh] overflow-y-auto pr-1.5">
-                          {AION_CATEGORIES.filter((c) => grouped[c]?.length).map((cat) => {
-                            const meta = CATEGORY_META[cat];
-                            const CatIcon = meta.icon;
-                            return (
-                              <div key={cat} className="mb-6 last:mb-0">
-                                <div className="mb-3 flex items-center gap-2">
-                                  <span className={`flex h-6 w-6 items-center justify-center rounded-md border ${meta.tile}`}>
-                                    <CatIcon className={`h-3.5 w-3.5 ${meta.color}`} />
-                                  </span>
-                                  <span className={`text-xs font-black tracking-[0.24em] uppercase ${meta.color}`}>{cat}</span>
-                                  <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold text-gray-500">{grouped[cat].length}</span>
-                                  <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
-                                </div>
-                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                  {grouped[cat].map((svc) => {
-                                    const isActive = sel?.id === svc.id;
-                                    const variantCount = (svc.options?.length ?? 0) + (svc.extras?.length ?? 0);
-                                    return (
-                                      <button key={svc.id} type="button" onClick={() => setSel(svc)}
-                                        className={`group relative rounded-xl border p-4 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/[0.08] shadow-[0_0_26px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}>
-                                        {isActive && <span className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />}
-                                        <span className="flex items-start justify-between gap-3">
-                                          <span className="flex min-w-0 items-start gap-3">
-                                            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"} transition-colors`}>
-                                              <CatIcon className={`h-5 w-5 ${isActive ? "text-cyan-300" : meta.color}`} />
-                                            </span>
-                                            <span className="min-w-0">
-                                              <span className="flex items-center gap-1.5">
-                                                <span className="truncate text-sm font-bold text-white">{svc.name}</span>
-                                                {svc.video && <Play className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-label="Video" />}
+                      {/* STEP 1 — DUNGEON PICKER */}
+                      {step === "dungeon" && (
+                        <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-cyan-400/40 bg-cyan-500/10">
+                              <Castle className="h-3.5 w-3.5 text-cyan-300" />
+                            </span>
+                            <span className="text-xs font-black tracking-[0.24em] uppercase text-cyan-300">Pick Your Dungeon</span>
+                            <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
+                          </div>
+
+                          <DungeonCarousel
+                            items={DUNGEON_PICKER}
+                            selectedId={sel?.id ?? null}
+                            onPick={(svc) => { setSel(svc); }}
+                          />
+
+                          <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
+                            Tap a dungeon to select it — swipe or use the arrows to flip
+                          </p>
+
+                          <div className="mt-6 flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.14] bg-white/[0.04]">
+                              <Swords className="h-3.5 w-3.5 text-gray-300" />
+                            </span>
+                            <span className="text-xs font-black tracking-[0.24em] uppercase text-gray-300">or another service</span>
+                            <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
+                          </div>
+
+                          <div className="mt-3 max-h-[40vh] overflow-y-auto pr-1.5">
+                            {AION_CATEGORIES.filter((c) => c !== "Dungeons" && grouped[c]?.length).map((cat) => {
+                              const meta = CATEGORY_META[cat];
+                              const CatIcon = meta.icon;
+                              return (
+                                <div key={cat} className="mb-5 last:mb-0">
+                                  <div className="mb-2.5 flex items-center gap-2">
+                                    <span className={`flex h-6 w-6 items-center justify-center rounded-md border ${meta.tile}`}>
+                                      <CatIcon className={`h-3.5 w-3.5 ${meta.color}`} />
+                                    </span>
+                                    <span className={`text-xs font-black tracking-[0.24em] uppercase ${meta.color}`}>{cat}</span>
+                                    <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold text-gray-500">{grouped[cat].length}</span>
+                                    <span className="h-px flex-1 bg-gradient-to-r from-white/[0.12] to-transparent" />
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    {grouped[cat].map((svc) => {
+                                      const isActive = sel?.id === svc.id;
+                                      const variantCount = (svc.options?.length ?? 0) + (svc.extras?.length ?? 0);
+                                      return (
+                                        <button key={svc.id} type="button" onClick={() => setSel(svc)}
+                                          className={`group relative rounded-xl border p-4 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/[0.08] shadow-[0_0_26px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}>
+                                          {isActive && <span className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" />}
+                                          <span className="flex items-start justify-between gap-3">
+                                            <span className="flex min-w-0 items-start gap-3">
+                                              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"} transition-colors`}>
+                                                <CatIcon className={`h-5 w-5 ${isActive ? "text-cyan-300" : meta.color}`} />
                                               </span>
-                                              <span className="mt-0.5 block truncate text-[11px] text-gray-500">{svc.description}</span>
+                                              <span className="min-w-0">
+                                                <span className="flex items-center gap-1.5">
+                                                  <span className="truncate text-sm font-bold text-white">{svc.name}</span>
+                                                  {svc.video && <Play className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-label="Video" />}
+                                                </span>
+                                                <span className="mt-0.5 block truncate text-[11px] text-gray-500">{svc.description}</span>
+                                              </span>
                                             </span>
-                                          </span>
-                                          {isActive ? (
-                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cyan-400/60 bg-cyan-500/20">
-                                              <Check className="h-3.5 w-3.5 text-cyan-300" />
-                                            </span>
-                                          ) : (
-                                            <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300">{svc.priceUnit ?? "pc"}</span>
-                                          )}
-                                        </span>
-                                        {variantCount > 0 ? (
-                                          <span className="mt-3 flex flex-wrap items-center gap-1.5">
-                                            {[...(svc.options ?? []), ...(svc.extras ?? [])].slice(0, 2).map((o) => (
-                                              <span key={o.label} className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-400">{o.label}</span>
-                                            ))}
-                                            {variantCount > 2 && (
-                                              <span className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-500">+{variantCount - 2} more</span>
+                                            {isActive ? (
+                                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cyan-400/60 bg-cyan-500/20">
+                                                <Check className="h-3.5 w-3.5 text-cyan-300" />
+                                              </span>
+                                            ) : (
+                                              <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-xs font-black text-cyan-300">{svc.priceUnit ?? "pc"}</span>
                                             )}
                                           </span>
-                                        ) : (
-                                          <span className="mt-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
-                                            {svc.priceUnit ?? "per pc"}
-                                          </span>
-                                        )}
-                                      </button>
-                                    );
-                                  })}
+                                          {variantCount > 0 ? (
+                                            <span className="mt-3 flex flex-wrap items-center gap-1.5">
+                                              {[...(svc.options ?? []), ...(svc.extras ?? [])].slice(0, 2).map((o) => (
+                                                <span key={o.label} className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-400">{o.label}</span>
+                                              ))}
+                                              {variantCount > 2 && (
+                                                <span className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold text-gray-500">+{variantCount - 2} more</span>
+                                              )}
+                                            </span>
+                                          ) : (
+                                            <span className="mt-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
+                                              {svc.priceUnit ?? "per pc"}
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </motion.div>
                       )}
 
@@ -513,7 +660,7 @@ export default function CreateOfferPage() {
                               disabled={!canNext}
                               className={`flex items-center justify-center gap-2 rounded-xl border px-6 py-3.5 text-xs font-black tracking-[0.18em] uppercase transition-all ${canNext ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-200 shadow-[0_0_20px_rgba(0,229,255,0.12)] hover:bg-cyan-500/25 cursor-pointer" : "border-white/[0.08] bg-white/[0.04] text-gray-600 cursor-not-allowed"}`}
                             >
-                              {step === "service" ? "Continue to Details" : "Continue to Confirm"} <ArrowRight className="h-3.5 w-3.5" />
+                              {step === "dungeon" ? "Continue to Details" : "Continue to Confirm"} <ArrowRight className="h-3.5 w-3.5" />
                             </button>
                             <button type="button" onClick={regress} disabled={stepIndex === 0} className={`flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-transparent px-6 py-3 text-xs font-bold text-gray-400 transition-all ${stepIndex === 0 ? "cursor-not-allowed opacity-40" : "hover:border-white/25 hover:text-white cursor-pointer"}`}>
                               <ChevronLeft className="h-3.5 w-3.5" /> Back

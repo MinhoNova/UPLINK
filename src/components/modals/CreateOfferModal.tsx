@@ -139,7 +139,7 @@ const ServiceGrid = memo(function ServiceGrid({
             <span className={`text-[11px] font-black leading-tight ${active ? "text-[#00ffff]" : "text-white"}`}>{s.name}</span>
             <span className="text-[9px] font-bold text-gray-400 leading-snug">{s.description}</span>
             <span className="text-[10px] font-black" style={{ color: "#ffd700" }}>
-              from {formatUsd(s.basePriceUsd)}
+              from {formatUsd(s.basePriceKina)}
               {s.priceUnit ? ` · ${s.priceUnit}` : ""}
             </span>
           </button>
@@ -494,8 +494,8 @@ function CreateOfferModal({
         serviceId: s.id,
         serviceName: s.name,
         category: s.category,
-        basePriceUsd: s.basePriceUsd,
-        priceUsd: s.basePriceUsd.toFixed(2),
+        basePriceKina: s.basePriceKina,
+        priceKina: s.basePriceKina.toFixed(2),
       },
     });
   }, []);
@@ -597,7 +597,7 @@ function CreateOfferModal({
                     <label className="block text-[10px] font-black text-white/70 uppercase mb-2 tracking-wide">Per-Run / Unit Price (USD)</label>
                     <UsdInput value={formState.priceUsd} onChange={v => dispatch({ type: "SET", payload: { priceUsd: v } })} />
                     <p className="text-[10px] text-gray-500 mt-1">
-                      Catalog base: {formatUsd(service.basePriceUsd)}{service.priceUnit ? ` (${service.priceUnit})` : ""}
+                      Catalog base: {formatUsd(service.basePriceKina)}{service.priceUnit ? ` (${service.priceUnit})` : ""}
                     </p>
                   </div>
                 </div>
