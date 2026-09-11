@@ -21,6 +21,15 @@ import {
   aionClassRole,
   AION2_LEVEL_MAX,
 } from "@/lib/aionClassMeta";
+import { effectiveAvatarEffect } from "@/lib/userProfile";
+import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import {
+  resolveProfileImage,
+  resolveProfileDisplayName,
+  resolveNameColor,
+  isAnimatedImageUrl,
+  profileImgClass,
+} from "@/lib/profileImage";
 
 /* ── FILTER TABS ── */
 const FILTER_TABS = [
@@ -179,6 +188,20 @@ export default function Aion2TestClubPage() {
     return "none";
   };
 
+  const getMutualFriendsCount = (userId2: string) => {
+    const myFriendIds = new Set(
+      friends
+        .filter((f: any) => f.status === "accepted" && (f.requester === meId || f.target === meId))
+        .map((f: any) => String(f.requester === meId ? f.target : f.requester))
+    );
+    const theirFriendIds = friends
+      .filter((f: any) => f.status === "accepted" && (f.requester === userId2 || f.target === userId2))
+      .map((f: any) => String(f.requester === userId2 ? f.target : f.requester));
+    return theirFriendIds.filter(
+      (id) => myFriendIds.has(id) && id !== String(meId) && id !== String(userId2)
+    ).length;
+  };
+
   const sendFriendRequest = async (targetId: string) => {
     if (!meId || String(targetId) === meId) return;
     try {
@@ -251,6 +274,19 @@ export default function Aion2TestClubPage() {
         setFriends((prev: any[]) =>
           (prev || []).map((f: any) => (String(f.id) === String(reqId) ? { ...f, status: "accepted" } : f))
         );
+      }
+    } catch {}
+  };
+
+  const handleFriendDecline = async (reqId: string) => {
+    try {
+      const res = await fetch("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "decline", targetId: reqId }),
+      });
+      if (res.ok) {
+        setFriends((prev: any[]) => (prev || []).filter((f: any) => String(f.id) !== String(reqId)));
       }
     } catch {}
   };
@@ -875,100 +911,168 @@ export default function Aion2TestClubPage() {
             const cardPic = hoverCard.pic;
             const vw = window.innerWidth;
             const vh = window.innerHeight;
-            const popW = 288;
+            const popW = Math.min(380, vw - 20);
             const spaceAbove = rect.top;
-            const showAbove = spaceAbove > vh * 0.32;
-            const left = Math.max(10, Math.min(rect.left, vw - popW - 10));
-            const top = showAbove ? rect.top - 12 : rect.bottom + 12;
+            const showAbove = spaceAbove > vh * 0.38;
+            const left = Math.max(10, Math.min(rect.left - 20, vw - popW - 10));
+            const top = showAbove ? Math.max(10, rect.top - 12) : Math.min(vh - 12, rect.bottom + 12);
             const oid = String(owner.id || "");
             const friendStatus = oid ? getFriendStatus(oid) : "none";
+            const hDisplayName = owner ? resolveProfileDisplayName(owner) : ownerName(owner);
+            const hNameColor = owner ? resolveNameColor(owner) : null;
+            const hAvatar = owner ? resolveProfileImage(owner) || cardPic || "" : cardPic || "";
+            const hEffect = owner ? effectiveAvatarEffect(owner, owner.effect) : "none";
+            const hBanner = owner?.banner || "";
+            const hint = hAvatar ? isAnimatedImageUrl(hAvatar) : false;
             return (
               <div
                 style={{ position: "fixed", top, left, width: popW, transform: showAbove ? "translateY(-100%)" : undefined, zIndex: 9999 }}
-                className="tn-light rounded-2xl border border-cyan-500/30 bg-[#070b1a]/95 backdrop-blur-2xl shadow-[0_12px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(34,211,238,0.2)] p-4 pointer-events-auto"
+                className="tn-light relative bg-[#080810] border border-white/10 rounded-[1.5rem] shadow-[0_32px_100px_rgba(0,0,0,0.8)] overflow-hidden pointer-events-auto w-[380px] max-w-[calc(100vw-20px)]"
                 onMouseEnter={cancelHide}
                 onMouseLeave={scheduleHide}
               >
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shrink-0">
-                    {cardPic ? (
-                      <img src={cardPic} alt="" className="w-full h-full object-cover" />
+                {/* Banner — full card width */}
+                <div className="relative h-28 w-full bg-gradient-to-br from-[#ff007f]/40 via-[#6b21a8]/30 to-[#00ffff]/30">
+                  {hBanner ? (
+                    <img
+                      src={hBanner}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-[#080810]/20 to-transparent pointer-events-none" />
+                </div>
+
+                {/* Avatar + name */}
+                <div className="px-5 -mt-10 relative z-10 flex items-end gap-3">
+                  <div
+                    className={`rounded-full overflow-hidden border-[3px] border-[#080810] shadow-[0_0_24px_rgba(255,0,127,0.25)] bg-black shrink-0 ${hint && hEffect === "none" ? "ring-1 ring-purple-500/30" : ""}`}
+                    style={{ width: 72, height: 72 }}
+                  >
+                    {hAvatar ? (
+                      <img src={hAvatar} alt="" className={profileImgClass(hAvatar, "w-full h-full rounded-full")} onError={(e) => { (e.currentTarget as HTMLImageElement).src = cardPic || ""; }} />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center"><Users className="w-5 h-5 text-cyan-400/70" /></div>
+                      <div className="w-full h-full flex items-center justify-center"><Users className="w-6 h-6 text-gray-600" /></div>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-black text-white uppercase truncate tracking-widest">
-                      {ownerName(owner)}
-                    </p>
+                  <div className="pb-1 flex-1 min-w-0">
+                    <h3 className="text-base font-black text-white uppercase truncate leading-tight" style={hNameColor ? { ...toNameStyle(hNameColor), textShadow: `0 0 14px ${nameGlowColor(hNameColor)}77` } : undefined}>
+                      {hDisplayName}
+                    </h3>
                     <RankBadge
                       stats={owner?.stats}
                       ratings={owner?.ratings}
                       rankOverride={owner?.rankOverride}
                     />
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {owner?.team?.name && (
+                        <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
+                          {owner.team.name}
+                        </span>
+                      )}
+                      {Array.isArray(owner?.team?.members) && owner.team.members.length > 0 && (
+                        <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-400">
+                          {1 + owner.team.members.filter((m: any) => m.status !== "pending").length}/4 squad
+                        </span>
+                      )}
+                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#8ea1ff]">
+                        Discord: {owner?.username ? `@${owner.username}` : "—"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {oid === meId ? (
-                  <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">This is you</p>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    {friendStatus === "friends" && (
-                      <button
-                        type="button"
-                        onClick={() => unfriend(oid)}
-                        className="group/fbtn flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all"
-                      >
-                        <UserCheck className="w-3 h-3 group-hover/fbtn:hidden" />
-                        <UserMinus className="w-3 h-3 hidden group-hover/fbtn:inline-block" />
-                        <span className="group-hover/fbtn:hidden">Friends</span>
-                        <span className="hidden group-hover/fbtn:inline">Unfriend</span>
-                      </button>
-                    )}
-                    {friendStatus === "none" && (
-                      <button
-                        type="button"
-                        disabled={isUserBlocked(oid)}
-                        onClick={() => sendFriendRequest(oid)}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40"
-                      >
-                        <UserPlus className="w-3 h-3" /> Add Friend
-                      </button>
-                    )}
-                    {friendStatus === "pending_sent" && (
-                      <span className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
-                        Pending
-                      </span>
-                    )}
-                    {friendStatus === "pending_received" && (
-                      <button
-                        type="button"
-                        onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-green-500/15 border border-green-500/35 text-green-400 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition"
-                      >
-                        <UserPlus className="w-3 h-3" /> Accept
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => openDm(oid)}
-                      className="flex items-center justify-center w-9 h-9 rounded-xl border border-[#ff007f]/30 bg-[#ff007f]/10 text-[#ff007f] hover:bg-[#ff007f]/20 transition-all"
-                      title="Send message"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleBlock(oid)}
-                      title={isUserBlocked(oid) ? "Unblock" : "Block"}
-                      className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all ${
-                        isUserBlocked(oid) ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-400" : "bg-white/5 border-white/10 text-red-400 hover:bg-red-500/15 hover:border-red-500/40"
-                      }`}
-                    >
-                      <Ban className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
+                <div className="px-5 pb-4 pt-2">
+                  {oid === meId ? (
+                    <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest py-1">
+                      Your profile
+                    </p>
+                  ) : (
+                    <>
+                      {friendStatus === "pending_received" && (
+                        <div className="flex gap-2 mb-3">
+                          <button
+                            type="button"
+                            onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }}
+                            className="flex-1 py-2 bg-green-500/15 text-green-400 border border-green-500/35 rounded-xl hover:bg-green-500 hover:text-black transition text-[9px] font-black uppercase tracking-widest"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendDecline(f.id); }}
+                            className="flex-1 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition text-[9px] font-black uppercase tracking-widest"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-center gap-8 py-1.5">
+                        <div className="flex flex-col items-center gap-0.5" title={`${getMutualFriendsCount(oid)} mutual friends`}>
+                          <Users className="w-4 h-4 text-[#00ffff]" />
+                          <span className="text-[10px] font-black text-white tabular-nums">
+                            {getMutualFriendsCount(oid)}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={isUserBlocked(oid)}
+                          onClick={() => openDm(oid)}
+                          title="Send message"
+                          className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Message</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleBlock(oid)}
+                          title={isUserBlocked(oid) ? "Unblock" : "Block"}
+                          className={`flex items-center gap-1.5 hover:scale-110 transition ${
+                            isUserBlocked(oid) ? "text-yellow-400" : "text-red-400"
+                          }`}
+                        >
+                          <Ban className="w-4 h-4" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Block</span>
+                        </button>
+                      </div>
+
+                      <div className="mt-2">
+                        {friendStatus === "friends" && (
+                          <button
+                            type="button"
+                            onClick={() => unfriend(oid)}
+                            className="group/fbtn w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all"
+                          >
+                            <UserCheck className="w-3 h-3 group-hover/fbtn:hidden" />
+                            <UserMinus className="w-3 h-3 hidden group-hover/fbtn:inline-block" />
+                            <span className="group-hover/fbtn:hidden">Friends</span>
+                            <span className="hidden group-hover/fbtn:inline">Unfriend</span>
+                          </button>
+                        )}
+                        {friendStatus === "none" && (
+                          <button
+                            type="button"
+                            disabled={isUserBlocked(oid)}
+                            onClick={() => sendFriendRequest(oid)}
+                            className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40"
+                          >
+                            <UserPlus className="w-3 h-3" /> Add Friend
+                          </button>
+                        )}
+                        {friendStatus === "pending_sent" && (
+                          <span className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })(),
