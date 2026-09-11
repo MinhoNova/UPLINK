@@ -164,7 +164,7 @@ export default function Navbar() {
     const adminHandle = "minhonovazen";
     const adminId = "1497295886223544471";
     
-    if (currentHandle === adminHandle && registeredUsers.length > 0 && !registeredUsers.find(u => u.id === adminId)) {
+    if (currentHandle === adminHandle && !registeredUsers.find(u => String(u.id) === String(adminId))) {
         console.log("Auto-registering admin...");
         fetch("/api/data", {
             method: "POST",
