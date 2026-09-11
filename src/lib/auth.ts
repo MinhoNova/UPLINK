@@ -93,6 +93,26 @@ export function getAuthOptions(): NextAuthOptions {
         if (user) {
           token.username = (user as { username?: string }).username;
           token.id = user.id;
+          // Auto-register new users into registeredUsers KV on first login
+          try {
+            const { getKV, setKV } = await import("@/lib/db");
+            const users: any[] = (await getKV("registeredUsers")) || [];
+            if (!users.some((u) => String(u.id) === String(user.id))) {
+              users.push({
+                id: user.id,
+                username: (user as { username?: string }).username || user.id,
+                name: (user as { name?: string | null }).name || null,
+                avatar: (user as { image?: string | null }).image || null,
+                lastSeenAt: Date.now(),
+                lastKnownIp: null,
+                stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },
+                subscription: { tier: "free" },
+              });
+              await setKV("registeredUsers", users);
+            }
+          } catch {
+            // Silently ignore — registration is best-effort
+          }
         }
         return token;
       },

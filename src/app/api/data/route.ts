@@ -93,6 +93,31 @@ export async function GET(req: Request) {
     }
 
     const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
+    // Server-side fallback: if the user logged in but the JWT callback's
+    // auto-registration silently failed (D1 unavailable at callback time),
+    // register them here so they appear in the admin dashboard.
+    if (scoped.registeredUsers && Array.isArray(scoped.registeredUsers)) {
+      const existing = scoped.registeredUsers.find((u: any) => String(u.id) === String(auth.user.id));
+      if (!existing) {
+        const freshUser = {
+          id: auth.user.id,
+          username: auth.user.username,
+          name: auth.user.name ?? null,
+          avatar: auth.user.image ?? null,
+          lastSeenAt: Date.now(),
+          lastKnownIp: null,
+          stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },
+          subscription: { tier: "free" },
+        };
+        scoped.registeredUsers.push(freshUser);
+        // Persist back to KV so future requests see them.
+        const allUsers = (data.registeredUsers as any[]) || [];
+        if (!allUsers.some((u: any) => String(u.id) === String(auth.user.id))) {
+          allUsers.push(freshUser);
+          setKV("registeredUsers", allUsers).catch(() => {});
+        }
+      }
+    }
     scoped.marketPrices = getMarketAverageByService(data.marketHistory);
     const body = JSON.stringify(scoped);
     dataCache.set(cacheKey, { at: Date.now(), body });
