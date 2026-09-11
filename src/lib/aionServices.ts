@@ -68,30 +68,6 @@ export const AION_SERVICES: AionService[] = [
     ],
   },
   {
-    id: "hourly-driving",
-    name: "Aion 2 Hourly Driving",
-    category: "Collections",
-    description: "Any task — skip the grind.",
-    basePriceKina: kinah(8.09),
-    priceUnit: "per hour",
-    express: kinah(1.62),
-    superExpress: kinah(3.24),
-  },
-  {
-    id: "empyrean-traces",
-    name: "Empyrean Traces Farm",
-    category: "Collections",
-    description: "Both continents.",
-    basePriceKina: kinah(0.8),
-    priceUnit: "per farm",
-    express: kinah(0.16),
-    superExpress: kinah(0.32),
-    options: [
-      { label: "Allied Side Traces", priceKina: kinah(47.79) },
-      { label: "Enemy Side Traces", priceKina: kinah(55.08) },
-    ],
-  },
-  {
     id: "daily-dungeons",
     name: "Daily Dungeons",
     category: "Dungeons",
@@ -238,7 +214,6 @@ export const AION_CATEGORIES = [
   "Leveling",
   "Raids",
   "Dungeons",
-  "Collections",
   "PVP",
   "Professions",
 ];

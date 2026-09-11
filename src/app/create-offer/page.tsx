@@ -25,7 +25,6 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
   Leveling: { icon: TrendingUp, color: "text-emerald-300", tile: "border-emerald-400/40 bg-emerald-500/10" },
   Raids: { icon: Swords, color: "text-rose-300", tile: "border-rose-400/40 bg-rose-500/10" },
   Dungeons: { icon: Castle, color: "text-cyan-300", tile: "border-cyan-400/40 bg-cyan-500/10" },
-  Collections: { icon: Gem, color: "text-purple-300", tile: "border-purple-400/40 bg-purple-500/10" },
   PVP: { icon: Crosshair, color: "text-orange-300", tile: "border-orange-400/40 bg-orange-500/10" },
   Professions: { icon: FlaskConical, color: "text-sky-300", tile: "border-sky-400/40 bg-sky-500/10" },
 };
