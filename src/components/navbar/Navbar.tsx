@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, DoorOpen, DoorClosed, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, ShieldX, TicketCheck, LifeBuoy } from "lucide-react";
+import { Bell, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, ShieldX, TicketCheck, LifeBuoy } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -19,7 +19,7 @@ import { getUserRanks } from "@/lib/ranks";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const { theme, toggleTheme } = useThemePreference();
+  const { theme } = useThemePreference();
   const { t, lang } = useI18n();
   const motionOn = useFlag("uplink_bg_motion", true);
   const [langOpen, setLangOpen] = useState(false);
@@ -327,10 +327,6 @@ export default function Navbar() {
               }
             }} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${getUserTier(currentUserId) === "free" ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
               ⚙️
-            </motion.button>
-            <motion.button title={t("nav_themeTitle")} onClick={toggleTheme} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${theme === 'dark' ? 'bg-[#ff007f] text-white shadow-[0_0_15px_rgba(255,0,127,0.4)]' : 'bg-white text-black shadow-md border border-black/5'}`}>
-              {theme === 'dark' ? <DoorOpen className="w-4 h-4" /> : <DoorClosed className="w-4 h-4" />}
-              {theme === 'dark' ? t('nav_dark') : t('nav_light')}
             </motion.button>
             <div className="relative" ref={langRef}>
               <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`px-3 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/10 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/30`}>

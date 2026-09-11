@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Radio, Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban
+  Radio, Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -23,6 +23,8 @@ import {
 } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
+import type { AionAutoApply } from "@/components/modals/AionAutoApplyModal";
 import {
   resolveProfileImage,
   resolveProfileDisplayName,
@@ -60,6 +62,7 @@ export default function Aion2TestClubPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const autoAttemptedRef = useRef<Set<string>>(new Set());
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
   const [hoverCard, setHoverCard] = useState<{ userId: string; rect: { top: number; left: number; bottom: number } | null; owner: any; pic: string | null } | null>(null);
   const hoverHideTimer = useRef<number | null>(null);
@@ -79,6 +82,55 @@ export default function Aion2TestClubPage() {
   useEffect(() => {
     if (!meId) return;
     let cancelled = false;
+    const autoApplyFor = (users: any[], lobbies: any[]) => {
+      const meUser = users.find((u: any) => String(u.id) === String(meId));
+      const aa = meUser?.aionAutoApply;
+      if (!aa?.enabled || !aa.aionClass || !meId) return;
+      const cls = String(aa.aionClass);
+      const role = aionClassRole(cls);
+      const candidates = (Array.isArray(lobbies) ? lobbies : []).filter((l) => {
+        if (!isLobbyListedInPublicFeed(l)) return false;
+        if (String(l.ownerId) === String(meId)) return false;
+        const st = l.status || "standby";
+        if (st !== "standby" && st !== "") return false;
+        const appliedAlready = (l.applicants || []).some(
+          (a: any) => String(a.applicantId || a.userId || a.id) === String(meId)
+        );
+        if (appliedAlready) return false;
+        if (Array.isArray(l.requiredClasses) && l.requiredClasses.length > 0) {
+          return l.requiredClasses.map((c: any) => String(c).trim()).includes(cls);
+        }
+        const rolesMap = l?.roles || {};
+        return Number(rolesMap[role] || rolesMap.dps || 0) > 0;
+      });
+      let didApply = false;
+      for (const l of candidates) {
+        const key = String(l.id);
+        if (autoAttemptedRef.current.has(key)) continue;
+        autoAttemptedRef.current.add(key);
+        didApply = true;
+        fetch("/api/lobbies/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lobbyId: l.id,
+            applicant: {
+              id: `${meId}-main`,
+              role,
+              className: cls,
+              aionClass: cls,
+              level: Number(aa.itemLevel) || 60,
+              applicantNote: "Auto-apply",
+              applicantName: meName,
+            },
+          }),
+        }).then(() => { window.dispatchEvent(new Event("data-refresh")); }).catch(() => {});
+      }
+      if (didApply) {
+        window.dispatchEvent(new Event("data-refresh"));
+        window.dispatchEvent(new Event("auto-apply-fired"));
+      }
+    };
     const load = () => {
       if (!meId) return;
       fetch("/api/data", { credentials: "include" })
@@ -87,7 +139,10 @@ export default function Aion2TestClubPage() {
           if (cancelled) return;
           if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
           if (d.friends) setFriends(d.friends);
-          if (d.lobbies) setLobbies(d.lobbies);
+          if (d.lobbies) {
+            setLobbies(d.lobbies);
+            autoApplyFor(Array.isArray(d.registeredUsers) ? d.registeredUsers : [], d.lobbies);
+          }
           setSignalScan(false);
         })
         .catch(() => { if (!cancelled) setSignalScan(false); });
@@ -102,7 +157,7 @@ export default function Aion2TestClubPage() {
       window.removeEventListener("data-refresh", load);
       clearInterval(poll);
     };
-  }, [meId]);
+  }, [meId, meName]);
 
   const missions = useMemo(() => {
     if (!meId) return [];
@@ -122,6 +177,14 @@ export default function Aion2TestClubPage() {
 
   const missionOwner = (m: any) =>
     registeredUsers.find((u: any) => String(u.id) === String(m.ownerId)) || null;
+
+  const historyOffers = useMemo(() => {
+    if (!meId) return [];
+    return (lobbies || [])
+      .filter((l: any) => l.status === "completed" && l.payoutStatus === "paid")
+      .sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0))
+      .slice(0, 8);
+  }, [lobbies, meId]);
 
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = {
     All: null,
@@ -320,6 +383,21 @@ export default function Aion2TestClubPage() {
   const isUserBlocked = (userId: string) => {
     const me = registeredUsers.find((u: any) => String(u.id) === String(meId));
     return Array.isArray(me?.blocked) && me.blocked.map(String).includes(String(userId));
+  };
+
+  const saveAutoApply = async (next: AionAutoApply) => {
+    const res = await fetch("/api/user/auto-apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aionAutoApply: next }),
+    });
+    if (!res.ok) throw new Error("save failed");
+    setRegisteredUsers((prev) =>
+      (prev || []).map((u: any) =>
+        String(u.id) === String(meId) ? { ...u, aionAutoApply: next } : u
+      )
+    );
+    window.dispatchEvent(new Event("data-refresh"));
   };
 
   const submitApply = async () => {
@@ -845,6 +923,71 @@ export default function Aion2TestClubPage() {
             </div>
           </aside>
 
+          {/* 4. History (completed & paid threads) */}
+          {historyOffers.length > 0 && (
+            <div className="w-full">
+              <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-emerald-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
+                <div className="flex items-center gap-3 pb-4 mb-5 border-b border-emerald-900/30">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
+                    <HistoryIcon className="w-4 h-4 text-emerald-300" />
+                  </span>
+                  <h3 className="text-xs font-black tracking-[0.2em] uppercase text-emerald-100">
+                    HISTORY
+                  </h3>
+                  <span className="ml-auto text-[8px] font-black tracking-widest text-slate-500 uppercase">
+                    {historyOffers.length} completed
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {historyOffers.map((h) => {
+                    const owner = lobbyOwner(h);
+                    const pic = ownerPic(h) || null;
+                    const totalRuns = h.selectedDungeons
+                      ? (Object.values(h.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
+                      : h.runsCount || 1;
+                    return (
+                      <motion.div
+                        key={String(h.id)}
+                        whileHover={{ x: 5 }}
+                        onClick={() => router.push(`/manage/${String(h.id)}`)}
+                        className="tn-light relative w-full rounded-2xl border border-emerald-500/20 overflow-hidden flex items-center gap-3 px-4 py-3 cursor-pointer group hover:border-emerald-400/40 hover:shadow-[0_0_24px_rgba(16,185,129,0.12)] transition-all"
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/50">
+                          {pic ? (
+                            <img src={pic} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-emerald-300/60 uppercase">
+                              {String(ownerName(h) || "?").slice(0, 1)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black uppercase tracking-wide text-white">
+                            {h.title || `${totalRuns}× Run`}
+                          </p>
+                          <p className="truncate text-[9px] font-bold uppercase tracking-widest text-gray-500">
+                            {ownerName(h)}
+                            {h.serverRegion ? ` · ${String(h.serverRegion).toUpperCase()}` : ""}
+                          </p>
+                        </div>
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          {Number(h.pricePerRun) > 0 && (
+                            <span className="text-[10px] font-black text-amber-300">
+                              {Number(h.pricePerRun).toFixed(2)}M
+                            </span>
+                          )}
+                          <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-emerald-400/40 bg-emerald-500/15 text-emerald-300">
+                            Completed ✓ Paid
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
 
@@ -1124,6 +1267,14 @@ export default function Aion2TestClubPage() {
           document.body
         )
       )}
+
+      {/* ── AUTO-APPLY SETTINGS MODAL ── */}
+      <AionAutoApplyModal
+        registeredUsers={registeredUsers}
+        meId={meId}
+        meName={meName || ""}
+        onSave={saveAutoApply}
+      />
 
     </div>
   );
