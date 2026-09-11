@@ -97,15 +97,6 @@ function DungeonFlip({
         {/* center guide glow */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/10 blur-2xl" />
 
-        {/* backdrops */}
-        {Array.from({ length: Math.min(4, items.length) }).map((_, k) => (
-          <div
-            key={k}
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-white/[0.03]"
-            style={{ width: CARD_W, height: CARD_H, marginLeft: PITCH * (k + 1), zIndex: -k - 1 }}
-          />
-        ))}
-
         {items.map((s, i) => {
           const d = i - idx;
           const x = d * PITCH + drag;
@@ -161,16 +152,18 @@ function DungeonFlip({
         {/* arrows */}
         <button
           type="button"
-          onClick={() => go(-1)}
-          className="absolute left-1 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
+          onClick={(e) => { e.stopPropagation(); go(-1); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute left-1 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer z-[50]"
           aria-label="Previous dungeon"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <button
           type="button"
-          onClick={() => go(1)}
-          className="absolute right-1 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer"
+          onClick={(e) => { e.stopPropagation(); go(1); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute right-1 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/60 text-gray-200 shadow-lg backdrop-blur transition-all hover:border-cyan-400/50 hover:text-cyan-300 cursor-pointer z-[50]"
           aria-label="Next dungeon"
         >
           <ChevronRight className="h-5 w-5" />
@@ -470,13 +463,13 @@ export default function CreateOfferPage() {
 
                             {/* services / dungeon flip of the active category */}
                             {activeCat === "Dungeons" ? (
-                              <div className="overflow-y-auto pr-1.5">
+                              <div className="overflow-hidden">
                                 <DungeonFlip
                                   items={DUNGEON_PICKER}
                                   initialId={sel?.id ?? null}
                                   onPick={(svc) => { setSel(svc); setStep("details"); }}
                                 />
-                                <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
+                                <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
                                   Flip to browse — tap to select
                                 </p>
                               </div>
