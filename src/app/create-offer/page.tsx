@@ -477,7 +477,7 @@ export default function CreateOfferPage() {
                                   onPick={(svc) => { setSel(svc); setStep("details"); }}
                                 />
                                 <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-gray-600">
-                                  Flip left / right to browse — tap the front card to select it
+                                  Flip to browse — tap to select
                                 </p>
                               </div>
                             ) : (
@@ -713,6 +713,13 @@ export default function CreateOfferPage() {
                           </>
                         ) : (
                           <>
+                            <button
+                              type="button"
+                              onClick={() => { setStep("service"); setSel(null); }}
+                              className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-6 py-3 text-xs font-bold text-gray-300 transition-all hover:border-white/25 hover:text-white cursor-pointer"
+                            >
+                              <ChevronLeft className="h-3.5 w-3.5" /> Back to Services
+                            </button>
                             <button
                               type="button"
                               onClick={publishOffer}
