@@ -857,8 +857,10 @@ export default function CreateOfferPage() {
                               </div>
                             </div>
 
-                            {/* DIFFICULTY — Normal/Hard pair for dungeon-category offers that have no sub-options */}
-                            {sel?.category === "Dungeons" && !pickedOption && (
+                            {/* DIFFICULTY — Normal/Hard pair for dungeon-category offers
+                                (every dungeon type gets this; expeditions keep their own per-dungeon
+                                variant picker below when a specific expedition is selected) */}
+                            {sel?.category === "Dungeons" && !pickedVariant && (
                               <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
                                 <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
                                   <Swords className="h-3.5 w-3.5 text-cyan-400" /> Difficulty · Normal / Hard

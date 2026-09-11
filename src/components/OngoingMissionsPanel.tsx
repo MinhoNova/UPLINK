@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Clock, Coins, Radio } from "lucide-react";
+import { Coins, Radio, Shield } from "lucide-react";
 import {
   getJoinedOngoingMissions,
   getOwnerOngoingMissions,
@@ -25,7 +25,6 @@ type Props = {
   };
   onOpenMission: (lobbyId: string) => void;
   alignWithOfferBanners?: boolean;
-  /** Sorted offer banner ids from the feed — lines up mission cards row-by-row. */
   alignOfferIds?: string[];
 };
 
@@ -187,10 +186,10 @@ export default function OngoingMissionsPanel({
     </motion.div>
   );
 
-   return (
+  return (
     <div
-      className={`w-full xl:w-[300px] shrink-0 flex flex-col self-start ${
-        alignWithOfferBanners ? "mt-3" : ""
+      className={`w-full xl:w-[280px] shrink-0 flex flex-col self-start ${
+        alignWithOfferBanners ? "mt-3" : "mt-4"
       }`}
     >
       <div
@@ -202,17 +201,18 @@ export default function OngoingMissionsPanel({
             : "bg-[linear-gradient(180deg,rgba(4,4,8,0.98),rgba(0,0,0,1))] border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
         }`}
       >
-        <h3
-          className={`text-xs font-black uppercase tracking-[0.24em] flex items-center gap-2 relative z-10 ${
-            alignWithOfferBanners ? "mb-2" : "mb-3"
-          } ${theme === "light" ? "text-[#00ffff]" : "text-white/90"}`}
-        >
-          <Clock className="w-3.5 h-3.5 text-[#ff007f]" />
-          Ongoing Missions
-        </h3>
+        <div className="flex items-center gap-2 mb-3 relative z-10">
+          <Shield className="h-4 w-4 rounded-full border border-cyan-400/30 bg-cyan-500/10 p-0.5 text-cyan-400 shrink-0" />
+          <h3
+            className={`text-xs font-black uppercase tracking-[0.24em] ${
+              theme === "light" ? "text-[#00ffff]" : "text-white/90"
+            }`}
+          >
+            Ongoing Missions
+          </h3>
+        </div>
 
         <div className="space-y-3 relative z-10 w-full">
-          {/* Embedded foot archives — red, separated section */}
           {hasEmbedded && (
             <div className="mb-2">
               <div className="flex items-center gap-2 mb-1.5 px-1">
