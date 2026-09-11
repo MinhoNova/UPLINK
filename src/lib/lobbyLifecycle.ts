@@ -959,13 +959,25 @@ export function inviteApplicantToLobby(lobby: any, applicant: any, notifId: numb
   const key = memberIdentityKey(applicant);
   if (!key) return lobby;
 
-  const applicantRole = (applicant.role || "dps").toLowerCase();
   const newRoles = { ...(lobby.roles || {}) };
   const alreadyInvited = (lobby.accepted || []).some(
     (a: any) => memberIdentityKey(a) === key && a.status === "invited"
   );
-  if (!alreadyInvited && Number(newRoles[applicantRole]) > 0) {
-    newRoles[applicantRole] -= 1;
+
+  const req = lobby?.requiredClasses;
+  if (Array.isArray(req) && req.length > 0) {
+    const appClass = String(applicant.aionClass || applicant.className || applicant.role || "").trim() || "dps";
+    const slot = newRoles[appClass] !== undefined
+      ? appClass
+      : Object.keys(newRoles).find((k) => String(k).trim().toLowerCase() === appClass.toLowerCase());
+    if (!alreadyInvited && slot && Number(newRoles[slot]) > 0) {
+      newRoles[slot] -= 1;
+    }
+  } else {
+    const applicantRole = (applicant.role || "dps").toLowerCase();
+    if (!alreadyInvited && Number(newRoles[applicantRole]) > 0) {
+      newRoles[applicantRole] -= 1;
+    }
   }
 
   const invitedMember = {
@@ -992,10 +1004,18 @@ export function cancelLobbyInvite(lobby: any, member: any): any {
   const key = memberIdentityKey(member);
   if (!key) return lobby;
 
-  const role = (member.role || "dps").toLowerCase();
   const newRoles = { ...(lobby.roles || {}) };
-  if (member.status === "invited") {
-    newRoles[role] = (Number(newRoles[role]) || 0) + 1;
+  const req = lobby?.requiredClasses;
+  if (Array.isArray(req) && req.length > 0) {
+    const slot = String(member.aionClass || member.className || member.role || "").trim() || "dps";
+    if (member.status === "invited") {
+      newRoles[slot] = (Number(newRoles[slot]) || 0) + 1;
+    }
+  } else {
+    const role = (member.role || "dps").toLowerCase();
+    if (member.status === "invited") {
+      newRoles[role] = (Number(newRoles[role]) || 0) + 1;
+    }
   }
 
   return {
@@ -1183,6 +1203,23 @@ export function getOccupantsBySlot(
   const slots = getPartyDisplaySlots(lobby);
   const usedKeys = new Set<string>();
 
+  const req = lobby?.requiredClasses;
+  if (Array.isArray(req) && req.length > 0) {
+    return slots.map((slot) => {
+      const want = String(slot).trim().toLowerCase();
+      const available = accepted.filter(
+        (a: any) =>
+          !usedKeys.has(memberIdentityKey(a)) &&
+          String(a.aionClass || a.class || a.role || "")
+            .trim()
+            .toLowerCase() === want
+      );
+      const occupant = available[0] || null;
+      if (occupant) usedKeys.add(memberIdentityKey(occupant));
+      return { slot, occupant };
+    });
+  }
+
   return slots.map((slot) => {
     const roleType = slot.startsWith("dps") ? "dps" : slot;
     const available = accepted.filter(
@@ -1205,7 +1242,11 @@ export function getOccupantsBySlot(
 export function openRolesForSquad(template: Record<string, number>, accepted: any[]): Record<string, number> {
   const open: Record<string, number> = {};
   for (const [role, total] of Object.entries(template)) {
-    const filled = (accepted || []).filter((a: any) => (a.role || "").toLowerCase() === role).length;
+    const filled = (accepted || []).filter((a: any) => {
+      const aClass = String(a.aionClass || a.className || a.role || "");
+      return aClass.trim().toLowerCase() === role.trim().toLowerCase() ||
+        aClass.toLowerCase() === (role || "").toLowerCase();
+    }).length;
     open[role] = Math.max(0, Number(total) - filled);
   }
   return open;
@@ -1355,6 +1396,16 @@ export function squadRolesFilled(roles: Record<string, number>) {
   return Object.values(roles || {}).every((open) => Number(open || 0) === 0);
 }
 
+/** Whether the class-based slots of this lobby are all filled. */
+export function classSlotsFilled(lobby: any): boolean {
+  const req = lobby?.requiredClasses;
+  if (!Array.isArray(req) || req.length === 0) return false;
+  const acceptedClasses = new Set(
+    (lobby?.accepted || []).map((a: any) => String(a.aionClass || a.className || a.role || "").trim().toLowerCase())
+  );
+  return req.every((cls: string) => acceptedClasses.has(String(cls).trim().toLowerCase()));
+}
+
 /** Public offer feed — open recruiting banners only (full squads move to Ongoing). */
 export function isLobbyListedInPublicFeed(lobby: any): boolean {
   if (!lobby) return false;
@@ -1362,11 +1413,18 @@ export function isLobbyListedInPublicFeed(lobby: any): boolean {
   if (cat && cat !== "dungeon" && cat !== "leveling") return false;
   const status = lobby.status || "standby";
   if (status !== "standby") return false;
+  if (Array.isArray(lobby?.requiredClasses) && lobby.requiredClasses.length > 0) {
+    return !classSlotsFilled(lobby);
+  }
   return !squadRolesFilled(lobby.roles || {});
 }
 
-/** Banner / party row slot keys (e.g. tank, healer, dps-1, dps-2). */
+/** Banner / party row slot keys (e.g. tank, healer, dps-1, dps-2, or class names). */
 export function getPartyDisplaySlots(lobby: any): string[] {
+  const req = lobby?.requiredClasses;
+  if (Array.isArray(req) && req.length > 0) {
+    return req.map((cls: string) => String(cls).trim() || "open");
+  }
   const template = getSquadTemplate(lobby);
   const slots: string[] = [];
   for (const [role, total] of Object.entries(template)) {

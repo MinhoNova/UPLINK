@@ -13,33 +13,19 @@ const AION_CLASS_THUMBS: Record<string, string> = {
   Chanter: "/classes/Chanter.png",
 };
 
-/** Lightweight role icons — fallback when a class portrait is unknown. */
-function roleThumbUrl(role: string): string {
-  const n = (role || "").trim();
-  const roleMap: Record<string, string> = {
-    dps: "DPS",
-    tank: "TANK",
-    healer: "HEALER",
-  };
-  const lower = n.toLowerCase();
-  if (roleMap[lower]) return `/classes-thumb/${roleMap[lower]}.png`;
-  const mapped = roleMap[aionClassRole(n)] || "DPS";
-  return `/classes-thumb/${mapped}.png`;
-}
-
 /** Class thumbnail — real portrait when the name is a known Aion class. */
 export function classThumbUrl(name: string): string {
   const n = (name || "").trim();
-  if (!n) return "/classes-thumb/DPS.png";
+  if (!n) return AION_CLASS_THUMBS.Templar;
   const exact = AION_CLASS_THUMBS[n];
   if (exact) return exact;
   const titleCase = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
   if (AION_CLASS_THUMBS[titleCase]) return AION_CLASS_THUMBS[titleCase];
-  return roleThumbUrl(n);
+  return AION_CLASS_THUMBS.Templar;
 }
 
 export function roleIconUrl(role: string): string {
-  return roleThumbUrl(role);
+  return classThumbUrl(role);
 }
 
 type IconSize = "sm" | "lg";

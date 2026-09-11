@@ -161,6 +161,32 @@ export default function Aion2TestClubPage() {
       .map(([role, n]) => ({ role, n: Number(n) }));
   };
 
+  const classSlotsOf = (l: any) => {
+    const req = l?.requiredClasses;
+    if (Array.isArray(req)) {
+      const acceptedClasses = new Set(
+        (l?.accepted || []).map((a: any) => String(a.aionClass || a.class || a.role || "").trim().toLowerCase())
+      );
+      return req.map((cls: string) => ({
+        cls,
+        filled: acceptedClasses.has(String(cls).trim().toLowerCase()),
+      }));
+    }
+    return null;
+  };
+
+  const openRolesLabel = (l: any) => {
+    const slots = classSlotsOf(l);
+    if (slots) {
+      const open = slots.filter((s) => !s.filled);
+      return open.length > 0 ? `OPEN: ${open.map((s) => s.cls).join(" · ")}` : "FULL";
+    }
+    const openRoles = openRolesOf(l);
+    return openRoles.length > 0
+      ? `OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`
+      : "FULL";
+  };
+
   const offerBgOf = (l: any) => {
     const o = lobbyOwner(l);
     if (!o || o.vfxSettings?.showOnBanner === false) return null;
@@ -536,6 +562,7 @@ export default function Aion2TestClubPage() {
                   const isMine = String(offer.ownerId) === meId;
                   const offerBg = offerBgOf(offer);
                   const openRoles = openRolesOf(offer);
+                  const classSlots = classSlotsOf(offer);
                   const applied = alreadyApplied(offer);
                   return (
                   <motion.div
@@ -610,26 +637,44 @@ export default function Aion2TestClubPage() {
                             {String(offer.serverRegion).toUpperCase()}
                           </span>
                         )}
-                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
-                          <Users className="w-3.5 h-3.5 text-cyan-400" />
-                          {openRoles.length > 0
-                            ? `OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`
-                            : "FULL"}
-                        </span>
+                        {classSlots ? (
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                            <Users className="w-3.5 h-3.5 text-cyan-400" />
+                            {openRolesLabel(offer)}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                            <Users className="w-3.5 h-3.5 text-cyan-400" />
+                            {openRoles.length > 0
+                              ? `OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`
+                              : "FULL"}
+                          </span>
+                        )}
                       </div>
+                      {classSlots && classSlots.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          {classSlots.map((s, i) => {
+                            const imgName = s.cls === "Spiritmaster" ? "Elementalist" : s.cls;
+                            return (
+                              <span key={i} className={`relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border ${s.filled ? "border-emerald-400/60 bg-emerald-500/15" : "border-cyan-400/40 bg-black/40"}`} title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
+                                <img src={`/classes/${imgName}.png`} alt={s.cls} className="h-6 w-6 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                                {s.filled && <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border border-black" />}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-
-                    {/* Apply / Delete */}
                     <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                       {applied ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-[9px] font-black uppercase tracking-widest">
+                        <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md">
                           <Check className="w-3 h-3" /> Applied
                         </span>
                       ) : (
                         <button
                           onClick={() => { setApplyTarget(offer); setApplyError(""); }}
                           disabled={!meId || applyingId === String(offer.id)}
-                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5"
+                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"
                         >
                           <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
                         </button>
@@ -639,14 +684,14 @@ export default function Aion2TestClubPage() {
                           <button
                             onClick={() => deleteOffer(offer)}
                             disabled={deletingId === String(offer.id)}
-                            className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/15 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50"
+                            className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md"
                           >
                             {deletingId === String(offer.id) ? "Deleting..." : "Confirm Delete?"}
                           </button>
                         ) : (
                           <button
                             onClick={() => { setConfirmId(String(offer.id)); setDeleteError(""); window.setTimeout(() => setConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }}
-                            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/10 transition-all"
+                            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 hover:backdrop-blur-xl transition-all backdrop-blur-md"
                           >
                             <Trash2 className="w-3 h-3" /> Delete
                           </button>
