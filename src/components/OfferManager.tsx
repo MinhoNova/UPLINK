@@ -321,7 +321,7 @@ export default function OfferManager({
                               {aName}
                             </p>
                             <div className="mt-1 flex items-center gap-1.5">
-                              <img src={classThumbUrl(aionClassOf(app))} alt="" className="h-4 w-4 object-contain" />
+                              <img src={classThumbUrl(aionClassOf(app))} alt="" title={aionClassOf(app) || "Class"} className="h-4 w-4 object-contain" />
                               <span className="text-[9px] font-black uppercase tracking-wider text-cyan-200">
                                 {aionClassOf(app) || "—"}
                               </span>
@@ -393,7 +393,7 @@ export default function OfferManager({
                               {mName}
                             </p>
                             <div className="mt-1 flex items-center gap-1.5">
-                              <img src={roleIconUrl(member.role || "dps")} alt="" className="h-4 w-4 object-contain" />
+                              <img src={roleIconUrl(member.role || "dps")} alt="" title={member.role || "dps"} className="h-4 w-4 object-contain" />
                               <span className="text-[9px] font-black uppercase tracking-wider text-gray-300">
                                 {String(member.role || "dps").toUpperCase()}
                               </span>

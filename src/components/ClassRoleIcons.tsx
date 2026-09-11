@@ -32,6 +32,7 @@ const ClassRoleIcons = ({
          <img
             src={classSrc || roleIconUrl(normalizedClass)}
             alt={className || "Class"}
+            title={className || normalizedClass}
             className={`object-contain relative z-10 drop-shadow-lg ${classImgClassName}`}
             style={{ width: size, height: size }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = roleIconUrl(normalizedClass); }}
@@ -40,6 +41,7 @@ const ClassRoleIcons = ({
             <img
                src={roleIconUrl(normalizedRole)}
                alt={role || "Role"}
+               title={role || normalizedRole}
                className={`w-full h-full object-contain drop-shadow-lg ${roleImgClassName}`}
                style={{ transform: `scale(${roleIconScale(role)})`, transformOrigin: 'center' }}
             />

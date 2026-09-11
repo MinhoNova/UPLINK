@@ -168,6 +168,7 @@ export default function OngoingMissionsPanel({
                   height={20}
                   className="w-5 h-5 object-contain"
                   alt=""
+                  title={a.class || a.aionClass || a.role || "dps"}
                 />
               </div>
             ))}

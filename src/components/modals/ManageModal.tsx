@@ -7,6 +7,8 @@ import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { classThumbUrl } from "@/lib/classThumb";
+import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
 /* ── TEMP ROLE EMOJIS (replace class/role thumbnails until real art ships) ── */
@@ -635,244 +637,6 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                         </div>
                                      </div>
 
-                                        {/* DUAL MODE: APPLICANTS or COMPLETED RUNS */}
-                                         {(!targetLobby.status || targetLobby.status === 'standby') && (
-                                            <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 flex items-center gap-2 ${targetLobby.category === 'leveling' ? 'text-[#8a2be2]' : 'text-[#00ffff]'}`}>
-                                               <Users className="w-3.5 h-3.5" />
-                                               Applications ({targetLobby.applicants?.length || 0})
-                                            </h3>
-                                         )}
-                                         <div className="flex flex-col max-h-[200px] bg-white/[0.02] border border-white/5 rounded-[2rem] p-3">
-                                          {(!targetLobby.status || targetLobby.status === 'standby') ? (
-                                             <>
-                                                <div className="overflow-y-auto space-y-2 pr-1 custom-scrollbar flex-1">
-                                                   {targetLobby.applicants?.length > 0 ? (
-                                                      sortApplicants(
-                                                         targetLobby.applicants.filter((app: any) => {
-                                                            const key = memberIdentityKey(app);
-                                                            return !(targetLobby.accepted || []).some(
-                                                               (a: any) => memberIdentityKey(a) === key
-                                                            );
-                                                         })
-                                                      ).map((app: any) => {
-                                                         const profileUser = registeredUsers.find(
-                                                            (u: any) => String(u.id) === String(app.applicantId || app.userId)
-                                                         );
-                                                         const displayName = resolveProfileDisplayName(
-                                                            profileUser || { name: app.applicantName || app.name },
-                                                            app.applicantName || app.name || "Applicant"
-                                                         );
-                                                         const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
-const aionClass = app.aionClass || app.className || app.class || "";
-                                                          const aionLevel = app.level || app.applicantLevel || "";
-                                                          const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
-return (
-                                                          <div key={app.id} className="relative w-full rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden group hover:border-[#00ffff]/30 transition-all flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-2.5 py-2">
-                                                             {/* player banner backdrop (like lobby offer) */}
-                                                             <div className="absolute inset-0 pointer-events-none opacity-70">
-                                                                {profileImg ? (
-                                                                   <>
-                                                                      <img
-                                                                         src={profileImg}
-                                                                         alt=""
-                                                                         className="absolute inset-0 w-full h-full object-cover"
-                                                                         loading="lazy"
-                                                                         decoding="async"
-                                                                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                      />
-                                                                      <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/80 to-[#050814]/20" />
-                                                                   </>
-                                                                ) : (
-                                                                   <div className="absolute right-0 top-0 bottom-0 w-2/5">
-                                                                      <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
-                                                                      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
-                                                                   </div>
-                                                                )}
-                                                             </div>
-
-                                                             {/* player avatar — left, like the lobby banner */}
-                                                             <div className="relative z-10 flex-shrink-0">
-                                                                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)]">
-                                                                   {profileImg ? (
-                                                                      <img
-                                                                         src={profileImg}
-                                                                         alt=""
-                                                                         className="w-full h-full object-cover"
-                                                                         loading="lazy"
-                                                                         decoding="async"
-                                                                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                      />
-                                                                   ) : (
-                                                                      <Users className="w-6 h-6 text-cyan-400/70" />
-                                                                   )}
-                                                                </div>
-                                                             </div>
-
-                                                             {/* details — middle */}
-                                                             <div className="relative z-10 flex-1 min-w-0">
-                                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                                   <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
-                                                                   <span className="text-[10px] text-cyan-300" title={app.role || "Role"}>
-                                                                      {roleEmoji(app.role)}
-                                                                   </span>
-                                                                   <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
-                                                                      {aionClass || "—"}
-                                                                   </span>
-                                                                   <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300">
-                                                                      Lv {aionLevel || "—"}
-                                                                   </span>
-                                                                   {app.teamName ? (
-                                                                      <span
-                                                                         className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[110px] truncate"
-                                                                         title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
-                                                                            ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
-                                                                            : app.teamName}
-                                                                      >
-                                                                         <Users className="w-3 h-3 text-purple-400" />
-                                                                         {app.teamName}
-                                                                         {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
-                                                                            <span className="text-cyan-300">({app.teamMembers.length})</span>
-                                                                         )}
-                                                                      </span>
-                                                                   ) : null}
-                                                                </div>
-                                                                <div className={`mt-1.5 rounded-lg border px-2 py-1 ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/10 bg-white/[0.02]'}`}>
-                                                                   <p className={`text-[10px] leading-snug line-clamp-2 break-words font-semibold ${note ? 'text-gray-100' : 'text-gray-600'}`}>
-                                                                      {note || "—"}
-                                                                   </p>
-                                                                </div>
-                                                             </div>
-
-                                                             {/* actions — right */}
-                                                             <div className="relative z-10 flex-shrink-0">
-                                                                {ownerAutoAcceptActive ? (
-                                                                   <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap">Auto</span>
-                                                                ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
-                                                                   <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
-                                                                      const upd = lobbies.map(l => l.id === targetLobby.id ? { ...l, applicants: (l.applicants || []).map((a: any) => String(a.id) === String(app.id) ? { ...a, invitedAt: undefined, inviteExpiresAt: undefined, inviteNotifId: undefined } : a) } : l);
-                                                                      const notifId = app.inviteNotifId;
-                                                                      const updNotifs = notifId ? notifications.filter(n => n.id !== notifId) : notifications;
-                                                                      setLobbies(upd); setTargetLobby(upd.find(l => l.id === targetLobby.id)); setNotifications(updNotifs);
-                                                                      saveGlobalData({ lobbies: upd, notifications: updNotifs });
-                                                                      addToast("Invite cancelled.", "info");
-                                                                   }} />
-                                                                ) : (
-                                                                   <motion.button
-                                                                      onClick={() => handleAccept(app)}
-                                                                      whileHover={{ scale: 1.04 }}
-                                                                      whileTap={{ scale: 0.97 }}
-                                                                      className="px-4 py-2 bg-green-500 text-black font-black rounded-xl hover:bg-green-400 transition-all text-[9px] uppercase tracking-wide whitespace-nowrap shadow-[0_0_18px_rgba(34,197,94,0.25)]"
-                                                                   >
-                                                                      Invite
-                                                                   </motion.button>
-                                                                )}
-                                                             </div>
-                                                          </div>
-                                                       ); })
-                                                   ) : (
-                                                      <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
-                                                         <Users className="w-12 h-12 mb-2" />
-                                                         <p className="text-[9px] font-black uppercase tracking-widest">No Signal Detected</p>
-                                                      </div>
-                                                   )}
-                                                </div>
-                                             </>
-                                          ) : (
-                                             <>
-                                                {(() => {
-                                                   const allRuns = targetLobby.detectedRuns || [];
-                                                   const totalRunPages = Math.max(1, Math.ceil(allRuns.length / RUNS_PER_PAGE));
-                                                   const safePage = Math.min(runsPage, totalRunPages);
-                                                   const pageRuns = allRuns.slice((safePage - 1) * RUNS_PER_PAGE, safePage * RUNS_PER_PAGE);
-                                                   const resolveRunMemberVisual = (run: any) => {
-                                                      const memberId = run.memberId;
-                                                      const memberUser = memberId ? registeredUsers.find((u: any) => String(u.id) === String(memberId)) : null;
-                                                      if (memberUser && getUserTier(memberId) === 'secret_club') {
-                                                         return {
-                                                            avatar: memberUser.customAvatar || memberUser.profileGif || memberUser.avatar || run.memberAvatar || '',
-                                                            effect: memberUser.effect || run.memberEffect || 'none',
-                                                         };
-                                                      }
-                                                      if (memberUser) {
-                                                         return {
-                                                            avatar: memberUser.avatar || run.memberAvatar || '',
-                                                            effect: memberUser.effect || run.memberEffect || 'none',
-                                                         };
-                                                      }
-                                                      return { avatar: run.memberAvatar || '', effect: run.memberEffect || 'none' };
-                                                   };
-                                                   return (
-                                                      <>
-                                                <div className="flex items-center justify-between mb-3">
-                                                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-green-400">
-                                                      <Zap className="w-4 h-4" />
-                                                      Completed Runs ({allRuns.length})
-                                                   </h3>
-                                                   {totalRunPages > 1 && (
-                                                      <div className="flex items-center gap-1.5">
-                                                         {Array.from({ length: totalRunPages }, (_, i) => i + 1).map((pageNum) => (
-                                                            <button
-                                                               key={pageNum}
-                                                               onClick={() => setRunsPage(pageNum)}
-                                                               className={`min-w-[26px] h-[26px] rounded-lg text-[9px] font-black transition-all ${safePage === pageNum ? 'bg-green-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-                                                            >
-                                                               {pageNum}
-                                                            </button>
-                                                         ))}
-                                                      </div>
-                                                   )}
-                                                </div>
-                                                <div className="space-y-2 flex-1">
-                                                   {allRuns.length > 0 ? (
-                                                      pageRuns.map((run: any, i: number) => {
-                                                         const memberVisual = resolveRunMemberVisual(run);
-                                                         return (
-                                                         <div key={`${run.url || run.dungeon}-${run.mythic_level}-${i}`} className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] hover:border-green-500/40 transition-all group">
-                                                            <div className="absolute inset-0 z-0 opacity-20">
-                                                               {run.dungeonImg && <img src={run.dungeonImg} className="w-full h-full object-cover" alt="" />}
-                                                               <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent"></div>
-                                                            </div>
-                                                            <div className="relative z-10 px-3 py-2 flex items-center gap-3">
-                                                               <AvatarWithEffect src={memberVisual.avatar} effect={memberVisual.effect} fallbackName={run.memberName || "Operative"} className="w-10 h-10 shrink-0" userId={run.memberId} />
-                                                               <div className="w-9 h-9 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-black/60 flex items-center justify-center">
-                                                                  {run.dungeonImg ? <img src={run.dungeonImg} className="w-full h-full object-cover" alt="" /> : <Zap className="w-4 h-4 text-gray-600" />}
-                                                               </div>
-                                                               <div className="min-w-0 flex-1">
-                                                                  <div className="flex items-center gap-2 mb-0.5">
-                                                                     <span className="text-xs font-black text-white uppercase truncate">{run.dungeonFull || run.dungeon}</span>
-                                                                     <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 font-black">
-                                                                        {run.mythic_level ? `Lv ${run.mythic_level}` : "CLEAR"}
-                                                                     </span>
-                                                                  </div>
-                                                                  <div className="flex items-center gap-2 text-[7px] font-black uppercase tracking-widest">
-                                                                     <span className={`flex items-center gap-1 ${(run.num_keystone_upgrades || 0) > 0 ? 'text-green-400' : 'text-yellow-400'}`}>
-                                                                        {(run.num_keystone_upgrades || 0) > 0 ? 'CLEARED' : 'COMPLETED'}
-                                                                     </span>
-                                                                     {run.clear_time_ms && (
-                                                                        <span className="text-gray-400">{Math.floor(run.clear_time_ms / 60000)}m {Math.floor((run.clear_time_ms % 60000) / 1000)}s</span>
-                                                                     )}
-                                                                     {run.completed_at && (
-                                                                        <span className="text-gray-500">{new Date(run.completed_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                                     )}
-                                                                  </div>
-                                                               </div>
-                                                            </div>
-                                                         </div>
-                                                      );})
-                                                   ) : (
-                                                      <div className="h-full flex flex-col items-center justify-center opacity-30 py-6">
-                                                         <Zap className="w-10 h-10 mb-2" />
-                                                         <p className="text-[9px] font-black uppercase tracking-widest mb-2">Awaiting Run Data</p>
-                                                          <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest">Auto-sync in progress...</p>
-                                                       </div>
-                                                   )}
-                                                </div>
-                                                      </>
-                                                   );
-                                                })()}
-                                             </>
-                                          )}
-                                        </div>
                                   </div>
                                   {/* RIGHT COLUMN: COMS & PAYMENT PROOF */}
                                    <div className="lg:col-span-6 flex flex-col gap-6 min-h-0">
@@ -951,6 +715,287 @@ return (
                                      </div>
                                  </div>
                               </div>
+
+{/* DUAL MODE: APPLICANTS or COMPLETED RUNS — full width below chat */}
+                                 <div className="w-full mt-2">
+
+                                            {/* DUAL MODE: APPLICANTS or COMPLETED RUNS */}
+                                            {(!targetLobby.status || targetLobby.status === 'standby') && (
+                                               <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 flex items-center gap-2 ${targetLobby.category === 'leveling' ? 'text-[#8a2be2]' : 'text-[#00ffff]'}`}>
+                                                  <Users className="w-3.5 h-3.5" />
+                                                  Applications ({targetLobby.applicants?.length || 0})
+                                               </h3>
+                                            )}
+                                            <div className="flex flex-col max-h-[200px] bg-white/[0.02] border border-white/5 rounded-[2rem] p-3">
+                                             {(!targetLobby.status || targetLobby.status === 'standby') ? (
+                                                <>
+                                                   <div className="overflow-y-auto space-y-2 pr-1 custom-scrollbar flex-1">
+                                                      {targetLobby.applicants?.length > 0 ? (
+                                                         sortApplicants(
+                                                            targetLobby.applicants.filter((app: any) => {
+                                                               const key = memberIdentityKey(app);
+                                                               return !(targetLobby.accepted || []).some(
+                                                                  (a: any) => memberIdentityKey(a) === key
+                                                               );
+                                                            })
+                                                         ).map((app: any) => {
+                                                            const profileUser = registeredUsers.find(
+                                                               (u: any) => String(u.id) === String(app.applicantId || app.userId)
+                                                            );
+                                                            const displayName = resolveProfileDisplayName(
+                                                               profileUser || { name: app.applicantName || app.name },
+                                                               app.applicantName || app.name || "Applicant"
+                                                            );
+                                                            const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
+   const aionClass = app.aionClass || app.className || app.class || "";
+const aionLevel = app.level || app.applicantLevel || "";
+                                                              const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
+                                                              const avgRate = getAverageRating(profileUser?.ratings);
+                                                              const rating10 = avgRate > 0 ? Math.round(avgRate * 2 * 10) / 10 : 0;
+                                                              const ratingCount = profileUser?.ratings?.length || 0;
+                                                              const postStatCount = targetLobby.category === 'leveling'
+                                                                 ? (profileUser?.stats?.levelingTotal || 0)
+                                                                 : (targetLobby.category === 'dungeon' ? (profileUser?.stats?.dungeonTotal || 0) : (profileUser?.stats?.postCount || 0));
+                                                              const postStatLabel = targetLobby.category === 'leveling' ? 'Leveling' : (targetLobby.category === 'dungeon' ? 'Dungeons' : 'Posts');
+   return (
+                                                             <div key={app.id} className="relative w-full rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden group hover:border-[#00ffff]/30 transition-all flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-2.5 py-2">
+                                                                {/* player banner backdrop (like lobby offer) */}
+                                                                <div className="absolute inset-0 pointer-events-none opacity-70">
+                                                                   {profileImg ? (
+                                                                      <>
+                                                                         <img
+                                                                            src={profileImg}
+                                                                            alt=""
+                                                                            className="absolute inset-0 w-full h-full object-cover"
+                                                                            loading="lazy"
+                                                                            decoding="async"
+                                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                         />
+                                                                         <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/80 to-[#050814]/20" />
+                                                                      </>
+                                                                   ) : (
+                                                                      <div className="absolute right-0 top-0 bottom-0 w-2/5">
+                                                                         <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
+                                                                         <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
+                                                                      </div>
+                                                                   )}
+                                                                </div>
+   
+                                                                {/* player avatar — left, like the lobby banner */}
+                                                                <div className="relative z-10 flex-shrink-0">
+                                                                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)]">
+                                                                      {profileImg ? (
+                                                                         <img
+                                                                            src={profileImg}
+                                                                            alt=""
+                                                                            className="w-full h-full object-cover"
+                                                                            loading="lazy"
+                                                                            decoding="async"
+                                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                         />
+                                                                      ) : (
+                                                                         <Users className="w-6 h-6 text-cyan-400/70" />
+                                                                      )}
+                                                                   </div>
+                                                                </div>
+   
+{/* details — middle */}
+                                                                 <div className="relative z-10 flex-1 min-w-0 flex flex-col gap-1.5 py-0.5">
+                                                                    {/* row 1 — name (left) vs category posts (right, opposite the name) */}
+                                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                                       <span className="text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
+                                                                       <span className="text-[10px] text-cyan-300" title={app.role || "Role"}>
+                                                                          {roleEmoji(app.role)}
+                                                                       </span>
+                                                                       {aionClass ? (
+                                                                          <img
+                                                                             src={classThumbUrl(aionClass)}
+                                                                             alt={aionClass}
+                                                                             title={aionClass}
+                                                                             className="w-4 h-4 object-contain rounded-sm"
+                                                                             loading="lazy"
+                                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                          />
+                                                                       ) : null}
+                                                                       <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300">
+                                                                          Lv {aionLevel || "—"}
+                                                                       </span>
+                                                                       {app.teamName ? (
+                                                                          <span
+                                                                             className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[110px] truncate"
+                                                                             title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
+                                                                                ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
+                                                                                : app.teamName}
+                                                                          >
+                                                                             <Users className="w-3 h-3 text-purple-400" />
+                                                                             {app.teamName}
+                                                                             {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
+                                                                                <span className="text-cyan-300">({app.teamMembers.length})</span>
+                                                                             )}
+                                                                          </span>
+                                                                       ) : null}
+                                                                       <span
+                                                                          className="ml-auto flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap"
+                                                                          title={`${postStatCount} ${postStatLabel.toLowerCase()} on site`}
+                                                                       >
+                                                                          <Zap className="w-3 h-3 text-[#00ffff]" />
+                                                                          <span className="tabular-nums">{postStatCount}</span> {postStatLabel}
+                                                                       </span>
+                                                                    </div>
+                                                                    {/* row 2 — reviews */}
+                                                                    <div className="flex items-center gap-1.5">
+                                                                       <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                                                       {ratingCount > 0 ? (
+                                                                          <span className="text-[10px] font-black text-yellow-300 tracking-wide">
+                                                                             {rating10.toFixed(1)} <span className="text-gray-500">/ 10</span>
+                                                                             <span className="text-gray-500 font-semibold"> ({ratingCount})</span>
+                                                                          </span>
+                                                                       ) : (
+                                                                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">No reviews</span>
+                                                                       )}
+                                                                    </div>
+                                                                    {/* row 3 — note */}
+                                                                    <div className={`mt-1 rounded-lg border px-2 py-1 ${note ? 'border-[#8a2be2]/30 bg-[#8a2be2]/10' : 'border-dashed border-white/10 bg-white/[0.02]'}`}>
+                                                                       <p className={`text-[10px] leading-snug line-clamp-2 break-words font-semibold ${note ? 'text-gray-100' : 'text-gray-600'}`}>
+                                                                          {note || "—"}
+                                                                       </p>
+                                                                    </div>
+                                                                 </div>
+   
+{/* actions — right */}
+                                                                 <div className="relative z-10 flex-shrink-0 flex items-center">
+                                                                    {ownerAutoAcceptActive ? (
+                                                                       <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap">Auto</span>
+                                                                    ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
+                                                                       <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
+                                                                          const upd = lobbies.map(l => l.id === targetLobby.id ? { ...l, applicants: (l.applicants || []).map((a: any) => String(a.id) === String(app.id) ? { ...a, invitedAt: undefined, inviteExpiresAt: undefined, inviteNotifId: undefined } : a) } : l);
+                                                                          const notifId = app.inviteNotifId;
+                                                                          const updNotifs = notifId ? notifications.filter(n => n.id !== notifId) : notifications;
+                                                                          setLobbies(upd); setTargetLobby(upd.find(l => l.id === targetLobby.id)); setNotifications(updNotifs);
+                                                                          saveGlobalData({ lobbies: upd, notifications: updNotifs });
+                                                                          addToast("Invite cancelled.", "info");
+                                                                       }} />
+                                                                    ) : (
+                                                                       <motion.button
+                                                                          onClick={() => handleAccept(app)}
+                                                                          whileHover={{ scale: 1.05 }}
+                                                                          whileTap={{ scale: 0.95 }}
+                                                                          className="px-4 py-2.5 bg-gradient-to-br from-[#00ffcc] to-[#00b3ff] text-black font-black rounded-xl transition-all text-[9px] uppercase tracking-widest whitespace-nowrap shadow-[0_0_18px_rgba(0,255,204,0.35)] border border-cyan-300/40 flex items-center gap-1.5"
+                                                                       >
+                                                                          <Zap className="w-3 h-3" />
+                                                                          Invite
+                                                                       </motion.button>
+                                                                    )}
+                                                                 </div>
+                                                             </div>
+                                                          ); })
+                                                      ) : (
+                                                         <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
+                                                            <Users className="w-12 h-12 mb-2" />
+                                                            <p className="text-[9px] font-black uppercase tracking-widest">No Signal Detected</p>
+                                                         </div>
+                                                      )}
+                                                   </div>
+                                                </>
+                                             ) : (
+                                                <>
+                                                   {(() => {
+                                                      const allRuns = targetLobby.detectedRuns || [];
+                                                      const totalRunPages = Math.max(1, Math.ceil(allRuns.length / RUNS_PER_PAGE));
+                                                      const safePage = Math.min(runsPage, totalRunPages);
+                                                      const pageRuns = allRuns.slice((safePage - 1) * RUNS_PER_PAGE, safePage * RUNS_PER_PAGE);
+                                                      const resolveRunMemberVisual = (run: any) => {
+                                                         const memberId = run.memberId;
+                                                         const memberUser = memberId ? registeredUsers.find((u: any) => String(u.id) === String(memberId)) : null;
+                                                         if (memberUser && getUserTier(memberId) === 'secret_club') {
+                                                            return {
+                                                               avatar: memberUser.customAvatar || memberUser.profileGif || memberUser.avatar || run.memberAvatar || '',
+                                                               effect: memberUser.effect || run.memberEffect || 'none',
+                                                            };
+                                                         }
+                                                         if (memberUser) {
+                                                            return {
+                                                               avatar: memberUser.avatar || run.memberAvatar || '',
+                                                               effect: memberUser.effect || run.memberEffect || 'none',
+                                                            };
+                                                         }
+                                                         return { avatar: run.memberAvatar || '', effect: run.memberEffect || 'none' };
+                                                      };
+                                                      return (
+                                                         <>
+                                                   <div className="flex items-center justify-between mb-3">
+                                                      <h3 className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-green-400">
+                                                         <Zap className="w-4 h-4" />
+                                                         Completed Runs ({allRuns.length})
+                                                      </h3>
+                                                      {totalRunPages > 1 && (
+                                                         <div className="flex items-center gap-1.5">
+                                                            {Array.from({ length: totalRunPages }, (_, i) => i + 1).map((pageNum) => (
+                                                               <button
+                                                                  key={pageNum}
+                                                                  onClick={() => setRunsPage(pageNum)}
+                                                                  className={`min-w-[26px] h-[26px] rounded-lg text-[9px] font-black transition-all ${safePage === pageNum ? 'bg-green-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                                                               >
+                                                                  {pageNum}
+                                                               </button>
+                                                            ))}
+                                                         </div>
+                                                      )}
+                                                   </div>
+                                                   <div className="space-y-2 flex-1">
+                                                      {allRuns.length > 0 ? (
+                                                         pageRuns.map((run: any, i: number) => {
+                                                            const memberVisual = resolveRunMemberVisual(run);
+                                                            return (
+                                                            <div key={`${run.url || run.dungeon}-${run.mythic_level}-${i}`} className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] hover:border-green-500/40 transition-all group">
+                                                               <div className="absolute inset-0 z-0 opacity-20">
+                                                                  {run.dungeonImg && <img src={run.dungeonImg} className="w-full h-full object-cover" alt="" />}
+                                                                  <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent"></div>
+                                                               </div>
+                                                               <div className="relative z-10 px-3 py-2 flex items-center gap-3">
+                                                                  <AvatarWithEffect src={memberVisual.avatar} effect={memberVisual.effect} fallbackName={run.memberName || "Operative"} className="w-10 h-10 shrink-0" userId={run.memberId} />
+                                                                  <div className="w-9 h-9 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-black/60 flex items-center justify-center">
+                                                                     {run.dungeonImg ? <img src={run.dungeonImg} className="w-full h-full object-cover" alt="" /> : <Zap className="w-4 h-4 text-gray-600" />}
+                                                                  </div>
+                                                                  <div className="min-w-0 flex-1">
+                                                                     <div className="flex items-center gap-2 mb-0.5">
+                                                                        <span className="text-xs font-black text-white uppercase truncate">{run.dungeonFull || run.dungeon}</span>
+                                                                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 font-black">
+                                                                           {run.mythic_level ? `Lv ${run.mythic_level}` : "CLEAR"}
+                                                                        </span>
+                                                                     </div>
+                                                                     <div className="flex items-center gap-2 text-[7px] font-black uppercase tracking-widest">
+                                                                        <span className={`flex items-center gap-1 ${(run.num_keystone_upgrades || 0) > 0 ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                                           {(run.num_keystone_upgrades || 0) > 0 ? 'CLEARED' : 'COMPLETED'}
+                                                                        </span>
+                                                                        {run.clear_time_ms && (
+                                                                           <span className="text-gray-400">{Math.floor(run.clear_time_ms / 60000)}m {Math.floor((run.clear_time_ms % 60000) / 1000)}s</span>
+                                                                        )}
+                                                                        {run.completed_at && (
+                                                                           <span className="text-gray-500">{new Date(run.completed_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                                        )}
+                                                                     </div>
+                                                                  </div>
+                                                               </div>
+                                                            </div>
+                                                         );})
+                                                      ) : (
+                                                         <div className="h-full flex flex-col items-center justify-center opacity-30 py-6">
+                                                            <Zap className="w-10 h-10 mb-2" />
+                                                            <p className="text-[9px] font-black uppercase tracking-widest mb-2">Awaiting Run Data</p>
+                                                             <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest">Auto-sync in progress...</p>
+                                                          </div>
+                                                      )}
+                                                   </div>
+                                                         </>
+                                                      );
+                                                   })()}
+                                                </>
+                                             )}
+                                           </div>
+
+                                </div>
+
                            </div>
                             {deleteConfirmation?.isOpen && (
                               <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">

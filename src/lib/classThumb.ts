@@ -1,9 +1,21 @@
 import { aionClassRole } from "@/lib/aionClassMeta";
 
-/** Lightweight 32×32 PNG thumbnails — avoid multi-MB SVG decode in lists. */
-export function classThumbUrl(name: string): string {
-  const n = (name || "").trim();
-  if (!n) return "/classes-thumb/DPS.png";
+/** Real Aion 2 class portraits served from /classes (folder: Classes/ at project root). */
+const AION_CLASS_THUMBS: Record<string, string> = {
+  Templar: "/classes/Templar.png",
+  Gladiator: "/classes/Gladiator.png",
+  Assassin: "/classes/Assassin.png",
+  Ranger: "/classes/Ranger.png",
+  Sorcerer: "/classes/Sorcerer.png",
+  Spiritmaster: "/classes/Elementalist.png",
+  Elementalist: "/classes/Elementalist.png",
+  Cleric: "/classes/Cleric.png",
+  Chanter: "/classes/Chanter.png",
+};
+
+/** Lightweight role icons — fallback when a class portrait is unknown. */
+function roleThumbUrl(role: string): string {
+  const n = (role || "").trim();
   const roleMap: Record<string, string> = {
     dps: "DPS",
     tank: "TANK",
@@ -11,12 +23,23 @@ export function classThumbUrl(name: string): string {
   };
   const lower = n.toLowerCase();
   if (roleMap[lower]) return `/classes-thumb/${roleMap[lower]}.png`;
-  const role = roleMap[aionClassRole(n)] || "DPS";
-  return `/classes-thumb/${role}.png`;
+  const mapped = roleMap[aionClassRole(n)] || "DPS";
+  return `/classes-thumb/${mapped}.png`;
+}
+
+/** Class thumbnail — real portrait when the name is a known Aion class. */
+export function classThumbUrl(name: string): string {
+  const n = (name || "").trim();
+  if (!n) return "/classes-thumb/DPS.png";
+  const exact = AION_CLASS_THUMBS[n];
+  if (exact) return exact;
+  const titleCase = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+  if (AION_CLASS_THUMBS[titleCase]) return AION_CLASS_THUMBS[titleCase];
+  return roleThumbUrl(n);
 }
 
 export function roleIconUrl(role: string): string {
-  return classThumbUrl(role);
+  return roleThumbUrl(role);
 }
 
 type IconSize = "sm" | "lg";
