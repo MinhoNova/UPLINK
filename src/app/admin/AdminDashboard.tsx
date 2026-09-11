@@ -120,7 +120,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetch("/api/data").then((r) => r.json()).then((data) => {
+    fetch("/api/data", { credentials: "include" }).then((r) => r.json()).then((data) => {
       setUsers(data.registeredUsers || []);
     }).catch(() => {});
   }, []);

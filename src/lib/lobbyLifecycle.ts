@@ -438,11 +438,11 @@ export function getOfferThreadStatusMeta(status: string, thread?: any): {
   glow: string;
 } {
   if (thread && isEmbeddedFootArchive(thread)) {
-    return { label: "UNPAID", color: "#eab308", bg: "rgba(234,179,8,0.12)", glow: "rgba(234,179,8,0.35)" };
+    return { label: "UNPAID", color: "#ef4444", bg: "rgba(239,68,68,0.12)", glow: "rgba(239,68,68,0.35)" };
   }
   switch (status) {
     case "unpaid":
-      return { label: "UNPAID", color: "#eab308", bg: "rgba(234,179,8,0.12)", glow: "rgba(234,179,8,0.35)" };
+      return { label: "UNPAID", color: "#ef4444", bg: "rgba(239,68,68,0.12)", glow: "rgba(239,68,68,0.35)" };
     case "in_progress":
       return { label: "ACTIVE", color: "#22c55e", bg: "rgba(34,197,94,0.12)", glow: "rgba(34,197,94,0.35)" };
     case "failed":
@@ -460,10 +460,11 @@ export function getOfferThreadStatusMeta(status: string, thread?: any): {
 
 export function formatOfferThreadLabel(lobby: any, index: number): string {
   const runs = lobby.runsCount || 1;
-  const gold = lobby.goldPerRun || 0;
+  const kinah = lobby.pricePerRun || lobby.totalGold || 0;
   const status = lobby.status || "standby";
   const badge = getOfferThreadStatusMeta(status).label;
-  return `Thread ${index + 1} · ${runs}x ${gold}K · ${badge}`;
+  const price = kinah > 0 ? `${kinah.toFixed(1)}M` : "";
+  return `Thread ${index + 1} · ${runs}×${price ? ` ${price}` : ""} · ${badge}`;
 }
 
 /** @deprecated use userCanViewOfferThread */
@@ -818,20 +819,25 @@ export function deductRunsFromDungeons(
 ) {
   const src = { ...(selectedDungeons || {}) };
   const totalFromDungeons = Object.values(src).reduce((s, v) => s + (Number(v) || 0), 0);
-  const total = totalFromDungeons > 0 ? totalFromDungeons : runsCount;
+
+  if (totalFromDungeons <= 0) {
+    const completedCount = Math.min(deduct, runsCount);
+    const remainingCount = Math.max(0, runsCount - completedCount);
+    return { completedPart: {} as Record<string, number>, remainingPart: {} as Record<string, number>, remainingCount, completedCount };
+  }
+
+  const total = totalFromDungeons;
   let left = Math.min(deduct, total);
   const completedPart: Record<string, number> = {};
   const remainingPart: Record<string, number> = { ...src };
 
-  if (totalFromDungeons > 0) {
-    for (const key of Object.keys(src)) {
-      while ((remainingPart[key] || 0) > 0 && left > 0) {
-        remainingPart[key]--;
-        completedPart[key] = (completedPart[key] || 0) + 1;
-        left--;
-      }
-      if (!remainingPart[key]) delete remainingPart[key];
+  for (const key of Object.keys(src)) {
+    while ((remainingPart[key] || 0) > 0 && left > 0) {
+      remainingPart[key]--;
+      completedPart[key] = (completedPart[key] || 0) + 1;
+      left--;
     }
+    if (!remainingPart[key]) delete remainingPart[key];
   }
 
   const completedCount = deduct - left;

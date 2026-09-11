@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Radio, Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon
+  Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -174,6 +174,105 @@ export default function Aion2TestClubPage() {
     }
     return out.slice(0, 6);
   }, [lobbies, meId]);
+
+  const unpaidMissions = useMemo(
+    () => missions.filter((m: any) => (m.status || "standby") === "unpaid"),
+    [missions]
+  );
+  const activeMissions = useMemo(
+    () => missions.filter((m: any) => (m.status || "standby") !== "unpaid"),
+    [missions]
+  );
+
+  const renderMissionCard = (m: any) => {
+    const owner = missionOwner(m);
+    const vfxOn = owner && (owner.vfxSettings?.showOnOngoing !== false);
+    const bgPoster = vfxOn ? resolveLobbyBannerBg(m, owner, owner?.activeVfx) : null;
+    const totalRuns = m.selectedDungeons
+      ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
+      : m.runsCount || 1;
+    const shown = (m.accepted || []).length;
+    const open = Math.max(0, 4 - shown);
+    const isUnpaid = (m.status || "standby") === "unpaid";
+    const accent = isUnpaid ? "red" : "cyan";
+    return (
+      <motion.div
+        key={String(m.id)}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.01 }}
+        onClick={() => router.push(`/manage/${String(m.id)}`)}
+        className={`tn-light relative w-full min-h-[104px] rounded-2xl border overflow-hidden flex flex-col justify-center px-4 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${
+          isUnpaid
+            ? "border-red-500/30 hover:border-red-400/50"
+            : "border-cyan-500/20 hover:border-cyan-400/40"
+        }`}
+      >
+        {bgPoster && (
+          <div className="absolute inset-0 z-0">
+            <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-55" loading="lazy" decoding="async" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/75 via-[#050814]/55 to-[#050814]/80" />
+          </div>
+        )}
+
+        <div className="relative z-10 flex items-start justify-between gap-2">
+          <p className="text-base font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+            {m.category === "leveling" ? (
+              <>
+                <span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">Leveling</span>
+                <span className="text-[#00ffff]">{m.startLevel || "1"}-{m.endLevel || "80"}</span>
+              </>
+            ) : (
+              <>
+                <span className="mr-1 text-[#00ffff]">{totalRuns}x</span> RUN
+              </>
+            )}
+          </p>
+          <div className="shrink-0 flex items-center gap-1.5">
+            <span
+              className={`px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${
+                isUnpaid
+                  ? "border-red-500/40 bg-red-500/15 text-red-300"
+                  : m.status === "in_progress"
+                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                    : m.status === "payment_pending"
+                      ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
+                      : "border-cyan-500/30 bg-black/50 text-cyan-300"
+              }`}
+            >
+              {isUnpaid ? "UNPAID" : m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
+            </span>
+            <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">
+              Open Thread ›
+            </span>
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+            {m.serverRegion && (
+              <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">
+                {String(m.serverRegion).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[7px] font-black text-slate-400 uppercase tracking-[0.15em] mr-0.5">Squad {shown}/4</span>
+            <div className="flex -space-x-1">
+              {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
+                <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
+                  <img src={classThumbUrl(a.class || a.aionClass || a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" title={a.class || a.aionClass || a.role || "dps"} />
+                </div>
+              ))}
+              {Array.from({ length: Math.max(0, open) }).map((_, i) => (
+                <div key={i} className="w-5 h-5 rounded-md border border-dashed border-white/15 bg-black/40" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   const missionOwner = (m: any) =>
     registeredUsers.find((u: any) => String(u.id) === String(m.ownerId)) || null;
@@ -802,16 +901,13 @@ export default function Aion2TestClubPage() {
           {/* 3. Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
             <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
-              {/* Widget Header */}
-              <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10">
-                  <Shield className="w-4 h-4 text-blue-300" />
-                </span>
+              {/* Widget Header — slim */}
+              <div className="flex items-center justify-between pb-4 mb-5 border-b border-blue-900/30">
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">
                   {t("missions_header") || "ONGOING MISSIONS"}
                 </h3>
-                {meId && (
-                  <span className="ml-auto flex items-center gap-1.5">
+                {meId ? (
+                  <span className="flex items-center gap-1.5">
                     {signalScan ? (
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                     ) : (
@@ -821,17 +917,11 @@ export default function Aion2TestClubPage() {
                       {signalScan ? (t("missions_scan") || "SCANNING") : "LIVE"}
                     </span>
                   </span>
-                )}
+                ) : null}
               </div>
 
-              {/* Center Sigil Empty State */}
               {missions.length === 0 ? (
-                <div className="flex flex-col items-center text-center py-10">
-                  <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
-                    <Shield className="w-8 h-8 text-blue-400/70 drop-shadow-[0_0_10px_rgba(59,130,246,0.9)] animate-pulse" />
-                    {signalScan && <Radio className="absolute w-5 h-5 text-blue-300/60 animate-ping" />}
-                  </div>
+                <div className="flex flex-col items-center text-center py-6">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                     {signalScan
                       ? (t("missions_scan") || "SCANNING FOR SIGNAL...")
@@ -839,85 +929,31 @@ export default function Aion2TestClubPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {missions.map((m) => {
-                      const owner = missionOwner(m);
-                      const vfxOn =
-                        owner && (owner.vfxSettings?.showOnOngoing !== false);
-                      const bgPoster = vfxOn
-                        ? resolveLobbyBannerBg(m, owner, owner?.activeVfx)
-                        : null;
-                      const totalRuns = m.selectedDungeons
-                        ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
-                        : m.runsCount || 1;
-                      const shown = (m.accepted || []).length
-                      const open = Math.max(0, 4 - shown);
-                      return (
-                        <motion.div
-                          key={String(m.id)}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          whileHover={{ scale: 1.01 }}
-                          onClick={() => router.push(`/manage/${String(m.id)}`)}
-                          className="tn-light relative w-full min-h-[104px] rounded-2xl border border-cyan-500/20 overflow-hidden flex flex-col justify-center px-4 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:border-cyan-400/40 hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all"
-                        >
-                          {bgPoster && (
-                            <div className="absolute inset-0 z-0">
-                              <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-55" loading="lazy" decoding="async" />
-                              <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/75 via-[#050814]/55 to-[#050814]/80" />
-                            </div>
-                          )}
+                <div className="space-y-5">
+                  {activeMissions.length > 0 && (
+                    <div className="space-y-3">
+                      <AnimatePresence mode="popLayout">
+                        {activeMissions.map((m) => renderMissionCard(m))}
+                      </AnimatePresence>
+                    </div>
+                  )}
 
-                          <div className="relative z-10 flex items-start justify-between gap-2">
-                            <p className="text-base font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
-                              {m.category === "leveling" ? (
-                                <>
-                                  <span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">Leveling</span>
-                                  <span className="text-[#00ffff]">{m.startLevel || "1"}-{m.endLevel || "80"}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="mr-1 text-[#00ffff]">{totalRuns}x</span> RUN
-                                </>
-                              )}
-                            </p>
-                            <div className="shrink-0 flex items-center gap-1.5">
-                              <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-500/30 bg-black/50 text-cyan-300">
-                                {m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
-                              </span>
-                              <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">
-                                Open Thread ›
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="relative z-10 mt-2.5 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                              {m.serverRegion && (
-                                <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">
-                                  {String(m.serverRegion).toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[7px] font-black text-slate-400 uppercase tracking-[0.15em] mr-0.5">Squad {shown}/4</span>
-                              <div className="flex -space-x-1">
-                                {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
-                                  <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
-                                    <img src={classThumbUrl(a.class || a.aionClass || a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" title={a.class || a.aionClass || a.role || "dps"} />
-                                  </div>
-                                ))}
-                                {Array.from({ length: Math.max(0, open) }).map((_, i) => (
-                                  <div key={i} className="w-5 h-5 rounded-md border border-dashed border-white/15 bg-black/40" />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
+                  {unpaidMissions.length > 0 && (
+                    <div className="pt-3 border-t border-red-500/20">
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-red-300">
+                          UNPAID RUNS
+                        </span>
+                        <span className="ml-auto rounded-full bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[8px] font-black tracking-widest text-red-300">
+                          {unpaidMissions.length}/{missions.length}
+                        </span>
+                      </div>
+                      <AnimatePresence mode="popLayout">
+                        {unpaidMissions.map((m) => renderMissionCard(m))}
+                      </AnimatePresence>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

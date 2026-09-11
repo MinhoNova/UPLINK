@@ -13,13 +13,18 @@ interface OfferThreadSelectProps {
 
 function threadMeta(thread: any, index: number) {
   const status = thread.status || "standby";
+  const kinah = thread.pricePerRun || thread.totalGold || 0;
   return {
     index: index + 1,
     runs: thread.runsCount || 1,
-    gold: thread.goldPerRun || 0,
+    kinah,
     status,
     statusMeta: getOfferThreadStatusMeta(status, thread),
     members: (thread.accepted || []).length,
+    serviceName: thread.serviceName || thread.title || "",
+    selectedOption: thread.selectedOption || thread.selectedOptionGroup || "",
+    serverRegion: thread.serverRegion || "",
+    category: thread.category || "",
   };
 }
 
@@ -71,7 +76,7 @@ export default function OfferThreadSelect({ threads, value, onChange }: OfferThr
         <span className="relative min-w-0 flex-1 truncate text-[10px] font-black uppercase tracking-[0.12em] text-white">
           <span className="text-[#00ffff]">T{selectedMeta.index}</span>
           <span className="mx-1.5 text-white/20">·</span>
-          <span>{selectedMeta.runs}× {selectedMeta.gold}K</span>
+          <span>{selectedMeta.runs}×{selectedMeta.kinah > 0 ? ` ${selectedMeta.kinah.toFixed(1)}M` : ""}</span>
           <span className="mx-1.5 text-white/20">·</span>
           <span style={{ color: selectedMeta.statusMeta.color }}>{selectedMeta.statusMeta.label}</span>
         </span>
@@ -136,7 +141,7 @@ export default function OfferThreadSelect({ threads, value, onChange }: OfferThr
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-[10px] font-black uppercase tracking-wider text-white">
-                          {meta.runs}× {meta.gold}K
+                          {meta.runs}×{meta.kinah > 0 ? ` ${meta.kinah.toFixed(1)}M` : ""}
                         </span>
                         <span
                           className="shrink-0 rounded-full px-2 py-0.5 text-[7px] font-black uppercase tracking-widest"
@@ -155,6 +160,23 @@ export default function OfferThreadSelect({ threads, value, onChange }: OfferThr
                           <span className="text-[#00ffff]">· viewing</span>
                         )}
                       </span>
+                      {(meta.serviceName || meta.selectedOption) && (
+                        <span className="mt-0.5 flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-gray-500">
+                          <span className="truncate text-[#00ffff]/80">{meta.serviceName}</span>
+                          {meta.selectedOption && (
+                            <>
+                              <span className="text-white/20">·</span>
+                              <span className="text-emerald-400/80">{meta.selectedOption}</span>
+                            </>
+                          )}
+                          {meta.serverRegion && (
+                            <>
+                              <span className="text-white/20">·</span>
+                              <span className="text-violet-300/80">{meta.serverRegion}</span>
+                            </>
+                          )}
+                        </span>
+                      )}
                     </span>
                     {isActive ? (
                       <Check className="h-4 w-4 shrink-0 text-[#00ffff]" />

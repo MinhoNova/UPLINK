@@ -380,6 +380,8 @@ export default function CreateOfferPage() {
   const [showOptions, setShowOptions] = useState(false);
   const [pickedOption, setPickedOption] = useState<AionServiceOption | null>(null);
   const [pickedVariant, setPickedVariant] = useState<AionServiceOption | null>(null);
+  const [difficultyOpen, setDifficultyOpen] = useState(false);
+  const [difficulty, setDifficulty] = useState("Average");
   const [pricePerRun, setPricePerRun] = useState(0);
   const [maxBoosters, setMaxBoosters] = useState(1);
   const [requiredClasses, setRequiredClasses] = useState<string[]>([]);
@@ -416,6 +418,8 @@ export default function CreateOfferPage() {
       setShowOptions(false);
       setPickedOption(null);
       setPickedVariant(null);
+      setDifficulty("Average");
+      setDifficultyOpen(false);
     }
   }, [sel?.id, marketPrices]);
 
@@ -427,7 +431,7 @@ export default function CreateOfferPage() {
     setStep("details");
   };
   const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPickedVariant(null); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPickedVariant(null); setDifficulty("Average"); setDifficultyOpen(false); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -451,13 +455,13 @@ export default function CreateOfferPage() {
         category,
         title: `${qty}× ${sel.name}`,
         serviceName: String(sel.name || "Mission"),
-        notes: `${sel.description || ""} · ${region}${pickedOption ? ` · ${pickedOption.label}` : ""}${pickedVariant ? ` · ${pickedVariant.label}` : ""}`,
+        notes: `${sel.description || ""} · ${region}${pickedOption ? ` · ${pickedOption.label}` : ""}${difficulty !== "Average" && pickedOption?.variants?.length ? ` · ${difficulty}` : ""}${pickedVariant && difficulty === "Average" ? ` · ${pickedVariant.label}` : ""}`,
         runsCount: qty,
         pricePerRun,
         maxBoosters,
         requiredClasses: requiredClasses.length > 0 ? requiredClasses : undefined,
-        selectedOption: pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
-        selectedOptionGroup: pickedVariant ? pickedOption?.label || undefined : undefined,
+        selectedOption: difficulty !== "Average" ? difficulty : pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
+        selectedOptionGroup: (difficulty !== "Average" || pickedVariant) ? pickedOption?.label || undefined : undefined,
         serverRegion: region,
         roles: requiredClasses.length > 0
           ? requiredClasses.reduce((acc: Record<string, number>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
@@ -655,8 +659,14 @@ export default function CreateOfferPage() {
                                   if (opt.variants && opt.variants.length > 0) {
                                     setPickedOption(opt);
                                     setPickedVariant(null);
+                                    const avg = opt.variants.reduce((s, v) => s + v.priceKina, 0) / opt.variants.length;
+                                    setPricePerRun(Math.round(avg * 100) / 100);
+                                    setDifficulty("Average");
+                                    setDifficultyOpen(false);
+                                    setStep("details");
                                   } else if (pickedOption && pickedOption.variants?.length) {
                                     setPickedVariant(opt);
+                                    setDifficulty(opt.label);
                                     setPricePerRun(opt.priceKina);
                                     setStep("details");
                                   } else {
@@ -847,6 +857,126 @@ export default function CreateOfferPage() {
                               </div>
                             </div>
 
+                            {/* DIFFICULTY — Normal/Hard pair for dungeon-category offers that have no sub-options */}
+                            {sel?.category === "Dungeons" && !pickedOption && (
+                              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+                                <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                  <Swords className="h-3.5 w-3.5 text-cyan-400" /> Difficulty · Normal / Hard
+                                </p>
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setDifficultyOpen((o) => !o)}
+                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-left transition-colors hover:border-cyan-400/40 cursor-pointer"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <span className="text-sm font-black text-white">{difficulty}</span>
+                                      <span className="text-[10px] font-bold text-cyan-300">
+                                        {pricePerRun.toFixed(2)}M
+                                      </span>
+                                    </span>
+                                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${difficultyOpen ? "rotate-180" : ""}`} />
+                                  </button>
+                                  {difficultyOpen && (
+                                    <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-20 overflow-hidden rounded-xl border border-cyan-400/25 bg-[#0a0f26]/95 shadow-[0_18px_44px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                                      <button
+                                        type="button"
+                                        onClick={() => { setDifficulty("Average"); setDifficultyOpen(false); setPricePerRun(sel.basePriceKina); }}
+                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Average" ? "bg-cyan-500/10" : ""}`}
+                                      >
+                                        <span className="text-xs font-bold text-white">Average (both)</span>
+                                        <span className="text-[10px] font-black text-cyan-300">{sel.basePriceKina.toFixed(2)}M</span>
+                                      </button>
+                                      <div className="border-t border-white/[0.06] my-1" />
+                                      <button
+                                        type="button"
+                                        onClick={() => { setDifficulty("Normal"); setDifficultyOpen(false); setPricePerRun(sel.basePriceKina); }}
+                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Normal" ? "bg-cyan-500/10" : ""}`}
+                                      >
+                                        <span className="text-xs font-bold text-white">Normal only</span>
+                                        <span className="text-[10px] font-black text-cyan-300">{sel.basePriceKina.toFixed(2)}M</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setDifficulty("Hard"); setDifficultyOpen(false); setPricePerRun(Math.round(sel.basePriceKina * 1.5 * 100) / 100); }}
+                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Hard" ? "bg-cyan-500/10" : ""}`}
+                                      >
+                                        <span className="text-xs font-bold text-white">Hard only</span>
+                                        <span className="text-[10px] font-black text-cyan-300">{(Math.round(sel.basePriceKina * 1.5 * 100) / 100).toFixed(2)}M</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
+                                  Owner picks the dungeon difficulty — price adjusts accordingly
+                                </p>
+                              </div>
+                            )}
+                            {/* DIFFICULTY (per dungeon — owner picks) */}
+                            {pickedOption && pickedOption.variants && pickedOption.variants.length > 1 && (
+                              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+                                <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                  <Swords className="h-3.5 w-3.5 text-cyan-400" /> Difficulty · {pickedOption.label}
+                                </p>
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() => setDifficultyOpen((o) => !o)}
+                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-left transition-colors hover:border-cyan-400/40 cursor-pointer"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <span className="text-sm font-black text-white">{difficulty}</span>
+                                      {difficulty !== "Average" && (
+                                        <span className="text-[10px] font-bold text-cyan-300">
+                                          {(pickedOption.variants.find((v) => v.label === difficulty)?.priceKina ?? 0).toFixed(2)}M
+                                        </span>
+                                      )}
+                                    </span>
+                                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${difficultyOpen ? "rotate-180" : ""}`} />
+                                  </button>
+                                  {difficultyOpen && (
+                                    <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-20 overflow-hidden rounded-xl border border-cyan-400/25 bg-[#0a0f26]/95 shadow-[0_18px_44px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setDifficulty("Average");
+                                          setDifficultyOpen(false);
+                                          const avg = pickedOption.variants.reduce((s, v) => s + v.priceKina, 0) / pickedOption.variants.length;
+                                          setPricePerRun(Math.round(avg * 100) / 100);
+                                          setPickedVariant(null);
+                                        }}
+                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Average" ? "bg-cyan-500/10" : ""}`}
+                                      >
+                                        <span className="text-xs font-bold text-white">Average</span>
+                                        <span className="text-[10px] font-black text-cyan-300">
+                                          {(pickedOption.variants.reduce((s, v) => s + v.priceKina, 0) / pickedOption.variants.length).toFixed(2)}M
+                                        </span>
+                                      </button>
+                                      {pickedOption.variants.map((v) => (
+                                        <button
+                                          key={v.label}
+                                          type="button"
+                                          onClick={() => {
+                                            setDifficulty(v.label);
+                                            setDifficultyOpen(false);
+                                            setPricePerRun(v.priceKina);
+                                            setPickedVariant(v);
+                                          }}
+                                          className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === v.label ? "bg-cyan-500/10" : ""}`}
+                                        >
+                                          <span className="text-xs font-bold text-white">{v.label}</span>
+                                          <span className="text-[10px] font-black text-cyan-300">{v.priceKina.toFixed(2)}M</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
+                                  Defaults to average of both difficulties — owner decides
+                                </p>
+                              </div>
+                            )}
+
                             {/* PRICE PER RUN */}
                             <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
                               <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
@@ -1000,12 +1130,13 @@ export default function CreateOfferPage() {
                       <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
 {[
                           ["Price", sel ? `${pricePerRun.toFixed(2)}M Kinah` : "—"],
+                          ["Difficulty", sel && pickedOption?.variants?.length ? difficulty : "—"],
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
                           ["Boosters", sel ? `${maxBoosters} player${maxBoosters > 1 ? "s" : ""}` : "—"],
                           ["Classes", sel ? (requiredClasses.length > 0 ? requiredClasses.join(", ") : "Any") : "—"],
                           ["Region", sel ? region : "—"],
                         ].map(([k, v], ix) => (
-                          <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 4 ? "border-b border-white/[0.06]" : ""}`}>
+                          <div key={k} className={`flex items-center justify-between gap-3 py-2.5 ${ix < 5 ? "border-b border-white/[0.06]" : ""}`}>
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">{k}</span>
                             <span className={`text-xs font-bold ${sel ? "text-gray-200" : "text-gray-600"}`}>{v}</span>
                           </div>
@@ -1017,7 +1148,7 @@ export default function CreateOfferPage() {
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"}{pickedVariant ? ` · ${pickedOption?.label} ${pickedVariant.label}` : pickedOption ? ` · ${pickedOption.label}` : " · Base"}</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"}{pickedOption && difficulty !== "Average" ? ` · ${pickedOption.label} ${difficulty}` : pickedOption ? ` · ${pickedOption.label}` : " · Base"}</p>
                           </div>
                           <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? (pricePerRun * qty).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
                         </div>

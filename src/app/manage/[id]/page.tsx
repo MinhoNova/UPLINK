@@ -528,7 +528,7 @@ export default function ManagePage() {
   const openRatePicker = useCallback((l: any) => {
     const targets = buildRatingTargets(l);
     if (targets.length === 0) { addToast("No squad-mates to review here.", "info"); return; }
-    const label = l.category === "leveling" ? `Leveling ${l.startLevel || "1"}-${l.endLevel || "80"}` : `${l.runsCount || 1}x ${l.keyLevel || "+10"}`;
+    const label = l.category === "leveling" ? `Leveling ${l.startLevel || "1"}-${l.endLevel || "80"}` : `${l.selectedOption ? `${l.selectedOption} · ` : ""}${l.runsCount || 1}× ${l.serviceName || "Expedition"}`;
     setRatePickerData({ lobbyId: l.id, missionTitle: label, targets });
   }, [buildRatingTargets, addToast]);
 
