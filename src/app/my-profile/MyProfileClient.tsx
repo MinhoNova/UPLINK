@@ -817,7 +817,23 @@ export default function MyProfileClient() {
                       )}
                     </div>
                     <button
-                      onClick={() => setTeamMembers((prev) => prev.filter((x) => x.id !== m.id))}
+                      onClick={async () => {
+                        const next = teamMembers.filter((x) => x.id !== m.id);
+                        setTeamMembers(next);
+                        const patch: Record<string, unknown> = {
+                          team: {
+                            name: teamName.trim(),
+                            members: next,
+                            ...(me?.team?.lastRenameAt ? { lastRenameAt: me.team.lastRenameAt } : {}),
+                          },
+                        };
+                        const ok = await patchMe(patch);
+                        if (ok) {
+                          window.dispatchEvent(new Event("data-refresh"));
+                          refresh();
+                          flash("Removed from squad");
+                        }
+                      }}
                       className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
                     >
                       <X className="w-4 h-4" />

@@ -11,9 +11,14 @@ export async function POST() {
 
   const adminId = String(auth.user.id);
   const adminHandle = String(auth.user.username ?? "");
-  const kept = users.filter(
-    (u) => String(u.id) === adminId || (typeof adminHandle === "string" && adminHandle && String(u.username) === adminHandle)
-  );
+  const kept = users
+    .filter(
+      (u) => String(u.id) === adminId || (typeof adminHandle === "string" && adminHandle && String(u.username) === adminHandle)
+    )
+    .map((u) => {
+      const { team, ...rest } = u;
+      return rest;
+    });
 
   await setKV("registeredUsers", kept);
 

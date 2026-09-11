@@ -104,6 +104,20 @@ export default function Navbar() {
                 `uplink_rank_cache_${currentUserId}`,
                 JSON.stringify({ stats: mine.stats || {}, override: mine.rankOverride ?? null })
               );
+              const profileCache = {
+                name: mine.name,
+                displayName: mine.displayName,
+                username: mine.username,
+                avatar: mine.avatar,
+                customAvatar: mine.customAvatar,
+                profileGif: mine.profileGif,
+                profileGifThumb: mine.profileGifThumb,
+                nameColor: mine.nameColor ?? null,
+                effect: mine.effect ?? "none",
+                stats: mine.stats || {},
+                rankOverride: mine.rankOverride ?? null,
+              };
+              localStorage.setItem(`uplink_profile_cache_${currentUserId}`, JSON.stringify(profileCache));
             } catch { /* ignore */ }
           }
         }
@@ -182,12 +196,29 @@ export default function Navbar() {
   }, [currentHandle, registeredUsers, session]);
 
   // Use session user as fallback if not in registeredUsers
-  const currentUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId)) || {
-    id: currentUserId,
-    name: session?.user?.name,
-    avatar: session?.user?.image,
-    username: (session?.user as any)?.username
-  };
+  const currentUser = useMemo(() => {
+    const live = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+    if (live) return live;
+    let cached: Record<string, any> | null = null;
+    try {
+      const raw = typeof window === "undefined" ? null : localStorage.getItem(`uplink_profile_cache_${currentUserId}`);
+      cached = raw ? JSON.parse(raw) : null;
+    } catch { /* ignore */ }
+    return {
+      id: currentUserId,
+      name: cached?.displayName || cached?.name || session?.user?.name,
+      displayName: cached?.displayName || undefined,
+      username: cached?.username || (session?.user as any)?.username,
+      avatar: cached?.customAvatar || cached?.profileGif || cached?.avatar || session?.user?.image,
+      customAvatar: cached?.customAvatar || undefined,
+      profileGif: cached?.profileGif || undefined,
+      profileGifThumb: cached?.profileGifThumb || undefined,
+      nameColor: cached?.nameColor || undefined,
+      effect: cached?.effect || undefined,
+      stats: cached?.stats || {},
+      rankOverride: cached?.rankOverride ?? null,
+    };
+  }, [registeredUsers, currentUserId, session?.user?.name, session?.user?.image]);
 
   // Stable rank: use last-known stats/override from cache until /api/data arrives,
   // so the rank emblem never flashes a placeholder (Bronze) before real data loads.

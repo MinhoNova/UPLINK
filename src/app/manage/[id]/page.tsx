@@ -294,6 +294,8 @@ export default function ManagePage() {
   const splitInFlightRef = useRef(false);
   const autoAcceptBusyRef = useRef(false);
   const hasFetchedRef = useRef(false);
+  const dataLoadedRef = useRef(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const knownLobbyIds = useRef<Set<string>>(new Set());
 
   const currentUserId = (session?.user as any)?.id || "guest";
@@ -319,6 +321,10 @@ export default function ManagePage() {
         .then((r) => r.json())
         .then((d) => {
           if (cancelled) return;
+          if (!dataLoadedRef.current) {
+            dataLoadedRef.current = true;
+            setDataLoaded(true);
+          }
           if (Array.isArray(d.lobbies)) {
             const ready = (d.lobbies || []).map(repairLobbyRoles);
             setLobbies((prev) => mergeLobbiesFromServer(ready, prev.map(repairLobbyRoles), currentUserId, splitInFlightRef.current || autoAcceptBusyRef.current).map(repairLobbyRoles));
@@ -1152,7 +1158,15 @@ const ManageContent = ({
         isUserBlocked={isUserBlocked}
         onTerminateLobby={onTerminateLobby}
       />
-      {!effectiveTarget && (
+      {!dataLoaded && !effectiveTarget && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/95 p-8">
+          <div className="text-center">
+            <div className="w-12 h-12 border-2 border-[#00ffff]/40 border-t-[#00ffff] rounded-full animate-spin mx-auto mb-6" />
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Establishing uplink…</p>
+          </div>
+        </div>
+      )}
+      {dataLoaded && !effectiveTarget && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/95 p-8">
           <div className="text-center">
             <h2 className="text-4xl font-black uppercase tracking-[0.3em] text-white mb-4">Transmission Lost</h2>
