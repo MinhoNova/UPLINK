@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Bell, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, ShieldX, TicketCheck, LifeBuoy } from "lucide-react";
@@ -455,7 +455,18 @@ export default function Navbar() {
                     Admin
                   </a>
                 )}
-              </div>
+
+                <button
+                  type="button"
+                  onClick={() => { signOut({ callbackUrl: "/" }); }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${
+                    pathname === '/logout' ? 'bg-red-500/10 text-red-300 border border-red-500/30' : 'bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/30'
+                  }`}
+                >
+                  <ShieldX className="w-3.5 h-3.5" />
+                  Sign Out
+                </button>
+                </div>
               )}
             </div>
           ) : (
