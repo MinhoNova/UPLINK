@@ -379,7 +379,7 @@ export default function ManagePage() {
     audio.play().catch(() => {});
   };
 
-  const saveGlobalData = useCallback(async (updates: any) => {
+  const saveGlobalData = useCallback(async (updates: any): Promise<boolean> => {
     const hasProfileUpdate = Boolean(updates?.registeredUsers && currentUserId && updates.registeredUsers.some((u: any) => String(u.id) === String(currentUserId)));
     if (hasProfileUpdate) {
       const self = updates.registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
@@ -389,10 +389,16 @@ export default function ManagePage() {
     }
     const { registeredUsers: _ru, ...rest } = updates || {};
     const restKeys = Object.keys(rest);
-    if (restKeys.length === 0) { window.dispatchEvent(new CustomEvent("data-refresh")); return; }
+    if (restKeys.length === 0) { window.dispatchEvent(new CustomEvent("data-refresh")); return true; }
     const res = await fetch("/api/data", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(rest) }).catch(() => null);
     window.dispatchEvent(new CustomEvent("data-refresh"));
-    if (res && !res.ok) { const err = await res.json().catch(() => ({})); if (err.error) addToast(err.error, "error"); }
+    if (res && !res.ok) {
+      const err = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (typeof err?.error === "string") addToast(err.error, "error");
+      if (err?.suspended === true) addToast("Your account has been suspended.", "error");
+      return false;
+    }
+    return true;
   }, [currentUserId]);
 
   /* ----- CONTEXT HELPERS ----- */
@@ -839,18 +845,20 @@ export default function ManagePage() {
     addToast("Proof discarded.", "info");
   };
 
-  const handlePasteProof = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handlePasteProof = async (e: React.ClipboardEvent<HTMLInputElement>) => {
     if (!targetLobby) return;
     const img = Array.from(e.clipboardData.items).find((i) => i.type.startsWith("image/"));
     if (!img) return;
     const file = img.getAsFile();
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const updated = { ...targetLobby, paymentProof: reader.result as string, status: "payment_pending" };
+    reader.onload = async () => {
+      const updated = { ...targetLobby, paymentProof: reader.result as string, status: "completed", payoutStatus: "paid", completedAt: Date.now() };
       setLobbies((prev) => prev.map((l) => (l.id === targetLobby.id ? updated : l)));
-      saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
-      addToast("Payment proof attached.", "success");
+      const saved = await saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
+      if (saved) {
+        addToast("Payment proof verified — moved to History.", "success");
+      }
     };
     reader.readAsDataURL(file);
   };

@@ -7,7 +7,7 @@ import { isAdminUser, stripAdminFromBanList, sanitizeBannedIdRecords, validateDa
 import { filterDataForUser } from '@/lib/dataAccess';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
-import { isUserBanned, bannedResponse, getBanInfo } from '@/lib/banCheck';
+import { isUserBanned, bannedResponse, getBanInfo, addUserBan } from '@/lib/banCheck';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
@@ -156,14 +156,32 @@ export async function POST(req: Request) {
     touchUserLastIp(auth.user.id, clientIp).catch(() => {});
 
     await initTables();
-    const newData = await req.json();
-    if (!newData || typeof newData !== 'object' || Array.isArray(newData)) {
+    const raw = await req.json();
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
+    const newData = raw as Record<string, unknown>;
 
     const existing = await getKVPairs();
     const validation = await validateDataWrites(newData, existing, auth.user.id, auth.user.username);
     if (!validation.ok) {
+      if (validation.fraudAttempt) {
+        await addUserBan({
+          id: auth.user.id,
+          handle: auth.user.username,
+          reason: "payment_fraud: attempted to mark a mission paid without another confirmed player",
+        }).catch(() => {});
+        await logAudit({
+          action: "system.paymentFraud",
+          userId: auth.user.id,
+          handle: auth.user.username,
+          meta: { lobbyId: validation.fraudAttempt.lobbyId, reason: "permanent ban" },
+        }).catch(() => {});
+        return NextResponse.json(
+          { error: validation.error, suspended: true },
+          { status: 403 }
+        );
+      }
       return NextResponse.json({ error: validation.error }, { status: 403 });
     }
 

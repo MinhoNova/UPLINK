@@ -37,6 +37,10 @@ export async function POST(req: Request) {
   const lobby = lobbies[idx] as any;
   const uid = String(auth.user.id);
 
+  if (String(lobby.ownerId) === uid) {
+    return NextResponse.json({ error: "You cannot apply to your own offer." }, { status: 403 });
+  }
+
   const status = lobby.status || "standby";
   if (status !== "standby") {
     return NextResponse.json({ error: "Offer is no longer open" }, { status: 403 });

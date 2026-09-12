@@ -849,6 +849,24 @@ export function memberIdentityKey(member: any): string {
   return String(member?.applicantId ?? member?.userId ?? member?.id ?? "");
 }
 
+/** True when the lobby has at least one confirmed player other than the offer owner.
+ *  Archived foot ledgers (member left / kicked after runs) count the member in history too,
+ *  so legitimately earned payments are never blocked by the anti-solo-fake-order gate. */
+export function hasIndependentSquadMember(lobby: any): boolean {
+  if (!lobby) return false;
+  const ownerId = String(lobby.ownerId || "");
+  const independent = (m: any) => {
+    const mid = memberIdentityKey(m);
+    if (!mid || mid === ownerId) return false;
+    if (m.status === "invited") return false;
+    return true;
+  };
+  if ((lobby.accepted || []).some((m: any) => independent(m))) return true;
+  return (lobby.history || []).some(
+    (h: any) => Number(h.runsAtExit) > 0 && independent(h)
+  );
+}
+
 /** Match squad member to session user id (handles legacy id / userId / applicantId fields). */
 export function memberMatchesUser(member: any, userId: string): boolean {
   const uid = String(userId || "");

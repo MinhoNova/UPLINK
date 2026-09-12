@@ -1,6 +1,6 @@
 import { isSecretClubTier } from "@/lib/userProfile";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { canOwnerCancelLobby } from "@/lib/lobbyLifecycle";
+import { canOwnerCancelLobby, hasIndependentSquadMember } from "@/lib/lobbyLifecycle";
 import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
 
 export const ADMIN_ID = "1497295886223544471";
@@ -227,7 +227,9 @@ function validateNewUserTicket(ticket: Record<string, unknown>, userId: string):
   return { ok: true, value: ticket };
 }
 
-type ValidateResult = { ok: true; value: unknown } | { ok: false; error: string };
+type ValidateResult =
+  | { ok: true; value: unknown }
+  | { ok: false; error: string; fraudAttempt?: { userId: string; lobbyId: string } };
 
 function memberUserId(member: { applicantId?: string; userId?: string; id?: string }) {
   return String(member.applicantId || member.userId || member.id || "");
@@ -342,6 +344,18 @@ export function validateLobbies(
     if (JSON.stringify(lobby) !== JSON.stringify(ex) && !lobbyUserCanModify(ex, userId, isAdmin)) {
       if (isSelfApplicantOnlyChange(ex, lobby, userId)) continue;
       return { ok: false, error: "Cannot modify lobby you are not part of" };
+    }
+    const justPaid =
+      ex &&
+      !(ex.status === "completed" && ex.payoutStatus === "paid") &&
+      lobby.status === "completed" &&
+      lobby.payoutStatus === "paid";
+    if (justPaid && !hasIndependentSquadMember(lobby)) {
+      return {
+        ok: false,
+        error: "Payment rejected: requires another confirmed player. Account suspended for payment fraud attempt.",
+        fraudAttempt: { userId, lobbyId: String(lobby.id) },
+      };
     }
   }
 
@@ -535,7 +549,10 @@ export async function validateDataWrites(
   existing: Record<string, unknown>,
   userId: string,
   handle: string
-): Promise<{ ok: true; sanitized: Record<string, unknown> } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; sanitized: Record<string, unknown> }
+  | { ok: false; error: string; fraudAttempt?: { userId: string; lobbyId: string } }
+> {
   const isAdmin = isAdminUser(userId, handle);
   const sanitized: Record<string, unknown> = {};
 
