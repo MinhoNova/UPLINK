@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, MessageCircle, Zap, Languages, Pause, Play, ShieldAlert, ShieldX, TicketCheck, LifeBuoy } from "lucide-react";
+import { Bell, ChevronDown, History, Languages, LifeBuoy, LogOut, MessageCircle, Pause, Play, ShieldAlert, ShieldX, TicketCheck, UserRound, Zap } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -23,7 +23,9 @@ export default function Navbar() {
   const { t, lang } = useI18n();
   const motionOn = useFlag("uplink_bg_motion", true);
   const [langOpen, setLangOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -39,6 +41,16 @@ export default function Navbar() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const closeProfileMenu = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", closeProfileMenu);
+    return () => document.removeEventListener("mousedown", closeProfileMenu);
   }, []);
 
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
@@ -413,60 +425,35 @@ export default function Navbar() {
               )}
 
               {pathname !== '/community' && (
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => { window.location.href = '/my-profile'; }}
-                className={`flex items-center gap-5 overflow-visible backdrop-blur-2xl cursor-pointer transition-opacity hover:opacity-90 ${
-                  theme === 'light'
-                    ? 'bg-white/10 border-white/10 border-2'
-                    : 'bg-black/40 border-white/5 border-2'
-                } pr-8 pl-1 py-1 rounded-full shadow-xl h-[68px]`}
-              >
-                <ProfileAvatarWithEffect
-                  src={getAvatarForEffect()}
-                  effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")}
-                  className="w-14 h-14"
-                  fallbackName={currentUser?.name || session?.user?.name || "U"}
-                />
-                <span className="flex items-center gap-2">
-                  {(() => {
-                    const nm = currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative');
-                    const c = resolveNameColor(currentUser);
-                    return c ? (
-                      <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate" style={{ ...toNameStyle(c), textShadow: `0 0 16px ${nameGlowColor(c)}66` }}>
-                        {nm}
-                      </span>
-                    ) : (
-                      <span className="text-xl font-black uppercase tracking-widest max-w-[200px] truncate bg-gradient-to-r from-[#67e8f9] via-[#a5b4fc] to-[#818cf8] bg-clip-text text-transparent">
-                        {renderDualColorName(nm)}
-                      </span>
-                    );
-                  })()}
-                  {(() => {
-                    const r = rankData.ranks.overall;
-                    const stats = rankData.stats;
-                    return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 object-contain shrink-0" />;
-                  })()}
-                </span>
-                {isAdmin && (
-                  <a href="/admin" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${pathname === '/admin' ? 'bg-violet-600/20 text-violet-400 border border-violet-500/30' : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/30'}`}>
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    Admin
-                  </a>
-                )}
-
+              <div ref={profileMenuRef} className="relative">
                 <button
                   type="button"
-                  onClick={() => { signOut({ callbackUrl: "/" }); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${
-                    pathname === '/logout' ? 'bg-red-500/10 text-red-300 border border-red-500/30' : 'bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white border border-red-500/30'
-                  }`}
+                  onClick={() => setProfileMenuOpen((open) => !open)}
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
+                  className={`flex h-[68px] items-center gap-4 overflow-visible rounded-full border-2 py-1 pl-1 pr-4 shadow-xl backdrop-blur-2xl transition-opacity hover:opacity-90 ${theme === 'light' ? 'border-white/10 bg-white/10' : 'border-white/5 bg-black/40'}`}
                 >
-                  <ShieldX className="w-3.5 h-3.5" />
-                  Sign Out
+                  <ProfileAvatarWithEffect src={getAvatarForEffect()} effect={effectiveAvatarEffect(currentUser, currentUser?.effect || "none")} className="w-14 h-14" fallbackName={currentUser?.name || session?.user?.name || "U"} />
+                  <span className="flex items-center gap-2">
+                    {(() => {
+                      const nm = currentUser?.displayName || currentUser?.name || session.user?.name || t('nav_operative');
+                      const c = resolveNameColor(currentUser);
+                      return c ? <span className="max-w-[200px] truncate text-xl font-black uppercase tracking-widest" style={{ ...toNameStyle(c), textShadow: `0 0 16px ${nameGlowColor(c)}66` }}>{nm}</span> : <span className="max-w-[200px] truncate bg-gradient-to-r from-[#67e8f9] via-[#a5b4fc] to-[#818cf8] bg-clip-text text-xl font-black uppercase tracking-widest text-transparent">{renderDualColorName(nm)}</span>;
+                    })()}
+                    {(() => { const r = rankData.ranks.overall; const stats = rankData.stats; return <img src={r.image} alt={r.tier} title={`${r.tier} — Booster: ${Number(stats.total)||0} runs · Poster: ${Number(stats.postCount)||0} posts`} className="h-7 w-7 shrink-0 object-contain" />; })()}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-cyan-300 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
-                </div>
+                {profileMenuOpen && (
+                  <div role="menu" className="absolute right-0 top-[calc(100%+0.6rem)] z-[90] w-48 overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#0a0f26]/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                    <a href="/my-profile" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-cyan-500/10 hover:text-cyan-200"><UserRound className="h-4 w-4" /> My Profile</a>
+                    <a href="/history" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-cyan-500/10 hover:text-cyan-200"><History className="h-4 w-4" /> History</a>
+                    {isAdmin && <a href="/admin" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/10"><ShieldAlert className="h-4 w-4" /> Admin</a>}
+                    <div className="my-1 border-t border-white/10" />
+                    <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); signOut({ callbackUrl: "/" }); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-red-300 transition hover:bg-red-500/15 hover:text-red-200"><LogOut className="h-4 w-4" /> Sign Out</button>
+                  </div>
+                )}
+              </div>
               )}
             </div>
           ) : (
