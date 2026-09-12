@@ -447,6 +447,46 @@ export default function CreateOfferPage() {
     }
   }, [sel?.id, marketPrices]);
 
+  /* Clear difficulty options + price helpers for the details step */
+  const difficultyOptions = useMemo(() => {
+    if (!sel) return [];
+    if (pickedOption?.variants?.length) {
+      const opts = pickedOption.variants.map((v) => ({ label: v.label, price: v.priceKina }));
+      const avg = opts.reduce((s, o) => s + o.price, 0) / opts.length;
+      return [{ label: "Average", price: Math.round(avg * 100) / 100 }, ...opts];
+    }
+    if (sel.category === "Dungeons" && !pickedOption) {
+      return [
+        { label: "Average", price: sel.basePriceKina },
+        { label: "Normal", price: sel.basePriceKina },
+        { label: "Hard", price: Math.round(sel.basePriceKina * 1.5 * 100) / 100 },
+      ];
+    }
+    return [];
+  }, [sel, pickedOption]);
+
+  const selectDifficulty = (opt: { label: string; price: number }) => {
+    setDifficulty(opt.label);
+    setDifficultyOpen(false);
+    setPricePerRun(opt.price);
+    if (pickedOption?.variants?.length) {
+      if (opt.label === "Average") setPickedVariant(null);
+      else {
+        const v = pickedOption.variants.find((x) => x.label === opt.label);
+        if (v) setPickedVariant(v);
+      }
+    }
+  };
+
+  const applyAveragePrice = () => {
+    if (!sel) return;
+    const market = marketPrices[sel.name];
+    if (market && market > 0) { setPricePerRun(market); return; }
+    const avg = difficultyOptions.find((o) => o.label === "Average");
+    if (avg) { setPricePerRun(avg.price); return; }
+    setPricePerRun(sel.basePriceKina);
+  };
+
   const canNext = !!sel;
   const stepIndex = STEPS.indexOf(step);
 
@@ -634,23 +674,6 @@ export default function CreateOfferPage() {
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
                 {/* ── LEFT: BUILDER ── */}
                 <section className="tn-light rounded-2xl border border-white/[0.09] bg-[#070a1c]/80 shadow-[0_20px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] bg-gradient-to-r from-cyan-500/[0.06] via-transparent to-purple-500/[0.06] px-5 py-4 sm:px-6">
-                    <div className="flex items-center gap-3">
-                      <span className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/40 bg-gradient-to-b from-cyan-500/20 to-purple-600/20 shadow-[0_0_18px_rgba(0,229,255,0.18)]">
-                        <Swords className="h-[18px] w-[18px] text-cyan-300" />
-                      </span>
-                      <div>
-                        <p className="text-[9px] font-black tracking-[0.3em] text-cyan-300/80 uppercase">Offer Builder</p>
-                        <p className="text-lg font-black capitalize text-white">{step}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-cyan-300 uppercase">
-                        Step {stepIndex + 1} <span className="text-cyan-400/50">/ {STEPS.length}</span>
-                      </span>
-                      <p className="mt-1 hidden text-[10px] text-gray-500 sm:block">{STEP_HINTS[step]}</p>
-                    </div>
-                  </div>
 
                   <div className="p-5 sm:p-6">
                     <AnimatePresence mode="wait">
@@ -825,10 +848,10 @@ export default function CreateOfferPage() {
                         const meta = CATEGORY_META[sel.category] ?? CATEGORY_META.Raids;
                         const CatIcon = meta.icon;
                         return (
-                          <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="flex flex-col gap-5">
-                            <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-4 py-3.5">
+                          <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }} className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.07] px-3.5 py-2.5">
                               <div className="flex min-w-0 items-center gap-3">
-                                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${meta.tile}`}>
+                                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${meta.tile}`}>
                                   <CatIcon className={`h-5 w-5 ${meta.color}`} />
                                 </span>
                                 <div className="min-w-0">
@@ -836,187 +859,92 @@ export default function CreateOfferPage() {
                                   <p className="truncate text-[11px] text-gray-500">{sel.description}</p>
                                 </div>
                               </div>
-                              <div className="shrink-0 text-right">
-                                <p className="text-base font-black text-cyan-300">{sel.priceUnit ?? "per pc"}</p>
-                                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-gray-500">{sel.priceUnit ?? "per pc"}</p>
-                              </div>
+                              <span className="shrink-0 rounded-md bg-black/30 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">{sel.priceUnit ?? "per pc"}</span>
                             </div>
 
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                              <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
                                 <Hash className="h-3.5 w-3.5 text-cyan-400" /> Quantity
                               </p>
-                              <div className="flex items-center justify-between gap-4">
-                                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">-</button>
+                              <div className="flex items-center justify-between gap-3">
+                                <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-base font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">-</button>
                                 <div className="text-center">
-                                  <span className="block text-3xl font-black tabular-nums text-white">{qty}</span>
-                                  <span className="text-[10px] font-black tracking-[0.2em] uppercase text-gray-500">{sel.priceUnit || "runs"}</span>
+                                  <span className="block text-2xl font-black tabular-nums text-white">{qty}</span>
+                                  <span className="text-[9px] font-black tracking-[0.18em] uppercase text-gray-500">{sel.priceUnit || "runs"}</span>
                                 </div>
-                                <button type="button" onClick={() => setQty(Math.min(100, qty + 1))} className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
+                                <button type="button" onClick={() => setQty(Math.min(100, qty + 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-base font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
                               </div>
                             </div>
 
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                <Globe className="h-3.5 w-3.5 text-cyan-400" /> Region
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                              <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                <Users className="h-3.5 w-3.5 text-cyan-400" /> Players
                               </p>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                                {REGIONS.map((r) => {
-                                  const isActive = region === r.label;
-                                  return (
-                                    <button key={r.label} type="button" onClick={() => { setRegion(r.label); setRegionOpen(false); }}
-                                      className={`relative flex items-center gap-3 rounded-xl border px-3.5 py-3.5 text-left transition-all cursor-pointer ${isActive ? "border-cyan-400/60 bg-cyan-500/10 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
-                                      <span className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"}`}>
-                                        <img src={REGION_FLAG[r.label]} alt={r.label} className="h-8 w-8 rounded-md object-cover" loading="lazy" decoding="async" />
-                                      </span>
-                                      <span className="min-w-0 flex-1">
-                                        <span className={`block text-sm font-bold ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{r.label}</span>
-                                        <span className="block text-[10px] text-gray-500">{r.desc}</span>
-                                      </span>
-                                      {isActive && <Check className="h-4 w-4 shrink-0 text-cyan-300" />}
-                                    </button>
-                                  );
-                                })}
+                              <div className="flex items-center justify-between gap-3">
+                                <button type="button" onClick={() => setMaxBoosters(Math.max(1, maxBoosters - 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-base font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">-</button>
+                                <div className="text-center">
+                                  <span className="block text-2xl font-black tabular-nums text-white">{maxBoosters}</span>
+                                  <span className="text-[9px] font-black tracking-[0.18em] uppercase text-gray-500">{maxBoosters > 1 ? "Boosters" : "Booster"}</span>
+                                </div>
+                                <button type="button" onClick={() => setMaxBoosters(Math.min(10, maxBoosters + 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-base font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
                               </div>
                             </div>
+                            </div>
 
-                            {/* DIFFICULTY — Normal/Hard pair for dungeon-category offers
-                                (every dungeon type gets this; expeditions keep their own per-dungeon
-                                variant picker below when a specific expedition is selected) */}
-                            {sel?.category === "Dungeons" && !pickedVariant && (
-                              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                                <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                  <Swords className="h-3.5 w-3.5 text-cyan-400" /> Difficulty · Normal / Hard
+                            {difficultyOptions.length > 0 && (
+                              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                                <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                  <Swords className="h-3.5 w-3.5 text-cyan-400" /> Difficulty
                                 </p>
-                                <div className="relative">
-                                  <button
-                                    type="button"
-                                    onClick={() => setDifficultyOpen((o) => !o)}
-                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-left transition-colors hover:border-cyan-400/40 cursor-pointer"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      <span className="text-sm font-black text-white">{difficulty}</span>
-                                      <span className="text-[10px] font-bold text-cyan-300">
-                                        {pricePerRun.toFixed(2)}M
-                                      </span>
-                                    </span>
-                                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${difficultyOpen ? "rotate-180" : ""}`} />
-                                  </button>
-                                  {difficultyOpen && (
-                                    <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-20 overflow-hidden rounded-xl border border-cyan-400/25 bg-[#0a0f26]/95 shadow-[0_18px_44px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+                                <div className="grid grid-cols-3 gap-2">
+                                  {difficultyOptions.map((opt) => {
+                                    const isActive = difficulty === opt.label;
+                                    return (
                                       <button
+                                        key={opt.label}
                                         type="button"
-                                        onClick={() => { setDifficulty("Average"); setDifficultyOpen(false); setPricePerRun(sel.basePriceKina); }}
-                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Average" ? "bg-cyan-500/10" : ""}`}
+                                        onClick={() => selectDifficulty(opt)}
+                                        className={`flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 transition-all cursor-pointer ${isActive ? "border-cyan-400/60 bg-cyan-500/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] text-gray-400 hover:border-white/[0.2] hover:text-gray-200"}`}
                                       >
-                                        <span className="text-xs font-bold text-white">Average (both)</span>
-                                        <span className="text-[10px] font-black text-cyan-300">{sel.basePriceKina.toFixed(2)}M</span>
+                                        <span className="text-xs font-black">{opt.label}</span>
+                                        <span className={`text-[9px] font-bold ${isActive ? "text-cyan-300" : "text-gray-500"}`}>{opt.price.toFixed(2)}M</span>
                                       </button>
-                                      <div className="border-t border-white/[0.06] my-1" />
-                                      <button
-                                        type="button"
-                                        onClick={() => { setDifficulty("Normal"); setDifficultyOpen(false); setPricePerRun(sel.basePriceKina); }}
-                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Normal" ? "bg-cyan-500/10" : ""}`}
-                                      >
-                                        <span className="text-xs font-bold text-white">Normal only</span>
-                                        <span className="text-[10px] font-black text-cyan-300">{sel.basePriceKina.toFixed(2)}M</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => { setDifficulty("Hard"); setDifficultyOpen(false); setPricePerRun(Math.round(sel.basePriceKina * 1.5 * 100) / 100); }}
-                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Hard" ? "bg-cyan-500/10" : ""}`}
-                                      >
-                                        <span className="text-xs font-bold text-white">Hard only</span>
-                                        <span className="text-[10px] font-black text-cyan-300">{(Math.round(sel.basePriceKina * 1.5 * 100) / 100).toFixed(2)}M</span>
-                                      </button>
-                                    </div>
-                                  )}
+                                    );
+                                  })}
                                 </div>
                                 <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
-                                  Owner picks the dungeon difficulty — price adjusts accordingly
-                                </p>
-                              </div>
-                            )}
-                            {/* DIFFICULTY (per dungeon — owner picks) */}
-                            {pickedOption && pickedOption.variants && pickedOption.variants.length > 1 && (
-                              <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                                <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                  <Swords className="h-3.5 w-3.5 text-cyan-400" /> Difficulty · {pickedOption.label}
-                                </p>
-                                <div className="relative">
-                                  <button
-                                    type="button"
-                                    onClick={() => setDifficultyOpen((o) => !o)}
-                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-left transition-colors hover:border-cyan-400/40 cursor-pointer"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      <span className="text-sm font-black text-white">{difficulty}</span>
-                                      {difficulty !== "Average" && (
-                                        <span className="text-[10px] font-bold text-cyan-300">
-                                          {(pickedOption.variants.find((v) => v.label === difficulty)?.priceKina ?? 0).toFixed(2)}M
-                                        </span>
-                                      )}
-                                    </span>
-                                    <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${difficultyOpen ? "rotate-180" : ""}`} />
-                                  </button>
-                                  {difficultyOpen && (
-                                    <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-20 overflow-hidden rounded-xl border border-cyan-400/25 bg-[#0a0f26]/95 shadow-[0_18px_44px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setDifficulty("Average");
-                                          setDifficultyOpen(false);
-                                          const avg = pickedOption.variants.reduce((s, v) => s + v.priceKina, 0) / pickedOption.variants.length;
-                                          setPricePerRun(Math.round(avg * 100) / 100);
-                                          setPickedVariant(null);
-                                        }}
-                                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === "Average" ? "bg-cyan-500/10" : ""}`}
-                                      >
-                                        <span className="text-xs font-bold text-white">Average</span>
-                                        <span className="text-[10px] font-black text-cyan-300">
-                                          {(pickedOption.variants.reduce((s, v) => s + v.priceKina, 0) / pickedOption.variants.length).toFixed(2)}M
-                                        </span>
-                                      </button>
-                                      {pickedOption.variants.map((v) => (
-                                        <button
-                                          key={v.label}
-                                          type="button"
-                                          onClick={() => {
-                                            setDifficulty(v.label);
-                                            setDifficultyOpen(false);
-                                            setPricePerRun(v.priceKina);
-                                            setPickedVariant(v);
-                                          }}
-                                          className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-white/[0.05] cursor-pointer ${difficulty === v.label ? "bg-cyan-500/10" : ""}`}
-                                        >
-                                          <span className="text-xs font-bold text-white">{v.label}</span>
-                                          <span className="text-[10px] font-black text-cyan-300">{v.priceKina.toFixed(2)}M</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                                <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
-                                  Defaults to average of both difficulties — owner decides
+                                  Owner picks the difficulty — price applies accordingly
                                 </p>
                               </div>
                             )}
 
-                            {/* PRICE PER RUN */}
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                            
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                            {/* PRICE PER RUN + SET AVERAGE */}
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                              <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
                                 <Coins className="h-3.5 w-3.5 text-amber-300" /> Price per {sel.priceUnit?.replace("per ", "") || "run"} (Kinah)
                               </p>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
                                 <input
                                   type="number"
                                   step="0.01"
                                   value={pricePerRun}
                                   onChange={(e) => setPricePerRun(parseFloat(e.target.value) || 0)}
-                                  className="flex-1 rounded-lg border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-lg font-black text-white focus:border-cyan-400/50 focus:outline-none transition-colors"
+                                  className="min-w-0 flex-1 rounded-lg border border-white/[0.12] bg-white/[0.06] px-3 py-2 text-base font-black text-white focus:border-cyan-400/50 focus:outline-none transition-colors"
                                 />
-                                <span className="text-sm font-bold text-gray-400 shrink-0">M Kinah</span>
+                                <span className="shrink-0 text-xs font-bold text-gray-400">M</span>
                               </div>
+                              <button
+                                type="button"
+                                onClick={applyAveragePrice}
+                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 transition-all hover:bg-cyan-500/20 cursor-pointer"
+                              >
+                                <TrendingUp className="h-3 w-3" /> Set Average
+                              </button>
                               <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
                                 {marketPrices[sel.name] && marketPrices[sel.name] > 0
                                   ? `Auto-filled from recent completed runs (market) — you can edit it`
@@ -1024,19 +952,30 @@ export default function CreateOfferPage() {
                               </p>
                             </div>
 
-                            {/* BOOSTERS COUNT */}
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                <Users className="h-3.5 w-3.5 text-cyan-400" /> Number of Boosters
+                            {/* REGION (compact) */}
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                              <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                                <Globe className="h-3.5 w-3.5 text-cyan-400" /> Region
                               </p>
-                              <div className="flex items-center justify-between gap-4">
-                                <button type="button" onClick={() => setMaxBoosters(Math.max(1, maxBoosters - 1))} className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">-</button>
-                                <div className="text-center">
-                                  <span className="block text-3xl font-black tabular-nums text-white">{maxBoosters}</span>
-                                  <span className="text-[10px] font-black tracking-[0.2em] uppercase text-gray-500">Players</span>
-                                </div>
-                                <button type="button" onClick={() => setMaxBoosters(Math.min(10, maxBoosters + 1))} className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-lg font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
+                              <div className="flex flex-col gap-1.5">
+                                {REGIONS.map((r) => {
+                                  const isActive = region === r.label;
+                                  return (
+                                    <button key={r.label} type="button" onClick={() => { setRegion(r.label); setRegionOpen(false); }}
+                                      className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-1.5 text-left transition-all cursor-pointer ${isActive ? "border-cyan-400/60 bg-cyan-500/10" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
+                                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"}`}>
+                                        <img src={REGION_FLAG[r.label]} alt={r.label} className="h-5 w-5 rounded object-cover" loading="lazy" decoding="async" />
+                                      </span>
+                                      <span className="min-w-0 flex-1">
+                                        <span className={`block text-xs font-bold ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{r.label}</span>
+                                        <span className="block text-[9px] text-gray-500">{r.desc}</span>
+                                      </span>
+                                      {isActive && <Check className="h-3.5 w-3.5 shrink-0 text-cyan-300" />}
+                                    </button>
+                                  );
+                                })}
                               </div>
+                            </div>
                             </div>
 
                             {/* REQUIRED CLASS SLOTS */}
