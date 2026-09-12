@@ -102,11 +102,31 @@ function buildInviteEmbedFields(lobby: any, ownerName: string) {
    ];
 }
 
+const CATEGORY_CHANNELS: Record<string, string[]> = {
+   leveling: ["🚀・leveling-offers", "leveling-offers", "leveling-squads", "leveling"],
+   dungeons: ["🏰・dungeon-offers", "dungeon-offers", "dungeons"],
+   raids: ["⚔️・raid-offers", "raid-offers", "raids"],
+   pvp: ["⚡・pvp-offers", "pvp-offers", "pvp"],
+   professions: ["🛠️・profession-offers", "profession-offers", "professions"],
+};
+
+const CATEGORY_EMOJI: Record<string, string> = {
+   leveling: "🚀",
+   dungeons: "🏰",
+   raids: "⚔️",
+   pvp: "⚡",
+   professions: "🛠️",
+};
+
+function channelPatternsFor(category: string | null | undefined): string[] {
+   const c = String(category || "").toLowerCase();
+   return CATEGORY_CHANNELS[c] || ["🎮・lfg", "lfg", "general"];
+}
+
 export async function sendLobbyEmbed(lobby: any) {
    await ensureGuildCache();
-   const channelNames = lobby.category === "leveling"
-      ? ["🚀・leveling-squads", "leveling-squads", "leveling"]
-      : ["⚔️・mythic-plus", "mythic-plus", "🎮・retail-wow", "lfg-retail-wow", "retail-wow"];
+   const category = String(lobby.category || "").toLowerCase();
+   const channelNames = channelPatternsFor(lobby.category);
    const channelId = findChannelId(channelNames);
    if (!channelId) {
       console.error("Discord channel not found for category:", lobby.category);
@@ -117,6 +137,7 @@ export async function sendLobbyEmbed(lobby: any) {
    const rolesNeeded = Object.entries(lobby.roles || {}).filter(([, c]) => (c as number) > 0);
    const rolesStr = rolesNeeded.map(([r, c]) => `**${String(r).toUpperCase()}** ×${c}`).join(" · ") || "Any role";
    const ownerName = lobby.ownerDiscordName || lobby.ownerHandle || "Unknown";
+   const categoryEmoji = CATEGORY_EMOJI[category] || "🎮";
    const title = missionTitle(lobby);
    const squadProgress = formatRolesProgress(lobby);
 
@@ -125,10 +146,10 @@ export async function sendLobbyEmbed(lobby: any) {
          name: `${ownerName} · UPLINK Mission Lead`,
          icon_url: lobby.ownerImage || undefined,
       },
-      title: lobby.category === "leveling" ? `🚀 ${title}` : `⚔️ ${title}`,
+      title: `${categoryEmoji} ${title}`,
       description:
          "Apply below — the owner reviews applicants on **UPLINK**. UPLINK is a coordination platform; we do not handle payments or loot.",
-      color: lobby.category === "leveling" ? 0x8a2be2 : 0xff007f,
+      color: CATEGORY_CHANNELS[category] ? (category === "leveling" ? 0x8a2be2 : category === "raids" ? 0xff007f : 0x00b7ff) : 0xff007f,
       fields: [
          { name: "💰 Offer", value: `**${price}K** gold`, inline: true },
          { name: "🎯 Open Roles", value: rolesStr, inline: true },
