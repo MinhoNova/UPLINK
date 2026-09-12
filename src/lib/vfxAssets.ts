@@ -74,8 +74,8 @@ export function resolveLobbyBannerFallback(lobby: { category?: string } | null |
 
 /**
  * Banner for offer cards & ongoing missions.
- * Priority: owner GIF → active VFX → offer image (customBg → dungeon/leveling pick) → category fallback.
- * When the owner disabled the banner (or has no owner), the offer image still shows first.
+ * Priority: active Lobby background (set in My Profile) → offer image (customBg → dungeon/leveling pick) → category fallback.
+ * The profile image/GIF is never used as the lobby banner.
  */
 export function resolveOfferBannerImage(
   lobby: { customBg?: string; category?: string } | null | undefined,
@@ -83,12 +83,10 @@ export function resolveOfferBannerImage(
   gate: "showOnBanner" | "showOnOngoing" = "showOnBanner"
 ): string | null {
   const offerImg = String(lobby?.customBg || "").trim();
-  if (!ownerUser || ownerUser.vfxSettings?.[gate] === false) {
-    return offerImg || resolveLobbyBannerFallback(lobby);
+  const vfxEnabled = ownerUser && ownerUser.vfxSettings?.[gate] !== false;
+  if (vfxEnabled) {
+    const bg = String(ownerUser.activeVfx || "").trim();
+    if (bg) return resolveLobbyBannerAnimatedSrc({ customBg: "" }, ownerUser, bg);
   }
-  const gif = String(ownerUser.profileGif || "").trim();
-  if (gif) return gif;
-  const vfx = String(ownerUser.activeVfx || "").trim();
-  if (vfx) return resolveLobbyBannerAnimatedSrc({ customBg: "" }, ownerUser, vfx);
   return offerImg || resolveLobbyBannerFallback(lobby);
 }
