@@ -271,16 +271,23 @@ export default function Aion2TestClubPage() {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.01 }}
         onClick={() => router.push(`/manage/${String(m.id)}`)}
-        className={`tn-light relative w-full min-h-[88px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-2.5 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${
+        className={`tn-light relative w-full min-h-[110px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${
           isUnpaid
             ? "border-red-500/30 hover:border-red-400/50"
             : "border-cyan-500/20 hover:border-cyan-400/40"
         }`}
       >
-        {bgPoster && (
-          <div className="absolute inset-0 z-0">
-            <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-55" loading="lazy" decoding="async" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/75 via-[#050814]/55 to-[#050814]/80" />
+        {/* Dark readable zone — same as offer cards */}
+        <div className="absolute inset-0 bg-[#070b1a]" />
+        {bgPoster ? (
+          <div className="absolute right-0 top-0 bottom-0 w-[50%] pointer-events-none overflow-hidden">
+            <img src={bgPoster} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
+          </div>
+        ) : (
+          <div className="absolute right-0 top-0 bottom-0 w-[50%] pointer-events-none overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
           </div>
         )}
 
@@ -1030,7 +1037,7 @@ export default function Aion2TestClubPage() {
 
           {/* 3. Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
-            <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
+            <div className="tn-light relative w-full min-h-[360px] h-full flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               {/* Widget Header — slim */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">
@@ -1051,7 +1058,7 @@ export default function Aion2TestClubPage() {
               </div>
 
               {missions.length === 0 ? (
-                <div className="flex flex-col items-center text-center py-6">
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                     {signalScan
                       ? (t("missions_scan") || "SCANNING FOR SIGNAL...")
@@ -1059,7 +1066,7 @@ export default function Aion2TestClubPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="flex-1 flex flex-col space-y-4">
                   {activeMissions.length > 0 && (
                     <div className="space-y-2.5">
                       <div className="flex items-center gap-2 px-1">
