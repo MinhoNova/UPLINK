@@ -847,26 +847,23 @@ export default function Aion2TestClubPage() {
                     whileHover={{ scale: 1.005 }}
                     className="tn-light relative w-full min-h-[133px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
-                    {/* Faction VFX banner / gradient — full card */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
+                    {/* Dark readable zone — full card underlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/80 to-transparent" />
+                    {/* Faction VFX banner / gradient — right panel only */}
+                    <div className="absolute right-0 top-0 bottom-0 w-[58%] pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
                       {offerBg ? (
-                        <>
-                          <img
-                            src={offerBg}
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/75 to-[#050814]/10" />
-                        </>
+                        <img
+                          src={offerBg}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
                       ) : (
-                        <div className="absolute right-0 top-0 bottom-0 w-2/5">
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
                       )}
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/60 to-transparent" />
                     </div>
 
                     {/* Creator avatar */}
