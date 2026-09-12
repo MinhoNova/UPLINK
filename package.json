@@ -18,6 +18,7 @@
     "thumbs:regen": "node scripts/regenerate-class-thumbs.cjs",
     "discord:roles": "node scripts/discord-sync-roles.cjs",
     "discord:autorole": "node scripts/discord-autorole-bot.cjs",
+    "discord:setup": "node scripts/setup-aion2-server.cjs",
     "og:generate": "node scripts/generate-og.cjs",
     "prebuild": "node scripts/generate-og.cjs"
   },
