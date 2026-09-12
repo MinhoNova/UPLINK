@@ -880,7 +880,7 @@ export default function Aion2TestClubPage() {
                     className="tn-light relative w-full min-h-[133px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
                   >
                     {/* Dark readable zone — full card underlay */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/80 to-transparent" />
+                    <div className="absolute inset-0 bg-[#070b1a]" />
                     {/* Faction VFX banner / gradient — right panel only */}
                     <div className="absolute right-0 top-0 bottom-0 w-[808px] max-w-[62%] pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
                       {offerBg ? (
