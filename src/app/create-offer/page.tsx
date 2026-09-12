@@ -216,8 +216,11 @@ function OptionFlip({
   title?: string;
   backLabel?: string;
 }) {
-  const CARD_W = 220;
-  const CARD_H = 150;
+  const hasArtwork = options.some((option) => Boolean(option.img));
+  const CARD_W = hasArtwork
+    ? (typeof window !== "undefined" ? Math.min(280, Math.max(210, Math.round(window.innerWidth * 0.26))) : 250)
+    : 220;
+  const CARD_H = hasArtwork ? Math.round(CARD_W * (1619 / 972)) : 150;
   const PITCH = 48;
 
   const [idx, setIdx] = useState(0);
