@@ -895,7 +895,7 @@ export default function Aion2TestClubPage() {
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#050814] via-[#050814]/60 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
                     </div>
 
                     {/* Creator avatar */}
