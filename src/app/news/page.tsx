@@ -6,25 +6,25 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "WoW News — Leveling Guides & Dungeon Strategies | WoWLFG",
-  description: "World of Warcraft news covering leveling methods, XP farms, dungeon guides, Mythic+ route changes, affixes, and class updates for The War Within.",
+  title: "UPLINK News — Leveling Guides & Dungeon Strategies",
+  description: "Leveling methods, dungeon guides, strategy updates and patch news from the UPLINK community.",
   alternates: { canonical: `${siteUrl}/news` },
   openGraph: {
-    title: "WoW News — Leveling Guides & Dungeon Strategies",
-    description: "World of Warcraft news covering leveling methods, dungeon guides, Mythic+ route changes, and class updates for The War Within.",
+    title: "UPLINK News — Leveling Guides & Dungeon Strategies",
+    description: "Leveling methods, dungeon guides and strategy updates from the UPLINK community.",
     url: `${siteUrl}/news`,
-    siteName: "WoWLFG — UPLINK",
+    siteName: "UPLINK — Aion 2 LFG",
     images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }],
   },
-  twitter: { card: "summary_large_image", title: "WoW News — Leveling Guides & Dungeon Strategies", description: "World of Warcraft news covering leveling methods, dungeon guides, and Mythic+ updates.", images: [`${siteUrl}/og.png`] },
+  twitter: { card: "summary_large_image", title: "UPLINK News — Leveling Guides & Dungeon Strategies", description: "Leveling methods, dungeon guides and strategy updates from the UPLINK community.", images: [`${siteUrl}/og.png`] },
 };
 
 export default function NewsLanding() {
   return (
     <main className="min-h-screen bg-[#05050a] text-white">
       <div className="max-w-5xl mx-auto px-4 pt-28 pb-12">
-        <h1 className="text-3xl font-black text-white mb-2">WoWLFG News</h1>
-        <p className="text-sm text-gray-500 mb-8">Latest methods, routes, and updates for The War Within</p>
+        <h1 className="text-3xl font-black text-white mb-2">UPLINK News</h1>
+        <p className="text-sm text-gray-500 mb-8">Latest methods, guides, and game updates</p>
 
         <div className="flex items-center gap-2 mb-12">
           <Link href="/news/leveling" className="flex items-center gap-1.5 rounded-lg border border-[#00ffff]/25 bg-[#00ffff]/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#00ffff] hover:bg-[#00ffff]/20 transition-all">

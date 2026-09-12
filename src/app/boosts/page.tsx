@@ -6,13 +6,13 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "WoWLFG Boost Requests — UPLINK Auction House",
+  title: "UPLINK Boost Requests — Auction House",
   description:
-    "WoWLFG — Browse open WoW boost requests for Mythic+ dungeons and power leveling. Place bids in gold and find your next boost contract on UPLINK.",
+    "Browse open boost requests for dungeons and leveling. Place bids in gold and find your next boost contract on UPLINK.",
   openGraph: {
-    title: "WoWLFG Boost Requests — UPLINK Auction House",
+    title: "UPLINK Boost Requests — Auction House",
     description:
-      "WoWLFG — Browse open boost requests for Mythic+ dungeons and power leveling. Place bids in gold.",
+      "Browse open boost requests for dungeons and leveling. Place bids in gold.",
   },
   alternates: {
     canonical: `${siteUrl}/boosts`,
@@ -36,7 +36,7 @@ export default function BoostsPage() {
         "@id": `${siteUrl}/boosts#itemlist`,
         url: `${siteUrl}/boosts`,
         name: "Boost Requests — UPLINK Auction House",
-        description: "Open boost requests for Mythic+ dungeons and power leveling where players place bids in gold.",
+        description: "Open boost requests for dungeons and leveling where players place bids in gold.",
         itemListElement: [] as any[],
         mainEntityOfPage: { "@type": "WebPage", "@id": `${siteUrl}/boosts` },
       },

@@ -6,28 +6,28 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "Mythic+ Boosting Guide — UPLINK",
+  title: "Boosting Guide — UPLINK",
   description:
-    "Complete guide to Mythic+ boosting on UPLINK. Learn how to post a boost request, place bids in gold, accept offers, and choose the right booster for your WoW dungeon key.",
+    "Complete guide to boost requests on UPLINK. Learn how to post a request, place bids in gold, accept offers, and choose the right booster.",
   openGraph: {
-    title: "Mythic+ Boosting Guide — UPLINK",
+    title: "Boosting Guide — UPLINK",
     description:
-      "Complete guide to Mythic+ boosting on UPLINK. Post requests, place bids, accept offers.",
+      "Complete guide to boost requests on UPLINK. Post requests, place bids, accept offers.",
   },
-  alternates: { canonical: `${siteUrl}/guides/mythic-plus-boosting` },
+  alternates: { canonical: `${siteUrl}/guides/boosting` },
 };
 
-export default function MythicPlusBoostingGuide() {
+export default function BoostingGuide() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
-    "@id": `${siteUrl}/guides/mythic-plus-boosting#article`,
-    headline: "Mythic+ Boosting Guide",
+    "@id": `${siteUrl}/guides/boosting#article`,
+    headline: "Boosting Guide",
     description:
-      "Complete guide to Mythic+ boosting on UPLINK. Learn how to post a boost request, place bids in gold, accept offers, and choose the right booster.",
+      "Complete guide to boost requests on UPLINK. Learn how to post a request, place bids in gold, accept offers, and choose the right booster.",
     author: { "@type": "Organization", name: "UPLINK", url: siteUrl },
     publisher: { "@type": "Organization", name: "UPLINK", url: siteUrl },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `${siteUrl}/guides/mythic-plus-boosting` },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${siteUrl}/guides/boosting` },
     datePublished: "2026-06-18",
     dateModified: "2026-06-18",
   };
@@ -50,14 +50,14 @@ export default function MythicPlusBoostingGuide() {
         </div>
         <article className="prose prose-invert max-w-none">
           <h1 className="text-3xl font-black uppercase tracking-[0.2em] mb-8 text-white">
-            Mythic+ Boosting Guide
+            Boosting Guide
           </h1>
 
           <section className="mb-8">
-            <h2 className="text-xl font-black text-[#00ffff] uppercase tracking-wider mb-3">What is Mythic+ Boosting?</h2>
+            <h2 className="text-xl font-black text-[#00ffff] uppercase tracking-wider mb-3">What is Boosting on UPLINK?</h2>
             <p className="text-gray-400 leading-relaxed">
-              Mythic+ boosting on UPLINK connects <strong className="text-white">boosters</strong> with players who need
-              help completing high-level Mythic+ keys. Unlike traditional boosting services that use
+              Boosting on UPLINK connects <strong className="text-white">boosters</strong> with players who need
+              help completing high-level content. Unlike traditional boosting services that use
               fixed prices, UPLINK runs an <strong className="text-white">auction-style marketplace</strong> where boosters
               bid in gold for the right to complete your boost request.
             </p>
@@ -67,8 +67,8 @@ export default function MythicPlusBoostingGuide() {
             <h2 className="text-xl font-black text-[#00ffff] uppercase tracking-wider mb-3">How to Post a Boost Request</h2>
             <ol className="list-decimal list-inside text-gray-400 leading-relaxed space-y-2">
               <li>Click the <strong className="text-white">Boost Request</strong> button on the main page toolbar.</li>
-              <li>Select your <strong className="text-white">faction</strong> (Horde or Alliance).</li>
-              <li>Choose a <strong className="text-white">dungeon</strong> from the available pool and set your target <strong className="text-white">key level</strong> (up to +90).</li>
+              <li>Select your <strong className="text-white">class</strong> and required role.</li>
+              <li>Choose a <strong className="text-white">dungeon</strong> from the available pool and set your target <strong className="text-white">difficulty</strong>.</li>
               <li>Set your <strong className="text-white">budget in gold</strong> — the maximum amount you are willing to pay.</li>
               <li>Submit your request. Boosters will see it and place bids.</li>
             </ol>

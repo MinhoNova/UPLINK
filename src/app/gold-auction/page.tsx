@@ -7,21 +7,20 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "Gold Blind Auction — WoW Boosting Gold Bids | UPLINK",
+  title: "Gold Blind Auction — Boosting Gold Bids | UPLINK",
   description:
-    "Post a WoW boost request and receive blind gold bids from boosters. Only you see the bids. Free blind auction system for Mythic+, leveling, and raid boosting on UPLINK.",
+    "Post a boost request and receive blind gold bids from boosters. Only you see the bids. Free blind auction system for dungeons and leveling boosts on UPLINK.",
   openGraph: {
-    title: "Gold Blind Auction — UPLINK | WoW Boosting Gold Bidding System",
+    title: "Gold Blind Auction — UPLINK | Boosting Gold Bidding System",
     description:
-      "Blind gold auctions for WoW boosting. Post requests, boosters bid in gold, only you see the bids. Fair, transparent, and free.",
-    siteName: "WoWLFG — UPLINK",
+      "Blind gold auctions for boosting. Post requests, boosters bid in gold, only you see the bids. Fair, transparent, and free.",
+    siteName: "UPLINK — Aion 2 LFG",
   },
   keywords: [
-    "wow gold auction", "blind auction wow", "gold boosting wow",
-    "wow boost gold bid", "wow auction boosting", "buy wow boost gold",
-    "wow mythic plus gold", "gold bid wow",
-    "WoW boosting for gold", "WoW boosting service",
-    "WoW boosting communities", "WoW boosting Discord",
+    "gold auction", "blind auction", "gold boosting",
+    "boost gold bid", "auction boosting", "buy boost gold",
+    "gold bid", "boosting for gold", "boosting service",
+    "boosting communities", "boosting discord",
   ],
   alternates: { canonical: `${siteUrl}/gold-auction` },
 };
@@ -30,7 +29,7 @@ const steps = [
   {
     icon: Coins,
     title: "1. Post a Boost Request",
-    desc: "Tell boosters what you need — dungeon, key level, or leveling range. Set your requirements and let the bidding begin.",
+    desc: "Tell boosters what you need — dungeon, difficulty, or leveling range. Set your requirements and let the bidding begin.",
   },
   {
     icon: Eye,
@@ -83,15 +82,15 @@ export default function GoldAuctionPage() {
         "@type": "WebPage",
         "@id": `${siteUrl}/gold-auction`,
         url: `${siteUrl}/gold-auction`,
-        name: "Gold Blind Auction — WoW Boosting Gold Bids",
-        description: "Blind gold auction system for WoW boosting on UPLINK. Post boost requests, receive blind bids, and choose the best booster.",
-        about: { "@type": "Thing", name: "WoW blind gold auction boosting" },
+        name: "Gold Blind Auction — Boosting Gold Bids",
+        description: "Blind gold auction system for boosting on UPLINK. Post boost requests, receive blind bids, and choose the best booster.",
+        about: { "@type": "Thing", name: "Blind gold auction boosting" },
         isPartOf: { "@id": `${siteUrl}#website` },
       },
       {
         "@type": "HowTo",
         "@id": `${siteUrl}/gold-auction#howto`,
-        name: "How Blind Gold Auctions Work for WoW Boosting",
+        name: "How Blind Gold Auctions Work for Boosting",
         description: "Steps to post a boost request and choose a booster via blind gold auction.",
         step: steps.map((s) => ({
           "@type": "HowToStep",
@@ -117,7 +116,7 @@ export default function GoldAuctionPage() {
             Gold <span className="text-[#00ffff]">Blind Auction</span>
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            The only WoW boosting marketplace with a true blind auction system. Post what you need, 
+            The only boosting marketplace with a true blind auction system. Post what you need, 
             boosters bid in gold, and <strong className="text-white">only you see the offers</strong>.
           </p>
           <div className="flex items-center justify-center gap-3 mt-8">
@@ -191,7 +190,7 @@ export default function GoldAuctionPage() {
               { q: "What is a blind gold auction?", a: "A bidding system where boosters submit gold offers for your boost request — but cannot see each other's bids. Only you, the requester, can see all offers." },
               { q: "Is the blind auction free?", a: "Yes, completely free. Post requests and place bids with no fees, subscriptions, or commissions." },
               { q: "Can I cancel my request?", a: "Yes. You can cancel anytime before accepting a bid. No penalties or locked-in contracts." },
-              { q: "How do I pay the booster?", a: "Payment is in WoW gold, agreed upon when you accept the bid. Arrange with the booster in-game after the run." },
+              { q: "How do I pay the booster?", a: "Payment is in game gold, agreed upon when you accept the bid. Arrange with the booster in-game after the run." },
             ].map((item) => (
               <details key={item.q} className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-2xl p-5 group open:border-[#00ffff]/20 transition">
                 <summary className="text-sm font-black text-white cursor-pointer list-none flex items-center justify-between group-open:text-[#00ffff] transition">

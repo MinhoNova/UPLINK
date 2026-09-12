@@ -6,24 +6,24 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "WoWLFG Guides — UPLINK",
+  title: "UPLINK Guides — Leveling & Dungeon Strategies",
   description:
-    "WoWLFG — Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft players. Learn how to find groups and climb the leaderboard.",
+    "Leveling tips, dungeon strategies, and boosting advice on UPLINK. Learn how to find groups and climb the market.",
   openGraph: {
-    title: "WoWLFG Guides — UPLINK",
+    title: "UPLINK Guides — Leveling & Dungeon Strategies",
     description:
-      "WoWLFG — Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft.",
+      "Leveling tips, dungeon strategies, and boosting advice on UPLINK.",
   },
   alternates: { canonical: `${siteUrl}/guides` },
 };
 
 const guides = [
   {
-    title: "Mythic+ Boosting Guide",
+    title: "Boosting Guide",
     description:
-      "Everything you need to know about Mythic+ boosting on UPLINK — how to post a boost request, place bids, and choose a booster.",
-    href: "/guides/mythic-plus-boosting",
-    keywords: ["Mythic+", "M+", "boosting", "dungeon", "key"],
+      "Everything you need to know about boost requests on UPLINK — how to post a request, place bids, and choose a booster.",
+    href: "/guides/boosting",
+    keywords: ["boosting", "auction", "bids", "dungeon"],
   },
 ];
 
@@ -42,8 +42,8 @@ export default function GuidesPage() {
       {
         "@type": "CollectionPage",
         "@id": `${siteUrl}/guides#collection`,
-        name: "WoW Guides — UPLINK",
-        description: "Mythic+ guides, leveling tips, dungeon strategies, and boosting advice.",
+        name: "UPLINK Guides — Leveling & Dungeon Strategies",
+        description: "Leveling tips, dungeon strategies, and boosting advice.",
         url: `${siteUrl}/guides`,
       },
     ],
@@ -61,7 +61,7 @@ export default function GuidesPage() {
       </div>
       <div className="relative z-10 max-w-3xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-black uppercase tracking-[0.2em] mb-2">WoW Guides</h1>
+          <h1 className="text-3xl font-black uppercase tracking-[0.2em] mb-2">UPLINK Guides</h1>
           <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">
             Learn how to find groups, post requests, and climb the leaderboard
           </p>

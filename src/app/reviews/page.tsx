@@ -6,11 +6,11 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "WoWLFG Reviews — UPLINK",
-  description: "WoWLFG — Read reviews and ratings from the UPLINK boosting community. Share your experience with the premier WoW LFG and boosting marketplace.",
+  title: "UPLINK Reviews — Player Community",
+  description: "Read reviews and ratings from the UPLINK LFG community. Share your experience with the premier Aion 2 LFG marketplace.",
   openGraph: {
-    title: "WoWLFG Reviews — UPLINK",
-    description: "WoWLFG — Read reviews and ratings from the UPLINK boosting community. Share your experience.",
+    title: "UPLINK Reviews — Player Community",
+    description: "Read reviews and ratings from the UPLINK LFG community. Share your experience.",
   },
   alternates: {
     canonical: `${siteUrl}/reviews`,
@@ -32,12 +32,12 @@ export default function ReviewsPage() {
       {
         "@type": "WebPage",
         "@id": `${siteUrl}/reviews`,
-        name: "WoWLFG Reviews — UPLINK",
-        description: "Read reviews and ratings from the UPLINK boosting community.",
+        name: "UPLINK Reviews — Player Community",
+        description: "Read reviews and ratings from the UPLINK LFG community.",
         about: {
           "@type": "Service",
           name: "UPLINK",
-          description: "World of Warcraft Mythic+ group finder and boosting marketplace.",
+          description: "LFG group finder and boosting marketplace.",
         },
       },
     ],

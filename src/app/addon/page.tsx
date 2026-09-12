@@ -7,13 +7,13 @@ const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "WoWLFG Addon — UPLINK WoW Group Finder",
+  title: "UPLINK Addon — Group Finder",
   description:
-    "WoWLFG — Download the UPLINK World of Warcraft addon for seamless group finder integration. Browse Mythic+ groups, check scores, and find your next run in-game.",
+    "Download the UPLINK group finder addon for seamless in-game integration. Browse groups, check scores, and find your next run in-game.",
   openGraph: {
-    title: "WoWLFG Addon — UPLINK WoW Group Finder",
+    title: "UPLINK Addon — Group Finder",
     description:
-      "WoWLFG — Browse Mythic+ groups, check scores, and find runs in-game with the UPLINK addon.",
+      "Browse groups, check scores, and find runs in-game with the UPLINK addon.",
   },
   alternates: { canonical: `${siteUrl}/addon` },
 };
@@ -37,7 +37,7 @@ export default function AddonPage() {
         applicationCategory: "GameApplication",
         operatingSystem: "Windows, macOS",
         description:
-          "World of Warcraft addon for UPLINK group finder integration. Browse Mythic+ groups, check scores, and find runs in-game.",
+          "In-game addon for UPLINK group finder integration. Browse groups, check scores, and find runs in-game.",
         url: `${siteUrl}/addon`,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       },
@@ -62,7 +62,7 @@ export default function AddonPage() {
           </div>
           <h1 className="text-3xl font-black uppercase tracking-[0.2em] mb-2">UPLINK Addon</h1>
           <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">
-            Seamless group finder integration for World of Warcraft
+            Seamless group finder integration for your game
           </p>
         </div>
 

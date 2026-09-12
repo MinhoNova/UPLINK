@@ -504,7 +504,14 @@ export default function CreateOfferPage() {
         .then((r) => r.json())
         .catch(() => ({ lobbies: [] }));
       const lobbies = Array.isArray(live.lobbies) ? live.lobbies : [];
-      const category = sel.category === "Leveling" ? "leveling" : "dungeon";
+      const categoryByService: Record<string, string> = {
+        Leveling: "leveling",
+        Dungeons: "dungeons",
+        Raids: "raids",
+        PVP: "pvp",
+        Professions: "professions",
+      };
+      const category = categoryByService[sel.category] ?? "dungeons";
       const lobby = {
         id: Date.now(),
         ownerId: String(me.id || ""),
@@ -539,6 +546,12 @@ export default function CreateOfferPage() {
       };
       const ok = await saveDataSmart({ lobbies: [...lobbies, lobby] });
       if (!ok) { setPubError("Could not publish your offer — please try again"); return; }
+      fetch("/api/discord/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ lobby }),
+      }).catch(() => {});
       setPublished(true);
     } catch {
       setPubError("Network error — please try again");

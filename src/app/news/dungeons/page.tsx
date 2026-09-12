@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
-  title: "Dungeon News — WoWLFG",
-  description: "Mythic+ routes, dungeon changes, new affixes, boss strategies, and seasonal updates for WoW The War Within.",
+  title: "Dungeon News — UPLINK",
+  description: "Dungeon routes, strategy changes, boss guides, and seasonal updates from the UPLINK community.",
   alternates: { canonical: `${siteUrl}/news/dungeons` },
-  openGraph: { title: "Dungeon News — WoWLFG", description: "Mythic+ routes, dungeon changes, new affixes, boss strategies, and seasonal updates for WoW The War Within.", url: `${siteUrl}/news/dungeons`, images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }] },
-  twitter: { card: "summary_large_image", title: "Dungeon News — WoWLFG", description: "Mythic+ routes, dungeon changes, new affixes, boss strategies, and seasonal updates for WoW The War Within.", images: [`${siteUrl}/og.png`] },
+  openGraph: { title: "Dungeon News — UPLINK", description: "Dungeon routes, strategy changes, boss guides, and seasonal updates.", url: `${siteUrl}/news/dungeons`, images: [{ url: `${siteUrl}/og.png`, width: 1200, height: 630 }] },
+  twitter: { card: "summary_large_image", title: "Dungeon News — UPLINK", description: "Dungeon routes, strategy changes, boss guides, and seasonal updates.", images: [`${siteUrl}/og.png`] },
 };
 
 export default function DungeonsPage() {
