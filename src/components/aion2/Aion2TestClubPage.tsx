@@ -44,6 +44,14 @@ const FILTER_TABS = [
   { label: "PVP",       key: "PVP",       icon: Swords },
 ];
 
+/* ── REGION FILTER TABS ── */
+const REGION_TABS = [
+  { label: "ALL",    key: "All",       flag: "" },
+  { label: "EU",     key: "EU",        flag: "/flags/eu.svg" },
+  { label: "NA EAST", key: "NA (EAST)", flag: "/flags/us.svg" },
+  { label: "NA WEST", key: "NA (WEST)", flag: "/flags/us.svg" },
+];
+
 const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling", "pvp"] as const;
 type OfferNotificationCategory = (typeof OFFER_NOTIFICATION_CATEGORIES)[number];
 type OfferNotificationSettings = { mutedAll: boolean; mutedCategories: OfferNotificationCategory[] };
@@ -62,6 +70,7 @@ export default function Aion2TestClubPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("All");
+  const [regionTab, setRegionTab] = useState("All");
   const motionOn = useFlag("uplink_bg_motion", true);
 
   const [lobbies, setLobbies] = useState<any[]>([]);
@@ -357,9 +366,10 @@ export default function Aion2TestClubPage() {
       return lobbies
         .filter(isLobbyListedInPublicFeed)
         .filter((l) => cats === null || cats.includes(String(l.category || "")))
+        .filter((l) => regionTab === "All" || String(l.serverRegion || "") === regionTab)
         .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
     },
-    [lobbies, activeTab]
+    [lobbies, activeTab, regionTab]
   );
 
   useEffect(() => {
@@ -826,6 +836,33 @@ export default function Aion2TestClubPage() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Region Filter Tabs */}
+            <div className="relative z-30 mb-6 flex max-w-full items-center gap-2">
+              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-cyan-800/25 bg-[#0a0f26]/50 p-1.5 pr-2 backdrop-blur-md shadow-[0_4px_18px_rgba(34,211,238,0.05)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {REGION_TABS.map((rtab) => {
+                  const isActive = regionTab === rtab.key;
+                  return (
+                    <button
+                      key={rtab.key}
+                      onClick={() => setRegionTab(rtab.key)}
+                      className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${
+                        isActive
+                          ? 'bg-[#0c132a] text-cyan-300 shadow-[inset_0_0_20px_rgba(34,211,238,0.15)] border border-cyan-500/40'
+                          : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
+                      }`}
+                    >
+                      {rtab.flag ? (
+                        <img src={rtab.flag} alt="" className="w-4 h-4 rounded-sm object-cover" loading="lazy" decoding="async" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-sm bg-cyan-400/15 border border-cyan-400/30" />
+                      )}
+                      <span>{rtab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Offer List */}

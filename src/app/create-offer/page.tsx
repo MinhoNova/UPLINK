@@ -20,6 +20,12 @@ const REGIONS = [
   { label: "NA (WEST)", desc: "North America — West", icon: MapPin },
 ];
 
+const REGION_FLAG: Record<string, string> = {
+  "EU": "/flags/eu.svg",
+  "NA (EAST)": "/flags/us.svg",
+  "NA (WEST)": "/flags/us.svg",
+};
+
 const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: string }> = {
   Currency: { icon: Coins, color: "text-amber-300", tile: "border-amber-400/40 bg-amber-500/10" },
   Leveling: { icon: TrendingUp, color: "text-emerald-300", tile: "border-emerald-400/40 bg-emerald-500/10" },
@@ -856,13 +862,12 @@ export default function CreateOfferPage() {
                               </p>
                               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                 {REGIONS.map((r) => {
-                                  const RegionIcon = r.icon;
                                   const isActive = region === r.label;
                                   return (
                                     <button key={r.label} type="button" onClick={() => { setRegion(r.label); setRegionOpen(false); }}
                                       className={`relative flex items-center gap-3 rounded-xl border px-3.5 py-3.5 text-left transition-all cursor-pointer ${isActive ? "border-cyan-400/60 bg-cyan-500/10 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] hover:border-white/[0.18] hover:bg-white/[0.05]"}`}>
-                                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-300" : "border-white/[0.1] bg-white/[0.04] text-gray-500"}`}>
-                                        <RegionIcon className="h-4 w-4" />
+                                      <span className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border ${isActive ? "border-cyan-400/50 bg-cyan-500/15" : "border-white/[0.1] bg-white/[0.04]"}`}>
+                                        <img src={REGION_FLAG[r.label]} alt={r.label} className="h-8 w-8 rounded-md object-cover" loading="lazy" decoding="async" />
                                       </span>
                                       <span className="min-w-0 flex-1">
                                         <span className={`block text-sm font-bold ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{r.label}</span>
