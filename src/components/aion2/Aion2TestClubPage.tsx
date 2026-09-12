@@ -362,19 +362,6 @@ export default function Aion2TestClubPage() {
     [lobbies, activeTab]
   );
 
-  const offerCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: 0, Dungeons: 0, Raids: 0, Leveling: 0, PVP: 0 };
-    lobbies.filter(isLobbyListedInPublicFeed).forEach((offer: any) => {
-      counts.All += 1;
-      const category = normalizeOfferCategory(offer.category);
-      if (category === "dungeon") counts.Dungeons += 1;
-      if (category === "raid") counts.Raids += 1;
-      if (category === "leveling") counts.Leveling += 1;
-      if (category === "pvp") counts.PVP += 1;
-    });
-    return counts;
-  }, [lobbies]);
-
   useEffect(() => {
     const publicOffers = lobbies.filter(isLobbyListedInPublicFeed);
     const currentIds = new Set(publicOffers.map((offer: any) => String(offer.id)));
@@ -816,7 +803,6 @@ export default function Aion2TestClubPage() {
                 {FILTER_TABS.map((tab) => {
                 const isActive = activeTab === tab.key;
                 const Icon = tab.icon;
-                const count = offerCounts[tab.key] || 0;
                 return (
                   <button
                     key={tab.key}
@@ -827,11 +813,6 @@ export default function Aion2TestClubPage() {
                         : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
                     }`}
                   >
-                    {count > 0 && (
-                      <span className="absolute -top-2 -right-1 min-w-5 h-5 px-1 flex items-center justify-center rounded-full border border-red-300/70 bg-red-500 text-[8px] font-black text-white shadow-[0_0_12px_rgba(239,68,68,0.65)]">
-                        {count > 99 ? "99+" : count}
-                      </span>
-                    )}
                     <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
                     <span>{tab.label}</span>
                   </button>

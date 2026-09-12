@@ -30,10 +30,17 @@ export async function POST(req: Request) {
 
   await initTables();
   const friends = (await getKV("friends")) || [];
+  const registeredUsers = (await getKV("registeredUsers")) || [];
 
   if (action === "request") {
     if (!targetId) return NextResponse.json({ error: "targetId required" }, { status: 400 });
     if (targetId === userId) return NextResponse.json({ error: "Cannot friend yourself" }, { status: 400 });
+    const targetUser = registeredUsers.find((user: any) => String(user.id) === String(targetId));
+    if (!targetUser) return NextResponse.json({ error: "Player not found" }, { status: 404 });
+    const blockedIds = Array.isArray(targetUser.blocked) ? targetUser.blocked.map(String) : [];
+    if (blockedIds.includes(String(userId))) {
+      return NextResponse.json({ error: "This player has blocked you." }, { status: 403 });
+    }
     const existing = friends.find((f: any) =>
       (f.requester === userId && f.target === targetId) || (f.requester === targetId && f.target === userId)
     );
