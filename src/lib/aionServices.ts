@@ -117,6 +117,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Krao Cave",
         priceKina: 0,
+        img: "/dungeons/krao-cave.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(6.5) },
           { label: "Hard", priceKina: kinah(9.75) },
@@ -125,6 +126,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Draupnir",
         priceKina: 0,
+        img: "/dungeons/draupnir.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(6.5) },
           { label: "Hard", priceKina: kinah(9.75) },
@@ -133,6 +135,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Urugugu Canyon",
         priceKina: 0,
+        img: "/dungeons/urugugu-canyon.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(7.5) },
           { label: "Hard", priceKina: kinah(11.25) },
@@ -141,6 +144,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Vakron Floating Island",
         priceKina: 0,
+        img: "/dungeons/vakron-floating-island.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(7.5) },
           { label: "Hard", priceKina: kinah(11.25) },
@@ -149,6 +153,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Fire Temple",
         priceKina: 0,
+        img: "/dungeons/fire-temple.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(9) },
           { label: "Hard", priceKina: kinah(13.5) },
@@ -157,6 +162,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Ferocious Horn Den",
         priceKina: 0,
+        img: "/dungeons/ferocious-horn-den.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(15) },
           { label: "Hard", priceKina: kinah(22.5) },
@@ -165,6 +171,7 @@ export const AION_SERVICES: AionService[] = [
       {
         label: "Dead Dramata Nest",
         priceKina: 0,
+        img: "/dungeons/dead-dramata-nest.jpg",
         variants: [
           { label: "Normal", priceKina: kinah(50) },
           { label: "Hard", priceKina: kinah(75) },

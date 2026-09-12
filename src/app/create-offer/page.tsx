@@ -293,7 +293,14 @@ function OptionFlip({
                 boxShadow: d === 0 ? "0 0 30px rgba(0,229,255,0.18), 0 12px 35px rgba(0,0,0,0.55)" : "0 12px 35px rgba(0,0,0,0.55)",
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-purple-900/30 to-black/60" />
+              {opt.img ? (
+                <>
+                  <img src={opt.img} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-[#071126]/35" />
+                </>
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-purple-900/30 to-black/60" />
+              )}
               <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
                 <p className={`text-sm font-black uppercase tracking-wider ${d === 0 ? "text-cyan-100" : "text-gray-300"}`}>{opt.label}</p>
                 {opt.variants && opt.variants.length > 0 ? (
