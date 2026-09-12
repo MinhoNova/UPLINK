@@ -1176,16 +1176,21 @@ export default function Aion2TestClubPage() {
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
               transition={{ duration: 0.2 }}
               onClick={(e) => e.stopPropagation()}
-              className="tn-light relative w-full max-w-md rounded-3xl border border-cyan-500/25 bg-[#0a0f26]/95 p-6 shadow-[0_0_60px_rgba(0,229,255,0.18)]"
+              className="tn-light relative w-full max-w-lg rounded-3xl border border-cyan-500/25 bg-[#0a0f26]/95 p-6 shadow-[0_0_60px_rgba(0,229,255,0.18)]"
             >
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
 
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black uppercase tracking-[0.24em] text-cyan-300">Signal Request</p>
-                  <h3 className="mt-1 text-base font-black uppercase tracking-wide text-white truncate">
-                    {applyTarget.title || `${applyTarget.runsCount || 1}× Boost`}
-                  </h3>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-500/10">
+                    <Swords className="h-5 w-5 text-cyan-300" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-black uppercase tracking-widest text-white">Apply to Offer</h3>
+                    <p className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                      {applyTarget.title || `${applyTarget.runsCount || 1}× Boost`}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => !applyingId && setApplyTarget(null)}
@@ -1195,7 +1200,10 @@ export default function Aion2TestClubPage() {
                 </button>
               </div>
 
-              <p className="mt-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Your class</p>
+              {/* Class — same module as the auto-apply gear */}
+              <p className="mt-5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+                <Users className="h-3 w-3 text-cyan-400" /> Your class
+              </p>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {AION2_CLASSES.map((c) => {
                   const isActive = applyAionClass === c;
@@ -1204,40 +1212,61 @@ export default function Aion2TestClubPage() {
                       key={c}
                       type="button"
                       onClick={() => setApplyAionClass(c)}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_16px_rgba(0,229,255,0.15)]" : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]"}`}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_16px_rgba(0,229,255,0.15)]" : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]"}`}
                     >
-                      <span className={`text-xs font-black tracking-wide ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span>
-                      <span className={`text-[8px] font-black tracking-widest ${isActive ? "text-cyan-300" : "text-gray-500"}`}>
-                        {AION2_ROLE_LABEL[aionClassRole(c)] || aionClassRole(c).toUpperCase()}
-                      </span>
+                      <img
+                        src={`/classes/${c === "Spiritmaster" ? "Elementalist" : c}.png`}
+                        alt=""
+                        className="h-6 w-6 object-contain"
+                        onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+                      />
+                      <span className={`min-w-0 flex-1 truncate text-xs font-black ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span>
+                      <span className="text-[8px] font-black tracking-widest text-gray-500">{AION2_ROLE_LABEL[aionClassRole(c)] || aionClassRole(c).toUpperCase()}</span>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Level</p>
+              {/* Item Level — same stepper as the auto-apply gear */}
+              <div className="mt-5">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Item Level</p>
+                <div className="mt-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) - 1))))}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
+                  >
+                    −
+                  </button>
                   <input
                     type="number"
                     min={1}
                     max={AION2_LEVEL_MAX}
                     value={applyLevel}
                     onChange={(e) => setApplyLevel(e.target.value)}
-                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm font-black text-white outline-none transition-all focus:border-cyan-400/50"
+                    className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none transition-all focus:border-cyan-400/50"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) + 1))))}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
+                  >
+                    +
+                  </button>
                 </div>
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Note (optional)</p>
-                  <input
-                    type="text"
-                    maxLength={200}
-                    value={applyNote}
-                    onChange={(e) => setApplyNote(e.target.value)}
-                    placeholder="Gear, availability..."
-                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none transition-all focus:border-cyan-400/50"
-                  />
-                </div>
+              </div>
+
+              {/* Note (optional) */}
+              <div className="mt-5">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Note (optional)</p>
+                <input
+                  type="text"
+                  maxLength={200}
+                  value={applyNote}
+                  onChange={(e) => setApplyNote(e.target.value)}
+                  placeholder="Gear, availability..."
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none transition-all focus:border-cyan-400/50"
+                />
               </div>
 
               {applyError && (
