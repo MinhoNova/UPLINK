@@ -94,6 +94,7 @@ export default function Aion2TestClubPage() {
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [offerNotificationSettings, setOfferNotificationSettings] = useState<OfferNotificationSettings>(DEFAULT_OFFER_NOTIFICATION_SETTINGS);
   const knownOfferIdsRef = useRef<Set<string> | null>(null);
+  const muteButtonRef = useRef<HTMLButtonElement>(null);
 
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
@@ -829,25 +830,10 @@ export default function Aion2TestClubPage() {
                 })}
               </div>
               {meId && (
-                <div className="relative shrink-0">
-                  <button type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Mute offer notifications" className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>
+                <div className="shrink-0">
+                  <button ref={muteButtonRef} type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Mute offer notifications" className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>
                     {offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                   </button>
-                  {showNotificationSettings && (
-                    <div className="absolute bottom-full right-0 z-40 mb-3 w-64 rounded-2xl border border-cyan-500/20 bg-[#080d21]/95 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-                      <p className="px-1 pb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Offer notifications</p>
-                      <button type="button" onClick={() => { const mutedAll = !offerNotificationSettings.mutedAll; if (!mutedAll && typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission(); void saveOfferNotificationSettings({ ...offerNotificationSettings, mutedAll }); }} className={`mb-2 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}>
-                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{offerNotificationSettings.mutedAll ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}{offerNotificationSettings.mutedAll ? "All offers muted" : "All offers enabled"}</span>
-                        <span className="text-[8px] font-bold">{offerNotificationSettings.mutedAll ? "Enable" : "Mute"}</span>
-                      </button>
-                      <div className="space-y-1 border-t border-white/10 pt-2">
-                        {OFFER_NOTIFICATION_CATEGORIES.map((category) => {
-                          const muted = offerNotificationSettings.mutedCategories.includes(category);
-                          return <button type="button" key={category} onClick={() => toggleOfferCategoryMute(category)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[9px] font-black uppercase tracking-widest transition-colors ${muted ? "text-red-300 hover:bg-red-500/10" : "text-slate-300 hover:bg-white/5"}`}><span>{category === "pvp" ? "PvP" : `${category}s`}</span>{muted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5 text-emerald-400" />}</button>;
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -1252,6 +1238,43 @@ export default function Aion2TestClubPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── OFFER NOTIFICATION POPOVER — detached from the scrolling tabs ── */}
+      {typeof document !== "undefined" && showNotificationSettings && muteButtonRef.current && createPortal(
+        (() => {
+          const rect = muteButtonRef.current!.getBoundingClientRect();
+          const width = 256;
+          const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+          const opensUpward = rect.top >= 280;
+          return (
+            <div
+              style={{ position: "fixed", left, top: opensUpward ? rect.top - 12 : rect.bottom + 12, transform: opensUpward ? "translateY(-100%)" : undefined, zIndex: 10000, width }}
+              className="rounded-2xl border border-cyan-500/25 bg-[#080d21]/95 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+            >
+              <p className="px-1 pb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Offer notifications</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const mutedAll = !offerNotificationSettings.mutedAll;
+                  if (!mutedAll && typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission();
+                  void saveOfferNotificationSettings({ ...offerNotificationSettings, mutedAll });
+                }}
+                className={`mb-2 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}
+              >
+                <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{offerNotificationSettings.mutedAll ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}{offerNotificationSettings.mutedAll ? "All offers muted" : "All offers enabled"}</span>
+                <span className="text-[8px] font-bold">{offerNotificationSettings.mutedAll ? "Enable" : "Mute"}</span>
+              </button>
+              <div className="space-y-1 border-t border-white/10 pt-2">
+                {OFFER_NOTIFICATION_CATEGORIES.map((category) => {
+                  const muted = offerNotificationSettings.mutedCategories.includes(category);
+                  return <button type="button" key={category} onClick={() => toggleOfferCategoryMute(category)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[9px] font-black uppercase tracking-widest transition-colors ${muted ? "text-red-300 hover:bg-red-500/10" : "text-slate-300 hover:bg-white/5"}`}><span>{category === "pvp" ? "PvP" : `${category}s`}</span>{muted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5 text-emerald-400" />}</button>;
+                })}
+              </div>
+            </div>
+          );
+        })(),
+        document.body
+      )}
 
       {/* ── HOVER PROFILE CARD (portal — floats above everything) ── */}
       {typeof document !== "undefined" && hoverCard && hoverCard.rect && hoverCard.owner && hoveredUserId === hoverCard.userId && (
