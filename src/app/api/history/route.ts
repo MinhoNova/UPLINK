@@ -9,12 +9,15 @@ export async function GET(req: Request) {
 
   await initTables();
   const lobbies = (await getKV("lobbies")) || [];
-  const history = lobbies.filter((lobby: any) =>
-    lobby.status === "completed" &&
-    lobby.payoutStatus === "paid" &&
-    Boolean(lobby.paymentProof) &&
-    userCanViewOfferThread(lobby, auth.user.id, auth.user.username)
-  );
+  const history = lobbies
+    .filter((lobby: any) =>
+      lobby.status === "completed" &&
+      lobby.payoutStatus === "paid" &&
+      Boolean(lobby.paymentProof) &&
+      userCanViewOfferThread(lobby, auth.user.id, auth.user.username)
+    )
+    .sort((a: any, b: any) => Number(b.completedAt || 0) - Number(a.completedAt || 0))
+    .slice(0, 100);
   const ownerIds = new Set(history.map((lobby: any) => String(lobby.ownerId)));
   const users = ((await getKV("registeredUsers")) || [])
     .filter((user: any) => ownerIds.has(String(user.id)))

@@ -22,6 +22,8 @@ export default function HistoryPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [proof, setProof] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -42,6 +44,12 @@ export default function HistoryPage() {
     () => [...lobbies].sort((a, b) => Number(b.completedAt || 0) - Number(a.completedAt || 0)),
     [lobbies]
   );
+  const totalPages = Math.max(1, Math.ceil(completedMissions.length / pageSize));
+  const pageMissions = completedMissions.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   if (status === "unauthenticated") {
     return <main className="min-h-screen bg-[#050816] px-6 pt-36 text-center text-sm font-bold text-slate-400">Sign in to view your history.</main>;
@@ -56,7 +64,7 @@ export default function HistoryPage() {
             <h1 className="mt-2 text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">History</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-400">Completed missions with a verified payment proof. Only the offer owner and players who joined the thread can view them.</p>
           </div>
-          {!loading && <span className="shrink-0 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-200">{completedMissions.length} paid</span>}
+          {!loading && <span className="shrink-0 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-200">{completedMissions.length} / 100 paid</span>}
         </div>
 
         {loading ? (
@@ -69,7 +77,7 @@ export default function HistoryPage() {
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2">
-            {completedMissions.map((lobby) => {
+            {pageMissions.map((lobby) => {
               const owner = users.find((user) => String(user.id) === String(lobby.ownerId));
               const banner = owner ? resolveLobbyBannerBg(lobby, owner, owner.activeVfx) : null;
               const completedAt = Number(lobby.completedAt);
@@ -99,6 +107,14 @@ export default function HistoryPage() {
               );
             })}
           </div>
+        )}
+
+        {completedMissions.length > pageSize && (
+          <nav className="mt-8 flex items-center justify-center gap-3" aria-label="History pages">
+            <button type="button" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-xl border border-white/15 bg-white/[0.03] px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:border-cyan-300/50 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-35">Previous</button>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Page {page} of {totalPages}</span>
+            <button type="button" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="rounded-xl border border-white/15 bg-white/[0.03] px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:border-cyan-300/50 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-35">Next</button>
+          </nav>
         )}
       </div>
 
