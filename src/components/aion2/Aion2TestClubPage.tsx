@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon
+  Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
+  Bell, BellOff, Settings2
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -38,9 +39,23 @@ import {
 const FILTER_TABS = [
   { label: "ALL",       key: "All",       icon: Layers },
   { label: "DUNGEONS",  key: "Dungeons",  icon: Shield },
+  { label: "RAIDS",     key: "Raids",     icon: Swords },
   { label: "LEVELING",  key: "Leveling",  icon: Sparkles },
   { label: "PVP",       key: "PVP",       icon: Swords },
 ];
+
+const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling", "pvp"] as const;
+type OfferNotificationCategory = (typeof OFFER_NOTIFICATION_CATEGORIES)[number];
+type OfferNotificationSettings = { mutedAll: boolean; mutedCategories: OfferNotificationCategory[] };
+const DEFAULT_OFFER_NOTIFICATION_SETTINGS: OfferNotificationSettings = { mutedAll: false, mutedCategories: [] };
+
+function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
+  const value = String(category || "dungeon").toLowerCase();
+  if (value === "raids") return "raid";
+  return OFFER_NOTIFICATION_CATEGORIES.includes(value as OfferNotificationCategory)
+    ? value as OfferNotificationCategory
+    : "dungeon";
+}
 
 export default function Aion2TestClubPage() {
   const { t } = useI18n();
@@ -76,9 +91,50 @@ export default function Aion2TestClubPage() {
     hoverHideTimer.current = null;
   };
   const [friends, setFriends] = useState<any[]>([]);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [offerNotificationSettings, setOfferNotificationSettings] = useState<OfferNotificationSettings>(DEFAULT_OFFER_NOTIFICATION_SETTINGS);
+  const knownOfferIdsRef = useRef<Set<string> | null>(null);
 
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
+
+  useEffect(() => {
+    const me = registeredUsers.find((u: any) => String(u.id) === meId);
+    const saved = me?.offerNotificationSettings;
+    if (!saved || typeof saved !== "object") {
+      setOfferNotificationSettings(DEFAULT_OFFER_NOTIFICATION_SETTINGS);
+      return;
+    }
+    setOfferNotificationSettings({
+      mutedAll: saved.mutedAll === true,
+      mutedCategories: Array.isArray(saved.mutedCategories)
+        ? saved.mutedCategories.filter((category: unknown): category is OfferNotificationCategory =>
+            OFFER_NOTIFICATION_CATEGORIES.includes(String(category).toLowerCase() as OfferNotificationCategory)
+          ).map((category: unknown) => normalizeOfferCategory(category))
+        : [],
+    });
+  }, [registeredUsers, meId]);
+
+  const saveOfferNotificationSettings = async (next: OfferNotificationSettings) => {
+    if (!meId) return;
+    setOfferNotificationSettings(next);
+    try {
+      await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: { id: meId, offerNotificationSettings: next } }),
+      });
+    } catch {
+      /* The next poll restores the saved setting if the request fails. */
+    }
+  };
+
+  const toggleOfferCategoryMute = (category: OfferNotificationCategory) => {
+    const mutedCategories = offerNotificationSettings.mutedCategories.includes(category)
+      ? offerNotificationSettings.mutedCategories.filter((value) => value !== category)
+      : [...offerNotificationSettings.mutedCategories, category];
+    void saveOfferNotificationSettings({ ...offerNotificationSettings, mutedCategories });
+  };
 
   useEffect(() => {
     if (!meId) return;
@@ -203,7 +259,7 @@ export default function Aion2TestClubPage() {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.01 }}
         onClick={() => router.push(`/manage/${String(m.id)}`)}
-        className={`tn-light relative w-full min-h-[104px] rounded-2xl border overflow-hidden flex flex-col justify-center px-4 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${
+        className={`tn-light relative w-full min-h-[88px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-2.5 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${
           isUnpaid
             ? "border-red-500/30 hover:border-red-400/50"
             : "border-cyan-500/20 hover:border-cyan-400/40"
@@ -217,7 +273,7 @@ export default function Aion2TestClubPage() {
         )}
 
         <div className="relative z-10 flex items-start justify-between gap-2">
-          <p className="text-base font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+          <p className="text-sm font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
             {m.category === "leveling" ? (
               <>
                 <span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">Leveling</span>
@@ -249,7 +305,7 @@ export default function Aion2TestClubPage() {
           </div>
         </div>
 
-        <div className="relative z-10 mt-2.5 flex items-center justify-between gap-2">
+        <div className="relative z-10 mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
             {m.serverRegion && (
               <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">
@@ -289,8 +345,9 @@ export default function Aion2TestClubPage() {
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = {
     All: null,
     Dungeons: ["dungeon"],
+    Raids: ["raid", "raids"],
     Leveling: ["leveling"],
-    PVP: [],
+    PVP: ["pvp"],
   };
 
   const displayOffers = useMemo(
@@ -303,6 +360,40 @@ export default function Aion2TestClubPage() {
     },
     [lobbies, activeTab]
   );
+
+  const offerCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: 0, Dungeons: 0, Raids: 0, Leveling: 0, PVP: 0 };
+    lobbies.filter(isLobbyListedInPublicFeed).forEach((offer: any) => {
+      counts.All += 1;
+      const category = normalizeOfferCategory(offer.category);
+      if (category === "dungeon") counts.Dungeons += 1;
+      if (category === "raid") counts.Raids += 1;
+      if (category === "leveling") counts.Leveling += 1;
+      if (category === "pvp") counts.PVP += 1;
+    });
+    return counts;
+  }, [lobbies]);
+
+  useEffect(() => {
+    const publicOffers = lobbies.filter(isLobbyListedInPublicFeed);
+    const currentIds = new Set(publicOffers.map((offer: any) => String(offer.id)));
+    if (!knownOfferIdsRef.current) {
+      knownOfferIdsRef.current = currentIds;
+      return;
+    }
+    const newOffers = publicOffers.filter((offer: any) => !knownOfferIdsRef.current?.has(String(offer.id)));
+    knownOfferIdsRef.current = currentIds;
+    if (offerNotificationSettings.mutedAll || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    newOffers
+      .filter((offer: any) => String(offer.ownerId) !== meId)
+      .filter((offer: any) => !offerNotificationSettings.mutedCategories.includes(normalizeOfferCategory(offer.category)))
+      .forEach((offer: any) => {
+        new Notification(`New ${normalizeOfferCategory(offer.category)} offer`, {
+          body: String(offer.title || `${offer.runsCount || 1}× Run`),
+          icon: "/icon.svg",
+        });
+      });
+  }, [lobbies, meId, offerNotificationSettings]);
 
   const lobbyOwner = (l: any) =>
     registeredUsers.find((u: any) => String(u.id) === String(l.ownerId)) || null;
@@ -714,6 +805,7 @@ export default function Aion2TestClubPage() {
               {FILTER_TABS.map((tab) => {
                 const isActive = activeTab === tab.key;
                 const Icon = tab.icon;
+                const count = offerCounts[tab.key] || 0;
                 return (
                   <button
                     key={tab.key}
@@ -724,11 +816,38 @@ export default function Aion2TestClubPage() {
                         : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
                     }`}
                   >
+                    {count > 0 && (
+                      <span className="absolute -top-2 -right-1 min-w-5 h-5 px-1 flex items-center justify-center rounded-full border border-red-300/70 bg-red-500 text-[8px] font-black text-white shadow-[0_0_12px_rgba(239,68,68,0.65)]">
+                        {count > 99 ? "99+" : count}
+                      </span>
+                    )}
                     <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
                     <span>{tab.label}</span>
                   </button>
                 );
               })}
+              {meId && (
+                <div className="relative shrink-0">
+                  <button type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Offer notification settings" className={`flex h-9 w-9 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-cyan-400/40 hover:text-cyan-200"}`}>
+                    {offerNotificationSettings.mutedAll ? <BellOff className="w-3.5 h-3.5" /> : <Settings2 className="w-3.5 h-3.5" />}
+                  </button>
+                  {showNotificationSettings && (
+                    <div className="absolute left-0 top-12 z-40 w-64 rounded-2xl border border-cyan-500/20 bg-[#080d21]/95 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                      <p className="px-1 pb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Offer notifications</p>
+                      <button type="button" onClick={() => { const mutedAll = !offerNotificationSettings.mutedAll; if (!mutedAll && typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission(); void saveOfferNotificationSettings({ ...offerNotificationSettings, mutedAll }); }} className={`mb-2 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}>
+                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{offerNotificationSettings.mutedAll ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}{offerNotificationSettings.mutedAll ? "All offers muted" : "All offers enabled"}</span>
+                        <span className="text-[8px] font-bold">{offerNotificationSettings.mutedAll ? "Enable" : "Mute"}</span>
+                      </button>
+                      <div className="space-y-1 border-t border-white/10 pt-2">
+                        {OFFER_NOTIFICATION_CATEGORIES.map((category) => {
+                          const muted = offerNotificationSettings.mutedCategories.includes(category);
+                          return <button type="button" key={category} onClick={() => toggleOfferCategoryMute(category)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[9px] font-black uppercase tracking-widest transition-colors ${muted ? "text-red-300 hover:bg-red-500/10" : "text-slate-300 hover:bg-white/5"}`}><span>{category === "pvp" ? "PvP" : `${category}s`}</span>{muted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5 text-emerald-400" />}</button>;
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Offer List */}
@@ -901,9 +1020,9 @@ export default function Aion2TestClubPage() {
 
           {/* 3. Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
-            <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
+            <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               {/* Widget Header — slim */}
-              <div className="flex items-center justify-between pb-4 mb-5 border-b border-blue-900/30">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">
                   {t("missions_header") || "ONGOING MISSIONS"}
                 </h3>
@@ -930,9 +1049,14 @@ export default function Aion2TestClubPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {activeMissions.length > 0 && (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 px-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">LIVE RUNS</span>
+                        <span className="ml-auto rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">{activeMissions.length}</span>
+                      </div>
                       <AnimatePresence mode="popLayout">
                         {activeMissions.map((m) => renderMissionCard(m))}
                       </AnimatePresence>
@@ -941,7 +1065,7 @@ export default function Aion2TestClubPage() {
 
                   {unpaidMissions.length > 0 && (
                     <div className="pt-3 border-t border-red-500/20">
-                      <div className="flex items-center gap-2 mb-3 px-1">
+                      <div className="flex items-center gap-2 mb-2.5 px-1">
                         <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                         <span className="text-[9px] font-black uppercase tracking-[0.18em] text-red-300">
                           UNPAID RUNS

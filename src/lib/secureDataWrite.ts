@@ -101,6 +101,21 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
   if ("bannerDisabled" in merged) {
     merged.bannerDisabled = merged.bannerDisabled === true;
   }
+  if ("offerNotificationSettings" in merged) {
+    const settings = merged.offerNotificationSettings;
+    const validCategories = new Set(["dungeon", "raid", "leveling", "pvp"]);
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+      delete merged.offerNotificationSettings;
+    } else {
+      const raw = settings as Record<string, unknown>;
+      merged.offerNotificationSettings = {
+        mutedAll: raw.mutedAll === true,
+        mutedCategories: Array.isArray(raw.mutedCategories)
+          ? [...new Set(raw.mutedCategories.map((v) => String(v).toLowerCase()).filter((v) => validCategories.has(v)))].slice(0, 4)
+          : [],
+      };
+    }
+  }
   for (const field of SELF_IMAGE_URL_FIELDS) {
     if (field in merged) {
       const url = sanitizeUrlField(merged[field]);
