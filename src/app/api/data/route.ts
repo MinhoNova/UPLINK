@@ -13,6 +13,7 @@ import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards } from '@/lib/rankAwards';
 import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
+import { DEFAULT_PROFILE_BANNER } from '@/lib/profileImage';
 
 /* Short in-process cache so the 8s homepage/thread polls don't re-read D1 + re-serialize on every tick. */
 const DATA_CACHE_TTL_MS = 2000;
@@ -104,6 +105,7 @@ export async function GET(req: Request) {
           username: auth.user.username,
           name: auth.user.name ?? null,
           avatar: auth.user.image ?? null,
+          banner: DEFAULT_PROFILE_BANNER,
           lastSeenAt: Date.now(),
           lastKnownIp: null,
           stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },

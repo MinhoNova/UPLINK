@@ -26,6 +26,7 @@ import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
 import type { AionAutoApply } from "@/components/modals/AionAutoApplyModal";
 import {
+  resolveProfileBanner,
   resolveProfileImage,
   resolveProfileDisplayName,
   resolveNameColor,
@@ -1146,7 +1147,7 @@ export default function Aion2TestClubPage() {
             const hNameColor = owner ? resolveNameColor(owner) : null;
             const hAvatar = owner ? resolveProfileImage(owner) || cardPic || "" : cardPic || "";
             const hEffect = owner ? effectiveAvatarEffect(owner, owner.effect) : "none";
-            const hBanner = owner?.banner || "";
+            const hBanner = resolveProfileBanner(owner) || "";
             const hint = hAvatar ? isAnimatedImageUrl(hAvatar) : false;
             return (
               <div
@@ -1156,7 +1157,7 @@ export default function Aion2TestClubPage() {
                 onMouseLeave={scheduleHide}
               >
                 {/* Banner — full card width */}
-                <div className="relative h-28 w-full bg-gradient-to-br from-[#ff007f]/40 via-[#6b21a8]/30 to-[#00ffff]/30">
+                <div className="relative h-28 w-full bg-[#080810]">
                   {hBanner ? (
                     <img
                       src={hBanner}

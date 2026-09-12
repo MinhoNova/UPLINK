@@ -11,7 +11,7 @@ import {
   Trash2, Swords, AlertTriangle, X, Loader2,
   Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
-import { resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
+import { resolveProfileBanner, resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 
 const REACTION_TYPES = [
@@ -464,14 +464,14 @@ export default function CommunityPage() {
             {showMyPosts && session?.user && (
               <div className="mb-6 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden border border-white/5 bg-black shadow-xl">
                 <div className="relative h-28 sm:h-32 w-full overflow-hidden group">
-                  {myProfile?.banner ? (
+                  {resolveProfileBanner(myProfile) ? (
                     <img
-                      src={myProfile.banner}
+                      src={resolveProfileBanner(myProfile)!}
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover object-center scale-105"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#ff007f]/30 via-[#8a2be2]/25 to-[#00ffff]/30" />
+                    <div className="absolute inset-0 bg-[#080810]" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
                   <button

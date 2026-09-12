@@ -22,7 +22,7 @@ import {
   Copy,
 } from "lucide-react";
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
-import { resolveProfileImage } from "@/lib/profileImage";
+import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
 import {
   importLobbyVfxFromUrl,
@@ -95,8 +95,8 @@ export default function MyProfileClient() {
     setTeamMembers(Array.isArray(me?.team?.members) ? me.team.members : []);
     setDisplayNameInput(me?.displayName || "");
     setNameColor(me?.nameColor || "");
-    setBannerUrl(me?.banner || "");
-  }, [me?.id, me?.team?.name]);
+    setBannerUrl(resolveProfileBanner(me) || "");
+  }, [me?.id, me?.team?.name, me?.banner, me?.bannerDisabled]);
 
   const teamConfirmed = useMemo(
     () => teamMembers.filter((m: any) => m.status !== "pending").length,
@@ -213,8 +213,11 @@ export default function MyProfileClient() {
         flash(data.error || "Upload failed", "err");
         return;
       }
-      const ok = await patchMe({ banner: data.url });
-      if (ok) flash("Banner updated — shows on your community profile too");
+      const ok = await patchMe({ banner: data.url, bannerDisabled: false });
+      if (ok) {
+        setBannerUrl(data.url);
+        flash("Banner updated — shows on your community profile too");
+      }
     } catch {
       flash("Upload failed", "err");
     } finally {
@@ -223,8 +226,11 @@ export default function MyProfileClient() {
   };
 
   const removeBanner = async () => {
-    await patchMe({ banner: null });
-    flash("Banner removed");
+    const ok = await patchMe({ banner: null, bannerDisabled: true });
+    if (ok) {
+      setBannerUrl("");
+      flash("Banner removed");
+    }
   };
 
   const saveNameColor = async () => {
@@ -455,9 +461,9 @@ export default function MyProfileClient() {
       <main className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-24">
         {/* ══ HERO ══ */}
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
-          {me?.banner && (
+          {resolveProfileBanner(me) && (
             <>
-              <img src={me.banner} alt="" className="absolute inset-0 w-full h-full object-cover object-center" loading="lazy" decoding="async" />
+              <img src={resolveProfileBanner(me)!} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#050814]/85 via-[#050814]/45 to-[#050814]/20" />
               <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/30 via-transparent to-[#050814]/60" />
             </>
@@ -640,7 +646,7 @@ export default function MyProfileClient() {
                 {bannerUrl ? (
                   <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-600">No banner</div>
+                  <div className="w-full h-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-600">Banner removed</div>
                 )}
               </div>
               <div className="flex gap-2">

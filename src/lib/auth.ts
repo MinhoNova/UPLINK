@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import { DEFAULT_PROFILE_BANNER } from "@/lib/profileImage";
 
 const DISCORD_USER_AGENT = "UPLINK (https://uplink.uplinklfg.workers.dev, 1.0)";
 
@@ -103,6 +104,7 @@ export function getAuthOptions(): NextAuthOptions {
                 username: (user as { username?: string }).username || user.id,
                 name: (user as { name?: string | null }).name || null,
                 avatar: (user as { image?: string | null }).image || null,
+                banner: DEFAULT_PROFILE_BANNER,
                 lastSeenAt: Date.now(),
                 lastKnownIp: null,
                 stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },

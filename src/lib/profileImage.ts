@@ -1,5 +1,18 @@
 import { isSecretClubTier } from "@/lib/userProfile";
 
+/** The banner shown until a member uploads one or explicitly removes it. */
+export const DEFAULT_PROFILE_BANNER = "/default-profile-banner.gif";
+
+/**
+ * A missing banner means "use the site default". `bannerDisabled` is kept
+ * separately so removing the default banner leaves the profile plain.
+ */
+export function resolveProfileBanner(user: any): string | null {
+  if (user?.bannerDisabled === true) return null;
+  const customBanner = typeof user?.banner === "string" ? user.banner.trim() : "";
+  return customBanner || DEFAULT_PROFILE_BANNER;
+}
+
 /** Secret Club hidden identity — mask only on public offer party cards (not thread/DM/community). */
 export function shouldHidePublicIdentity(user: any, viewerUserId?: string): boolean {
   if (!user) return false;

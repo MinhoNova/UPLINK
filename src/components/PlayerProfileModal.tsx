@@ -9,6 +9,7 @@ import {
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import {
+  resolveProfileBanner,
   resolveProfileImage,
   resolveProfileDisplayName,
   resolveNameColor,
@@ -221,7 +222,7 @@ export default function PlayerProfileModal() {
   const isSelf = profileUser && String(profileUser.id) === String(currentUserId);
   const avatarSrc = profileUser ? resolveProfileImage(profileUser) : "";
   const effect = profileUser ? effectiveAvatarEffect(profileUser, profileUser.effect) : "none";
-  const bannerSrc = profileUser?.banner || "";
+  const bannerSrc = resolveProfileBanner(profileUser) || "";
   const displayName = profileUser ? resolveProfileDisplayName(profileUser) : "";
   const nameColor = profileUser ? resolveNameColor(profileUser) : null;
 
@@ -246,7 +247,7 @@ export default function PlayerProfileModal() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Banner — full card width */}
-            <div className="relative h-36 w-full bg-gradient-to-br from-[#ff007f]/40 via-[#6b21a8]/30 to-[#00ffff]/30">
+            <div className="relative h-36 w-full bg-[#080810]">
               {bannerSrc ? (
                 <img
                   src={bannerSrc}

@@ -98,6 +98,9 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
   if ("displayName" in merged && merged.displayName != null) {
     merged.displayName = String(merged.displayName).trim().slice(0, 40) || undefined;
   }
+  if ("bannerDisabled" in merged) {
+    merged.bannerDisabled = merged.bannerDisabled === true;
+  }
   for (const field of SELF_IMAGE_URL_FIELDS) {
     if (field in merged) {
       const url = sanitizeUrlField(merged[field]);
