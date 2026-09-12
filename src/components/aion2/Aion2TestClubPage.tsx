@@ -1029,7 +1029,7 @@ export default function Aion2TestClubPage() {
           </section>
 
           {/* 3. Right Sidebar: Ongoing Missions */}
-          <aside className="w-full xl:pt-[68px]">
+          <aside className="w-full">
             <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               {/* Widget Header — slim */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
