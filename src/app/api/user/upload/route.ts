@@ -112,6 +112,7 @@ export async function POST(req: Request) {
       maxDim,
       isGifUpload: !!(isGifUpload && (field === "profileGif" || isBanner || isChatImage)),
       isBanner,
+      cropSquare: field === "customAvatar",
     });
     normalized = result.buffer;
     ext = result.ext;

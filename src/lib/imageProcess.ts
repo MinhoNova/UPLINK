@@ -35,25 +35,32 @@ export async function normalizeCommunityImage(buffer: Buffer, preferGif = false)
 
 export async function normalizeProfileImage(
   buffer: Buffer,
-  opts: { maxDim: number; isGifUpload: boolean; isBanner: boolean }
+  opts: { maxDim: number; isGifUpload: boolean; isBanner: boolean; cropSquare?: boolean }
 ) {
   const format = assertValidImage(buffer);
   if (opts.isBanner) {
     const sharp = (await import("sharp")).default;
     if (opts.isGifUpload && format === "gif") {
       const optimized = await sharp(buffer, { animated: true })
-        .resize(opts.maxDim, opts.maxDim, { fit: "inside", withoutEnlargement: true })
+        .resize(960, 384, { fit: "cover", withoutEnlargement: true })
         .gif()
         .toBuffer();
       return { buffer: optimized, ext: "gif" as const };
     }
     const webp = await sharp(buffer)
-      .resize(opts.maxDim, opts.maxDim, { fit: "inside", withoutEnlargement: true })
+      .resize(960, 384, { fit: "cover", withoutEnlargement: true })
       .webp({ quality: 85 })
       .toBuffer();
     return { buffer: webp, ext: "webp" as const };
   }
   if (opts.isGifUpload) return { buffer, ext: "gif" as const };
+  if (opts.cropSquare) {
+    const sharp = (await import("sharp")).default;
+    const square = await sharp(buffer).resize(512, 512, { fit: "cover", withoutEnlargement: true });
+    if (format === "jpeg") return { buffer: await square.jpeg().toBuffer(), ext: "jpg" as const };
+    if (format === "png") return { buffer: await square.png().toBuffer(), ext: "png" as const };
+    return { buffer: await square.webp({ quality: 88 }).toBuffer(), ext: "webp" as const };
+  }
   if (format === "jpeg") return { buffer, ext: "jpg" as const };
   if (format === "png") return { buffer, ext: "png" as const };
   return { buffer, ext: "webp" as const };

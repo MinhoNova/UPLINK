@@ -1356,8 +1356,8 @@ export default function Aion2TestClubPage() {
                 onMouseEnter={cancelHide}
                 onMouseLeave={scheduleHide}
               >
-                {/* Banner — full card width */}
-                <div className="relative h-28 w-full bg-[#080810]">
+                {/* Banner — full card width, Discord 5:2 */}
+                <div className="relative aspect-[5/2] w-full bg-[#080810]">
                   {hBanner ? (
                     <img
                       src={hBanner}
@@ -1373,7 +1373,7 @@ export default function Aion2TestClubPage() {
                 <div className="px-5 -mt-10 relative z-10 flex items-end gap-3">
                   <div
                     className={`rounded-full overflow-hidden border-[3px] border-[#080810] shadow-[0_0_24px_rgba(255,0,127,0.25)] bg-black shrink-0 ${hint && hEffect === "none" ? "ring-1 ring-purple-500/30" : ""}`}
-                    style={{ width: 72, height: 72 }}
+                    style={{ width: 80, height: 80 }}
                   >
                     {hAvatar ? (
                       <img src={hAvatar} alt="" className={profileImgClass(hAvatar, "w-full h-full rounded-full")} onError={(e) => { (e.currentTarget as HTMLImageElement).src = cardPic || ""; }} />
