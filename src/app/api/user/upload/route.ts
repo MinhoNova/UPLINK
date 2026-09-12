@@ -13,6 +13,7 @@ import { validateSafeGifUrl } from "@/lib/safeRemoteUrl";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+const MAX_BANNER_UPLOAD_BYTES = 24 * 1024 * 1024;
 const MAX_DIM = 512;
 const SAFE_RE = /^[a-zA-Z0-9_-]+$/;
 
@@ -77,7 +78,13 @@ export async function POST(req: Request) {
     posterFile = formData.get("poster") as File | null;
     field = resolveField(formData.get("field"));
     if (!file || file.size === 0) return NextResponse.json({ error: "No file" }, { status: 400 });
-    if (file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: "File too large" }, { status: 413 });
+    const uploadCap = field === "banner" ? MAX_BANNER_UPLOAD_BYTES : MAX_UPLOAD_BYTES;
+    if (file.size > uploadCap) {
+      return NextResponse.json(
+        { error: field === "banner" ? "Banner too large (max 24MB)" : "File too large (max 4MB)" },
+        { status: 413 }
+      );
+    }
     isGifHint = !!(file.name.match(/\.gif$/i) || file.type === "image/gif");
     buffer = Buffer.from(await file.arrayBuffer());
   }

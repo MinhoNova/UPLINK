@@ -83,7 +83,7 @@ export default function OngoingMissionsPanel({
           : null;
         return bgPoster ? (
           <div className="absolute inset-0 z-0">
-            <img src={bgPoster} className="w-full h-full object-cover opacity-100" alt="" loading="lazy" decoding="async" />
+            <img src={bgPoster} className="w-full h-full object-cover opacity-100 animate-pan-slow" alt="" loading="lazy" decoding="async" />
           </div>
         ) : null;
       })()}

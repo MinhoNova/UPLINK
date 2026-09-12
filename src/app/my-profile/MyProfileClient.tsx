@@ -198,8 +198,8 @@ export default function MyProfileClient() {
   };
 
   const handleBannerFile = async (file: File) => {
-    if (file.size > 8 * 1024 * 1024) {
-      flash("File too large (max 8MB)", "err");
+    if (file.size > 24 * 1024 * 1024) {
+      flash("File too large (max 24MB)", "err");
       return;
     }
     setBannerBusy(true);

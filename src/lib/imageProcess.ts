@@ -38,6 +38,21 @@ export async function normalizeProfileImage(
   opts: { maxDim: number; isGifUpload: boolean; isBanner: boolean }
 ) {
   const format = assertValidImage(buffer);
+  if (opts.isBanner) {
+    const sharp = (await import("sharp")).default;
+    if (opts.isGifUpload && format === "gif") {
+      const optimized = await sharp(buffer, { animated: true })
+        .resize(opts.maxDim, opts.maxDim, { fit: "inside", withoutEnlargement: true })
+        .gif()
+        .toBuffer();
+      return { buffer: optimized, ext: "gif" as const };
+    }
+    const webp = await sharp(buffer)
+      .resize(opts.maxDim, opts.maxDim, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+    return { buffer: webp, ext: "webp" as const };
+  }
   if (opts.isGifUpload) return { buffer, ext: "gif" as const };
   if (format === "jpeg") return { buffer, ext: "jpg" as const };
   if (format === "png") return { buffer, ext: "png" as const };
