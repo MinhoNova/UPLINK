@@ -807,7 +807,7 @@ export default function Aion2TestClubPage() {
 
           {/* Center Column: Offers */}
           <section className="min-w-0">
-            {/* Filter Tabs — aligned above the offer cards */}
+            {/* Filter Tabs — category + region in one strip, mute button far right */}
             <div className="relative z-30 mb-6 flex max-w-full items-center gap-2">
               <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-blue-900/40 bg-[#0a0f26]/70 p-1.5 pr-2 backdrop-blur-md shadow-[0_4px_24px_rgba(34,211,238,0.06)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {FILTER_TABS.map((tab) => {
@@ -828,19 +828,7 @@ export default function Aion2TestClubPage() {
                   </button>
                 );
                 })}
-              </div>
-              {meId && (
-                <div className="shrink-0">
-                  <button ref={muteButtonRef} type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Mute offer notifications" className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>
-                    {offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Region Filter Tabs */}
-            <div className="relative z-30 mb-6 flex max-w-full items-center gap-2">
-              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-cyan-800/25 bg-[#0a0f26]/50 p-1.5 pr-2 backdrop-blur-md shadow-[0_4px_18px_rgba(34,211,238,0.05)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="mx-1 h-6 w-px shrink-0 bg-white/15" />
                 {REGION_TABS.map((rtab) => {
                   const isActive = regionTab === rtab.key;
                   return (
@@ -863,6 +851,13 @@ export default function Aion2TestClubPage() {
                   );
                 })}
               </div>
+              {meId && (
+                <div className="ml-auto shrink-0">
+                  <button ref={muteButtonRef} type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Mute offer notifications" className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>
+                    {offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Offer List */}
