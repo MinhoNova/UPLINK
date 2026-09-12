@@ -35,6 +35,7 @@ export const AION_SERVICES: AionService[] = [
     description: "Fast leveling to your target. Example 1 → 30.",
     basePriceKina: kinah(169.93),
     priceUnit: "1 → 30 range",
+    img: "/dungeons/leveling.png",
     express: kinah(33.99),
     superExpress: kinah(67.97),
     extras: [

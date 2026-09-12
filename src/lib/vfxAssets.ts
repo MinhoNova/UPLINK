@@ -64,3 +64,10 @@ export function resolveLobbyBannerAnimatedSrc(
   }
   return null;
 }
+
+/** Category-level banner fallback for offers without a custom image or owner VFX. */
+export function resolveLobbyBannerFallback(lobby: { category?: string } | null | undefined): string | null {
+  if (!lobby) return null;
+  if (String(lobby.category || "").toLowerCase() === "leveling") return "/dungeons/leveling.png";
+  return null;
+}

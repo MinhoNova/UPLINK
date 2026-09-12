@@ -13,7 +13,7 @@ import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import RankBadge from "@/components/RankBadge";
-import { resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
+import { resolveLobbyBannerAnimatedSrc, resolveLobbyBannerFallback } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import {
@@ -254,7 +254,9 @@ export default function Aion2TestClubPage() {
   const renderMissionCard = (m: any) => {
     const owner = missionOwner(m);
     const vfxOn = owner && (owner.vfxSettings?.showOnOngoing !== false);
-    const bgPoster = vfxOn ? resolveLobbyBannerAnimatedSrc(m, owner, owner?.activeVfx) : null;
+    const bgPoster = vfxOn
+      ? resolveLobbyBannerAnimatedSrc(m, owner, owner?.activeVfx) || resolveLobbyBannerFallback(m)
+      : resolveLobbyBannerFallback(m);
     const totalRuns = m.selectedDungeons
       ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
       : m.runsCount || 1;
@@ -450,10 +452,11 @@ export default function Aion2TestClubPage() {
 
   const offerBgOf = (l: any) => {
     const o = lobbyOwner(l);
-    if (!o || o.vfxSettings?.showOnBanner === false) return null;
+    if (!o || o.vfxSettings?.showOnBanner === false) return resolveLobbyBannerFallback(l);
     return (
       resolveLobbyBannerAnimatedSrc(l, o, o?.activeVfx) ||
       String(o?.profileGif || "") ||
+      resolveLobbyBannerFallback(l) ||
       null
     );
   };
@@ -877,12 +880,12 @@ export default function Aion2TestClubPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.005 }}
-                    className="tn-light relative w-full min-h-[133px] rounded-2xl bg-white/[0.04] backdrop-blur-2xl border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] hover:bg-white/[0.06] transition-all"
+                    className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
                   >
                     {/* Dark readable zone — full card underlay */}
                     <div className="absolute inset-0 bg-[#070b1a]" />
                     {/* Faction VFX banner / gradient — right panel only */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[808px] max-w-[62%] pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] pointer-events-none overflow-hidden">
                       {offerBg ? (
                         <img
                           src={offerBg}

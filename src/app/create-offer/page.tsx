@@ -495,7 +495,7 @@ export default function CreateOfferPage() {
         applicants: [],
         invited: [],
         accepted: [],
-        customBg: "",
+        customBg: sel.img || "",
         blacklistedClasses: [],
         blockedRoles: [],
         status: "standby",
