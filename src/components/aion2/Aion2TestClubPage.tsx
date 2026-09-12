@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Settings2
+  Bell, BellOff
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -801,8 +801,9 @@ export default function Aion2TestClubPage() {
           {/* Center Column: Offers */}
           <section className="min-w-0">
             {/* Filter Tabs — aligned above the offer cards */}
-            <div className="flex items-center gap-2 p-1.5 mb-6 w-fit max-w-full overflow-x-auto bg-[#0a0f26]/70 backdrop-blur-md rounded-full border border-blue-900/40 shadow-[0_4px_24px_rgba(34,211,238,0.06)]">
-              {FILTER_TABS.map((tab) => {
+            <div className="relative z-30 mb-6 flex max-w-full items-center gap-2">
+              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-blue-900/40 bg-[#0a0f26]/70 p-1.5 pr-2 backdrop-blur-md shadow-[0_4px_24px_rgba(34,211,238,0.06)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {FILTER_TABS.map((tab) => {
                 const isActive = activeTab === tab.key;
                 const Icon = tab.icon;
                 const count = offerCounts[tab.key] || 0;
@@ -825,14 +826,15 @@ export default function Aion2TestClubPage() {
                     <span>{tab.label}</span>
                   </button>
                 );
-              })}
+                })}
+              </div>
               {meId && (
                 <div className="relative shrink-0">
-                  <button type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Offer notification settings" className={`flex h-9 w-9 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-cyan-400/40 hover:text-cyan-200"}`}>
-                    {offerNotificationSettings.mutedAll ? <BellOff className="w-3.5 h-3.5" /> : <Settings2 className="w-3.5 h-3.5" />}
+                  <button type="button" onClick={() => setShowNotificationSettings((open) => !open)} title="Mute offer notifications" className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>
+                    {offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                   </button>
                   {showNotificationSettings && (
-                    <div className="absolute left-0 top-12 z-40 w-64 rounded-2xl border border-cyan-500/20 bg-[#080d21]/95 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                    <div className="absolute bottom-full right-0 z-40 mb-3 w-64 rounded-2xl border border-cyan-500/20 bg-[#080d21]/95 p-3 shadow-[0_18px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                       <p className="px-1 pb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Offer notifications</p>
                       <button type="button" onClick={() => { const mutedAll = !offerNotificationSettings.mutedAll; if (!mutedAll && typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission(); void saveOfferNotificationSettings({ ...offerNotificationSettings, mutedAll }); }} className={`mb-2 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}>
                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">{offerNotificationSettings.mutedAll ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}{offerNotificationSettings.mutedAll ? "All offers muted" : "All offers enabled"}</span>
@@ -1019,7 +1021,7 @@ export default function Aion2TestClubPage() {
           </section>
 
           {/* 3. Right Sidebar: Ongoing Missions */}
-          <aside className="w-full">
+          <aside className="w-full xl:pt-[68px]">
             <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               {/* Widget Header — slim */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
