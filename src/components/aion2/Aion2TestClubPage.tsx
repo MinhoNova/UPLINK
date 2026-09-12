@@ -13,7 +13,7 @@ import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import RankBadge from "@/components/RankBadge";
-import { resolveLobbyBannerBg, resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
+import { resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import {
@@ -245,7 +245,7 @@ export default function Aion2TestClubPage() {
   const renderMissionCard = (m: any) => {
     const owner = missionOwner(m);
     const vfxOn = owner && (owner.vfxSettings?.showOnOngoing !== false);
-    const bgPoster = vfxOn ? resolveLobbyBannerBg(m, owner, owner?.activeVfx) : null;
+    const bgPoster = vfxOn ? resolveLobbyBannerAnimatedSrc(m, owner, owner?.activeVfx) : null;
     const totalRuns = m.selectedDungeons
       ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
       : m.runsCount || 1;
@@ -268,7 +268,7 @@ export default function Aion2TestClubPage() {
       >
         {bgPoster && (
           <div className="absolute inset-0 z-0">
-            <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-55 animate-pan-slow" loading="lazy" decoding="async" />
+            <img src={bgPoster} alt="" className="w-full h-full object-cover opacity-55" loading="lazy" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/75 via-[#050814]/55 to-[#050814]/80" />
           </div>
         )}

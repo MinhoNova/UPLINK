@@ -8,7 +8,7 @@ import {
   getOwnerOngoingMissions,
   isEmbeddedFootArchive,
 } from "@/lib/lobbyLifecycle";
-import { resolveLobbyBannerBg } from "@/lib/vfxAssets";
+import { resolveLobbyBannerAnimatedSrc } from "@/lib/vfxAssets";
 import { classThumbUrl } from "@/lib/classThumb";
 
 type Props = {
@@ -79,11 +79,11 @@ export default function OngoingMissionsPanel({
         const ownerUser = registeredUsers.find((u: any) => u.id === l.ownerId);
         const vfxOn = ownerUser && getVfxSettings(ownerUser).showOnOngoing;
         const bgPoster = vfxOn
-          ? resolveLobbyBannerBg(l, ownerUser, ownerUser?.activeVfx)
+          ? resolveLobbyBannerAnimatedSrc(l, ownerUser, ownerUser?.activeVfx)
           : null;
         return bgPoster ? (
           <div className="absolute inset-0 z-0">
-            <img src={bgPoster} className="w-full h-full object-cover opacity-100 animate-pan-slow" alt="" loading="lazy" decoding="async" />
+            <img src={bgPoster} className="w-full h-full object-cover opacity-100" alt="" loading="lazy" decoding="async" />
           </div>
         ) : null;
       })()}
