@@ -197,7 +197,8 @@ function DungeonFlip({
           </div>
           <button
             type="button"
-            onClick={() => onPick(active)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onPick(active); }}
             className="flex shrink-0 items-center gap-1.5 rounded-lg border border-cyan-400/50 bg-cyan-500/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-cyan-200 transition-all hover:bg-cyan-500/25 cursor-pointer"
           >
             Select <Check className="h-3.5 w-3.5" />
@@ -371,7 +372,8 @@ function OptionFlip({
           </div>
           <button
             type="button"
-            onClick={() => onSelect(active)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onSelect(active); }}
             className="flex shrink-0 items-center gap-1.5 rounded-lg border border-cyan-400/50 bg-cyan-500/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-cyan-200 transition-all hover:bg-cyan-500/25 cursor-pointer"
           >
             Select <Check className="h-3.5 w-3.5" />
@@ -397,7 +399,7 @@ export default function CreateOfferPage() {
   const [pickedOption, setPickedOption] = useState<AionServiceOption | null>(null);
   const [pickedVariant, setPickedVariant] = useState<AionServiceOption | null>(null);
   const [difficultyOpen, setDifficultyOpen] = useState(false);
-  const [difficulty, setDifficulty] = useState("Average");
+  const [difficulty, setDifficulty] = useState("Normal");
   const [pricePerRun, setPricePerRun] = useState(0);
   const [maxBoosters, setMaxBoosters] = useState(1);
   const [requiredClasses, setRequiredClasses] = useState<string[]>([]);
@@ -442,7 +444,7 @@ export default function CreateOfferPage() {
       setShowOptions(false);
       setPickedOption(null);
       setPickedVariant(null);
-      setDifficulty("Average");
+      setDifficulty("Normal");
       setDifficultyOpen(false);
     }
   }, [sel?.id, marketPrices]);
@@ -451,13 +453,10 @@ export default function CreateOfferPage() {
   const difficultyOptions = useMemo(() => {
     if (!sel) return [];
     if (pickedOption?.variants?.length) {
-      const opts = pickedOption.variants.map((v) => ({ label: v.label, price: v.priceKina }));
-      const avg = opts.reduce((s, o) => s + o.price, 0) / opts.length;
-      return [{ label: "Average", price: Math.round(avg * 100) / 100 }, ...opts];
+      return pickedOption.variants.map((v) => ({ label: v.label, price: v.priceKina }));
     }
     if (sel.category === "Dungeons" && !pickedOption) {
       return [
-        { label: "Average", price: sel.basePriceKina },
         { label: "Normal", price: sel.basePriceKina },
         { label: "Hard", price: Math.round(sel.basePriceKina * 1.5 * 100) / 100 },
       ];
@@ -470,11 +469,8 @@ export default function CreateOfferPage() {
     setDifficultyOpen(false);
     setPricePerRun(opt.price);
     if (pickedOption?.variants?.length) {
-      if (opt.label === "Average") setPickedVariant(null);
-      else {
-        const v = pickedOption.variants.find((x) => x.label === opt.label);
-        if (v) setPickedVariant(v);
-      }
+      const v = pickedOption.variants.find((x) => x.label === opt.label);
+      if (v) setPickedVariant(v);
     }
   };
 
@@ -495,7 +491,7 @@ export default function CreateOfferPage() {
     setStep("details");
   };
   const regress = () => { setRegionOpen(false); setStep(STEPS[stepIndex - 1]); };
-  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPickedVariant(null); setDifficulty("Average"); setDifficultyOpen(false); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
+  const resetOffer = () => { setStep("service"); setSel(null); setQty(1); setRegion("EU"); setRegionOpen(false); setPublished(false); setPubError(""); setShowOptions(false); setPickedOption(null); setPickedVariant(null); setDifficulty("Normal"); setDifficultyOpen(false); setPricePerRun(0); setMaxBoosters(1); setRequiredClasses([]); };
 
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
@@ -714,9 +710,10 @@ export default function CreateOfferPage() {
                                   if (opt.variants && opt.variants.length > 0) {
                                     setPickedOption(opt);
                                     setPickedVariant(null);
-                                    const avg = opt.variants.reduce((s, v) => s + v.priceKina, 0) / opt.variants.length;
-                                    setPricePerRun(Math.round(avg * 100) / 100);
-                                    setDifficulty("Average");
+                                    const defaultVariant = opt.variants[0];
+                                    setPickedVariant(defaultVariant);
+                                    setPricePerRun(defaultVariant.priceKina);
+                                    setDifficulty(defaultVariant.label);
                                     setDifficultyOpen(false);
                                     setStep("details");
                                   } else if (pickedOption && pickedOption.variants?.length) {
@@ -920,23 +917,6 @@ export default function CreateOfferPage() {
                                       </button>
                                     );
                                   })}
-                                  {!difficultyOptions.some((o) => o.label === "Average") && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setDifficulty("Average");
-                                        applyAveragePrice();
-                                      }}
-                                      className={`flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 transition-all cursor-pointer ${difficulty === "Average" ? "border-cyan-400/60 bg-cyan-500/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] text-gray-400 hover:border-white/[0.2] hover:text-gray-200"}`}
-                                    >
-                                      <span className="text-xs font-black">Average</span>
-                                      <span className={`text-[9px] font-bold ${difficulty === "Average" ? "text-cyan-300" : "text-gray-500"}`}>
-                                        {marketPrices[sel.name] && marketPrices[sel.name] > 0
-                                          ? marketPrices[sel.name].toFixed(2)
-                                          : (difficultyOptions[0]?.price || sel.basePriceKina).toFixed(2)}M
-                                      </span>
-                                    </button>
-                                  )}
                                 </div>
                                 <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
                                   Owner picks the difficulty — price applies accordingly
