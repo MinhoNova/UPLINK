@@ -554,11 +554,19 @@ export default function CreateOfferPage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
 
-      {/* ── SCENIC BACKGROUND — same composition as the lobby home ── */}
+      {/* ── SCENIC BACKGROUND — mirrors the lobby from the very top of the page ── */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-contain bg-top bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
+        <div
+          className="absolute inset-0 bg-contain bg-top bg-no-repeat"
+          style={{
+            backgroundImage: `url('/AION2.png')`,
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+            maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+          }}
+        />
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-[#050814]/35 to-[#050814]/95" />
+        <div className="absolute inset-x-0 top-0 h-[230vh] bg-[linear-gradient(to_bottom,transparent_0%,rgba(5,8,20,0.3)_70vh,rgba(5,8,20,0.75)_120vh,rgba(5,8,20,0.97)_175vh,#050814_215vh)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
@@ -912,6 +920,23 @@ export default function CreateOfferPage() {
                                       </button>
                                     );
                                   })}
+                                  {!difficultyOptions.some((o) => o.label === "Average") && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setDifficulty("Average");
+                                        applyAveragePrice();
+                                      }}
+                                      className={`flex flex-col items-center gap-0.5 rounded-lg border px-2 py-2 transition-all cursor-pointer ${difficulty === "Average" ? "border-cyan-400/60 bg-cyan-500/15 text-white shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.09] bg-white/[0.03] text-gray-400 hover:border-white/[0.2] hover:text-gray-200"}`}
+                                    >
+                                      <span className="text-xs font-black">Average</span>
+                                      <span className={`text-[9px] font-bold ${difficulty === "Average" ? "text-cyan-300" : "text-gray-500"}`}>
+                                        {marketPrices[sel.name] && marketPrices[sel.name] > 0
+                                          ? marketPrices[sel.name].toFixed(2)
+                                          : (difficultyOptions[0]?.price || sel.basePriceKina).toFixed(2)}M
+                                      </span>
+                                    </button>
+                                  )}
                                 </div>
                                 <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
                                   Owner picks the difficulty — price applies accordingly
