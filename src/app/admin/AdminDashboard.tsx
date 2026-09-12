@@ -48,6 +48,7 @@ export default function AdminDashboard() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [wipeConfirm, setWipeConfirm] = useState(false);
+  const [lobbiesConfirm, setLobbiesConfirm] = useState(false);
 
   const friendlyDate = (ts: number | string | undefined) => {
     if (!ts) return "—";
@@ -119,6 +120,17 @@ export default function AdminDashboard() {
     setWipeConfirm(false);
   };
 
+  const wipeAllLobbies = async () => {
+    try {
+      const res = await fetch("/api/admin/wipe-lobbies", { method: "POST" });
+      const d = (await res.json()) as { removedLobbies?: number; removedNotifications?: number; error?: string };
+      setActionMsg(res.ok ? `Reset complete — removed ${d.removedLobbies ?? 0} offer(s) and ${d.removedNotifications ?? 0} notification(s)` : d.error || "Failed");
+    } catch {
+      setActionMsg("Network error");
+    }
+    setLobbiesConfirm(false);
+  };
+
   useEffect(() => {
     fetch("/api/data", { credentials: "include" }).then((r) => r.json()).then((data) => {
       setUsers(data.registeredUsers || []);
@@ -186,6 +198,30 @@ export default function AdminDashboard() {
                 className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition"
               >
                 Reset Names & Avatars
+              </button>
+            )}
+            {lobbiesConfirm ? (
+              <div className="flex items-center gap-2 bg-red-900/30 border border-red-500/40 rounded-xl px-3 py-2">
+                <span className="text-[10px] font-black text-red-300 uppercase tracking-widest">Wipe ALL offers, missions & history?</span>
+                <button
+                  onClick={wipeAllLobbies}
+                  className="px-3 py-2 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setLobbiesConfirm(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setLobbiesConfirm(true)}
+                className="px-4 py-2 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition"
+              >
+                Reset All Offers
               </button>
             )}
             {wipeConfirm ? (
