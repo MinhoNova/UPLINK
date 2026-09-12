@@ -55,7 +55,7 @@ export default function ContactPage() {
 
         <div className="space-y-4 mb-12">
           {[
-            { icon: MessageSquare, title: "Discord", desc: "Join our community Discord for fastest support, discussion, and updates.", link: "https://discord.gg/r4m3Stk7XZ", linkText: "Join Discord →" },
+            { icon: MessageSquare, title: "Discord", desc: "Join our community Discord for fastest support, discussion, and updates.", link: "https://discord.gg/fvYCMS3G5", linkText: "Join Discord →" },
             { icon: Mail, title: "Email", desc: "For business inquiries or formal requests, send us an email.", link: "mailto:support@uplinklfg.com", linkText: "support@uplinklfg.com" },
             { icon: Shield, title: "Report an Issue", desc: "Found a bug or want to report a user? Contact us and we will look into it promptly.", link: "/community", linkText: "Report via Community →" },
           ].map((m) => (

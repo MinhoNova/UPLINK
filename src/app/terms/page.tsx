@@ -84,7 +84,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="9. Contact">
-            <p>For questions about these terms, contact us via Discord at <a href="https://discord.gg/r4m3Stk7XZ" className="text-[#00ffff] hover:underline">discord.gg/r4m3Stk7XZ</a> or email support@uplinklfg.com.</p>
+            <p>For questions about these terms, contact us via Discord at <a href="https://discord.gg/fvYCMS3G5" className="text-[#00ffff] hover:underline">discord.gg/fvYCMS3G5</a> or email support@uplinklfg.com.</p>
           </Section>
         </div>
 

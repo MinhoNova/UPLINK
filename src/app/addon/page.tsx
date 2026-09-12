@@ -88,7 +88,7 @@ export default function AddonPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <a
-              href="https://discord.gg/r4m3Stk7XZ"
+              href="https://discord.gg/fvYCMS3G5"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#5865F2] text-white text-xs font-black uppercase tracking-widest hover:bg-[#4752c4] transition"

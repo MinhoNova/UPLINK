@@ -81,7 +81,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="7. Contact">
-            <p>For privacy-related inquiries, contact us via Discord at <a href="https://discord.gg/r4m3Stk7XZ" className="text-[#00ffff] hover:underline">discord.gg/r4m3Stk7XZ</a> or email support@uplinklfg.com.</p>
+            <p>For privacy-related inquiries, contact us via Discord at <a href="https://discord.gg/fvYCMS3G5" className="text-[#00ffff] hover:underline">discord.gg/fvYCMS3G5</a> or email support@uplinklfg.com.</p>
           </Section>
         </div>
 
