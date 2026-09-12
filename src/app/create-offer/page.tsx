@@ -8,7 +8,7 @@ import {
   Check, Shield, Crown, Gem, Lock, Castle, Crosshair, Users,
   FlaskConical, TrendingUp, Hash, Globe, MapPin, ChevronRight, type LucideIcon,
 } from "lucide-react";
-import { AION_SERVICES, AION_CATEGORIES, DUNGEON_PICKER, AION_CLASSES, AionService, AionServiceOption } from "@/lib/aionServices";
+import { AION_SERVICES, AION_CATEGORIES, AION_CLASSES, AionService, AionServiceOption } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 
 const STEPS = ["service", "details"] as const;
@@ -412,6 +412,14 @@ export default function CreateOfferPage() {
     return g;
   }, []);
 
+  /* Categories whose services carry artwork cards (Dungeons / Raids / PVP) get the
+     portrait flip; the rest keep the plain grid. */
+  const flipItems = useMemo(() => {
+    const m: Record<string, AionService[]> = {};
+    for (const cat of AION_CATEGORIES) { m[cat] = grouped[cat].filter((s) => Boolean(s.img)); }
+    return m;
+  }, [grouped]);
+
   useEffect(() => {
     fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
@@ -719,10 +727,10 @@ export default function CreateOfferPage() {
                             </div>
 
                             {/* services / dungeon flip of the active category */}
-                            {activeCat === "Dungeons" ? (
+                            {flipItems[activeCat]?.length > 0 ? (
                               <div className="overflow-hidden">
                                 <DungeonFlip
-                                  items={DUNGEON_PICKER}
+                                  items={flipItems[activeCat]}
                                   initialId={sel?.id ?? null}
                                   onPick={(svc) => {
                                     setSel(svc);
