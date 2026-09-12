@@ -13,7 +13,7 @@ import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import RankBadge from "@/components/RankBadge";
-import { resolveLobbyBannerAnimatedSrc, resolveLobbyBannerFallback } from "@/lib/vfxAssets";
+import { resolveOfferBannerImage } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import {
@@ -253,10 +253,7 @@ export default function Aion2TestClubPage() {
 
   const renderMissionCard = (m: any) => {
     const owner = missionOwner(m);
-    const vfxOn = owner && (owner.vfxSettings?.showOnOngoing !== false);
-    const bgPoster = vfxOn
-      ? resolveLobbyBannerAnimatedSrc(m, owner, owner?.activeVfx) || resolveLobbyBannerFallback(m)
-      : resolveLobbyBannerFallback(m);
+    const bgPoster = resolveOfferBannerImage(m, owner, "showOnOngoing");
     const totalRuns = m.selectedDungeons
       ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
       : m.runsCount || 1;
@@ -459,13 +456,7 @@ export default function Aion2TestClubPage() {
 
   const offerBgOf = (l: any) => {
     const o = lobbyOwner(l);
-    if (!o || o.vfxSettings?.showOnBanner === false) return resolveLobbyBannerFallback(l);
-    return (
-      resolveLobbyBannerAnimatedSrc(l, o, o?.activeVfx) ||
-      String(o?.profileGif || "") ||
-      resolveLobbyBannerFallback(l) ||
-      null
-    );
+    return resolveOfferBannerImage(l, o);
   };
 
   const alreadyApplied = (l: any) =>

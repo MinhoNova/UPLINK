@@ -71,3 +71,24 @@ export function resolveLobbyBannerFallback(lobby: { category?: string } | null |
   if (String(lobby.category || "").toLowerCase() === "leveling") return "/dungeons/leveling.png";
   return null;
 }
+
+/**
+ * Banner for offer cards & ongoing missions.
+ * Priority: owner GIF → active VFX → offer image (customBg → dungeon/leveling pick) → category fallback.
+ * When the owner disabled the banner (or has no owner), the offer image still shows first.
+ */
+export function resolveOfferBannerImage(
+  lobby: { customBg?: string; category?: string } | null | undefined,
+  ownerUser: any,
+  gate: "showOnBanner" | "showOnOngoing" = "showOnBanner"
+): string | null {
+  const offerImg = String(lobby?.customBg || "").trim();
+  if (!ownerUser || ownerUser.vfxSettings?.[gate] === false) {
+    return offerImg || resolveLobbyBannerFallback(lobby);
+  }
+  const gif = String(ownerUser.profileGif || "").trim();
+  if (gif) return gif;
+  const vfx = String(ownerUser.activeVfx || "").trim();
+  if (vfx) return resolveLobbyBannerAnimatedSrc({ customBg: "" }, ownerUser, vfx);
+  return offerImg || resolveLobbyBannerFallback(lobby);
+}
