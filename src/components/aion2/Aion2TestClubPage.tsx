@@ -887,7 +887,7 @@ export default function Aion2TestClubPage() {
                     {/* Dark readable zone — full card underlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/80 to-transparent" />
                     {/* Faction VFX banner / gradient — right panel only */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[58%] pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute right-0 top-0 bottom-0 w-[808px] max-w-[62%] pointer-events-none overflow-hidden opacity-85 group-hover:opacity-100 transition-opacity">
                       {offerBg ? (
                         <img
                           src={offerBg}
