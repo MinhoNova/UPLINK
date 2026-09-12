@@ -572,7 +572,7 @@ export default function CreateOfferPage() {
       </div>
 
       {/* ── PREMIUM TOP BAR ── */}
-      <header className="relative z-40 border-b border-white/[0.08] bg-black/45 backdrop-blur-xl">
+      <header className="relative z-40 border-b border-white/[0.08] bg-transparent">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-5 sm:px-8 py-4">
           <a href="/" className="group flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.03] px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-200 backdrop-blur-md transition-all hover:border-cyan-300/50 hover:text-white cursor-pointer">
             <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" /> Back to Lobby
