@@ -5,6 +5,7 @@ import { getSiteUrl } from "@/lib/siteUrl";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "Mythic+ Boosting Guide — UPLINK",
   description:
     "Complete guide to Mythic+ boosting on UPLINK. Learn how to post a boost request, place bids in gold, accept offers, and choose the right booster for your WoW dungeon key.",

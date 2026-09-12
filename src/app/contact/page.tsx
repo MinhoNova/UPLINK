@@ -6,13 +6,13 @@ import { Mail, MessageSquare, Shield } from "lucide-react";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Contact Us — WoWLFG | UPLINK",
+  title: "Contact Us — Aion 2 LFG",
   description:
-    "Get in touch with the WoWLFG team. Join our Discord community, report issues, or send us an email. We are here to help with WoW boosting, gold auctions, and platform support.",
+    "Get in touch with the Aion 2 LFG team. Join our Discord community, report issues, or send us an email. We are here to help with platform support.",
   openGraph: {
-    title: "Contact WoWLFG — UPLINK",
-    description: "Contact the WoWLFG team via Discord or email. We respond quickly to support requests and feedback.",
-    siteName: "WoWLFG — UPLINK",
+    title: "Contact Aion 2 LFG",
+    description: "Contact the Aion 2 LFG team via Discord or email. We respond quickly to support requests and feedback.",
+    siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/contact` },
 };
@@ -33,8 +33,8 @@ export default function ContactPage() {
         "@type": "ContactPage",
         "@id": `${siteUrl}/contact`,
         url: `${siteUrl}/contact`,
-        name: "Contact WoWLFG",
-        description: "Contact the WoWLFG team for support, feedback, or inquiries about WoW boosting.",
+        name: "Contact Aion 2 LFG",
+        description: "Contact the Aion 2 LFG team for support, feedback, or inquiries.",
         isPartOf: { "@type": "WebSite", "@id": `${siteUrl}#website` },
       },
     ],

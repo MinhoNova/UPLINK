@@ -5,13 +5,13 @@ import { getSiteUrl } from "@/lib/siteUrl";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — WoWLFG | UPLINK",
+  title: "Privacy Policy — Aion 2 LFG",
   description:
-    "WoWLFG Privacy Policy. Learn how we collect, use, and protect your data when you use our WoW boosting platform, community features, and Discord integration.",
+    "Aion 2 LFG Privacy Policy. Learn how we collect, use, and protect your data when you use our LFG platform, community features, and Discord integration.",
   openGraph: {
-    title: "Privacy Policy — WoWLFG",
-    description: "WoWLFG Privacy Policy — how we handle your data, cookies, and Discord login information.",
-    siteName: "WoWLFG — UPLINK",
+    title: "Privacy Policy — Aion 2 LFG",
+    description: "Aion 2 LFG Privacy Policy — how we handle your data, cookies, and Discord login information.",
+    siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/privacy` },
 };
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         "@id": `${siteUrl}/privacy`,
         url: `${siteUrl}/privacy`,
         name: "Privacy Policy",
-        description: "WoWLFG Privacy Policy — data collection, cookies, Discord integration, and your rights.",
+        description: "Aion 2 LFG Privacy Policy — data collection, cookies, Discord integration, and your rights.",
         isPartOf: { "@type": "WebSite", "@id": `${siteUrl}#website` },
       },
     ],
@@ -52,12 +52,12 @@ export default function PrivacyPage() {
 
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <Section title="1. Information We Collect">
-            <p>When you log in with Discord, we collect your Discord user ID, username, avatar, and email address. This information is used to create and manage your account on WoWLFG.</p>
-            <p>We also store content you create — community posts, comments, reactions, boost requests, and news shares — along with timestamps and metadata.</p>
+            <p>When you log in with Discord, we collect your Discord user ID, username, avatar, and email address. This information is used to create and manage your account on Aion 2 LFG.</p>
+            <p>We also store content you create — community posts, comments, reactions, offers, and notifications — along with timestamps and metadata.</p>
           </Section>
 
           <Section title="2. How We Use Your Data">
-            <p>Your data is used exclusively to operate the WoWLFG platform: display your profile, show your posts and comments, enable community interactions, and maintain boost request records.</p>
+            <p>Your data is used exclusively to operate the Aion 2 LFG platform: display your profile, show your posts and comments, enable community interactions, and maintain offer records.</p>
             <p>We do not sell, rent, or share your personal data with third parties for marketing purposes.</p>
           </Section>
 
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="5. Third-Party Services">
-            <p>WoWLFG uses Discord for authentication and Cloudflare for hosting and infrastructure. Each service has its own privacy policy governing data handling.</p>
+            <p>Aion 2 LFG uses Discord for authentication and Cloudflare for hosting and infrastructure. Each service has its own privacy policy governing data handling.</p>
             <p>We do not integrate any other third-party analytics, advertising, or tracking services.</p>
           </Section>
 

@@ -508,7 +508,7 @@ export default function CommunityPage() {
               <button onClick={() => setFilterTag(null)} className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg transition ${!filterTag ? "bg-[#00ffff]/20 text-[#00ffff] shadow-[0_0_10px_rgba(0,255,255,0.15)]" : "bg-white/5 text-gray-500 hover:bg-white/10"}`}>
                 All
               </button>
-              {["Mythic+", "Raid", "PvP", "Meme", "Leveling", "Delves"].map((tag) => (
+              {["Dungeons", "Raids", "PvP", "Meme", "Leveling", "Squads"].map((tag) => (
                 <button key={tag} onClick={() => setFilterTag(tag === filterTag ? null : tag)} className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg transition ${filterTag === tag ? "bg-[#00ffff]/20 text-[#00ffff]" : "bg-white/5 text-gray-500 hover:bg-white/10"}`}>
                   {tag}
                 </button>
@@ -586,7 +586,7 @@ export default function CommunityPage() {
                         <ImagePlus className="w-3.5 h-3.5" />
                       </button>
                       <div className="flex items-center gap-1">
-                        {["Mythic+", "Raid", "PvP", "Meme", "Leveling", "Delves"].map((tag) => (
+{["Dungeons", "Raids", "PvP", "Meme", "Leveling", "Squads"].map((tag) => (
                           <button key={tag} onClick={() => toggleTag(tag)} className={`text-[8px] font-black uppercase px-1.5 py-1 rounded transition ${selectedTags.includes(tag) ? "bg-[#00ffff]/20 text-[#00ffff]" : "text-gray-600 hover:text-gray-400"}`}>
                             #{tag}
                           </button>

@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const tagStr = tags.map((t) => `#${t}`).join(" ");
 
   return {
+    robots: { index: false, follow: false, nocache: true },
     title: `${item.title} — WoWLFG News`,
     description: `${item.title} ${tagStr} ${item.content.slice(0, 160)}`.trim().slice(0, 200),
     openGraph: {

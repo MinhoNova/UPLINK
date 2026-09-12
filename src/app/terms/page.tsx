@@ -5,13 +5,13 @@ import { getSiteUrl } from "@/lib/siteUrl";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Terms of Service — WoWLFG | UPLINK",
+  title: "Terms of Service — Aion 2 LFG",
   description:
-    "WoWLFG Terms of Service. Rules and guidelines for using our WoW boosting platform, community features, blind gold auctions, and Discord services.",
+    "Aion 2 LFG Terms of Service. Rules and guidelines for using our LFG platform, community features, and Discord services.",
   openGraph: {
-    title: "Terms of Service — WoWLFG",
-    description: "WoWLFG Terms of Service — rules, acceptable use, and guidelines for the WoW boosting community platform.",
-    siteName: "WoWLFG — UPLINK",
+    title: "Terms of Service — Aion 2 LFG",
+    description: "Aion 2 LFG Terms of Service — rules, acceptable use, and platform guidelines.",
+    siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/terms` },
 };
@@ -33,7 +33,7 @@ export default function TermsPage() {
         "@id": `${siteUrl}/terms`,
         url: `${siteUrl}/terms`,
         name: "Terms of Service",
-        description: "WoWLFG Terms of Service — rules, acceptable use, and platform guidelines.",
+        description: "Aion 2 LFG Terms of Service — rules, acceptable use, and platform guidelines.",
         isPartOf: { "@type": "WebSite", "@id": `${siteUrl}#website` },
       },
     ],
@@ -52,11 +52,11 @@ export default function TermsPage() {
 
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <Section title="1. Acceptance of Terms">
-            <p>By accessing or using WoWLFG (the "Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
+            <p>By accessing or using Aion 2 LFG (the "Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
           </Section>
 
           <Section title="2. Description of Service">
-            <p>WoWLFG is a community platform for World of Warcraft players to find groups, post boost requests with blind gold auctions, browse guides, and interact through community posts and comments.</p>
+            <p>Aion 2 LFG is a community platform for Aion 2 players to find groups, post offers for dungeons, raids, PvP and leveling, and interact through community posts and comments.</p>
           </Section>
 
           <Section title="3. User Accounts">
@@ -64,23 +64,23 @@ export default function TermsPage() {
           </Section>
 
           <Section title="4. Acceptable Use">
-            <p>You agree not to: (a) harass, abuse, or harm other users; (b) post fraudulent, misleading, or inappropriate content; (c) attempt to manipulate the blind auction system; (d) use the Platform for any illegal activity; (e) exploit bugs or vulnerabilities for personal gain.</p>
+            <p>You agree not to: (a) harass, abuse, or harm other users; (b) post fraudulent, misleading, or inappropriate content; (c) attempt to manipulate the offer system or payments; (d) use the Platform for any illegal activity; (e) exploit bugs or vulnerabilities for personal gain.</p>
           </Section>
 
           <Section title="5. Content Guidelines">
-            <p>You retain ownership of content you post. By posting, you grant WoWLFG a non-exclusive license to display your content on the Platform. We reserve the right to remove content that violates these terms.</p>
+            <p>You retain ownership of content you post. By posting, you grant Aion 2 LFG a non-exclusive license to display your content on the Platform. We reserve the right to remove content that violates these terms.</p>
           </Section>
 
-          <Section title="6. Gold Transactions">
-            <p>WoWLFG facilitates connections between players seeking boosts and boosters offering services. All gold transactions are conducted directly between users. WoWLFG is not a party to any transaction and is not responsible for disputes.</p>
+          <Section title="6. Offers & Payments">
+            <p>Aion 2 LFG facilitates connections between players posting offers and players applying to them. All payments or in-game agreements are conducted directly between users. Aion 2 LFG is not a party to any transaction and is not responsible for disputes.</p>
           </Section>
 
           <Section title="7. Termination">
-            <p>WoWLFG will terminate, in appropriate circumstances, accounts of users who repeatedly infringe these terms or engage in harmful behavior. We reserve the right to suspend or ban accounts at our discretion.</p>
+            <p>Aion 2 LFG will terminate, in appropriate circumstances, accounts of users who repeatedly infringe these terms or engage in harmful behavior. We reserve the right to suspend or ban accounts at our discretion.</p>
           </Section>
 
           <Section title="8. Disclaimer">
-            <p>The Platform is provided "as is" without warranties of any kind. WoWLFG is not affiliated with Blizzard Entertainment or Activision. World of Warcraft is a registered trademark of Blizzard Entertainment.</p>
+            <p>The Platform is provided "as is" without warranties of any kind. Aion 2 LFG is not affiliated with NCSOFT or any game publisher. Aion is a registered trademark of its respective owners.</p>
           </Section>
 
           <Section title="9. Contact">

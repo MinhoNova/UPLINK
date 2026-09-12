@@ -7,6 +7,7 @@ const siteUrl = getSiteUrl();
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "Leveling News — WoWLFG",
   description: "AFK leveling methods, XP farms, 80-90 boosts, rotations, and leveling updates for WoW The War Within.",
   alternates: { canonical: `${siteUrl}/news/leveling` },

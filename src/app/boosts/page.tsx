@@ -5,6 +5,7 @@ import BoostsPageContent from "./BoostsPageContent";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "WoWLFG Boost Requests — UPLINK Auction House",
   description:
     "WoWLFG — Browse open WoW boost requests for Mythic+ dungeons and power leveling. Place bids in gold and find your next boost contract on UPLINK.",

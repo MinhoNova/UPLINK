@@ -6,6 +6,7 @@ import { Coins, Eye, ShieldCheck, Handshake, TrendingUp, Users } from "lucide-re
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "Gold Blind Auction — WoW Boosting Gold Bids | UPLINK",
   description:
     "Post a WoW boost request and receive blind gold bids from boosters. Only you see the bids. Free blind auction system for Mythic+, leveling, and raid boosting on UPLINK.",

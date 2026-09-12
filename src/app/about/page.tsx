@@ -6,13 +6,13 @@ import { Users, Shield, Coins, HeartHandshake } from "lucide-react";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "About Us — WoWLFG | UPLINK",
+  title: "About Us — Aion 2 LFG",
   description:
-    "WoWLFG is a free community-powered WoW boosting platform. Learn about our mission to make WoW boosting fair, transparent, and accessible through blind gold auctions on UPLINK.",
+    "Aion 2 LFG (aion2lfg.com) is a free community LFG platform for Aion 2. Find squads for dungeons, raids, Abyss Points farming and leveling — transparent, community-first, and free.",
   openGraph: {
-    title: "About WoWLFG — UPLINK",
-    description: "Free WoW boosting marketplace with blind gold auctions. Community-driven, no subscriptions, no hidden fees.",
-    siteName: "WoWLFG — UPLINK",
+    title: "About Aion 2 LFG",
+    description: "The Aion 2 group finder. Find dungeons, raids, PvP and leveling squads for free.",
+    siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/about` },
 };
@@ -33,8 +33,8 @@ export default function AboutPage() {
         "@type": "AboutPage",
         "@id": `${siteUrl}/about`,
         url: `${siteUrl}/about`,
-        name: "About WoWLFG — Free WoW Boosting Marketplace",
-        description: "WoWLFG (World of Warcraft Looking For Group) is a vibrant community created for WoW players to find groups, post boost requests, and use safety-focused platform tools.",
+        name: "About Aion 2 LFG",
+        description: "Aion 2 LFG is a free community LFG platform for Aion 2 players to find groups, post offers, and use safety-focused platform tools.",
         isPartOf: { "@type": "WebSite", "@id": `${siteUrl}#website` },
       },
     ],
@@ -48,19 +48,19 @@ export default function AboutPage() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#ff007f]/5 blur-[120px] rounded-full" />
       </div>
       <div className="relative z-10 max-w-3xl mx-auto px-4 py-24">
-        <h1 className="text-4xl sm:text-5xl font-black text-white mb-6 tracking-tight">About <span className="text-[#00ffff]">WoWLFG</span></h1>
+        <h1 className="text-4xl sm:text-5xl font-black text-white mb-6 tracking-tight">About <span className="text-[#00ffff]">Aion 2 LFG</span></h1>
         <p className="text-sm text-gray-400 leading-relaxed mb-8">
-          WoWLFG (World of Warcraft Looking For Group) is a vibrant and growing community created for 
-          World of Warcraft players to find groups, post boost requests with gold auctions, browse guides, 
-          and use safety-focused platform tools — all completely free.
+          Aion 2 LFG (aion2lfg.com) is a vibrant and growing community created for 
+          Aion 2 players to find groups, post offers for dungeons, raids, Abyss Points farming 
+          and leveling — and coordinate with teammates through Discord.
         </p>
 
         <div className="grid sm:grid-cols-2 gap-4 mb-12">
           {[
-            { icon: Users, title: "Community First", desc: "Built by WoW players for WoW players. Every feature serves the community, not a bottom line." },
+            { icon: Users, title: "Community First", desc: "Built by Aion 2 players for Aion 2 players. Every feature serves the community, not a bottom line." },
             { icon: Shield, title: "Safety Focused", desc: "Verification systems, reputation tracking, and transparent reviews keep the platform trustworthy." },
-            { icon: Coins, title: "Free Gold Auctions", desc: "No commissions, no listing fees, no premium tiers. Blind gold auctions keep boosting fair." },
-            { icon: HeartHandshake, title: "Open & Transparent", desc: "Leaderboards, public reviews, and community feedback so you know exactly who you're dealing with." },
+            { icon: Coins, title: "Free to Use", desc: "No commissions, no listing fees, no premium tiers. Posting and applying to offers is completely free." },
+            { icon: HeartHandshake, title: "Open & Transparent", desc: "Public offers, reviews, and community feedback so you know exactly who you're dealing with." },
           ].map((v) => (
             <div key={v.title} className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-6">
               <v.icon className="w-6 h-6 text-[#ff007f] mb-3" />
@@ -73,19 +73,19 @@ export default function AboutPage() {
         <div className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-6 mb-8">
           <h2 className="text-base font-black text-white mb-3">Our Mission</h2>
           <p className="text-sm text-gray-400 leading-relaxed mb-3">
-            We believe WoW boosting should be accessible to everyone. Traditional boost marketplaces take 
-            cuts, hide fees, and lack transparency. WoWLFG changes that with a blind auction system where 
-            boosters compete on price and you choose the best offer — all in gold, all for free.
+            We believe LFG should be accessible to everyone. Traditional boosting marketplaces take 
+            cuts, hide fees, and lack transparency. Aion 2 LFG fixes that with an open offer system where 
+            players post their runs and you join the best offer — all free, on the site and on Discord.
           </p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            Whether you are looking for a Mythic+ carry, leveling service, or want to offer your skills as 
-            a booster, WoWLFG gives you the tools to connect, transact, and build reputation — no 
-            subscriptions, no limits, no BS.
+            Whether you are looking for a dungeon group, a raid squad, an Abyss Points farm, or a leveling 
+            service — or you want to offer your own runs — Aion 2 LFG gives you the tools to connect, 
+            coordinate, and build reputation, no subscriptions, no limits, no BS.
           </p>
         </div>
 
         <div className="text-center">
-          <Link href="/boosts" className="inline-flex items-center gap-2 px-6 py-3 bg-[#ff007f] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ff007f]/80 transition shadow-[0_0_20px_rgba(255,0,127,0.3)]">
+          <Link href="/create-offer" className="inline-flex items-center gap-2 px-6 py-3 bg-[#ff007f] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ff007f]/80 transition shadow-[0_0_20px_rgba(255,0,127,0.3)]">
             Get Started Free
           </Link>
         </div>

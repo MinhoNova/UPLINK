@@ -7,6 +7,7 @@ const siteUrl = getSiteUrl();
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "Dungeon News — WoWLFG",
   description: "Mythic+ routes, dungeon changes, new affixes, boss strategies, and seasonal updates for WoW The War Within.",
   alternates: { canonical: `${siteUrl}/news/dungeons` },

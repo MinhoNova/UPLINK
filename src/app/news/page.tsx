@@ -5,6 +5,7 @@ import { getSiteUrl } from "@/lib/siteUrl";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "WoW News — Leveling Guides & Dungeon Strategies | WoWLFG",
   description: "World of Warcraft news covering leveling methods, XP farms, dungeon guides, Mythic+ route changes, affixes, and class updates for The War Within.",
   alternates: { canonical: `${siteUrl}/news` },

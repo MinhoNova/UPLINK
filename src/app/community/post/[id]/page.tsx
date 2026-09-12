@@ -16,10 +16,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const tagStr = tags.map((t) => `#${t}`).join(" ");
 
   return {
-    title: `${title} — WoWLFG Community`,
+    title: `${title} — Aion 2 LFG Community`,
     description: `${title} ${tagStr} ${post.content.slice(0, 120)}`.trim(),
     openGraph: {
-      title: `${title} — WoWLFG`,
+      title: `${title} — Aion 2 LFG`,
       description: post.content.slice(0, 200),
       ...(post.image ? { images: [{ url: post.image }] } : {}),
       type: "article",

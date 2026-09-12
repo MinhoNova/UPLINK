@@ -8,12 +8,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const pages: [string, string, number][] = [
     ["", "daily", 1],
     ["/create-offer", "weekly", 0.9],
-    ["/guides", "weekly", 0.7],
-    ["/boosts", "weekly", 0.7],
-    ["/gold-auction", "weekly", 0.6],
-    ["/reviews", "weekly", 0.6],
-    ["/news", "weekly", 0.6],
-    ["/addon", "monthly", 0.4],
     ["/about", "monthly", 0.4],
     ["/contact", "monthly", 0.4],
     ["/support", "monthly", 0.4],

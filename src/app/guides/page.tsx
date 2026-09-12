@@ -5,6 +5,7 @@ import { getSiteUrl } from "@/lib/siteUrl";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "WoWLFG Guides — UPLINK",
   description:
     "WoWLFG — Mythic+ guides, leveling tips, dungeon strategies, and boosting advice for World of Warcraft players. Learn how to find groups and climb the leaderboard.",

@@ -5,6 +5,7 @@ import ReviewsPageContent from "./ReviewsPageContent";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "WoWLFG Reviews — UPLINK",
   description: "WoWLFG — Read reviews and ratings from the UPLINK boosting community. Share your experience with the premier WoW LFG and boosting marketplace.",
   openGraph: {

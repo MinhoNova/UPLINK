@@ -6,6 +6,7 @@ import { Download, Package, Shield, Zap, GitBranch } from "lucide-react";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
   title: "WoWLFG Addon — UPLINK WoW Group Finder",
   description:
     "WoWLFG — Download the UPLINK World of Warcraft addon for seamless group finder integration. Browse Mythic+ groups, check scores, and find your next run in-game.",
