@@ -384,16 +384,25 @@ export default function Aion2TestClubPage() {
     }
     const newOffers = publicOffers.filter((offer: any) => !knownOfferIdsRef.current?.has(String(offer.id)));
     knownOfferIdsRef.current = currentIds;
-    if (offerNotificationSettings.mutedAll || typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    newOffers
+    if (offerNotificationSettings.mutedAll) return;
+    const audibleOffers = newOffers
       .filter((offer: any) => String(offer.ownerId) !== meId)
-      .filter((offer: any) => !offerNotificationSettings.mutedCategories.includes(normalizeOfferCategory(offer.category)))
-      .forEach((offer: any) => {
+      .filter((offer: any) => !offerNotificationSettings.mutedCategories.includes(normalizeOfferCategory(offer.category)));
+    if (audibleOffers.length === 0) return;
+
+    const sound = new Audio("/Message.mp3");
+    sound.volume = 0.55;
+    void sound.play().catch(() => {
+      /* Browsers can block audio until the visitor has interacted with the page. */
+    });
+
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    audibleOffers.forEach((offer: any) => {
         new Notification(`New ${normalizeOfferCategory(offer.category)} offer`, {
           body: String(offer.title || `${offer.runsCount || 1}× Run`),
           icon: "/icon.svg",
         });
-      });
+    });
   }, [lobbies, meId, offerNotificationSettings]);
 
   const lobbyOwner = (l: any) =>
