@@ -23,11 +23,7 @@ function HomeSeoFooter() {
         <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           {[
             ["/create-offer", "Create an Offer"],
-            ["/guides", "Guides"],
-            ["/boosts", "Boosts"],
             ["/reviews", "Reviews"],
-            ["/gold-auction", "Gold Auction"],
-            ["/news", "News"],
             ["/about", "About"],
             ["/contact", "Contact"],
           ].map(([href, label]) => (
