@@ -363,12 +363,12 @@ const ManageModal = ({
                                      ? activeVfx
                                      : null
                                );
-                               return bgUrl ? (
-                                 <div className="absolute inset-0 z-0 opacity-10">
-                                    <img src={bgUrl} key={bgUrl} className="w-full h-full object-cover" alt="" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/80 to-transparent"></div>
-                                 </div>
-                               ) : null;
+return bgUrl ? (
+                                  <div className="absolute inset-0 z-0 opacity-40">
+                                     <img src={bgUrl} key={bgUrl} className="w-full h-full object-cover" alt="" />
+                                     <div className="absolute inset-0 bg-gradient-to-t from-[#05050a] via-[#05050a]/80 to-transparent"></div>
+                                  </div>
+                                ) : null;
                             })()}
                             <div className="flex flex-col p-8 md:p-12 relative z-10 min-h-0">
                               {/* HEADER & TOP ACTIONS */}
