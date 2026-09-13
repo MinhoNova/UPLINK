@@ -52,7 +52,7 @@ export const metadata: Metadata = {
       "Find Aion 2 squads for dungeons, raids, PvP (Abyss Points farming) and leveling on aion2lfg.com.",
     images: [
       {
-        url: `${siteUrl}/og.png`,
+        url: `${siteUrl}/og-aion2.png`,
         width: 1200,
         height: 630,
         alt: "Aion 2 LFG — the Aion 2 group finder",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     title: "Aion 2 LFG | Aion 2 Group Finder",
     description:
       "Find Aion 2 squads — dungeons, raids, PvP and leveling. LFG made easy.",
-    images: [`${siteUrl}/og.png`],
+    images: [`${siteUrl}/og-aion2.png`],
   },
   robots: {
     index: true,
