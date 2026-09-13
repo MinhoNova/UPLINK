@@ -104,10 +104,10 @@ const KEEP_ROLE_ORDER = [
 
 const TOPICS = {
   "welcome-briefing":
-    "Welcome to AION 2 LFG ⎯ find squads, list offers, and coordinate on UPLINK (aion2lfg.com). Read #rules, then hit the role picker.",
+    "Welcome to AION 2 LFG ⎯ a fan-run community, not affiliated with NCSOFT. Find squads, list offers & coordinate on UPLINK (aion2lfg.com). Read #rules, then grab a role.",
   rules:
     "Server rules ⎯ keep it respectful, no gold-selling scams, no spam. Violations = mutes/bans. Full policy on UPLINK.",
-  "📢・announcements": "Official announcements from the UPLINK team.",
+  "📢・announcements": "Announcements from the UPLINK team — a fan-run AION 2 community, not affiliated with NCSOFT.",
   "🗨️・general-chat": "Game chat, LFG banter, and community talk. English-friendly — all AION 2 players welcome!",
   "🎮・aion-2": "Everything about AION 2: classes, builds, content talk, and the future.",
   "📸・media-clips": "Clips, screenshots, and highlights from your runs.",

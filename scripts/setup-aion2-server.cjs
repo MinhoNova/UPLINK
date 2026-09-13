@@ -73,12 +73,12 @@ const CATEGORIES = [
       {
         name: "📢・announcements",
         type: ChannelType.GuildText,
-        topic: "📢 Official UPLINK announcements & Aion 2 site updates.",
+        topic: "📢 UPLINK community announcements & Aion 2 site updates (fan-run, not affiliated with NCSOFT).",
       },
       {
         name: "welcome-briefing",
         type: ChannelType.GuildText,
-        topic: "👋 Welcome to UPLINK — the LFG & boosting hub for Aion 2. Open offers and apply on aion2lfg.com",
+        topic: "👋 Welcome to AION 2 LFG — a fan-run community, not affiliated with NCSOFT. Open offers and apply on aion2lfg.com",
       },
     ],
   },

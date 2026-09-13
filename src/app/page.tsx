@@ -20,6 +20,10 @@ function HomeSeoFooter() {
           Alchemy) are one post away. Set your class, region and difficulty, and let the best
           players apply.
         </p>
+        <p className="mt-3 max-w-3xl text-xs leading-relaxed text-slate-500">
+          Aion 2 LFG is a fan-run community. We are not affiliated with, endorsed by, or otherwise
+          connected to NCSOFT or AION.
+        </p>
         <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           {[
             ["/create-offer", "Create an Offer"],
