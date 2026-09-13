@@ -443,7 +443,7 @@ export default function MyProfileClient() {
   const rank = myRanks.overall;
 
   return (
-    <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-clip">
       {/* Scenic artwork + dot-net — same composition as the lobby home && Offer Forge */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-cover bg-center sm:bg-contain sm:bg-top sm:bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />

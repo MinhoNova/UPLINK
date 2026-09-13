@@ -561,7 +561,7 @@ export default function CreateOfferPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
+    <div className="relative min-h-screen overflow-x-clip bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
 
       {/* ── SCENIC BACKGROUND — mirrors the lobby from the very top of the page ── */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>

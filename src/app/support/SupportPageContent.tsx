@@ -123,7 +123,7 @@ export default function SupportPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-yellow-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-yellow-500/30 overflow-x-clip">
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-cover bg-center sm:bg-contain sm:bg-top sm:bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />

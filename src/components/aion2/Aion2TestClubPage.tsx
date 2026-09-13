@@ -726,7 +726,7 @@ export default function Aion2TestClubPage({
   const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-clip relative">
 
       {/* Background Artwork — full page, behind all content, never cut.
           Only allow-listed themes from heroBg.ts are ever rendered. */}
