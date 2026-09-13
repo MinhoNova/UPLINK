@@ -25,7 +25,7 @@ const root = path.join(__dirname, "..");
 loadEnvFile(path.join(root, ".env.local"));
 loadEnvFile(path.join(root, ".dev.vars"));
 
-if (!process.env.DISCORD_GUILD_ID) process.env.DISCORD_GUILD_ID = "1497323747198238933";
+if (!process.env.DISCORD_GUILD_ID) process.env.DISCORD_GUILD_ID = "1387155425710833674";
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
 if (!TOKEN) {
   console.error("DISCORD_BOT_TOKEN is not set.");
