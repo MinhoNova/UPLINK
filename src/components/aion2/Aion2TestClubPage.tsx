@@ -298,15 +298,12 @@ export default function Aion2TestClubPage({
       >
         {/* Dark readable zone — same as offer cards */}
         <div className="absolute inset-0 bg-[#070b1a]" />
-        {bgPoster ? (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0" style={offerBgStyle} />
+          {bgPoster ? (
             <img src={bgPoster} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0" style={offerBgStyle} />
-          </div>
-        )}
+          ) : null}
+        </div>
 
         <div className="relative z-10 flex items-start justify-between gap-2">
           <p className="text-sm font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
@@ -941,6 +938,7 @@ export default function Aion2TestClubPage({
                       <div className="absolute inset-0 bg-[#070b1a]" />
                       {/* Faction VFX banner / gradient — right panel only */}
                       <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]">
+                        <div className="absolute inset-0" style={offerBgStyle} />
                         {offerBg ? (
                           <img
                             src={offerBg}
@@ -950,9 +948,7 @@ export default function Aion2TestClubPage({
                             decoding="async"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                           />
-                        ) : (
-                          <div className="absolute inset-0" style={offerBgStyle} />
-                        )}
+                        ) : null}
                         <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
                       </div>
                     </div>
