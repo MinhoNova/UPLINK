@@ -15,10 +15,8 @@ import { useRouter } from "next/navigation";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
 import { resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
 import {
-  OFFER_BANNER_BG_OPTIONS,
-  resolveOfferBannerBg,
   offerBannerBgStyle,
-  type OfferBannerBgKey,
+  OFFER_BANNER_BG_DEFAULT,
 } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage } from "@/lib/vfxAssets";
@@ -73,7 +71,13 @@ function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
     : "dungeon";
 }
 
-export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: string }) {
+export default function Aion2TestClubPage({
+  initialHeroBg,
+  initialHeroVfx,
+}: {
+  initialHeroBg?: string;
+  initialHeroVfx?: string;
+}) {
   const { t } = useI18n();
   const { data: session } = useSession();
   const router = useRouter();
@@ -81,9 +85,7 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
   const [regionTab, setRegionTab] = useState("All");
   const motionOn = useFlag("uplink_bg_motion", true);
   const [heroBg, setHeroBg] = useState<HeroBgKey>(() => resolveHeroBg(initialHeroBg));
-  const [offerBgTheme, setOfferBgTheme] = useState<OfferBannerBgKey>(OFFER_BANNER_BG_OPTIONS[0].key);
-  const [offerBgPickerOpen, setOfferBgPickerOpen] = useState(false);
-  const [offerBgSaving, setOfferBgSaving] = useState(false);
+  const [heroVfx, setHeroVfx] = useState(() => String(initialHeroVfx || "").trim());
 
   useEffect(() => {
     const ac = new AbortController();
@@ -91,9 +93,9 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
       .then((r) => (r.ok ? r.json() : null))
       .then((d: unknown) => { const bg = (d as { bg?: unknown } | null)?.bg; if (typeof bg === "string") setHeroBg(resolveHeroBg(bg)); })
       .catch(() => {});
-    fetch("/api/site/offer-banner-bg", { credentials: "include", signal: ac.signal })
+    fetch("/api/site/hero-vfx", { credentials: "include", signal: ac.signal })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: unknown) => { const bg = (d as { bg?: unknown } | null)?.bg; if (typeof bg === "string") setOfferBgTheme(resolveOfferBannerBg(bg)); })
+      .then((d: unknown) => { const vfx = (d as { vfx?: unknown } | null)?.vfx; if (typeof vfx === "string") setHeroVfx(vfx.trim()); })
       .catch(() => {});
     return () => ac.abort();
   }, []);
@@ -700,35 +702,28 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
     }
   };
 
-  const applyOfferBgTheme = async (key: OfferBannerBgKey) => {
-    setOfferBgPickerOpen(false);
-    setOfferBgSaving(true);
-    const prev = offerBgTheme;
-    setOfferBgTheme(key);
-    try {
-      const res = await fetch("/api/site/offer-banner-bg", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ bg: key }),
-      });
-      if (!res.ok) setOfferBgTheme(prev);
-    } catch {
-      setOfferBgTheme(prev);
-    } finally {
-      setOfferBgSaving(false);
-    }
-  };
-
-  const offerBgStyle = offerBannerBgStyle(offerBgTheme);
+  const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
 
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
 
       {/* Background Artwork — full page, behind all content, never cut.
-          Only allow-listed themes from heroBg.ts are ever rendered. */}
+          Admin-picked animated background (Lobby Store) takes priority;
+          otherwise only allow-listed themes from heroBg.ts are ever rendered. */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {heroBg === "scenic" ? (
+        {heroVfx ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-top bg-no-repeat"
+              style={{
+                backgroundImage: `url("${heroVfx}")`,
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+              }}
+            />
+            <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+          </>
+        ) : heroBg === "scenic" ? (
           <>
             <div
               className="absolute inset-0 bg-contain bg-top bg-no-repeat"
@@ -1586,44 +1581,6 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
         meName={meName || ""}
         onSave={saveAutoApply}
       />
-
-      {/* Admin-only: offer banner background picker */}
-      {isAdmin && (
-        <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-2">
-          <AnimatePresence>
-            {offerBgPickerOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                className="flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-[#0a0f26]/95 p-2 shadow-2xl backdrop-blur-xl"
-              >
-                {OFFER_BANNER_BG_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    disabled={offerBgSaving}
-                    onClick={() => applyOfferBgTheme(opt.key)}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 ${offerBgTheme === opt.key ? "bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30" : "text-slate-300 hover:bg-white/5 border border-transparent"}`}
-                  >
-                    <span className="h-5 w-5 rounded-full border border-white/20 shrink-0" style={opt.style} />
-                    <span>{opt.label}</span>
-                    {offerBgTheme === opt.key && <Check className="ml-auto h-3.5 w-3.5" />}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <button
-            type="button"
-            title="Change the gradient background on offer banners"
-            onClick={() => setOfferBgPickerOpen((o) => !o)}
-            className="rounded-full border border-white/10 bg-[#0a0f26]/85 px-4 py-2 text-[9px] font-black uppercase tracking-[0.18em] text-slate-300 hover:text-white hover:border-cyan-400/40 transition-all backdrop-blur-md shadow-2xl"
-          >
-            {offerBgSaving ? "SAVING…" : "🎨 OFFER BANNERS"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

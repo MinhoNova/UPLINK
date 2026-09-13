@@ -46,16 +46,18 @@ function HomeSeoFooter() {
 
 export default async function HomePage() {
   let initialHeroBg: string | undefined;
+  let initialHeroVfx = "";
   try {
     const kv = await getKVPairs();
     initialHeroBg = resolveHeroBg(kv.heroBg);
+    initialHeroVfx = String(kv.heroVfx ?? "").trim();
   } catch {
     initialHeroBg = "scenic";
   }
 
   return (
     <>
-      <Aion2TestClubPage initialHeroBg={initialHeroBg} />
+      <Aion2TestClubPage initialHeroBg={initialHeroBg} initialHeroVfx={initialHeroVfx} />
       <HomeSeoFooter />
     </>
   );

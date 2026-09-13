@@ -20,6 +20,7 @@ import {
   X,
   ExternalLink,
   Copy,
+  Globe,
 } from "lucide-react";
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
@@ -31,6 +32,7 @@ import {
   extractGifPosterBlob,
 } from "@/lib/clientImagePoster";
 import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
 
 const TEAM_MAX = 4;
 const TEAM_MAX_MEMBERS = 3;
@@ -45,6 +47,8 @@ export default function MyProfileClient() {
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
   const myId = String((session?.user as any)?.id || "");
+  const myHandle = String((session?.user as any)?.username || "");
+  const isAdminClient = isPrimaryAdmin(myId, myHandle);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const refresh = useCallback(() => {
@@ -81,6 +85,8 @@ export default function MyProfileClient() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [vfxUrl, setVfxUrl] = useState("");
   const [vfxBusy, setVfxBusy] = useState(false);
+  const [siteBg, setSiteBg] = useState("");
+  const [siteBgBusy, setSiteBgBusy] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [teamQuery, setTeamQuery] = useState("");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -287,8 +293,49 @@ export default function MyProfileClient() {
     const patch: Record<string, unknown> = { userVfx: next };
     if (me?.activeVfx === src) patch.activeVfx = null;
     const ok = await patchMe(patch);
-    if (ok) flash("Background deleted");
+    if (ok) {
+      if (src === siteBg) void applySiteBg(""); // deleted the site background — revert to default
+      flash("Background deleted");
+    }
   };
+
+  const applySiteBg = async (src: string) => {
+    setSiteBgBusy(true);
+    try {
+      const res = await fetch("/api/site/hero-vfx", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ vfx: src }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        flash((d as { error?: string })?.error || "Could not update site background", "err");
+        return;
+      }
+      setSiteBg(src);
+      flash(src ? "Site background updated — live on the homepage" : "Back to default Aion artwork");
+    } catch {
+      flash("Network error", "err");
+    } finally {
+      setSiteBgBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAdminClient) return;
+    let alive = true;
+    fetch("/api/site/hero-vfx", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: unknown) => {
+        const vfx = String((d as { vfx?: unknown } | null)?.vfx ?? "").trim();
+        if (alive && vfx) setSiteBg(vfx);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [isAdminClient]);
 
   const candidateTeam = useMemo(() => {
     const q = teamQuery.trim().toLowerCase();
@@ -892,6 +939,30 @@ export default function MyProfileClient() {
             </span>
           </div>
 
+          {isAdminClient && (
+            <div className="flex items-center gap-3 mb-6 rounded-2xl border border-cyan-400/20 bg-cyan-500/[0.06] px-4 py-3">
+              <Globe className="w-4 h-4 text-cyan-300 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">
+                  SITE-WIDE BACKGROUND
+                </p>
+                <p className="text-[9px] text-slate-400 truncate">
+                  {siteBg ? "Live on the homepage right now — click a card below to switch, or reset to default art." : "Default Aion artwork is live — pick any background below to make it the homepage backdrop."}
+                </p>
+              </div>
+              {siteBg && (
+                <button
+                  type="button"
+                  onClick={() => applySiteBg("")}
+                  disabled={siteBgBusy}
+                  className="shrink-0 px-4 py-2 rounded-xl border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/10 font-black text-[9px] uppercase tracking-widest transition-all disabled:opacity-40"
+                >
+                  {siteBgBusy ? "Saving…" : "Reset default"}
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-3 mb-8">
             <div className="flex-1 min-w-[220px] flex gap-2">
               <div className="relative flex-1">
@@ -948,16 +1019,20 @@ export default function MyProfileClient() {
                 const src = resolveVfxSrc(entry);
                 const preview = resolveVfxBannerUrl(entry);
                 const isActive = me?.activeVfx === src;
+                const isSiteBg = isAdminClient && siteBg === src;
                 return (
                   <motion.div
                     key={`${src}-${i}`}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`relative group border-2 rounded-2xl aspect-video overflow-hidden transition-all ${isActive ? "border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)]" : "border-white/10 hover:border-[#ff007f]/50"}`}
+                    className={`relative group border-2 rounded-2xl aspect-video overflow-hidden transition-all ${isSiteBg ? "border-cyan-400/70 shadow-[0_0_25px_rgba(34,211,238,0.3)]" : isActive ? "border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)]" : "border-white/10 hover:border-[#ff007f]/50"}`}
                   >
                     <img src={preview} className="w-full h-full object-cover" alt="" loading="lazy" />
                     {isActive && (
                       <span className="absolute top-3 left-3 bg-emerald-500 text-black font-black text-[9px] px-2 py-1 rounded-lg uppercase">Active</span>
+                    )}
+                    {isSiteBg && (
+                      <span className="absolute top-3 left-3 bg-cyan-400 text-black font-black text-[9px] px-2 py-1 rounded-lg uppercase">Site BG</span>
                     )}
                     <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4 gap-3">
                       <button
@@ -967,6 +1042,16 @@ export default function MyProfileClient() {
                         {isActive ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
                         {isActive ? "Active" : "Activate"}
                       </button>
+                      {isAdminClient && (
+                        <button
+                          onClick={() => applySiteBg(src)}
+                          disabled={siteBgBusy}
+                          className={`flex items-center gap-1.5 py-2 px-4 text-white font-black text-[10px] uppercase rounded-xl transition-all disabled:opacity-50 ${isSiteBg ? "bg-slate-600/90 hover:bg-slate-500" : "bg-cyan-600/90 hover:bg-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.4)]"}`}
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          {siteBgBusy ? "Saving…" : isSiteBg ? "Site BG ✓" : "Set Site BG"}
+                        </button>
+                      )}
                       <button
                         onClick={() => deleteVfx(src)}
                         className="py-2 px-4 bg-red-600/90 hover:bg-red-500 text-white font-black text-[10px] uppercase rounded-xl transition-all flex items-center gap-1.5"
