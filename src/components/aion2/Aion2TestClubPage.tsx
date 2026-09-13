@@ -72,10 +72,8 @@ function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
 
 export default function Aion2TestClubPage({
   initialHeroBg,
-  initialHeroVfx,
 }: {
   initialHeroBg?: string;
-  initialHeroVfx?: string;
 }) {
   const { t } = useI18n();
   const { data: session } = useSession();
@@ -84,17 +82,12 @@ export default function Aion2TestClubPage({
   const [regionTab, setRegionTab] = useState("All");
   const motionOn = useFlag("uplink_bg_motion", true);
   const [heroBg, setHeroBg] = useState<HeroBgKey>(() => resolveHeroBg(initialHeroBg));
-  const [heroVfx, setHeroVfx] = useState(() => String(initialHeroVfx || "").trim());
 
   useEffect(() => {
     const ac = new AbortController();
     fetch("/api/site/hero-bg", { credentials: "include", signal: ac.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: unknown) => { const bg = (d as { bg?: unknown } | null)?.bg; if (typeof bg === "string") setHeroBg(resolveHeroBg(bg)); })
-      .catch(() => {});
-    fetch("/api/site/hero-vfx", { credentials: "include", signal: ac.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: unknown) => { const vfx = (d as { vfx?: unknown } | null)?.vfx; if (typeof vfx === "string") setHeroVfx(vfx.trim()); })
       .catch(() => {});
     return () => ac.abort();
   }, []);
@@ -707,22 +700,9 @@ export default function Aion2TestClubPage({
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
 
       {/* Background Artwork — full page, behind all content, never cut.
-          Admin-picked animated background (Lobby Store) takes priority;
-          otherwise only allow-listed themes from heroBg.ts are ever rendered. */}
+          Only allow-listed themes from heroBg.ts are ever rendered. */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {heroVfx ? (
-          <>
-            <div
-              className="absolute inset-0 bg-cover bg-top bg-no-repeat"
-              style={{
-                backgroundImage: `url("${heroVfx}")`,
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
-                maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
-              }}
-            />
-            <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
-          </>
-        ) : heroBg === "scenic" ? (
+        {heroBg === "scenic" ? (
           <>
             <div
               className="absolute inset-0 bg-contain bg-top bg-no-repeat"
