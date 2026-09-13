@@ -8,6 +8,7 @@ import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
 import { getSiteUrl } from "@/lib/siteUrl";
+import { getDiscordInviteUrl } from "@/lib/discordConstants";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -18,6 +19,7 @@ export const viewport: Viewport = {
 };
 
 const siteUrl = getSiteUrl();
+const discordInviteUrl = getDiscordInviteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -89,7 +91,10 @@ const seoJsonLd = JSON.stringify({
       name: "Aion 2 LFG",
       url: siteUrl,
       logo: `${siteUrl}/icon.svg`,
-      sameAs: [siteUrl],
+      sameAs: [
+        discordInviteUrl,
+        `${siteUrl}/discord`,
+      ],
     },
   ],
 }).replace(/</g, "\\u003c");

@@ -97,6 +97,7 @@ export default function DiscordServerPage() {
           })}
         </div>
       </div>
+      <link rel="me" href={inviteUrl} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </main>
   );
