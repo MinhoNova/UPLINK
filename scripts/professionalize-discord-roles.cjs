@@ -31,15 +31,15 @@ async function api(url, options = {}) {
 
 const combine = (...items) => items.reduce((total, item) => total | item, 0n).toString();
 const rolesToKeep = [
-  ["👑 UPLINK Owner", "👑 UPLINK Owner", 0xffd700, combine(PermissionFlagsBits.Administrator)],
-  ["⚡ Admin", "⚡ Admin", 0xef4444, combine(PermissionFlagsBits.ManageGuild, PermissionFlagsBits.ManageRoles, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.KickMembers, PermissionFlagsBits.BanMembers, PermissionFlagsBits.ModerateMembers)],
-  ["🛡️ Moderator", "🛡️ Moderator", 0x3b82f6, combine(PermissionFlagsBits.ManageMessages, PermissionFlagsBits.KickMembers, PermissionFlagsBits.ModerateMembers)],
-  ["__support__", "🧰 Support", 0x22c55e, combine(PermissionFlagsBits.ManageMessages)],
-  ["👑 Mission Lead", "🎯 Event Host", 0x8b5cf6, combine(PermissionFlagsBits.ManageMessages)],
-  ["🔥 Elite Booster", "💎 Premium", 0xd4af37, "0"],
-  ["🌟 Secret Club", "⭐ VIP", 0xa855f7, "0"],
-  ["📡 Community", "🌐 Community Member", 0x38bdf8, "0"],
-  ["💠 Verified Operative", "💠 Verified Operative", 0x14b8a6, "0"],
+  ["👑 UPLINK Owner", "Owner", 0xffd700, combine(PermissionFlagsBits.Administrator)],
+  ["⚡ Admin", "Administrators", 0xef4444, combine(PermissionFlagsBits.ManageGuild, PermissionFlagsBits.ManageRoles, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.KickMembers, PermissionFlagsBits.BanMembers, PermissionFlagsBits.ModerateMembers)],
+  ["🛡️ Moderator", "Moderators", 0x3b82f6, combine(PermissionFlagsBits.ManageMessages, PermissionFlagsBits.KickMembers, PermissionFlagsBits.ModerateMembers)],
+  ["🧰 Support", "Support Team", 0x22c55e, combine(PermissionFlagsBits.ManageMessages)],
+  ["🎯 Event Host", "Community Management", 0x8b5cf6, combine(PermissionFlagsBits.ManageMessages)],
+  ["💎 Premium", "Premium", 0xd4af37, "0"],
+  ["⭐ VIP", "VIP", 0xa855f7, "0"],
+  ["🌐 Community Member", "Member", 0x38bdf8, "0"],
+  ["💠 Verified Operative", "Verified", 0x14b8a6, "0"],
 ];
 const legacyNames = new Set(["🛡️ Vanguard", "💠 Daeva", "🌙 Night Raider", "🌙 Nightwalker", "⚔️ Blade Dancer", "🔥 Flameborn", "🌿 Elysian", "🔮 Asmodian", "ChillZone🌌", "✨ Luminary", "🛡️ Tank", "💚 Healer", "⚔️ DPS", "Aetheria"]);
 
@@ -66,7 +66,7 @@ const legacyNames = new Set(["🛡️ Vanguard", "💠 Daeva", "🌙 Night Raide
     roles = await api(`/guilds/${guildId}/roles`);
   }
 
-  const verified = roles.find((role) => role.name === "💠 Verified Operative");
+  const verified = roles.find((role) => role.name === "Verified");
   if (!verified) throw new Error("Verified role is missing.");
   const members = await api(`/guilds/${guildId}/members?limit=1000`);
   let verifiedCount = 0;

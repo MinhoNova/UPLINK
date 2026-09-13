@@ -109,8 +109,8 @@ async function main() {
     discord(`/guilds/${guildId}/roles`),
     discord(`/guilds/${guildId}/members?limit=1000`),
   ]);
-  const verified = roles.find((role) => role.name === "💠 Verified Operative");
-  if (!verified) throw new Error('Role "💠 Verified Operative" was not found.');
+  const verified = roles.find((role) => role.name === "Verified");
+  if (!verified) throw new Error('Role "Verified" was not found.');
 
   let opened = 0;
   for (const channel of channels) {
