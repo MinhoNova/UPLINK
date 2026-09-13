@@ -940,7 +940,7 @@ export default function Aion2TestClubPage({
                     {/* Dark readable zone — full card underlay */}
                     <div className="absolute inset-0 bg-[#070b1a]" />
                     {/* Faction VFX banner / gradient — right panel only */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] pointer-events-none overflow-hidden">
+                    <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] pointer-events-none">
                       {offerBg ? (
                         <img
                           src={offerBg}
@@ -954,6 +954,16 @@ export default function Aion2TestClubPage({
                         <div className="absolute inset-0" style={offerBgStyle} />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
+                      {(isMine || isAdmin) && (
+                        <button
+                          type="button"
+                          onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
+                          title="Change this offer's banner background"
+                          className="pointer-events-auto absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/40 bg-[#050814]/85 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)] backdrop-blur-md transition-all hover:border-[#ff007f]/60 hover:bg-[#ff007f]/15 hover:text-[#ffb3dd] hover:shadow-[0_0_16px_rgba(255,0,127,0.3)]"
+                        >
+                          <Palette className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Creator avatar */}
@@ -1039,15 +1049,6 @@ export default function Aion2TestClubPage({
                           className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"
                         >
                           <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
-                        </button>
-                      )}
-                      {(isMine || isAdmin) && (
-                        <button
-                          onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
-                          title="Change this offer's banner background"
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-[#ff007f]/40 hover:text-[#ffb3dd] hover:bg-[#ff007f]/10 transition-all backdrop-blur-md"
-                        >
-                          <Palette className="w-3 h-3" /> Banner
                         </button>
                       )}
                       {(isMine || isAdmin) && (
