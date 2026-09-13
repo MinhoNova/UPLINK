@@ -1,4 +1,6 @@
 import Aion2TestClubPage from "@/components/aion2/Aion2TestClubPage";
+import { getKVPairs } from "@/lib/db";
+import { resolveHeroBg } from "@/lib/heroBg";
 
 function HomeSeoFooter() {
   return (
@@ -42,10 +44,18 @@ function HomeSeoFooter() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  let initialHeroBg: string | undefined;
+  try {
+    const kv = await getKVPairs();
+    initialHeroBg = resolveHeroBg(kv.heroBg);
+  } catch {
+    initialHeroBg = "scenic";
+  }
+
   return (
     <>
-      <Aion2TestClubPage />
+      <Aion2TestClubPage initialHeroBg={initialHeroBg} />
       <HomeSeoFooter />
     </>
   );

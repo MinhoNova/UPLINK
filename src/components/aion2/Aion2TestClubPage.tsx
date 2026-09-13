@@ -13,6 +13,7 @@ import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
+import { HERO_BG_OPTIONS, resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
@@ -66,13 +67,25 @@ function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
     : "dungeon";
 }
 
-export default function Aion2TestClubPage() {
+export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: string }) {
   const { t } = useI18n();
   const { data: session } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("All");
   const [regionTab, setRegionTab] = useState("All");
   const motionOn = useFlag("uplink_bg_motion", true);
+  const [heroBg, setHeroBg] = useState<HeroBgKey>(() => resolveHeroBg(initialHeroBg));
+  const [bgPickerOpen, setBgPickerOpen] = useState(false);
+  const [bgSaving, setBgSaving] = useState(false);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    fetch("/api/site/hero-bg", { credentials: "include", signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: unknown) => { const bg = (d as { bg?: unknown } | null)?.bg; if (typeof bg === "string") setHeroBg(resolveHeroBg(bg)); })
+      .catch(() => {});
+    return () => ac.abort();
+  }, []);
 
   const [lobbies, setLobbies] = useState<any[]>([]);
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
@@ -676,20 +689,65 @@ export default function Aion2TestClubPage() {
     }
   };
 
+  /* ── Hero background picker (admin-only, long-press). ──
+     Chosen keys come from the hardcoded allow-list only; the server
+     re-validates the same list, so no custom CSS/URL can be injected. */
+  const longPressTimer = useRef<number | null>(null);
+  const startLongPress = () => {
+    if (!isAdmin) return;
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      if (isAdmin) setBgPickerOpen(true);
+    }, 650);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const applyHeroBg = async (key: HeroBgKey) => {
+    setBgPickerOpen(false);
+    setBgSaving(true);
+    const prev = heroBg;
+    setHeroBg(key);
+    try {
+      const res = await fetch("/api/site/hero-bg", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ bg: key }),
+      });
+      if (!res.ok) setHeroBg(prev);
+    } catch {
+      setHeroBg(prev);
+    } finally {
+      setBgSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
 
-      {/* Scenic Background Artwork — full page, behind all content, never cut */}
+      {/* Background Artwork — full page, behind all content, never cut.
+          Only allow-listed themes from heroBg.ts are ever rendered. */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div
-          className="absolute inset-0 bg-contain bg-top bg-no-repeat"
-          style={{
-            backgroundImage: `url('/AION2.png')`,
-            WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
-            maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
-          }}
-        />
-        <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+        {heroBg === "scenic" ? (
+          <>
+            <div
+              className="absolute inset-0 bg-contain bg-top bg-no-repeat"
+              style={{
+                backgroundImage: `url('/AION2.png')`,
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)",
+              }}
+            />
+            <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
+          </>
+        ) : (
+          <div className="absolute inset-0" style={heroBgStyle(heroBg)} />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-[#050814]/35 to-[#050814]/95" />
         <div className="absolute inset-x-0 top-0 h-[230vh] bg-[linear-gradient(to_bottom,transparent_0%,rgba(5,8,20,0.3)_70vh,rgba(5,8,20,0.75)_120vh,rgba(5,8,20,0.97)_175vh,#050814_215vh)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,8,20,0.8)_100%)]" />
@@ -699,7 +757,13 @@ export default function Aion2TestClubPage() {
       {/* ══════════════════════════════════════════════════════════
           HERO SECTION
           ══════════════════════════════════════════════════════════ */}
-      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
+      <section
+        className="tn-hero relative w-full min-h-[620px] flex items-center justify-center md:justify-end py-12 px-4 select-none"
+        onPointerDown={startLongPress}
+        onPointerUp={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+      >
 
         {/* Center glow — subtle, doesn't wash out the image */}
         <motion.div
@@ -739,7 +803,7 @@ export default function Aion2TestClubPage() {
         />
 
         {/* Hero Content — no glass wrapper, transparent background */}
-        <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 max-w-2xl mx-auto">
+        <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 max-w-lg mx-auto md:mx-0 md:mr-[8vw]">
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -821,6 +885,47 @@ export default function Aion2TestClubPage() {
           </motion.div>
 
         </div>
+
+        {/* Admin-only: background picker (long-press banner OR this chip) */}
+        {isAdmin && (
+          <div className="absolute bottom-3 left-3 z-40 flex flex-col gap-2">
+            <button
+              type="button"
+              title="Hold the banner down (650ms) to open the background picker too"
+              onClick={() => setBgPickerOpen((o) => !o)}
+              className="rounded-full border border-white/10 bg-[#0a0f26]/80 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white hover:border-cyan-400/40 transition-all backdrop-blur-md"
+            >
+              {bgSaving ? "SAVING…" : "🎨 CHANGE BANNER BACKGROUND"}
+            </button>
+            <AnimatePresence>
+              {bgPickerOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  className="flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-[#0a0f26]/95 p-2 shadow-2xl backdrop-blur-xl"
+                >
+                  {HERO_BG_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      disabled={bgSaving}
+                      onClick={() => applyHeroBg(opt.key)}
+                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 ${heroBg === opt.key ? "bg-[#00ffff]/15 text-[#00ffff] border border-[#00ffff]/30" : "text-slate-300 hover:bg-white/5 border border-transparent"}`}
+                    >
+                      <span
+                        className="h-5 w-5 rounded-full border border-white/20 shrink-0"
+                        style={opt.style ?? { background: "url('/AION2.png') center/cover" }}
+                      />
+                      <span>{opt.label}</span>
+                      {heroBg === opt.key && <Check className="ml-auto h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </section>
 
       {/* ══════════════════════════════════════════════════════════
