@@ -1441,10 +1441,12 @@ export function classSlotsFilled(lobby: any): boolean {
 }
 
 /** Public offer feed — open recruiting banners only (full squads move to Ongoing). */
+const PUBLIC_FEED_CATEGORIES = new Set(["dungeon", "dungeons", "raid", "raids", "leveling", "pvp"]);
+
 export function isLobbyListedInPublicFeed(lobby: any): boolean {
   if (!lobby) return false;
   const cat = lobby.category;
-  if (cat && cat !== "dungeon" && cat !== "leveling") return false;
+  if (cat && !PUBLIC_FEED_CATEGORIES.has(cat)) return false;
   const status = lobby.status || "standby";
   if (status !== "standby") return false;
   if (Array.isArray(lobby?.requiredClasses) && lobby.requiredClasses.length > 0) {

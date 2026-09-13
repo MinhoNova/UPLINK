@@ -377,7 +377,7 @@ export default function Aion2TestClubPage({
 
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = {
     All: null,
-    Dungeons: ["dungeon"],
+    Dungeons: ["dungeon", "dungeons"],
     Raids: ["raid", "raids"],
     Leveling: ["leveling"],
     PVP: ["pvp"],

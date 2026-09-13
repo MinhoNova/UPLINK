@@ -506,12 +506,12 @@ export default function CreateOfferPage() {
       const lobbies = Array.isArray(live.lobbies) ? live.lobbies : [];
       const categoryByService: Record<string, string> = {
         Leveling: "leveling",
-        Dungeons: "dungeons",
-        Raids: "raids",
+        Dungeons: "dungeon",
+        Raids: "raid",
         PVP: "pvp",
         Professions: "professions",
       };
-      const category = categoryByService[sel.category] ?? "dungeons";
+      const category = categoryByService[sel.category] ?? "dungeon";
       const lobby = {
         id: Date.now(),
         ownerId: String(me.id || ""),
