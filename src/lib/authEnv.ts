@@ -6,6 +6,7 @@ const AUTH_ENV_KEYS = [
   "NEXTAUTH_SECRET",
   "NEXTAUTH_URL",
   "AUTH_TRUST_HOST",
+  "DISCORD_BOT_TOKEN",
 ] as const;
 
 export type AppSession = {
