@@ -1,10 +1,10 @@
-# Copy to .dev.vars for local wrangler dev / build (do not commit real secrets)
+﻿# Copy to .dev.vars for local wrangler dev / build (do not commit real secrets)
 NEXTJS_ENV=development
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_BOT_TOKEN=
 DISCORD_GUILD_ID=
-NEXT_PUBLIC_DISCORD_INVITE_URL=https://discord.gg/fvYCMS3G5
+NEXT_PUBLIC_DISCORD_INVITE_URL=https://discord.gg/dJUPJ6xXXn
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
 AUTH_TRUST_HOST=true

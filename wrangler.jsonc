@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "uplink",
   "main": "./custom-worker.ts",
@@ -42,7 +42,7 @@
     "NEXT_PUBLIC_LIVEKIT_URL": "wss://uplink-sist6urm.livekit.cloud",
     "DISCORD_CLIENT_ID": "1387173936931803298",
     "DISCORD_GUILD_ID": "1497323747198238933",
-    "NEXT_PUBLIC_DISCORD_INVITE_URL": "https://discord.gg/fvYCMS3G5",
+    "NEXT_PUBLIC_DISCORD_INVITE_URL": "https://discord.gg/dJUPJ6xXXn",
     "BATTLENET_CLIENT_ID": "2d8396c3dfa2465fbc95c031cb453d2d"
   }
 }

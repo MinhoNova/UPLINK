@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { getSiteUrl } from "@/lib/siteUrl";
 
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Aion 2 LFG",
+  title: "Terms of Service â€” Aion 2 LFG",
   description:
     "Aion 2 LFG Terms of Service. Rules and guidelines for using our LFG platform, community features, and Discord services.",
   openGraph: {
-    title: "Terms of Service — Aion 2 LFG",
-    description: "Aion 2 LFG Terms of Service — rules, acceptable use, and platform guidelines.",
+    title: "Terms of Service â€” Aion 2 LFG",
+    description: "Aion 2 LFG Terms of Service â€” rules, acceptable use, and platform guidelines.",
     siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/terms` },
@@ -33,7 +33,7 @@ export default function TermsPage() {
         "@id": `${siteUrl}/terms`,
         url: `${siteUrl}/terms`,
         name: "Terms of Service",
-        description: "Aion 2 LFG Terms of Service — rules, acceptable use, and platform guidelines.",
+        description: "Aion 2 LFG Terms of Service â€” rules, acceptable use, and platform guidelines.",
         isPartOf: { "@type": "WebSite", "@id": `${siteUrl}#website` },
       },
     ],
@@ -84,12 +84,12 @@ export default function TermsPage() {
           </Section>
 
           <Section title="9. Contact">
-            <p>For questions about these terms, contact us via Discord at <a href="https://discord.gg/fvYCMS3G5" className="text-[#00ffff] hover:underline">discord.gg/fvYCMS3G5</a> or email support@uplinklfg.com.</p>
+            <p>For questions about these terms, contact us via Discord at <a href="https://discord.gg/dJUPJ6xXXn" className="text-[#00ffff] hover:underline">discord.gg/dJUPJ6xXXn</a> or email support@uplinklfg.com.</p>
           </Section>
         </div>
 
         <div className="mt-10 text-center">
-          <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#00ffff] transition">← Back to Home</Link>
+          <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#00ffff] transition">â† Back to Home</Link>
         </div>
       </div>
     </div>

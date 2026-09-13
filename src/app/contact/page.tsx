@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { Mail, MessageSquare, Shield } from "lucide-react";
@@ -6,7 +6,7 @@ import { Mail, MessageSquare, Shield } from "lucide-react";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Contact Us — Aion 2 LFG",
+  title: "Contact Us â€” Aion 2 LFG",
   description:
     "Get in touch with the Aion 2 LFG team. Join our Discord community, report issues, or send us an email. We are here to help with platform support.",
   openGraph: {
@@ -55,9 +55,9 @@ export default function ContactPage() {
 
         <div className="space-y-4 mb-12">
           {[
-            { icon: MessageSquare, title: "Discord", desc: "Join our community Discord for fastest support, discussion, and updates.", link: "https://discord.gg/fvYCMS3G5", linkText: "Join Discord →" },
+            { icon: MessageSquare, title: "Discord", desc: "Join our community Discord for fastest support, discussion, and updates.", link: "https://discord.gg/dJUPJ6xXXn", linkText: "Join Discord â†’" },
             { icon: Mail, title: "Email", desc: "For business inquiries or formal requests, send us an email.", link: "mailto:support@uplinklfg.com", linkText: "support@uplinklfg.com" },
-            { icon: Shield, title: "Report an Issue", desc: "Found a bug or want to report a user? Contact us and we will look into it promptly.", link: "/community", linkText: "Report via Community →" },
+            { icon: Shield, title: "Report an Issue", desc: "Found a bug or want to report a user? Contact us and we will look into it promptly.", link: "/community", linkText: "Report via Community â†’" },
           ].map((m) => (
             <div key={m.title} className="bg-gradient-to-br from-[#0a0a16] to-black border border-white/5 rounded-[2rem] p-6 flex items-start gap-4">
               <m.icon className="w-6 h-6 text-[#00ffff] mt-1 shrink-0" />

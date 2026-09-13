@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { getSiteUrl } from "@/lib/siteUrl";
 
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Aion 2 LFG",
+  title: "Privacy Policy â€” Aion 2 LFG",
   description:
     "Aion 2 LFG Privacy Policy. Learn how we collect, use, and protect your data when you use our LFG platform, community features, and Discord integration.",
   openGraph: {
-    title: "Privacy Policy — Aion 2 LFG",
-    description: "Aion 2 LFG Privacy Policy — how we handle your data, cookies, and Discord login information.",
+    title: "Privacy Policy â€” Aion 2 LFG",
+    description: "Aion 2 LFG Privacy Policy â€” how we handle your data, cookies, and Discord login information.",
     siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/privacy` },
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         "@id": `${siteUrl}/privacy`,
         url: `${siteUrl}/privacy`,
         name: "Privacy Policy",
-        description: "Aion 2 LFG Privacy Policy — data collection, cookies, Discord integration, and your rights.",
+        description: "Aion 2 LFG Privacy Policy â€” data collection, cookies, Discord integration, and your rights.",
         isPartOf: { "@type": "WebSite", "@id": `${siteUrl}#website` },
       },
     ],
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <Section title="1. Information We Collect">
             <p>When you log in with Discord, we collect your Discord user ID, username, avatar, and email address. This information is used to create and manage your account on Aion 2 LFG.</p>
-            <p>We also store content you create — community posts, comments, reactions, offers, and notifications — along with timestamps and metadata.</p>
+            <p>We also store content you create â€” community posts, comments, reactions, offers, and notifications â€” along with timestamps and metadata.</p>
           </Section>
 
           <Section title="2. How We Use Your Data">
@@ -81,12 +81,12 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="7. Contact">
-            <p>For privacy-related inquiries, contact us via Discord at <a href="https://discord.gg/fvYCMS3G5" className="text-[#00ffff] hover:underline">discord.gg/fvYCMS3G5</a> or email support@uplinklfg.com.</p>
+            <p>For privacy-related inquiries, contact us via Discord at <a href="https://discord.gg/dJUPJ6xXXn" className="text-[#00ffff] hover:underline">discord.gg/dJUPJ6xXXn</a> or email support@uplinklfg.com.</p>
           </Section>
         </div>
 
         <div className="mt-10 text-center">
-          <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#00ffff] transition">← Back to Home</Link>
+          <Link href="/" className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#00ffff] transition">â† Back to Home</Link>
         </div>
       </div>
     </div>
