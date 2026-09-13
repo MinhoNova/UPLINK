@@ -935,36 +935,40 @@ export default function Aion2TestClubPage({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.005 }}
-                    className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 overflow-hidden flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
+                    className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
                   >
-                    {/* Dark readable zone — full card underlay */}
-                    <div className="absolute inset-0 bg-[#070b1a]" />
-                    {/* Faction VFX banner / gradient — right panel only */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] pointer-events-none">
-                      {offerBg ? (
-                        <img
-                          src={offerBg}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0" style={offerBgStyle} />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
-                      {(isMine || isAdmin) && (
-                        <button
-                          type="button"
-                          onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
-                          title="Change this offer's banner background"
-                          className="pointer-events-auto absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-30 flex h-20 w-7 flex-col items-center justify-center gap-1 rounded-l-md rounded-r-lg border border-cyan-400/30 bg-[#050814]/85 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)] backdrop-blur-md transition-all hover:border-[#ff007f]/60 hover:bg-[#ff007f]/15 hover:text-[#ffb3dd] hover:shadow-[0_0_16px_rgba(255,0,127,0.3)]"
-                        >
-                          <Palette className="h-3.5 w-3.5 rotate-90" />
-                        </button>
-                      )}
+                    {/* Clipped visual layer — keeps rounded corners for dark zone + banner strip */}
+                    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                      {/* Dark readable zone — full card underlay */}
+                      <div className="absolute inset-0 bg-[#070b1a]" />
+                      {/* Faction VFX banner / gradient — right panel only */}
+                      <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]">
+                        {offerBg ? (
+                          <img
+                            src={offerBg}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0" style={offerBgStyle} />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
+                      </div>
                     </div>
+
+                    {(isMine || isAdmin) && (
+                      <button
+                        type="button"
+                        onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
+                        title="Change this offer's banner background"
+                        className="absolute -left-2 top-1/2 -translate-y-1/2 z-30 flex h-20 w-7 flex-col items-center justify-center gap-1 rounded-l-md rounded-r-lg border border-cyan-400/30 bg-[#050814]/85 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)] backdrop-blur-md transition-all hover:border-[#ff007f]/60 hover:bg-[#ff007f]/15 hover:text-[#ffb3dd] hover:shadow-[0_0_16px_rgba(255,0,127,0.3)]"
+                      >
+                        <Palette className="h-3.5 w-3.5 rotate-90" />
+                      </button>
+                    )}
 
                     {/* Creator avatar */}
                     <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
