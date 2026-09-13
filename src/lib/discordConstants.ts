@@ -1,13 +1,13 @@
 ﻿/** Discord server role display names (must match scripts/discord-sync-roles.cjs). */
 export const DISCORD_ROLE = {
-  owner: "ðŸ‘‘ UPLINK Owner",
-  admin: "âš¡ Admin",
-  moderator: "ðŸ›¡ï¸ Moderator",
-  verified: "ðŸ’  Verified Operative",
-  booster: "ðŸ”¥ Elite Booster",
-  missionLead: "ðŸ‘‘ Mission Lead",
-  secretClub: "ðŸŒŸ Secret Club",
-  community: "ðŸ“¡ Community",
+  owner: "👑 UPLINK Owner",
+  admin: "⚡ Admin",
+  moderator: "🛡️ Moderator",
+  verified: "💠 Verified Operative",
+  booster: "🔥 Elite Booster",
+  missionLead: "👑 Mission Lead",
+  secretClub: "🌟 Secret Club",
+  community: "📡 Community",
 } as const;
 
 /** Auto-assigned when a member joins the server (via autorole bot). */
