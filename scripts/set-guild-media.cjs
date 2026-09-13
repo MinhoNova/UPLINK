@@ -2,7 +2,7 @@
  * Sets the UPLINK server icon + banner (and optional invite splash) from site brand images.
  *
  * Usage: npm run discord:media
- *   Defaults: icon = public/og.png, banner = public/og.png
+ *   Defaults: icon = public/og-aion2.png, banner = public/og-aion2.png
  */
 const fs = require("fs");
 const path = require("path");
@@ -32,7 +32,7 @@ if (!TOKEN) {
 const args = process.argv.slice(2);
 const iconArg = args.find((a) => a.startsWith("--icon="))?.split("=")[1];
 const bannerArg = args.find((a) => a.startsWith("--banner="))?.split("=")[1];
-const pathOf = (rel) => (rel && fs.existsSync(path.join(root, rel)) ? path.join(root, rel) : path.join(root, "public", "og.png"));
+const pathOf = (rel) => (rel && fs.existsSync(path.join(root, rel)) ? path.join(root, rel) : path.join(root, "public", "og-aion2.png"));
 const toData = (file) => {
   const mime = file.endsWith(".gif") ? "image/gif" : file.endsWith(".jpg") || file.endsWith(".jpeg") ? "image/jpeg" : "image/png";
   return `data:${mime};base64,${fs.readFileSync(file).toString("base64")}`;
