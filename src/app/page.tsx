@@ -28,6 +28,7 @@ function HomeSeoFooter() {
           {[
             ["/create-offer", "Create an Offer"],
             ["/reviews", "Reviews"],
+            ["/discord", "Discord Server"],
             ["/about", "About"],
             ["/contact", "Contact"],
           ].map(([href, label]) => (
