@@ -27,7 +27,7 @@ export default {
       (async () => {
         // Discord OAuth health monitor (runs at most every 5 min internally)
         try {
-          await runAuthHealthCheck();
+          await runAuthHealthCheck({ env: env as unknown as Record<string, unknown> });
         } catch (err) {
           console.error("[authHealth] check failed:", err);
         }

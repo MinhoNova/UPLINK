@@ -89,17 +89,54 @@ async function sendOwnerDm(text: string): Promise<boolean> {
   return msg.ok;
 }
 
-export async function getAuthHealthStatus(): Promise<AuthHealthRecord | null> {
-  return ((await getKV(KV_KEY)) as AuthHealthRecord | null) ?? null;
+const ENV_KEYS = [
+  "DISCORD_CLIENT_ID",
+  "DISCORD_CLIENT_SECRET",
+  "NEXTAUTH_SECRET",
+  "NEXTAUTH_URL",
+  "AUTH_TRUST_HOST",
+  "DISCORD_BOT_TOKEN",
+] as const;
+
+function applyEnv(env?: Record<string, unknown>) {
+  if (!env) return;
+  for (const key of ENV_KEYS) {
+    const value = env[key];
+    if (typeof value === "string" && value.length > 0) process.env[key] = value;
+  }
 }
 
-export async function runAuthHealthCheck(): Promise<AuthHealthRecord> {
+async function readRecord(): Promise<AuthHealthRecord | null> {
+  try {
+    return ((await getKV(KV_KEY)) as AuthHealthRecord | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeRecord(record: AuthHealthRecord) {
+  try {
+    await setKV(KV_KEY, record);
+  } catch (err) {
+    console.error("[authHealth] failed to persist status:", err);
+  }
+}
+
+export async function getAuthHealthStatus(): Promise<AuthHealthRecord | null> {
+  return readRecord();
+}
+
+export async function runAuthHealthCheck(opts?: {
+  force?: boolean;
+  env?: Record<string, unknown>;
+}): Promise<AuthHealthRecord> {
+  applyEnv(opts?.env);
   await syncAuthEnvFromCloudflare();
 
   const now = Date.now();
-  const prev = (await getKV(KV_KEY)) as AuthHealthRecord | null;
+  const prev = await readRecord();
 
-  if (prev && now - prev.checkedAt < CHECK_INTERVAL_MS) return prev;
+  if (!opts?.force && prev && now - prev.checkedAt < CHECK_INTERVAL_MS) return prev;
 
   const { ok: credOk, status, error, errorDescription } = await discordClientCredentialsOk();
   const hasAuthSecret = Boolean(process.env.NEXTAUTH_SECRET);
@@ -136,6 +173,6 @@ export async function runAuthHealthCheck(): Promise<AuthHealthRecord> {
     record.alertedAt = null;
   }
 
-  await setKV(KV_KEY, record);
+  await writeRecord(record);
   return record;
 }
