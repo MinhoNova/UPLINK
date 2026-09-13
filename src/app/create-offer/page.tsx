@@ -997,11 +997,11 @@ export default function CreateOfferPage() {
                             </div>
 
                             {/* REQUIRED CLASS SLOTS */}
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-                              <p className="mb-3 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+                              <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
                                 <Shield className="h-3.5 w-3.5 text-cyan-400" /> Required Classes (up to 4)
                               </p>
-                              <div className="grid grid-cols-4 gap-2">
+                              <div className="grid grid-cols-4 gap-1.5">
                                 {AION_CLASSES.map((cls) => {
                                   const isSelected = requiredClasses.includes(cls);
                                   const imgName = cls === "Spiritmaster" ? "Elementalist" : cls;
@@ -1016,12 +1016,13 @@ export default function CreateOfferPage() {
                                           setRequiredClasses([...requiredClasses, cls]);
                                         }
                                       }}
-                                      className={`relative flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all cursor-pointer ${isSelected ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}
+                                      className={`relative flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-all cursor-pointer ${isSelected ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_18px_rgba(0,229,255,0.14)]" : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.2] hover:bg-white/[0.06]"}`}
                                     >
                                       <img
                                         src={`/classes/${imgName}.png`}
                                         alt={cls}
-                                        className="h-10 w-10 object-contain"
+                                        className="h-8 w-8 object-contain"
+                                        decoding="async"
                                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
                                       />
                                       <span className={`text-[8px] font-black uppercase tracking-wider ${isSelected ? "text-cyan-300" : "text-gray-400"}`}>{cls}</span>
@@ -1034,7 +1035,7 @@ export default function CreateOfferPage() {
                                   );
                                 })}
                               </div>
-                              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
+                              <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
                                 {requiredClasses.length}/4 selected — accepted players fill these slots
                               </p>
                             </div>

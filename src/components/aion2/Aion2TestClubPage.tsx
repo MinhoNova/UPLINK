@@ -1032,11 +1032,11 @@ export default function Aion2TestClubPage({
                       </div>
                     </div>
                     {classSlots && classSlots.length > 0 && (
-                      <div className="relative z-10 flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-cyan-400/20 bg-[#050814]/70 px-2 py-1.5 shadow-[0_0_18px_rgba(34,211,238,0.08)] backdrop-blur-sm lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
+                      <div className="relative z-10 flex shrink-0 items-center justify-center gap-1 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
                         {classSlots.map((s, i) => (
-                          <span key={i} className={`relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border ${s.filled ? "border-emerald-400/60 bg-emerald-500/15" : "border-cyan-400/40 bg-black/40"}`} title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
-                            <img src={classThumbUrl(s.cls)} alt={s.cls} width={32} height={32} className="h-7 w-7 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                            {s.filled && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border border-black bg-emerald-400" />}
+                          <span key={i} className="relative flex items-center justify-center" title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
+                            <img src={classThumbUrl(s.cls)} alt={s.cls} width={56} height={56} className={`h-14 w-14 object-contain drop-shadow-[0_2px_12px_rgba(34,211,238,0.45)] ${s.filled ? "brightness-110 saturate-125" : "opacity-90"}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                            {s.filled && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border border-[#070b1a] bg-emerald-400" />}
                           </span>
                         ))}
                       </div>

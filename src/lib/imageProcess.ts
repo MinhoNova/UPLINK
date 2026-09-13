@@ -39,14 +39,10 @@ export async function normalizeProfileImage(
 ) {
   const format = assertValidImage(buffer);
   if (opts.isBanner) {
-    const sharp = (await import("sharp")).default;
     if (opts.isGifUpload && format === "gif") {
-      const optimized = await sharp(buffer, { animated: true })
-        .resize(960, 384, { fit: "cover", withoutEnlargement: true })
-        .gif()
-        .toBuffer();
-      return { buffer: optimized, ext: "gif" as const };
+      return { buffer, ext: "gif" as const };
     }
+    const sharp = (await import("sharp")).default;
     const webp = await sharp(buffer)
       .resize(960, 384, { fit: "cover", withoutEnlargement: true })
       .webp({ quality: 85 })

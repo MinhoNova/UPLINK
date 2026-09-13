@@ -120,6 +120,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 
+  if (isBanner && ext === "gif" && normalized.length > 17 * 1024 * 1024) {
+    return NextResponse.json({ error: "Banner too large to store (max 17MB)" }, { status: 413 });
+  }
+
   const mimeType =
     ext === "gif" ? "image/gif" :
     ext === "png" ? "image/png" :

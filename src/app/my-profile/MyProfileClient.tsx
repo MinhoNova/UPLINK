@@ -24,6 +24,7 @@ import {
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
 import {
   importLobbyVfxFromUrl,
   uploadLobbyVfxBlob,
@@ -55,6 +56,7 @@ export default function MyProfileClient() {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
         if (d.notifications) setNotifications(d.notifications);
+        setDefaultBanner(typeof d.siteDefaultBanner === "string" ? d.siteDefaultBanner : "");
         setDataLoaded(true);
       })
       .catch(() => {});
@@ -89,6 +91,8 @@ export default function MyProfileClient() {
   const [nameColor, setNameColor] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [bannerBusy, setBannerBusy] = useState(false);
+  const [defaultBanner, setDefaultBanner] = useState("");
+  const [defaultBannerBusy, setDefaultBannerBusy] = useState(false);
 
   useEffect(() => {
     setTeamName(me?.team?.name || "");
@@ -230,6 +234,67 @@ export default function MyProfileClient() {
     if (ok) {
       setBannerUrl("");
       flash("Banner removed");
+    }
+  };
+
+  const handleDefaultBannerFile = async (file: File) => {
+    if (file.size > 24 * 1024 * 1024) {
+      flash("File too large (max 24MB)", "err");
+      return;
+    }
+    setDefaultBannerBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      fd.append("field", "banner");
+      const res = await fetch("/api/user/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        flash(data.error || "Upload failed", "err");
+        return;
+      }
+      const save = await fetch("/api/admin/default-banner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banner: data.url }),
+      });
+      const saved = await save.json();
+      if (!save.ok) {
+        flash(saved.error || "Save failed", "err");
+        return;
+      }
+      setDefaultBanner(data.url);
+      window.dispatchEvent(new Event("data-refresh"));
+      refresh();
+      flash("Default banner set for everyone");
+    } catch {
+      flash("Upload failed", "err");
+    } finally {
+      setDefaultBannerBusy(false);
+    }
+  };
+
+  const resetDefaultBanner = async () => {
+    setDefaultBannerBusy(true);
+    try {
+      const save = await fetch("/api/admin/default-banner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banner: null }),
+      });
+      const saved = await save.json();
+      if (!save.ok) {
+        flash(saved.error || "Save failed", "err");
+        return;
+      }
+      setDefaultBanner("");
+      window.dispatchEvent(new Event("data-refresh"));
+      refresh();
+      flash("Default banner reset to built-in");
+    } catch {
+      flash("Request failed", "err");
+    } finally {
+      setDefaultBannerBusy(false);
     }
   };
 
@@ -678,6 +743,47 @@ export default function MyProfileClient() {
                 )}
               </div>
             </div>
+
+            {isPrimaryAdmin(myId, me?.username) && (
+              <div className="mt-6 pt-5 border-t border-cyan-500/20">
+                <p className="text-[9px] font-black uppercase tracking-widest text-cyan-300 mb-2">
+                  Site default banner <span className="text-slate-700 normal-case tracking-normal">(shown on every member profile until they set their own)</span>
+                </p>
+                <div className="w-full h-16 rounded-xl overflow-hidden border border-cyan-500/25 bg-black/40 relative mb-3">
+                  {defaultBanner ? (
+                    <img src={defaultBanner} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-600">Built-in default</div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all text-[10px] font-black uppercase tracking-widest text-cyan-200">
+                    <Upload className="w-3.5 h-3.5" />
+                    {defaultBannerBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : defaultBanner ? "Replace Default" : "Set Default"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={defaultBannerBusy}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = "";
+                        if (f) void handleDefaultBannerFile(f);
+                      }}
+                    />
+                  </label>
+                  {defaultBanner && (
+                    <button
+                      onClick={resetDefaultBanner}
+                      disabled={defaultBannerBusy}
+                      className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition-all text-[10px] font-black uppercase tracking-widest"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Name Color */}
             <div className="mt-6 pt-5 border-t border-blue-900/30">

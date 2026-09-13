@@ -100,12 +100,13 @@ export async function GET(req: Request) {
     if (scoped.registeredUsers && Array.isArray(scoped.registeredUsers)) {
       const existing = scoped.registeredUsers.find((u: any) => String(u.id) === String(auth.user.id));
       if (!existing) {
+        const siteDefaultBanner = ((await getKV("siteDefaultBanner")) as string) || DEFAULT_PROFILE_BANNER;
         const freshUser = {
           id: auth.user.id,
           username: auth.user.username,
           name: auth.user.name ?? null,
           avatar: auth.user.image ?? null,
-          banner: DEFAULT_PROFILE_BANNER,
+          banner: siteDefaultBanner,
           lastSeenAt: Date.now(),
           lastKnownIp: null,
           stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },
