@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff
+  Bell, BellOff, Loader2
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -18,7 +18,7 @@ import {
   OFFER_BANNER_BG_DEFAULT,
 } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
-import { resolveOfferBannerImage } from "@/lib/vfxAssets";
+import { resolveOfferBannerImage, resolveVfxBannerUrl, type VfxEntry } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import {
@@ -110,6 +110,9 @@ export default function Aion2TestClubPage({
   const [applyLevel, setApplyLevel] = useState("60");
   const [applyNote, setApplyNote] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [siteBgOpen, setSiteBgOpen] = useState(false);
+  const [siteBgSaving, setSiteBgSaving] = useState(false);
+  const [siteBgError, setSiteBgError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -675,6 +678,35 @@ export default function Aion2TestClubPage({
       .catch(() => {});
     return () => { cancelled = true; };
   }, [meId]);
+
+  const siteVfxOptions = useMemo(() => {
+    if (!isAdmin) return [];
+    const meUser = registeredUsers.find((u: any) => String(u.id) === meId);
+    const list = Array.isArray(meUser?.userVfx) ? (meUser.userVfx as VfxEntry[]) : [];
+    return list.map((entry) => resolveVfxBannerUrl(entry)).filter(Boolean);
+  }, [isAdmin, registeredUsers, meId]);
+
+  const applySiteBg = async (src: string) => {
+    setSiteBgSaving(true);
+    setSiteBgError("");
+    try {
+      const res = await fetch("/api/site/hero-vfx", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vfx: src }),
+      });
+      if (res.ok) {
+        setHeroVfx(src);
+      } else {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        setSiteBgError(d?.error || "Failed to set background");
+      }
+    } catch {
+      setSiteBgError("Network error");
+    } finally {
+      setSiteBgSaving(false);
+    }
+  };
 
   const deleteOffer = async (l: any) => {
     if (!meId || deletingId) return;
@@ -1549,6 +1581,67 @@ export default function Aion2TestClubPage({
           })(),
           document.body
         )
+      )}
+
+      {/* ── SITE BACKGROUND QUICK PICKER (admin, lobby-side) ── */}
+      {isAdmin && meId && (
+        <div className="fixed bottom-5 right-5 z-[75] flex flex-col items-end gap-2">
+          <AnimatePresence>
+            {siteBgOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.96 }}
+                transition={{ duration: 0.18 }}
+                className="w-72 overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f26]/95 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
+                  <span className="text-[9px] font-black uppercase tracking-[0.25em] text-cyan-300">Site Background</span>
+                  <button type="button" onClick={() => setSiteBgOpen(false)} className="text-white/50 transition-colors hover:text-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="max-h-[55vh] space-y-2 overflow-y-auto p-3">
+                  <button
+                    type="button"
+                    onClick={() => applySiteBg("")}
+                    className={`w-full rounded-xl border p-2 text-left transition-all ${!heroVfx ? "border-cyan-400/60 bg-cyan-500/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/90">Default (Scenic)</span>
+                  </button>
+                  {siteVfxOptions.length === 0 && (
+                    <p className="px-1 text-[9px] leading-relaxed text-white/45">
+                      No custom backgrounds yet — upload from My Profile → Lobby Store, then pick here.
+                    </p>
+                  )}
+                  {siteVfxOptions.map((thumb) => (
+                    <button
+                      key={thumb}
+                      type="button"
+                      onClick={() => applySiteBg(thumb)}
+                      className={`w-full overflow-hidden rounded-xl border transition-all ${heroVfx === thumb ? "border-cyan-400/60" : "border-white/10 hover:border-white/25"}`}
+                    >
+                      <img src={thumb} alt="" loading="lazy" decoding="async" className="h-20 w-full object-cover" />
+                    </button>
+                  ))}
+                  {siteBgError && <p className="px-1 text-[9px] text-red-400">{siteBgError}</p>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button
+            type="button"
+            title="Change site background"
+            onClick={() => setSiteBgOpen((open) => !open)}
+            className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${
+              siteBgOpen
+                ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-300"
+                : "border-white/15 bg-[#0a0f26]/80 text-white/70 hover:border-cyan-400/50 hover:text-white"
+            }`}
+          >
+            {siteBgSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+          </button>
+        </div>
       )}
 
       {/* ── AUTO-APPLY SETTINGS MODAL ── */}
