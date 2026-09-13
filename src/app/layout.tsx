@@ -42,9 +42,6 @@ export const metadata: Metadata = {
     "aion 2 classes",
     "aion 2 leveling",
   ],
-  alternates: {
-    canonical: siteUrl,
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
