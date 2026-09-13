@@ -860,7 +860,7 @@ export default function Aion2TestClubPage({
       {/* ══════════════════════════════════════════════════════════
           MAIN CONTENT GRID
           ══════════════════════════════════════════════════════════ */}
-      <main className="max-w-[1600px] mx-auto px-6 pb-24 relative z-20">
+      <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-8">
 
           {/* Center Column: Offers */}

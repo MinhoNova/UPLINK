@@ -4,7 +4,7 @@ import { resolveHeroBg } from "@/lib/heroBg";
 
 function HomeSeoFooter() {
   return (
-    <footer className="relative border-t border-white/[0.06] bg-[#050814] px-6 py-16 text-white">
+    <footer className="relative mt-16 border-t border-white/[0.06] bg-[#050814] px-6 py-16 text-white">
       <div className="mx-auto max-w-[1400px]">
         <h1 className="text-xl font-black uppercase tracking-[0.18em] text-cyan-100 sm:text-2xl">
           Aion 2 LFG — Find Your Squad for Every Dungeon, Raid &amp; PvP Battle
