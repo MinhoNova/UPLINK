@@ -22,6 +22,7 @@
     "discord:cleanup": "node scripts/cleanup-wow-discord.cjs",
     "discord:beautify": "node scripts/beautify-server.cjs",
     "discord:inspect": "node scripts/inspect-discord.cjs",
+    "discord:emoji": "node scripts/upload-emoji.cjs",
     "og:generate": "node scripts/generate-og.cjs",
     "prebuild": "node scripts/generate-og.cjs"
   },
