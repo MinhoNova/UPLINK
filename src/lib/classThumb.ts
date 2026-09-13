@@ -1,16 +1,16 @@
 import { aionClassRole } from "@/lib/aionClassMeta";
 
-/** Real Aion 2 class portraits served from /classes (folder: Classes/ at project root). */
+/** Pre-rasterized Aion 2 class portraits, sized for UI use. */
 const AION_CLASS_THUMBS: Record<string, string> = {
-  Templar: "/classes/Templar.png",
-  Gladiator: "/classes/Gladiator.png",
-  Assassin: "/classes/Assassin.png",
-  Ranger: "/classes/Ranger.png",
-  Sorcerer: "/classes/Sorcerer.png",
-  Spiritmaster: "/classes/Elementalist.png",
-  Elementalist: "/classes/Elementalist.png",
-  Cleric: "/classes/Cleric.png",
-  Chanter: "/classes/Chanter.png",
+  Templar: "/classes-thumb/Templar.webp",
+  Gladiator: "/classes-thumb/Gladiator.webp",
+  Assassin: "/classes-thumb/Assassin.webp",
+  Ranger: "/classes-thumb/Ranger.webp",
+  Sorcerer: "/classes-thumb/Sorcerer.webp",
+  Spiritmaster: "/classes-thumb/Elementalist.webp",
+  Elementalist: "/classes-thumb/Elementalist.webp",
+  Cleric: "/classes-thumb/Cleric.webp",
+  Chanter: "/classes-thumb/Chanter.webp",
 };
 
 /** Class thumbnail — real portrait when the name is a known Aion class. */

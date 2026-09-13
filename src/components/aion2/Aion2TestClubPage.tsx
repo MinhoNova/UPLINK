@@ -987,7 +987,7 @@ export default function Aion2TestClubPage({
                     </div>
 
                     {/* Offer Details */}
-                    <div className="relative z-10 flex-1 min-w-0">
+                    <div className="relative z-10 flex-1 min-w-0 lg:max-w-[42%]">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
                           {String(offer.category || "dungeon").toUpperCase()}
@@ -1007,6 +1007,15 @@ export default function Aion2TestClubPage({
                             {String(offer.serverRegion).toUpperCase()}
                           </span>
                         )}
+                        {owner?.team?.name && (
+                          <span
+                            className="flex max-w-[180px] items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/[0.08] px-2 py-0.5 text-[9px] font-black tracking-wide text-amber-200"
+                            title={`Team: ${owner.team.name}`}
+                          >
+                            <Users className="h-3 w-3 shrink-0 text-amber-300" />
+                            <span className="truncate">{owner.team.name}</span>
+                          </span>
+                        )}
                         {classSlots ? (
                           <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                             <Users className="w-3.5 h-3.5 text-cyan-400" />
@@ -1021,20 +1030,17 @@ export default function Aion2TestClubPage({
                           </span>
                         )}
                       </div>
-                      {classSlots && classSlots.length > 0 && (
-                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                          {classSlots.map((s, i) => {
-                            const imgName = s.cls === "Spiritmaster" ? "Elementalist" : s.cls;
-                            return (
-                              <span key={i} className={`relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border ${s.filled ? "border-emerald-400/60 bg-emerald-500/15" : "border-cyan-400/40 bg-black/40"}`} title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
-                                <img src={`/classes/${imgName}.png`} alt={s.cls} className="h-6 w-6 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                                {s.filled && <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border border-black" />}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
+                    {classSlots && classSlots.length > 0 && (
+                      <div className="relative z-10 flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-cyan-400/20 bg-[#050814]/70 px-2 py-1.5 shadow-[0_0_18px_rgba(34,211,238,0.08)] backdrop-blur-sm lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
+                        {classSlots.map((s, i) => (
+                          <span key={i} className={`relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border ${s.filled ? "border-emerald-400/60 bg-emerald-500/15" : "border-cyan-400/40 bg-black/40"}`} title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
+                            <img src={classThumbUrl(s.cls)} alt={s.cls} width={32} height={32} className="h-7 w-7 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                            {s.filled && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border border-black bg-emerald-400" />}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="relative z-10 flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                       {applied ? (
                         <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md">

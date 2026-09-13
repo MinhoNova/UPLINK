@@ -35,11 +35,11 @@ async function rasterize(svgPath, size) {
 async function main() {
   if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const svgs = fs.readdirSync(SVG_DIR).filter((f) => f.endsWith(".svg"));
+  const sourceImages = fs.readdirSync(SVG_DIR).filter((f) => /\.(svg|png)$/i.test(f));
   let totalBytes = 0;
 
-  for (const file of svgs) {
-    const base = file.replace(/\.svg$/i, "");
+  for (const file of sourceImages) {
+    const base = file.replace(/\.(svg|png)$/i, "");
     const size = ROLE_NAMES.has(base.toUpperCase()) || SMALL_NAMES.has(base)
       ? ROLE_NAMES.has(base.toUpperCase())
         ? ROLE_PX
@@ -60,7 +60,7 @@ async function main() {
     }
   }
 
-  console.log(`\nDone — ${svgs.length} WebP thumbs, ${totalBytes} B total`);
+  console.log(`\nDone — ${sourceImages.length} WebP thumbs, ${totalBytes} B total`);
 }
 
 main().catch((err) => {
