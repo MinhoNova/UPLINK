@@ -5,6 +5,14 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 const productionUrl = "https://aion2lfg.com";
 
 const nextConfig: NextConfig = {
+  // Sitemap is only served at /sitemap.xml; forwarding the bare paths prevents
+  // Google Search Console from ever seeing an HTML 404 at /sitemap or /sitemap/.
+  async redirects() {
+    return [
+      { source: "/sitemap", destination: "/sitemap.xml", permanent: true },
+      { source: "/sitemap/", destination: "/sitemap.xml", permanent: true },
+    ];
+  },
   // NextAuth reads NEXTAUTH_URL in the client bundle; without this it defaults to localhost:3000.
   env: {
     NEXTAUTH_URL:
