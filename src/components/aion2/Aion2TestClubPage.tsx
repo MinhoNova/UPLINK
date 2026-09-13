@@ -299,11 +299,11 @@ export default function Aion2TestClubPage({
         {/* Dark readable zone — same as offer cards */}
         <div className="absolute inset-0 bg-[#070b1a]" />
         {bgPoster ? (
-          <div className="absolute right-0 top-0 bottom-0 w-[50%] pointer-events-none overflow-hidden">
-            <img src={bgPoster} alt="" className="absolute inset-0 w-full h-full object-contain" loading="lazy" decoding="async" />
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <img src={bgPoster} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
           </div>
         ) : (
-          <div className="absolute right-0 top-0 bottom-0 w-[50%] pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute inset-0" style={offerBgStyle} />
           </div>
         )}
@@ -953,6 +953,7 @@ export default function Aion2TestClubPage({
                         ) : (
                           <div className="absolute inset-0" style={offerBgStyle} />
                         )}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
                       </div>
                     </div>
 
