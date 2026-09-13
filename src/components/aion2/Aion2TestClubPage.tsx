@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff
+  Bell, BellOff, Palette, Loader2
 } from "lucide-react";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -18,7 +18,7 @@ import {
   OFFER_BANNER_BG_DEFAULT,
 } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
-import { resolveOfferBannerImage } from "@/lib/vfxAssets";
+import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import {
@@ -106,6 +106,9 @@ export default function Aion2TestClubPage({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [bgEditOfferId, setBgEditOfferId] = useState<string | null>(null);
+  const [bgSavingOfferId, setBgSavingOfferId] = useState<string | null>(null);
+  const [bgError, setBgError] = useState("");
   const autoAttemptedRef = useRef<Set<string>>(new Set());
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
   const [hoverCard, setHoverCard] = useState<{ userId: string; rect: { top: number; left: number; bottom: number } | null; owner: any; pic: string | null } | null>(null);
@@ -669,6 +672,32 @@ export default function Aion2TestClubPage({
     return () => { cancelled = true; };
   }, [meId]);
 
+  const applyOfferBg = async (offerId: string, bg: string) => {
+    setBgSavingOfferId(offerId);
+    setBgError("");
+    try {
+      const res = await fetch("/api/lobbies", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ lobbyId: offerId, customBg: bg }),
+      });
+      if (res.ok) {
+        setLobbies((prev) =>
+          prev.map((l: { id?: string; customBg?: string }) => (String(l.id) === offerId ? { ...l, customBg: bg } : l))
+        );
+        setBgEditOfferId(null);
+      } else {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        setBgError(d?.error || "Could not update banner");
+      }
+    } catch {
+      setBgError("Network error");
+    } finally {
+      setBgSavingOfferId(null);
+    }
+  };
+
   const deleteOffer = async (l: any) => {
     if (!meId || deletingId) return;
     setDeletingId(String(l.id));
@@ -1010,6 +1039,15 @@ export default function Aion2TestClubPage({
                           className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"
                         >
                           <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
+                        </button>
+                      )}
+                      {(isMine || isAdmin) && (
+                        <button
+                          onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
+                          title="Change this offer's banner background"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-[#ff007f]/40 hover:text-[#ffb3dd] hover:bg-[#ff007f]/10 transition-all backdrop-blur-md"
+                        >
+                          <Palette className="w-3 h-3" /> Banner
                         </button>
                       )}
                       {(isMine || isAdmin) && (
@@ -1530,6 +1568,73 @@ export default function Aion2TestClubPage({
           document.body
         )
       )}
+
+      {/* ── OFFER BANNER BACKGROUND PICKER ── */}
+      {bgEditOfferId && (() => {
+        const edOffer = lobbies.find((l: { id?: string }) => String(l.id) === bgEditOfferId) || null;
+        const edOwner = edOffer ? lobbyOwner(edOffer) : null;
+        const edCurrent = String(edOffer?.customBg || "").trim();
+        const edThumbs: Array<{ src: string; thumb: string }> = (Array.isArray(edOwner?.userVfx) ? (edOwner.userVfx as VfxEntry[]) : [])
+          .map((entry) => ({ src: resolveVfxSrc(entry), thumb: resolveVfxBannerUrl(entry) }))
+          .filter((t) => Boolean(t.src) && Boolean(t.thumb));
+        return (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0a0f26] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.7)]"
+            >
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-[#ff007f]" />
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-100">Banner Background</h3>
+                </div>
+                <button type="button" onClick={() => setBgEditOfferId(null)} className="text-white/50 transition-colors hover:text-white">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => applyOfferBg(bgEditOfferId!, "")}
+                disabled={bgSavingOfferId === bgEditOfferId}
+                className={`w-full rounded-2xl border p-4 text-left transition-all disabled:opacity-50 ${!edCurrent ? "border-cyan-400/60 bg-cyan-500/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}
+              >
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/90">Default</p>
+                <p className="text-[8px] text-white/45 mt-1">My active background (or the offer&apos;s own image)</p>
+              </button>
+
+              <p className="mt-4 mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">My backgrounds</p>
+              {edThumbs.length === 0 ? (
+                <p className="rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-4 text-center text-[9px] leading-relaxed text-white/40">
+                  No custom backgrounds yet — upload from My Profile → Lobby Store, then pick here.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 max-h-[38vh] overflow-y-auto pr-1">
+                  {edThumbs.map((t) => (
+                    <button
+                      key={t.src}
+                      type="button"
+                      onClick={() => applyOfferBg(bgEditOfferId!, t.src)}
+                      disabled={bgSavingOfferId === bgEditOfferId}
+                      className={`relative aspect-video overflow-hidden rounded-xl border-2 transition-all disabled:opacity-50 ${edCurrent === t.src ? "border-[#ff007f]/70 shadow-[0_0_18px_rgba(255,0,127,0.25)]" : "border-white/10 hover:border-white/30"}`}
+                    >
+                      <img src={t.thumb} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                      {edCurrent === t.src && (
+                        <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff007f] text-black">
+                          <Check className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {bgError && <p className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-red-400">{bgError}</p>}
+            </motion.div>
+          </div>
+        );
+      })()}
 
       {/* ── AUTO-APPLY SETTINGS MODAL ── */}
       <AionAutoApplyModal

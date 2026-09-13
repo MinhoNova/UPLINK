@@ -74,19 +74,21 @@ export function resolveLobbyBannerFallback(lobby: { category?: string } | null |
 
 /**
  * Banner for offer cards & ongoing missions.
- * Priority: active Lobby background (set in My Profile) → offer image (customBg → dungeon/leveling pick) → category fallback.
+ * Priority: per-offer image (customBg) → active Lobby background (set in My Profile) → category fallback.
+ * Every offer keeps its own banner unless the owner explicitly clears it back to the default chain.
  * The profile image/GIF is never used as the lobby banner.
  */
 export function resolveOfferBannerImage(
-  lobby: { customBg?: string; category?: string } | null | undefined,
+  lobby: { customBg?: string; customBgPoster?: string; category?: string } | null | undefined,
   ownerUser: any,
   gate: "showOnBanner" | "showOnOngoing" = "showOnBanner"
 ): string | null {
   const offerImg = String(lobby?.customBg || "").trim();
+  if (offerImg) return resolveLobbyBannerAnimatedSrc(lobby as { customBg?: string; customBgPoster?: string }, ownerUser, ownerUser?.activeVfx || null);
   const vfxEnabled = ownerUser && ownerUser.vfxSettings?.[gate] !== false;
   if (vfxEnabled) {
     const bg = String(ownerUser.activeVfx || "").trim();
     if (bg) return resolveLobbyBannerAnimatedSrc({ customBg: "" }, ownerUser, bg);
   }
-  return offerImg || resolveLobbyBannerFallback(lobby);
+  return resolveLobbyBannerFallback(lobby);
 }
