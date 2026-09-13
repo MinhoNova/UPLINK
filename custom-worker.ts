@@ -1,6 +1,7 @@
 // @ts-ignore `.open-next/worker.js` is generated at build time
 import { default as handler } from "./.open-next/worker.js";
 import { syncGuildAutoRoles } from "./src/lib/discordGuild";
+import { runAuthHealthCheck } from "./src/lib/authHealth";
 
 export default {
   fetch: async (request: Request, env: CloudflareEnv, ctx: ExecutionContext) => {
@@ -18,6 +19,17 @@ export default {
           ]).then((r: any) => { if (r?.granted > 0) console.log(`[autorole] granted=${r.granted}`); });
         } catch {
           // timeout is fine
+        }
+      })()
+    );
+
+    ctx.waitUntil(
+      (async () => {
+        // Discord OAuth health monitor (runs at most every 5 min internally)
+        try {
+          await runAuthHealthCheck();
+        } catch (err) {
+          console.error("[authHealth] check failed:", err);
         }
       })()
     );
