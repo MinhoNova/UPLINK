@@ -9,6 +9,7 @@ import { canViewPost } from "@/lib/postVisibility";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
 import { sanitizePlainText, sanitizeImageUrl } from "@/lib/sanitizer";
+import { ADMIN_IDS } from "@/lib/roles";
 
 const MAX_DAILY_POSTS = 10;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -236,7 +237,7 @@ export async function DELETE(req: NextRequest) {
   const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
   if (post.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (post[0].userId !== (session.user as any).id && (session.user as any).id !== "1497295886223544471") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (post[0].userId !== (session.user as any).id && !ADMIN_IDS.includes(String((session.user as any).id))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   await db.delete(reactions).where(eq(reactions.postId, postId));
   await db.delete(reports).where(eq(reports.postId, postId));

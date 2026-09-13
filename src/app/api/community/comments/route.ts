@@ -6,6 +6,7 @@ import { asc, eq } from "drizzle-orm";
 import { getKV, initTables } from "@/lib/db";
 import { sanitizePlainText } from "@/lib/sanitizer";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
+import { ADMIN_IDS } from "@/lib/roles";
 export async function GET(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);
@@ -81,7 +82,7 @@ export async function DELETE(req: NextRequest) {
   const comment = await db.select().from(comments).where(eq(comments.id, commentId)).limit(1);
   if (comment.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (comment[0].userId !== (session.user as any).id && (session.user as any).id !== "1497295886223544471") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (comment[0].userId !== (session.user as any).id && !ADMIN_IDS.includes(String((session.user as any).id))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   await db.delete(comments).where(eq(comments.id, commentId));
 

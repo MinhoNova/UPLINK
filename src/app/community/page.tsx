@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { resolveProfileBanner, resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
 
 const REACTION_TYPES = [
   { type: "LOL", icon: "😂", label: "LOL" },
@@ -108,7 +109,7 @@ export default function CommunityPage() {
 
    const currentUserId = (session?.user as any)?.id || "";
   const currentUserHandle = (session?.user as any)?.username || "";
-  const isAdmin = currentUserId === "1497295886223544471" || currentUserHandle === "minhonovazen";
+  const isAdmin = isPrimaryAdmin(currentUserId, currentUserHandle);
 
   const openProfile = (userId: string) => {
     window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId } }));
@@ -739,7 +740,7 @@ export default function CommunityPage() {
                                     <div className="flex items-center gap-2">
                                       <span className="text-[11px] font-black text-white/80 truncate">{renderAuthorName(c.userId, c.userName)}</span>
                                       <span className="text-[8px] text-gray-500">{new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                                      {String(c.userId) === String(currentUserId) && (
+                                      {(String(c.userId) === String(currentUserId) || isAdmin) && (
                                         <button onClick={() => deleteComment(post.id, c.id)} className="ml-auto text-gray-600 hover:text-red-400 transition">
                                           <X className="w-2.5 h-2.5" />
                                         </button>
@@ -787,7 +788,7 @@ export default function CommunityPage() {
                                               <div className="flex items-center gap-1.5">
                                                 <span className="text-[10px] font-black text-white/70 truncate">{renderAuthorName(r.userId, r.userName)}</span>
                                                 <span className="text-[7px] text-gray-500">{new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                                                {String(r.userId) === String(currentUserId) && (
+                                                {(String(r.userId) === String(currentUserId) || isAdmin) && (
                                                   <button onClick={() => deleteComment(post.id, r.id)} className="ml-auto text-gray-600 hover:text-red-400 transition">
                                                     <X className="w-2 h-2" />
                                                   </button>
