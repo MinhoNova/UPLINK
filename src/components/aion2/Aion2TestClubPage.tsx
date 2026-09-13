@@ -12,6 +12,7 @@ import {
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
+import { getDiscordInviteUrl } from "@/lib/discordConstants";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
@@ -794,6 +795,25 @@ export default function Aion2TestClubPage() {
                 </span>
                 <span className="text-blue-300 group-hover:translate-x-1 transition-transform font-bold">›</span>
               </div>
+            </motion.a>
+          </motion.div>
+
+          {/* JOIN DISCORD Server CTA */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+          >
+            <motion.a
+              href={getDiscordInviteUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative group mt-5 block rounded-full border border-[#5865F2]/45 bg-[#0a0f26]/60 px-12 py-3.5 text-[10px] font-black tracking-[0.3em] uppercase text-[#aab8ff] transition-all backdrop-blur-md hover:border-[#5865F2] hover:text-white hover:bg-[#141b3d] hover:shadow-[0_0_35px_rgba(88,101,242,0.4)] active:scale-95"
+            >
+              <span className="flex items-center justify-center gap-3">
+                <span>{t("hero_discord") || "JOIN OUR DISCORD"}</span>
+                <span className="text-[#aab8ff] group-hover:translate-x-1 transition-transform font-bold">›</span>
+              </span>
             </motion.a>
           </motion.div>
 
