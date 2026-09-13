@@ -959,7 +959,7 @@ export default function Aion2TestClubPage({
                           type="button"
                           onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
                           title="Change this offer's banner background"
-                          className="pointer-events-auto absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/40 bg-[#050814]/85 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)] backdrop-blur-md transition-all hover:border-[#ff007f]/60 hover:bg-[#ff007f]/15 hover:text-[#ffb3dd] hover:shadow-[0_0_16px_rgba(255,0,127,0.3)]"
+                          className="pointer-events-auto absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/40 bg-[#050814]/85 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)] backdrop-blur-md transition-all hover:border-[#ff007f]/60 hover:bg-[#ff007f]/15 hover:text-[#ffb3dd] hover:shadow-[0_0_16px_rgba(255,0,127,0.3)]"
                         >
                           <Palette className="h-3.5 w-3.5" />
                         </button>
