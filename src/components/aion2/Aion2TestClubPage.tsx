@@ -1023,12 +1023,12 @@ export default function Aion2TestClubPage({
                       <div className="relative z-10 w-full mt-2">
                         <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1">
                           {classSlots.map((s, i) => (
-                            <div key={i} className={`flex flex-col items-center gap-1 shrink-0 ${s.filled ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                            <div key={i} className="flex flex-col items-center gap-1 shrink-0">
                               <div className="relative">
-                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={40} height={40} className={`w-10 h-10 object-contain drop-shadow-[0_2px_8px_rgba(34,211,238,0.45)] ${s.filled ? 'brightness-110 saturate-125' : ''}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={40} height={40} className={`w-10 h-10 object-contain drop-shadow-[0_2px_8px_rgba(34,211,238,0.45)] ${s.filled ? 'brightness-110 saturate-125' : 'opacity-60'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                                 {s.filled && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border border-[#070b1a]" />}
                               </div>
-                              <span className={`text-[7px] font-black uppercase tracking-wider whitespace-nowrap ${s.filled ? 'text-cyan-300' : 'text-gray-500'}`}>{s.cls}</span>
+                              <span className={`text-[7px] font-black uppercase tracking-wider whitespace-nowrap ${s.filled ? 'text-emerald-300' : 'text-cyan-300'}`}>{s.cls}</span>
                             </div>
                           ))}
                         </div>
