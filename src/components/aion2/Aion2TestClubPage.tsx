@@ -989,15 +989,6 @@ export default function Aion2TestClubPage({
 
                     {/* Offer Details */}
                     <div className="relative z-10 flex-1 min-w-0 lg:max-w-[42%]">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
-                          {String(offer.category || "dungeon").toUpperCase()}
-                        </span>
-                        {applied && (
-                          <span className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300">
-                            Applied
-                          </span>
-                        )}
                       </div>
                       <h4 className="mt-1.5 text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
                         {offer.title || `${offer.runsCount || 1}× Boost`}
@@ -1022,12 +1013,7 @@ export default function Aion2TestClubPage({
                             <span className="truncate">{owner.team.name}</span>
                           </span>
                         )}
-                        {classSlots ? (
-                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
-                            <Users className="w-3.5 h-3.5 text-cyan-400" />
-                            {openRolesLabel(offer)}
-                          </span>
-                        ) : (
+                        {classSlots ? null : (
                           <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                             <Users className="w-3.5 h-3.5 text-cyan-400" />
                             {openRoles.length > 0
@@ -1041,7 +1027,7 @@ export default function Aion2TestClubPage({
                       <div className="relative z-10 flex shrink-0 items-center justify-center gap-1 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
                         {classSlots.map((s, i) => (
                           <span key={i} className="relative flex items-center justify-center" title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
-                            <img src={classThumbUrl(s.cls)} alt={s.cls} width={56} height={56} className={`h-14 w-14 object-contain drop-shadow-[0_2px_12px_rgba(34,211,238,0.45)] ${s.filled ? "brightness-110 saturate-125" : "opacity-90"}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                            <img src={classThumbUrl(s.cls)} alt={s.cls} width={56} height={56} className={`h-14 w-14 object-contain drop-shadow-[0_2px_12px_rgba(34,211,238,0.45)] ${s.filled ? "brightness-110 saturate-125 opacity-100" : "opacity-40 grayscale"}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                             {s.filled && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border border-[#070b1a] bg-emerald-400" />}
                           </span>
                         ))}
