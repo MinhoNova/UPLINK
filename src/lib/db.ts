@@ -50,7 +50,11 @@ export async function getKVPairs(): Promise<Record<string, any>> {
     const { results } = await d1.prepare("SELECT key, value FROM kv_store").all<{ key: string; value: string }>();
     const out: Record<string, any> = {};
     for (const row of results ?? []) {
-      out[row.key] = JSON.parse(row.value);
+      try {
+        out[row.key] = JSON.parse(row.value);
+      } catch {
+        out[row.key] = row.value;
+      }
     }
     return out;
   }
