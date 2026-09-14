@@ -6,9 +6,9 @@ function HomeSeoFooter() {
   return (
     <footer className="relative mt-16 border-t border-white/[0.06] bg-[#050814] px-6 py-16 text-white">
       <div className="mx-auto max-w-[1400px]">
-        <h1 className="text-xl font-black uppercase tracking-[0.18em] text-cyan-100 sm:text-2xl">
+        <h2 className="text-xl font-black uppercase tracking-[0.18em] text-cyan-100 sm:text-2xl">
           Aion 2 LFG — Find Your Squad for Every Dungeon, Raid &amp; PvP Battle
-        </h1>
+        </h2>
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-400">
           <span className="font-bold text-slate-200">Aion 2 LFG</span> (aion2lfg.com) is the
           LFG group finder and boosting hub for NCsoft&apos;s Aion 2. Post an offer or join a
@@ -28,11 +28,16 @@ function HomeSeoFooter() {
         </p>
         <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           {[
+            ["/", "Home"],
             ["/create-offer", "Create an Offer"],
             ["/reviews", "Reviews"],
             ["/discord", "Discord Server"],
-            ["/about", "About"],
+            ["/about", "About Us"],
             ["/contact", "Contact"],
+            ["/pvp", "PvP"],
+            ["/leveling", "Leveling"],
+            ["/dungeons", "Dungeons"],
+            ["/raids", "Raids"],
           ].map(([href, label]) => (
             <a key={href} href={href} className="transition-colors hover:text-cyan-300">
               {label}
@@ -46,6 +51,10 @@ function HomeSeoFooter() {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export const metadata = {
+  alternates: { canonical: "https://aion2lfg.com" },
+};
 
 export default async function HomePage() {
   let initialHeroBg: string | undefined;

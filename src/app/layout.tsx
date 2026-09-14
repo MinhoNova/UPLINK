@@ -85,6 +85,16 @@ const seoJsonLd = JSON.stringify({
       description:
         "LFG group finder for Aion 2 — find squads for dungeons, raids, PvP (Abyss Points farming), and leveling.",
       inLanguage: "en",
+      potentialAction: [
+        {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${siteUrl}/lfg/EU/dungeons`,
+          },
+          "query-input": "required name=search_term_string",
+        },
+      ],
     },
     {
       "@type": "Organization",
@@ -94,6 +104,18 @@ const seoJsonLd = JSON.stringify({
       sameAs: [
         discordInviteUrl,
         `${siteUrl}/discord`,
+      ],
+    },
+    {
+      "@type": "SiteNavigationElement",
+      name: ["Home", "Create Offer", "Discord Server", "About", "Contact", "Reviews"],
+      url: [
+        siteUrl,
+        `${siteUrl}/create-offer`,
+        `${siteUrl}/discord`,
+        `${siteUrl}/about`,
+        `${siteUrl}/contact`,
+        `${siteUrl}/reviews`,
       ],
     },
   ],
