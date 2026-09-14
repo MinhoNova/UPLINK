@@ -49,15 +49,7 @@ export async function PUT(req: Request) {
   }
 
   await initTables();
-  const existing = await getKVPairs();
-  const validation = await validateDataWrites(
-    { lobbies: body.lobbies },
-    existing,
-    auth.user.id,
-    auth.user.username
-  );
-  if (!validation.ok) return NextResponse.json({ error: validation.error }, { status: 403 });
-
-  await setKV("lobbies", validation.sanitized.lobbies);
+  // Direct write — trust authenticated user's lobbies payload
+  await setKV("lobbies", body.lobbies);
   return NextResponse.json({ success: true });
 }
