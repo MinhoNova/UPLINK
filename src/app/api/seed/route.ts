@@ -21,11 +21,7 @@ export async function POST() {
     const d1 = await getD1();
     if (!d1) return NextResponse.json({ error: "D1 not available" }, { status: 500 });
 
-    // Check if already seeded
-    const existing = await d1.prepare("SELECT COUNT(*) as c FROM kv_store").first<{ c: number }>();
-    if (existing && existing.c > 50) {
-      return NextResponse.json({ ok: true, message: "Already seeded", count: existing.c });
-    }
+
 
     // Load db.json
     const dbPath = path.join(process.cwd(), "src", "data", "db.json");
