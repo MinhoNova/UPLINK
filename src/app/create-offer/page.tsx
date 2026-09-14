@@ -36,9 +36,19 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
 };
 
 const STEP_HINTS: Record<Step, string> = {
-  service: "Pick your dungeon or service",
-  details: "Final details — quantity and region",
+  service: "Select a service",
+  details: "Configure your offer",
 };
+
+const AUTO_CLASSES = ["Templar", "Cleric", "Assassin", "Ranger"];
+
+function autoPickClasses(count: number): string[] {
+  if (count <= 0) return [];
+  if (count >= 4) return [...AUTO_CLASSES];
+  if (count === 3) return ["Templar", "Cleric", "Assassin"];
+  if (count === 2) return ["Templar", "Assassin"];
+  return ["Assassin"];
+}
 
 /* ── Dungeon flip — iOS app-switcher style, full portrait images ──────────── */
 function DungeonFlip({
@@ -398,11 +408,18 @@ export default function CreateOfferPage() {
   const [showOptions, setShowOptions] = useState(false);
   const [pickedOption, setPickedOption] = useState<AionServiceOption | null>(null);
   const [pickedVariant, setPickedVariant] = useState<AionServiceOption | null>(null);
-  const [difficultyOpen, setDifficultyOpen] = useState(false);
   const [difficulty, setDifficulty] = useState("Normal");
+  const [difficultyOpen, setDifficultyOpen] = useState(false);
   const [pricePerRun, setPricePerRun] = useState(0);
   const [maxBoosters, setMaxBoosters] = useState(1);
   const [requiredClasses, setRequiredClasses] = useState<string[]>([]);
+  const [autoClasses, setAutoClasses] = useState(true);
+
+  useEffect(() => {
+    if (autoClasses && qty > 0) {
+      setRequiredClasses(autoPickClasses(qty));
+    }
+  }, [qty, autoClasses]);
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
 
   /* Standalone premium page — hide the global UPLINK navbar */
@@ -664,11 +681,11 @@ export default function CreateOfferPage() {
                   <p className="flex items-center gap-2 text-xs font-black tracking-[0.3em] text-cyan-300 uppercase">
                     <Gem className="h-3.5 w-3.5" /> Aion 2 · Offer Forge
                   </p>
-                  <h1 className="mt-3 bg-gradient-to-b from-white via-cyan-50 to-cyan-400 bg-clip-text  text-5xl font-black tracking-tight text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.35)] sm:text-6xl">
-                    Forge Your Offer
+                  <h1 className="mt-3 bg-gradient-to-b from-white via-cyan-50 to-cyan-400 bg-clip-text text-5xl font-black tracking-tight text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.35)] sm:text-6xl">
+                    Create Your Offer
                   </h1>
                   <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-400">
-                    Craft a premium mission post and broadcast it to every Daeva in Atreia. Take charge of your run.
+                    Post a mission and let the best players apply. You set the price, you pick the squad.
                   </p>
                 </div>
 
@@ -956,17 +973,10 @@ export default function CreateOfferPage() {
                                 />
                                 <span className="shrink-0 text-xs font-bold text-gray-400">M</span>
                               </div>
-                              <button
-                                type="button"
-                                onClick={applyAveragePrice}
-                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-300 transition-all hover:bg-cyan-500/20 cursor-pointer"
-                              >
-                                <TrendingUp className="h-3 w-3" /> Set Average
-                              </button>
                               <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
                                 {marketPrices[sel.name] && marketPrices[sel.name] > 0
-                                  ? `Auto-filled from recent completed runs (market) — you can edit it`
-                                  : "Average market price — you can edit it"}
+                                  ? `Suggested: ${marketPrices[sel.name].toFixed(2)}M based on market`
+                                  : "Set your price per run"}
                               </p>
                             </div>
 
