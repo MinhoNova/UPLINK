@@ -31,6 +31,17 @@ export async function GET(req: Request) {
   try {
     const auth = await requireSession(req);
     if (!auth.ok) {
+      // Public read for homepage display
+      if (req.headers.get("accept")?.includes("application/json")) {
+        await initTables();
+        const data = await getKVPairs();
+        return NextResponse.json({
+          lobbies: data.lobbies || [],
+          registeredUsers: data.registeredUsers || [],
+          characters: data.characters || [],
+          goldOffers: data.goldOffers || [],
+        });
+      }
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
