@@ -6,14 +6,7 @@ import path from "path";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return new Response(
-    `<html><body>
-      <h1>Seed D1 Database</h1>
-      <p>This will seed the database from src/data/db.json</p>
-      <form method="POST"><button type="submit">Seed Now</button></form>
-    </body></html>`,
-    { headers: { "content-type": "text/html" } }
-  );
+  return Response.redirect(new URL("/api/seed", "https://aion2lfg.com").toString(), 307);
 }
 
 export async function POST() {
