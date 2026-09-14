@@ -185,10 +185,12 @@ export default function Aion2TestClubPage({
     load();
     window.addEventListener("focus", load);
     window.addEventListener("data-refresh", load);
+    const poll = setInterval(load, 30000);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", load);
       window.removeEventListener("data-refresh", load);
+      clearInterval(poll);
     };
   }, []);
 
