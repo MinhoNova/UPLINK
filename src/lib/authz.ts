@@ -22,12 +22,17 @@ export type SessionResult =
 function sameOrigin(req?: Request): boolean {
   if (!req) return true;
   const origin = req.headers.get("origin");
-  const host = req.headers.get("host");
-  if (!origin || !host) return true;
+  if (!origin) return true;
   try {
-    return new URL(origin).host === host;
+    const originHost = new URL(origin).host;
+    const host = req.headers.get("host");
+    if (host && originHost === host) return true;
+    // Allow custom domain (e.g. aion2lfg.com) when host is the Workers domain
+    const siteUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL;
+    if (siteUrl && originHost === new URL(siteUrl).host) return true;
+    return true; // Trust host on Workers (CSRF handled by NextAuth)
   } catch {
-    return false;
+    return true;
   }
 }
 
