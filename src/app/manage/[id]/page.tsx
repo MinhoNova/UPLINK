@@ -54,13 +54,7 @@ const CLASS_ROLE_OPTIONS: Record<string, string[]> = {
   Songweaver: ["dps", "healer"],
 };
 
-const WOW_CLASS_GROUPS: Record<string, string[]> = {
-  Warrior: ["Templar", "Gladiator"],
-  Scout: ["Assassin", "Ranger"],
-  Mage: ["Sorcerer", "Spiritmaster"],
-  Priest: ["Chanter", "Cleric"],
-  Techist: ["Gunner", "Aethertech", "Songweaver"],
-};
+
 
 /* ---------- VoiceRoomContent (LiveKit) ---------- */
 const VoiceRoomContent = ({ roomName, onDisconnect, inline, users, currentUserId, currentUserAvatar }: { roomName: string; onDisconnect: () => void; inline?: boolean; users?: any[]; currentUserId?: string; currentUserAvatar?: string }) => {

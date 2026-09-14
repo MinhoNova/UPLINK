@@ -123,21 +123,7 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
       else merged[field] = url;
     }
   }
-  if (!isSecretClubTier(existing)) {
-    for (const field of SECRET_CLUB_ONLY_FIELDS) {
-      if (existing[field] !== undefined) merged[field] = existing[field];
-      else delete merged[field];
-    }
-    if (merged.effect && merged.effect !== "none") {
-      merged.effect = existing.effect ?? "none";
-    }
-    if (merged.activeVfx !== undefined && merged.activeVfx !== existing.activeVfx) {
-      merged.activeVfx = existing.activeVfx;
-    }
-    if (Array.isArray(merged.userVfx) && JSON.stringify(merged.userVfx) !== JSON.stringify(existing.userVfx)) {
-      merged.userVfx = existing.userVfx ?? [];
-    }
-  }
+
   return merged;
 }
 

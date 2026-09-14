@@ -158,12 +158,7 @@ export async function POST(req: Request) {
   await initTables();
   const users = (await getKV("registeredUsers")) || [];
   const idx = users.findIndex((u: { id?: string }) => String(u.id) === String(userId));
-  if (field === "profileGif" && idx !== -1 && !isSecretClubTier(users[idx])) {
-    return NextResponse.json({ error: "Secret Club required for profile GIF" }, { status: 403 });
-  }
-  if (isBanner && idx !== -1 && !isSecretClubTier(users[idx])) {
-    return NextResponse.json({ error: "Secret Club required for profile banner" }, { status: 403 });
-  }
+  // All uploads open — Secret Club removed
   if (idx !== -1) {
     const patch: Record<string, string> = { [field]: url };
     if (field === "profileGif" && thumbUrl) patch.profileGifThumb = thumbUrl;

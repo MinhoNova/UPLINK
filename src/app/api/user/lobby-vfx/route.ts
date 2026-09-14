@@ -35,8 +35,8 @@ export async function POST(req: Request) {
   await initTables();
   const users = (await getKV("registeredUsers")) || [];
   const idx = users.findIndex((u: { id?: string }) => String(u.id) === String(userId));
-  if (idx === -1 || !isSecretClubTier(users[idx])) {
-    return NextResponse.json({ error: "Secret Club required" }, { status: 403 });
+  if (idx === -1) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   const contentType = req.headers.get("content-type") || "";

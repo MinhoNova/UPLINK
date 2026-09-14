@@ -953,7 +953,7 @@ const aionLevel = app.level || app.applicantLevel || "";
                                                          pageRuns.map((run: any, i: number) => {
                                                             const memberVisual = resolveRunMemberVisual(run);
                                                             return (
-                                                            <div key={`${run.url || run.dungeon}-${run.mythic_level}-${i}`} className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] hover:border-green-500/40 transition-all group">
+                                                            <div key={`${run.dungeon}-${i}`} className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] hover:border-green-500/40 transition-all group">
                                                                <div className="absolute inset-0 z-0 opacity-20">
                                                                   {run.dungeonImg && <img src={run.dungeonImg} className="w-full h-full object-cover" alt="" />}
                                                                   <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent"></div>
@@ -966,9 +966,6 @@ const aionLevel = app.level || app.applicantLevel || "";
                                                                   <div className="min-w-0 flex-1">
                                                                      <div className="flex items-center gap-2 mb-0.5">
                                                                         <span className="text-xs font-black text-white uppercase truncate">{run.dungeonFull || run.dungeon}</span>
-                                                                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 font-black">
-                                                                           {run.mythic_level ? `Lv ${run.mythic_level}` : "CLEAR"}
-                                                                        </span>
                                                                      </div>
                                                                      <div className="flex items-center gap-2 text-[7px] font-black uppercase tracking-widest">
                                                                         <span className={`flex items-center gap-1 ${(run.num_keystone_upgrades || 0) > 0 ? 'text-green-400' : 'text-yellow-400'}`}>
