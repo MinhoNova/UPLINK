@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/siteUrl";
+
+const SITE_URL = "https://aion2lfg.com";
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = getSiteUrl();
+  const siteUrl = SITE_URL;
 
   return {
     rules: [
