@@ -1008,6 +1008,11 @@ export default function Aion2TestClubPage({
                             {String(offer.serverRegion).toUpperCase()}
                           </span>
                         )}
+                        {Number(offer.pricePerRun) > 0 && (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black tracking-widest text-amber-300">
+                            {Number(offer.pricePerRun).toFixed(2)}M <span className="text-[7px] font-bold text-amber-400/70">per run</span>
+                          </span>
+                        )}
                         {owner?.team?.name && (
                           <span
                             className="flex max-w-[180px] items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/[0.08] px-2 py-0.5 text-[9px] font-black tracking-wide text-amber-200"
