@@ -931,16 +931,17 @@ export default function Aion2TestClubPage({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.005 }}
-                    className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
-                  >
-                    {/* Clipped visual layer — keeps rounded corners for dark zone + banner strip */}
-                    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none" onDoubleClick={(e) => {
+                    onDoubleClick={(e) => {
                       if (isMine || isAdmin) {
                         e.stopPropagation();
                         setBgEditOfferId(String(offer.id));
                         setBgError("");
                       }
-                    }}>
+                    }}
+                    className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
+                  >
+                    {/* Clipped visual layer — keeps rounded corners for dark zone + banner strip */}
+                    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                       {/* Dark readable zone — full card underlay */}
                       <div className="absolute inset-0 bg-[#070b1a]" />
                       {/* Faction VFX banner / gradient — right panel only */}
@@ -984,7 +985,6 @@ export default function Aion2TestClubPage({
 
                     {/* Offer Details */}
                     <div className="relative z-10 flex-1 min-w-0 lg:max-w-[42%]">
-                      </div>
                       <h4 className="mt-1.5 text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
                         {offer.title || `${offer.runsCount || 1}× Boost`}
                       </h4>
@@ -1008,7 +1008,7 @@ export default function Aion2TestClubPage({
                             <span className="truncate">{owner.team.name}</span>
                           </span>
                         )}
-                        {classSlots ? null : (
+                        {!classSlots && (
                           <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                             <Users className="w-3.5 h-3.5 text-cyan-400" />
                             {openRoles.length > 0
@@ -1018,14 +1018,20 @@ export default function Aion2TestClubPage({
                         )}
                       </div>
                     </div>
+                    {/* Required Classes */}
                     {classSlots && classSlots.length > 0 && (
-                      <div className="relative z-10 flex shrink-0 items-center justify-center gap-1 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2">
-                        {classSlots.map((s, i) => (
-                          <span key={i} className="relative flex items-center justify-center" title={`${s.cls}${s.filled ? " — filled" : " — open"}`}>
-                            <img src={classThumbUrl(s.cls)} alt={s.cls} width={56} height={56} className={`h-14 w-14 object-contain drop-shadow-[0_2px_12px_rgba(34,211,238,0.45)] ${s.filled ? "brightness-110 saturate-125 opacity-100" : "opacity-40 grayscale"}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                            {s.filled && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border border-[#070b1a] bg-emerald-400" />}
-                          </span>
-                        ))}
+                      <div className="relative z-10 w-full mt-2">
+                        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1">
+                          {classSlots.map((s, i) => (
+                            <div key={i} className={`flex flex-col items-center gap-1 shrink-0 ${s.filled ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                              <div className="relative">
+                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={40} height={40} className={`w-10 h-10 object-contain drop-shadow-[0_2px_8px_rgba(34,211,238,0.45)] ${s.filled ? 'brightness-110 saturate-125' : ''}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                                {s.filled && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border border-[#070b1a]" />}
+                              </div>
+                              <span className={`text-[7px] font-black uppercase tracking-wider whitespace-nowrap ${s.filled ? 'text-cyan-300' : 'text-gray-500'}`}>{s.cls}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                     <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
