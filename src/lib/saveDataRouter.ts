@@ -15,6 +15,7 @@ export async function saveDataSmart(updates: Updates): Promise<boolean> {
         const res = await fetch("/api/users/me", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ profile: users[0] }),
         });
         if (res.ok) {
@@ -28,6 +29,7 @@ export async function saveDataSmart(updates: Updates): Promise<boolean> {
       const res = await fetch("/api/lobbies", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -40,6 +42,7 @@ export async function saveDataSmart(updates: Updates): Promise<boolean> {
       const res = await fetch("/api/lobbies", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ lobbies }),
       });
       if (res.ok) {
@@ -51,6 +54,7 @@ export async function saveDataSmart(updates: Updates): Promise<boolean> {
       const res = await fetch("/api/notifications", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ notifications: updates.notifications }),
       });
       if (res.ok) {
@@ -63,6 +67,7 @@ export async function saveDataSmart(updates: Updates): Promise<boolean> {
   const res = await fetch("/api/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(updates),
   });
   window.dispatchEvent(new CustomEvent("data-refresh"));
