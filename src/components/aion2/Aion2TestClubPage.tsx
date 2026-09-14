@@ -226,6 +226,7 @@ export default function Aion2TestClubPage({
         .then((d) => {
           if (cancelled) return;
           if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
+          if (d.friends) setFriends(d.friends);
           if (d.lobbies) {
             setLobbies(d.lobbies);
             autoApplyFor(Array.isArray(d.registeredUsers) ? d.registeredUsers : [], d.lobbies);

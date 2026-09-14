@@ -1427,7 +1427,9 @@ export function finalizeMissionFailed(lobby: any, failVotes: any[], messages: an
 
 /** Squad is full when every role has zero open slots. */
 export function squadRolesFilled(roles: Record<string, number>) {
-  return Object.values(roles || {}).every((open) => Number(open || 0) === 0);
+  const entries = Object.entries(roles || {});
+  if (entries.length === 0) return false;
+  return entries.every(([, open]) => Number(open || 0) === 0);
 }
 
 /** Whether the class-based slots of this lobby are all filled. */
