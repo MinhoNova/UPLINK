@@ -27,5 +27,7 @@ export async function GET(req: Request) {
       ips: Array.isArray(v.ips) ? v.ips : [],
     }));
 
-  return NextResponse.json({ date, visits });
+  return NextResponse.json({ date, visits }, {
+    headers: { "Cache-Control": "no-store, max-age=0" },
+  });
 }

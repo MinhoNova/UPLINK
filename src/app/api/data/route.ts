@@ -51,7 +51,9 @@ export async function GET(req: Request) {
           }
         } catch {}
       }
-      return NextResponse.json(data);
+      return NextResponse.json(data, {
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      });
     }
 
     const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
