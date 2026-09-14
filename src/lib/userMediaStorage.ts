@@ -14,20 +14,12 @@ export async function storeUserMediaFile(
   const kv = await getKVBinding();
   const id = `${userId}_${Date.now()}.${ext}`;
 
-  if (kv) {
-    const key = `${MEDIA_KV_PREFIX}${id}`;
-    await kv.put(key, buffer.toString("base64"), {
-      metadata: { contentType, ext },
-    });
-    return `/api/user/media?key=${encodeURIComponent(key)}`;
-  }
-
-  const subdir = ext === "gif" || contentType.includes("gif") ? "user-avatars" : "user-avatars";
-  const dir = path.join(process.cwd(), "public", subdir);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const filename = id;
-  fs.writeFileSync(path.join(dir, filename), buffer);
-  return `/${subdir}/${filename}`;
+  if (!kv) throw new Error("Upload service not available");
+  const key = `${MEDIA_KV_PREFIX}${id}`;
+  await kv.put(key, buffer.toString("base64"), {
+    metadata: { contentType, ext },
+  });
+  return `/api/user/media?key=${encodeURIComponent(key)}`;
 }
 
 export async function storeCommunityMediaFile(

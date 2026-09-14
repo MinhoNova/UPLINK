@@ -221,13 +221,11 @@ export default function Aion2TestClubPage({
       }
     };
     const load = () => {
-      if (!meId) return;
-      fetch("/api/data", { credentials: "include" })
+      fetch("/api/public-data")
         .then((r) => r.json())
         .then((d) => {
           if (cancelled) return;
           if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
-          if (d.friends) setFriends(d.friends);
           if (d.lobbies) {
             setLobbies(d.lobbies);
             autoApplyFor(Array.isArray(d.registeredUsers) ? d.registeredUsers : [], d.lobbies);
@@ -246,7 +244,7 @@ export default function Aion2TestClubPage({
       window.removeEventListener("data-refresh", load);
       clearInterval(poll);
     };
-  }, [meId, meName]);
+  }, []);
 
   const missions = useMemo(() => {
     if (!meId) return [];

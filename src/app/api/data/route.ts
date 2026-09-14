@@ -32,17 +32,26 @@ export async function GET(req: Request) {
     const auth = await requireSession(req);
     if (!auth.ok) {
       // Public read for homepage display
-      if (req.headers.get("accept")?.includes("application/json")) {
-        await initTables();
-        const data = await getKVPairs();
-        return NextResponse.json({
-          lobbies: data.lobbies || [],
-          registeredUsers: data.registeredUsers || [],
-          characters: data.characters || [],
-          goldOffers: data.goldOffers || [],
-        });
+      await initTables();
+      const data = await getKVPairs();
+      // Fallback: if lobbies empty, query D1 directly
+      if (!Array.isArray(data.lobbies) || data.lobbies.length === 0) {
+        try {
+          const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+          let env;
+          try { ({ env } = getCloudflareContext()); } catch { ({ env } = await getCloudflareContext({ async: true })); }
+          const d1 = (env as any)?.DB;
+          if (d1) {
+            const { results } = await d1.prepare("SELECT key, value FROM kv_store").all<{ key: string; value: string }>();
+            if (results) {
+              for (const row of results) {
+                try { (data as any)[row.key] = JSON.parse(row.value); } catch {}
+              }
+            }
+          }
+        } catch {}
       }
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+      return NextResponse.json(data);
     }
 
     const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
