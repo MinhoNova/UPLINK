@@ -26,10 +26,10 @@ export default function ClassesPage() {
         <p className="text-slate-400 mb-8">Complete guide to all 8 Aion 2 classes.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {AION2_CLASSES.map((cls) => (
-            <div key={cls.name} className="p-5 rounded-2xl border border-cyan-500/20 bg-white/[0.03]">
+            <a key={cls.name} href={`/classes/${cls.name.toLowerCase()}`} className="p-5 rounded-2xl border border-cyan-500/20 bg-white/[0.03] hover:border-cyan-400/40 transition-all">
               <h2 className="text-lg font-black text-white mb-1">{cls.name}</h2>
               <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">{cls.role}</span>
-            </div>
+            </a>
           ))}
         </div>
       </div>

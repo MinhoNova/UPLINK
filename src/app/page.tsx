@@ -34,10 +34,12 @@ function HomeSeoFooter() {
             ["/discord", "Discord Server"],
             ["/about", "About Us"],
             ["/contact", "Contact"],
+            ["/classes", "Classes"],
             ["/pvp", "PvP"],
             ["/leveling", "Leveling"],
             ["/dungeons", "Dungeons"],
             ["/raids", "Raids"],
+            ["/ascend", "Ascend"],
           ].map(([href, label]) => (
             <a key={href} href={href} className="transition-colors hover:text-cyan-300">
               {label}
