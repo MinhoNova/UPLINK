@@ -169,7 +169,58 @@ export default function Aion2TestClubPage({
   };
 
   useEffect(() => {
+    if (!meId) return;
     let cancelled = false;
+    const autoApplyFor = (users: any[], lobbies: any[]) => {
+      const meUser = users.find((u: any) => String(u.id) === String(meId));
+      const aa = meUser?.aionAutoApply;
+      if (!aa?.enabled || !aa.aionClass || !meId) return;
+      const cls = String(aa.aionClass);
+      const role = aionClassRole(cls);
+      const candidates = (Array.isArray(lobbies) ? lobbies : []).filter((l) => {
+        if (!isLobbyListedInPublicFeed(l)) return false;
+        if (String(l.ownerId) === String(meId)) return false;
+        const st = l.status || "standby";
+        if (st !== "standby" && st !== "") return false;
+        const appliedAlready = (l.applicants || []).some(
+          (a: any) => String(a.applicantId || a.userId || a.id) === String(meId)
+        );
+        if (appliedAlready) return false;
+        if (Array.isArray(l.requiredClasses) && l.requiredClasses.length > 0) {
+          return l.requiredClasses.map((c: any) => String(c).trim()).includes(cls);
+        }
+        const rolesMap = l?.roles || {};
+        return Number(rolesMap[role] || rolesMap.dps || 0) > 0;
+      });
+      let didApply = false;
+      for (const l of candidates) {
+        const key = String(l.id);
+        if (autoAttemptedRef.current.has(key)) continue;
+        autoAttemptedRef.current.add(key);
+        didApply = true;
+        fetch("/api/lobbies/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            lobbyId: l.id,
+            applicant: {
+              id: `${meId}-main`,
+              role,
+              className: cls,
+              aionClass: cls,
+              level: Number(aa.itemLevel) || 60,
+              applicantNote: "Auto-apply",
+              applicantName: meName,
+            },
+          }),
+        }).then(() => { window.dispatchEvent(new Event("data-refresh")); }).catch(() => {});
+      }
+      if (didApply) {
+        window.dispatchEvent(new Event("data-refresh"));
+        window.dispatchEvent(new Event("auto-apply-fired"));
+      }
+    };
     const load = () => {
       fetch("/api/public-data")
         .then((r) => r.json())
@@ -177,7 +228,10 @@ export default function Aion2TestClubPage({
           if (cancelled) return;
           if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
           if (d.friends) setFriends(d.friends);
-          if (d.lobbies) setLobbies(d.lobbies);
+          if (d.lobbies) {
+            setLobbies(d.lobbies);
+            autoApplyFor(Array.isArray(d.registeredUsers) ? d.registeredUsers : [], d.lobbies);
+          }
           setSignalScan(false);
         })
         .catch(() => { if (!cancelled) setSignalScan(false); });
