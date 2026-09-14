@@ -934,7 +934,13 @@ export default function Aion2TestClubPage({
                     className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
                   >
                     {/* Clipped visual layer — keeps rounded corners for dark zone + banner strip */}
-                    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none" onDoubleClick={(e) => {
+                      if (isMine || isAdmin) {
+                        e.stopPropagation();
+                        setBgEditOfferId(String(offer.id));
+                        setBgError("");
+                      }
+                    }}>
                       {/* Dark readable zone — full card underlay */}
                       <div className="absolute inset-0 bg-[#070b1a]" />
                       {/* Faction VFX banner / gradient — right panel only */}
@@ -953,17 +959,6 @@ export default function Aion2TestClubPage({
                         <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
                       </div>
                     </div>
-
-                    {(isMine || isAdmin) && (
-                      <button
-                        type="button"
-                        onClick={() => { setBgEditOfferId(String(offer.id)); setBgError(""); }}
-                        title="Change this offer's banner background"
-                        className="absolute -left-5 top-1/2 -translate-y-1/2 z-30 flex h-20 w-7 flex-col items-center justify-center gap-1 rounded-l-md rounded-r-md border border-cyan-400/30 bg-[#050814]/85 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)] backdrop-blur-md transition-all hover:border-[#ff007f]/60 hover:bg-[#ff007f]/15 hover:text-[#ffb3dd] hover:shadow-[0_0_16px_rgba(255,0,127,0.3)]"
-                      >
-                        <Palette className="h-3.5 w-3.5 rotate-90" />
-                      </button>
-                    )}
 
                     {/* Creator avatar */}
                     <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
