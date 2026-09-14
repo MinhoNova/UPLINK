@@ -169,9 +169,9 @@ export default function Aion2TestClubPage({
   };
 
   useEffect(() => {
-    if (!meId) return;
     let cancelled = false;
     const autoApplyFor = (users: any[], lobbies: any[]) => {
+      if (!meId) return;
       const meUser = users.find((u: any) => String(u.id) === String(meId));
       const aa = meUser?.aionAutoApply;
       if (!aa?.enabled || !aa.aionClass || !meId) return;
