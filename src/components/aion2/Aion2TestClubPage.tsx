@@ -259,9 +259,9 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                         {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
                       </div>
 
-                      {/* Class Images - Centered */}
+                      {/* Class Images - Dead Center of Card */}
                       {classSlots && classSlots.length > 0 && (
-                        <div className="flex items-center gap-2">
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 z-20">
                           {classSlots.map((s, i) => (
                             <div key={i} className="relative">
                               <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
