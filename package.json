@@ -26,6 +26,7 @@
     "discord:onboarding": "node scripts/setup-onboarding.cjs",
     "discord:repair": "node scripts/repair-discord-access.cjs",
     "discord:professionalize": "node scripts/professionalize-discord-roles.cjs",
+    "discord:community": "node scripts/professional-community.cjs",
     "discord:media": "node scripts/set-guild-media.cjs",
     "og:generate": "node scripts/generate-og.cjs",
     "prebuild": "node scripts/generate-og.cjs"

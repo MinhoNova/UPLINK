@@ -93,7 +93,7 @@ const CATEGORIES = [
     ],
   },
   {
-    name: "💰 MARKETPLACE",
+    name: "🎮 SQUAD CENTER",
     // Offers are posted automatically by the UPLINK bot — read-only for everyone.
     channels: [
       { name: "🚀・leveling-offers", type: ChannelType.GuildText, topic: "Leveling offers — posted automatically by UPLINK." },
@@ -101,7 +101,7 @@ const CATEGORIES = [
       { name: "⚔️・raid-offers", type: ChannelType.GuildText, topic: "Raid offers — posted automatically by UPLINK." },
       { name: "⚡・pvp-offers", type: ChannelType.GuildText, topic: "PvP offers — posted automatically by UPLINK." },
       { name: "🛠️・profession-offers", type: ChannelType.GuildText, topic: "Profession offers — posted automatically by UPLINK." },
-      { name: "💰・boost-auction", type: ChannelType.GuildText, topic: "Blind gold auction requests — post a request, boosters bid." },
+      { name: "🤝・find-squad", type: ChannelType.GuildText, topic: "Looking for a group to play with? Post your request here." },
     ],
     readOnly: true,
   },

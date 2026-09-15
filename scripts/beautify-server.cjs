@@ -48,7 +48,7 @@ const KEEP_CATEGORY_ORDER = [
   "📌 SYSTEM",
   "⚔️ AION-2 LFG",
   "🗣️ COMMUNITY",
-  "💰 MARKETPLACE",
+  "🎮 SQUAD CENTER",
   "🎧 HANGOUT",
   "🔒 STAFF",
 ];
@@ -106,14 +106,14 @@ const TOPICS = {
   "welcome-briefing":
     "Welcome to AION 2 LFG ⎯ a fan-run community, not affiliated with NCSOFT. Find squads, list offers & coordinate on UPLINK (aion2lfg.com). Read #rules, then grab a role.",
   rules:
-    "Server rules ⎯ keep it respectful, no gold-selling scams, no spam. Violations = mutes/bans. Full policy on UPLINK.",
+    "Server rules ⎯ keep it respectful, no scams, no spam. Violations = mutes/bans. Full policy on UPLINK.",
   "📢・announcements": "Announcements from the UPLINK team — a fan-run AION 2 community, not affiliated with NCSOFT.",
   "🗨️・general-chat": "Game chat, LFG banter, and community talk. English-friendly — all AION 2 players welcome!",
   "🎮・aion-2": "Everything about AION 2: classes, builds, content talk, and the future.",
   "📸・media-clips": "Clips, screenshots, and highlights from your runs.",
   "❓・help": "Need help with the server or UPLINK? Ask away.",
   "💡・suggestions": "Ideas for the community & UPLINK — drop them here.",
-  "💰・boost-auction": "Managed marketplace for offers listed on UPLINK. We never handle payments — report scammers to staff.",
+  "🤝・find-squad": "Looking for a group? Post your request — squads from UPLINK can respond. Never trust unsolicited DMs.",
   "🚀・leveling-offers": "Leveling squads listed on UPLINK — apply via the site.",
   "🏰・dungeon-offers": "Dungeon offers listed on UPLINK — apply via the site.",
   "⚔️・raid-offers": "Raid offers listed on UPLINK — apply via the site.",
