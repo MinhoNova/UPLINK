@@ -259,15 +259,17 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                         {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
                       </div>
 
-                      {/* Class Images - Center */}
+                      {/* Class Images - Centered between details and actions */}
                       {classSlots && classSlots.length > 0 && (
-                        <div className="relative z-10 flex items-center gap-2 flex-shrink-0">
-                          {classSlots.map((s, i) => (
-                            <div key={i} className="relative">
-                              <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                              {s.filled && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#070b1a]" />}
-                            </div>
-                          ))}
+                        <div className="flex-1 flex justify-center">
+                          <div className="flex items-center gap-2">
+                            {classSlots.map((s, i) => (
+                              <div key={i} className="relative">
+                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                                {s.filled && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#070b1a]" />}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
