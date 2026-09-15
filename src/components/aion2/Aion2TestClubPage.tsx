@@ -310,14 +310,48 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
             </div>
           </section>
 
-          {/* Sidebar */}
+          {/* Sidebar - Ongoing Missions */}
           <aside className="w-full">
-            <div className="tn-light relative w-full min-h-[360px] h-full flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
+            <div className="tn-light relative w-full min-h-[360px] max-h-[calc(100vh-200px)] flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
-                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">{t("missions_header") || "ONGOING MISSIONS"}</h3>
-                {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : "LIVE"}</span></span>) : null}
+                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">ONGOING MISSIONS</h3>
+                <span className="flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full ${signalScan ? 'bg-blue-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? 'SCANNING' : 'LIVE'}</span></span>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                {displayOffers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? 'SCANNING FOR SIGNAL...' : 'NO ACTIVE MISSIONS'}</p></div>
+                ) : (
+                  displayOffers.slice(0, 10).map((offer) => {
+                    const owner = lobbyOwner(offer);
+                    const pic = ownerPic(offer);
+                    const classSlots = classSlotsOf(offer);
+                    return (
+                      <div key={`sidebar-${offer.id}`} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.03] border border-cyan-500/10 hover:border-cyan-500/30 transition-all">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#050814]/80 border border-cyan-400/40 flex items-center justify-center overflow-hidden">
+                            {pic ? (<img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : (<Users className="w-3 h-3 text-cyan-400/70" />)}
+                          </div>
+                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-[#0a0f26]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-black text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</span>
+                            {offer.serverRegion && (<span className="text-[7px] font-black text-violet-300 shrink-0">{String(offer.serverRegion).toUpperCase()}</span>)}
+                          </div>
+                          {Number(offer.pricePerRun) > 0 && <span className="text-[8px] font-bold text-amber-300">{Number(offer.pricePerRun).toFixed(2)}M / run</span>}
+                        </div>
+                        {classSlots && classSlots.length > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            {classSlots.slice(0, 3).map((s, i) => (
+                              <img key={i} src={classThumbUrl(s.cls)} alt="" width={20} height={20} className={`w-5 h-5 object-contain ${s.filled ? 'brightness-125' : 'brightness-75'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </aside>
         </div>
