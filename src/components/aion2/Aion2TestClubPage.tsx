@@ -161,7 +161,7 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
     const open = Math.max(0, 4 - shown);
     const isUnpaid = (m.status || "standby") === "unpaid";
     return (
-      <motion.div key={String(m.id)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.01 }} className={`tn-light relative w-full min-h-[110px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${isUnpaid ? "border-red-500/30 hover:border-red-400/50" : "border-cyan-500/20 hover:border-cyan-400/40"}`}>
+      <motion.div key={String(m.id)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.01 }} onClick={() => router.push(`/manage/${String(m.id)}`)} className={`tn-light relative w-full min-h-[110px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${isUnpaid ? "border-red-500/30 hover:border-red-400/50" : "border-cyan-500/20 hover:border-cyan-400/40"}`}>
         <div className="absolute inset-0 bg-[#070b1a]" />
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0" style={offerBgStyle} />
