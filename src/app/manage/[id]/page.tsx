@@ -907,6 +907,8 @@ export default function ManagePage() {
 
   if (!lobbyId) return null;
 
+  const canView = dataLoaded && targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle) || isAdmin);
+
   if (!dataLoaded) {
     return (
       <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
@@ -918,12 +920,14 @@ export default function ManagePage() {
     );
   }
 
-  if (!targetLobby || !userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle) && !isAdmin) {
+  if (!targetLobby || !canView) {
     return (
       <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin mx-auto mb-6" />
-          <p className="text-xs font-black tracking-widest text-red-400 uppercase">Access Denied</p>
+          <p className="text-xs font-black tracking-widest text-red-400 uppercase">
+            {!targetLobby ? "Mission not found" : "Access Denied"}
+          </p>
         </div>
       </div>
     );

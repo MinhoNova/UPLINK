@@ -22,6 +22,7 @@ export type CommunityChatMessage = {
   text: string;
   image?: string;
   createdAt: number;
+  edited?: boolean;
   replyTo?: CommunityChatReplyRef;
   reactions?: Record<string, string>;
 };

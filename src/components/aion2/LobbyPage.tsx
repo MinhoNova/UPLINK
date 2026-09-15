@@ -262,7 +262,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       </div>
 
       {/* Spacer — hero text removed; create-offer moved to navbar */}
-      <div className="h-28" />
+      <div className="h-44" />
 
       {/* Main */}
       <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">

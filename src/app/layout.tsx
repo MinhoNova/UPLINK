@@ -7,6 +7,7 @@ import { I18nProvider } from "@/i18n/i18n";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
+import GlobalChatWidget from "@/components/GlobalChatWidget";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
 import "./globals.css";
@@ -163,6 +164,7 @@ export default function RootLayout({
             <DirectCommsPanel />
             <CommunityNotificationsPanel />
             <PlayerProfileModal />
+            <GlobalChatWidget />
             {children}
           </I18nProvider>
         </AuthProvider>
