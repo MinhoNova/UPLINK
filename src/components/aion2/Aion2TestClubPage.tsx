@@ -265,8 +265,8 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                           {/* Prices */}
                           {Number(offer.pricePerRun) > 0 && (
                             <div className="flex items-center gap-3 mt-1">
-                              <span className="text-[10px] font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
-                              <span className="text-[9px] font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
+                              <span className="text-sm font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
+                              <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
                             </div>
                           )}
                           {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
@@ -376,6 +376,69 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Profile Hover Card */}
+      {typeof document !== "undefined" && hoverCard && hoverCard.rect && hoverCard.owner && hoveredUserId === hoverCard.userId && (
+        createPortal(
+          (() => {
+            const rect = hoverCard.rect!;
+            const owner = hoverCard.owner;
+            const cardPic = hoverCard.pic;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const popW = Math.min(380, vw - 20);
+            const spaceAbove = rect.top;
+            const showAbove = spaceAbove > vh * 0.38;
+            const left = Math.max(10, Math.min(rect.left - 20, vw - popW - 10));
+            const top = showAbove ? Math.max(10, rect.top - 12) : Math.min(vh - 12, rect.bottom + 12);
+            const hAvatar = owner ? resolveProfileImage(owner) || cardPic || "" : cardPic || "";
+            const hBanner = resolveProfileBanner(owner) || "";
+            const hDisplayName = owner ? resolveProfileDisplayName(owner) : "";
+            const hNameColor = owner ? resolveNameColor(owner) : null;
+            return (
+              <div
+                style={{ position: "fixed", top, left, width: popW, transform: showAbove ? "translateY(-100%)" : undefined, zIndex: 9999 }}
+                className="tn-light relative bg-[#080810] border border-white/10 rounded-[1.5rem] shadow-[0_32px_100px_rgba(0,0,0,0.8)] overflow-hidden pointer-events-auto w-[380px] max-w-[calc(100vw-20px)]"
+                onMouseEnter={cancelHide}
+                onMouseLeave={scheduleHide}
+              >
+                <div className="relative aspect-[5/2] w-full bg-[#080810]">
+                  {hBanner && <img src={hBanner} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-[#080810]/20 to-transparent pointer-events-none" />
+                </div>
+                <div className="px-5 -mt-10 relative z-10 flex items-end gap-3">
+                  <div className="rounded-full overflow-hidden border-[3px] border-[#080810] shadow-[0_0_24px_rgba(255,0,127,0.25)] bg-black shrink-0" style={{ width: 80, height: 80 }}>
+                    {hAvatar ? (<img src={hAvatar} alt="" className={profileImgClass(hAvatar, "w-full h-full rounded-full")} onError={(e) => { (e.currentTarget as HTMLImageElement).src = cardPic || ""; }} />) : (<div className="w-full h-full flex items-center justify-center"><Users className="w-6 h-6 text-gray-600" /></div>)}
+                  </div>
+                  <div className="pb-1 flex-1 min-w-0">
+                    <h3 className="text-base font-black text-white uppercase truncate leading-tight" style={hNameColor ? { ...toNameStyle(hNameColor), textShadow: `0 0 14px ${nameGlowColor(hNameColor)}77` } : undefined}>
+                      {hDisplayName}
+                    </h3>
+                    <RankBadge stats={owner?.stats} ratings={owner?.ratings} rankOverride={owner?.rankOverride} />
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {owner?.team?.name && (<span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">{owner.team.name}</span>)}
+                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#8ea1ff]">Discord: @{owner?.username || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-5 pb-4 pt-2">
+                  <div className="flex items-center justify-center gap-8 py-1.5">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <Users className="w-4 h-4 text-[#00ffff]" />
+                      <span className="text-[10px] font-black text-white tabular-nums">{owner?.friends?.length ?? 0}</span>
+                    </div>
+                    <button type="button" className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition">
+                      <MessageCircle className="w-4 h-4" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Message</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })(),
+          document.body
+        )
+      )}
 
       {/* BG Picker Modal */}
       {bgEditOfferId && (() => {
