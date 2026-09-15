@@ -247,10 +247,22 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
 
                         {/* Offer Details Next to Avatar */}
                         <div className="min-w-0 max-w-[200px]">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</h4>
-                            {offer.serverRegion && (<span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">{String(offer.serverRegion).toUpperCase()}</span>)}
-                          </div>
+                          {/* Region Badge with Flag */}
+                          {offer.serverRegion && (
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <img
+                                src={String(offer.serverRegion).toLowerCase().includes("na") ? "/flags/us.svg" : "/flags/eu.svg"}
+                                alt={String(offer.serverRegion)}
+                                className="w-3 h-3 rounded-sm object-cover"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                              <span className="text-[9px] font-black tracking-widest text-violet-300">{String(offer.serverRegion).toUpperCase()}</span>
+                            </div>
+                          )}
+                          {/* Title */}
+                          <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</h4>
+                          {/* Prices */}
                           {Number(offer.pricePerRun) > 0 && (
                             <div className="flex items-center gap-3 mt-1">
                               <span className="text-[10px] font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
