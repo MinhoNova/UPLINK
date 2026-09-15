@@ -134,6 +134,78 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
   const offerBgOf = (l: any) => { const o = lobbyOwner(l); return resolveOfferBannerImage(l, o); };
   const alreadyApplied = (l: any) => meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
 
+  // ── Ongoing Missions (sidebar with animated banners) ──
+  const missions = useMemo(() => {
+    if (!meId) return [];
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const m of [...getOwnerOngoingMissions(lobbies, meId), ...getJoinedOngoingMissions(lobbies, meId)]) {
+      const key = String(m.id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(m);
+    }
+    return out.slice(0, 6);
+  }, [lobbies, meId]);
+
+  const missionOwner = (m: any) => registeredUsers.find((u: any) => String(u.id) === String(m.ownerId)) || null;
+
+  const unpaidMissions = useMemo(() => missions.filter((m: any) => (m.status || "standby") === "unpaid"), [missions]);
+  const activeMissions = useMemo(() => missions.filter((m: any) => (m.status || "standby") !== "unpaid"), [missions]);
+
+  const renderMissionCard = (m: any) => {
+    const owner = missionOwner(m);
+    const bgPoster = resolveOfferBannerImage(m, owner, "showOnOngoing");
+    const totalRuns = m.selectedDungeons ? (Object.values(m.selectedDungeons) as number[]).reduce((a: number, b: number) => a + b, 0) : m.runsCount || 1;
+    const shown = (m.accepted || []).length;
+    const open = Math.max(0, 4 - shown);
+    const isUnpaid = (m.status || "standby") === "unpaid";
+    return (
+      <motion.div key={String(m.id)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.01 }} onClick={() => router.push(`/manage/${String(m.id)}`)} className={`tn-light relative w-full min-h-[110px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${isUnpaid ? "border-red-500/30 hover:border-red-400/50" : "border-cyan-500/20 hover:border-cyan-400/40"}`}>
+        <div className="absolute inset-0 bg-[#070b1a]" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0" style={offerBgStyle} />
+          {bgPoster && <img src={bgPoster} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" loading="lazy" decoding="async" />}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
+        </div>
+        <div className="relative z-10 flex items-start justify-between gap-2">
+          <p className="text-sm font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+            {m.category === "leveling" ? (<><span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">Leveling</span><span className="text-[#00ffff]">{m.startLevel || "1"}-{m.endLevel || "80"}</span></>) : (<><span className="mr-1 text-[#00ffff]">{totalRuns}x</span> RUN</>)}
+          </p>
+          <div className="shrink-0 flex items-center gap-1.5">
+            <span className={`px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${isUnpaid ? "border-red-500/40 bg-red-500/15 text-red-300" : m.status === "in_progress" ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : m.status === "payment_pending" ? "border-orange-500/40 bg-orange-500/15 text-orange-300" : "border-cyan-500/30 bg-black/50 text-cyan-300"}`}>
+              {isUnpaid ? "UNPAID" : m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
+            </span>
+            <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">Open Thread ›</span>
+          </div>
+        </div>
+        <div className="relative z-10 mt-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+            {m.serverRegion && (<span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">{String(m.serverRegion).toUpperCase()}</span>)}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[7px] font-black text-slate-400 uppercase tracking-[0.15em] mr-0.5">Squad {shown}/4</span>
+            <div className="flex -space-x-1">
+              {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
+                <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
+                  <img src={classThumbUrl(a.class || a.aionClass || a.role || "dps")} width={16} height={16} className="w-4 h-4 object-contain" alt="" title={a.class || a.aionClass || a.role || "dps"} />
+                </div>
+              ))}
+              {Array.from({ length: Math.max(0, open) }).map((_, i) => (
+                <div key={i} className="w-5 h-5 rounded-md border border-dashed border-white/15 bg-black/40" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const historyOffers = useMemo(() => {
+    if (!meId) return [];
+    return (lobbies || []).filter((l: any) => l.status === "completed" && l.payoutStatus === "paid").sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 8);
+  }, [lobbies, meId]);
+
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"], PVP: ["pvp"] };
 
   const displayOffers = useMemo(() => {
@@ -312,48 +384,66 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
 
           {/* Sidebar - Ongoing Missions */}
           <aside className="w-full">
-            <div className="tn-light relative w-full min-h-[360px] max-h-[calc(100vh-200px)] flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
+            <div className="tn-light relative w-full min-h-[360px] h-full flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
-                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">ONGOING MISSIONS</h3>
-                <span className="flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full ${signalScan ? 'bg-blue-400 animate-pulse' : 'bg-emerald-400'}`} /><span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? 'SCANNING' : 'LIVE'}</span></span>
+                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">{t("missions_header") || "ONGOING MISSIONS"}</h3>
+                {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : "LIVE"}</span></span>) : null}
               </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {displayOffers.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? 'SCANNING FOR SIGNAL...' : 'NO ACTIVE MISSIONS'}</p></div>
-                ) : (
-                  displayOffers.slice(0, 10).map((offer) => {
-                    const owner = lobbyOwner(offer);
-                    const pic = ownerPic(offer);
-                    const classSlots = classSlotsOf(offer);
-                    return (
-                      <div key={`sidebar-${offer.id}`} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.03] border border-cyan-500/10 hover:border-cyan-500/30 transition-all">
-                        <div className="relative flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-[#050814]/80 border border-cyan-400/40 flex items-center justify-center overflow-hidden">
-                            {pic ? (<img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : (<Users className="w-3 h-3 text-cyan-400/70" />)}
-                          </div>
-                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-[#0a0f26]" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1">
-                            <span className="text-[9px] font-black text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</span>
-                            {offer.serverRegion && (<span className="text-[7px] font-black text-violet-300 shrink-0">{String(offer.serverRegion).toUpperCase()}</span>)}
-                          </div>
-                          {Number(offer.pricePerRun) > 0 && <span className="text-[8px] font-bold text-amber-300">{Number(offer.pricePerRun).toFixed(2)}M / run</span>}
-                        </div>
-                        {classSlots && classSlots.length > 0 && (
-                          <div className="flex items-center gap-0.5">
-                            {classSlots.slice(0, 3).map((s, i) => (
-                              <img key={i} src={classThumbUrl(s.cls)} alt="" width={20} height={20} className={`w-5 h-5 object-contain ${s.filled ? 'brightness-125' : 'brightness-75'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+              {missions.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
+              ) : (
+                <div className="flex-1 flex flex-col space-y-4">
+                  {activeMissions.length > 0 && (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 px-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">LIVE RUNS</span><span className="ml-auto rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">{activeMissions.length}</span></div>
+                      <AnimatePresence mode="popLayout">{activeMissions.map((m) => renderMissionCard(m))}</AnimatePresence>
+                    </div>
+                  )}
+                  {unpaidMissions.length > 0 && (
+                    <div className="pt-3 border-t border-red-500/20">
+                      <div className="flex items-center gap-2 mb-2.5 px-1"><span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-red-300">UNPAID RUNS</span><span className="ml-auto rounded-full bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[8px] font-black tracking-widest text-red-300">{unpaidMissions.length}/{missions.length}</span></div>
+                      <AnimatePresence mode="popLayout">{unpaidMissions.map((m) => renderMissionCard(m))}</AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </aside>
+
+          {/* History (completed & paid threads) */}
+          {historyOffers.length > 0 && (
+            <div className="w-full">
+              <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-emerald-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
+                <div className="flex items-center gap-3 pb-4 mb-5 border-b border-emerald-900/30">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10"><HistoryIcon className="w-4 h-4 text-emerald-300" /></span>
+                  <h3 className="text-xs font-black tracking-[0.2em] uppercase text-emerald-100">HISTORY</h3>
+                  <span className="ml-auto text-[8px] font-black tracking-widest text-slate-500 uppercase">{historyOffers.length} completed</span>
+                </div>
+                <div className="space-y-3">
+                  {historyOffers.map((h) => {
+                    const owner = lobbyOwner(h);
+                    const pic = ownerPic(h) || null;
+                    const totalRuns = h.selectedDungeons ? (Object.values(h.selectedDungeons) as number[]).reduce((a: number, b: number) => a + b, 0) : h.runsCount || 1;
+                    return (
+                      <motion.div key={String(h.id)} whileHover={{ x: 5 }} onClick={() => router.push(`/manage/${String(h.id)}`)} className="tn-light relative w-full rounded-2xl border border-emerald-500/20 overflow-hidden flex items-center gap-3 px-4 py-3 cursor-pointer group hover:border-emerald-400/40 hover:shadow-[0_0_24px_rgba(16,185,129,0.12)] transition-all">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/50">
+                          {pic ? (<img src={pic} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />) : (<span className="flex h-full w-full items-center justify-center text-[10px] font-black text-emerald-300/60 uppercase">{String(ownerName(h) || "?").slice(0, 1)}</span>)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black uppercase tracking-wide text-white">{h.title || `${totalRuns}× Run`}</p>
+                          <p className="truncate text-[9px] font-bold uppercase tracking-widest text-gray-500">{ownerName(h)}{h.serverRegion ? ` · ${String(h.serverRegion).toUpperCase()}` : ""}</p>
+                        </div>
+                        <div className="shrink-0 flex flex-col items-end gap-1">
+                          {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{Number(h.pricePerRun).toFixed(2)}M</span>)}
+                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">PAID</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
