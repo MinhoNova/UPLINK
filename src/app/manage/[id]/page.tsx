@@ -898,7 +898,6 @@ export default function ManagePage() {
     resolveChatIdentity,
     openRatePicker,
     DUNGEONS,
-    WOW_CLASS_GROUPS,
     CLASS_ROLE_OPTIONS,
     AUTO_ACCEPT_DURATION_MS,
     AvatarWithEffect,

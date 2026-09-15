@@ -33,7 +33,6 @@ export interface PageContextValue {
   ) => { name: string; avatar: string };
   openRatePicker: (lobby: any) => void;
   DUNGEONS: { name: string; img: string; short: string }[];
-  WOW_CLASS_GROUPS: Record<string, string[]>;
   CLASS_ROLE_OPTIONS: Record<string, string[]>;
   AUTO_ACCEPT_DURATION_MS: number;
   AvatarWithEffect: any;
