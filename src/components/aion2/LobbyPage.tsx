@@ -51,7 +51,7 @@ function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
   return OFFER_NOTIFICATION_CATEGORIES.includes(value as OfferNotificationCategory) ? value as OfferNotificationCategory : "dungeon";
 }
 
-export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: string }) {
+export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string }) {
   const { t } = useI18n();
   const { data: session } = useSession();
   const router = useRouter();

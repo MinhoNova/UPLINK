@@ -1,4 +1,4 @@
-import Aion2TestClubPage from "@/components/aion2/Aion2TestClubPage";
+import LobbyPage from "@/components/aion2/LobbyPage";
 import { getKVPairs } from "@/lib/db";
 import { resolveHeroBg } from "@/lib/heroBg";
 
@@ -69,7 +69,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Aion2TestClubPage initialHeroBg={initialHeroBg} />
+      <LobbyPage initialHeroBg={initialHeroBg} />
       <HomeSeoFooter />
     </>
   );
