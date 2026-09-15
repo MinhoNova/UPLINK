@@ -55,7 +55,6 @@ export default function MyProfileClient() {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
         if (d.notifications) setNotifications(d.notifications);
-        setDefaultBanner(typeof d.siteDefaultBanner === "string" ? d.siteDefaultBanner : "");
         setDataLoaded(true);
       })
       .catch(() => {});
@@ -90,12 +89,8 @@ export default function MyProfileClient() {
   const [nameColor, setNameColor] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [bannerBusy, setBannerBusy] = useState(false);
-  const [defaultBanner, setDefaultBanner] = useState("");
-  const [defaultBannerBusy, setDefaultBannerBusy] = useState(false);
-
   useEffect(() => {
     setTeamName(me?.team?.name || "");
-    setTeamMembers(Array.isArray(me?.team?.members) ? me.team.members : []);
     setDisplayNameInput(me?.displayName || "");
     setNameColor(me?.nameColor || "");
     setBannerUrl(resolveProfileBanner(me) || "");
@@ -233,67 +228,6 @@ export default function MyProfileClient() {
     if (ok) {
       setBannerUrl("");
       flash("Banner removed");
-    }
-  };
-
-  const handleDefaultBannerFile = async (file: File) => {
-    if (file.size > 24 * 1024 * 1024) {
-      flash("File too large (max 24MB)", "err");
-      return;
-    }
-    setDefaultBannerBusy(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file, file.name);
-      fd.append("field", "banner");
-      const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        flash(data.error || "Upload failed", "err");
-        return;
-      }
-      const save = await fetch("/api/admin/default-banner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ banner: data.url }),
-      });
-      const saved = await save.json();
-      if (!save.ok) {
-        flash(saved.error || "Save failed", "err");
-        return;
-      }
-      setDefaultBanner(data.url);
-      window.dispatchEvent(new Event("data-refresh"));
-      refresh();
-      flash("Default banner set for everyone");
-    } catch {
-      flash("Upload failed", "err");
-    } finally {
-      setDefaultBannerBusy(false);
-    }
-  };
-
-  const resetDefaultBanner = async () => {
-    setDefaultBannerBusy(true);
-    try {
-      const save = await fetch("/api/admin/default-banner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ banner: null }),
-      });
-      const saved = await save.json();
-      if (!save.ok) {
-        flash(saved.error || "Save failed", "err");
-        return;
-      }
-      setDefaultBanner("");
-      window.dispatchEvent(new Event("data-refresh"));
-      refresh();
-      flash("Default banner reset to built-in");
-    } catch {
-      flash("Request failed", "err");
-    } finally {
-      setDefaultBannerBusy(false);
     }
   };
 
