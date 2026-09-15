@@ -24,7 +24,6 @@ import {
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
-import { isPrimaryAdmin } from "@/lib/rolesConstants";
 import {
   importLobbyVfxFromUrl,
   uploadLobbyVfxBlob,
@@ -744,48 +743,7 @@ export default function MyProfileClient() {
               </div>
             </div>
 
-            {isPrimaryAdmin(myId, me?.username) && (
-              <div className="mt-6 pt-5 border-t border-cyan-500/20">
-                <p className="text-[9px] font-black uppercase tracking-widest text-cyan-300 mb-2">
-                  Site default banner <span className="text-slate-700 normal-case tracking-normal">(shown on every member profile until they set their own)</span>
-                </p>
-                <div className="w-full h-16 rounded-xl overflow-hidden border border-cyan-500/25 bg-black/40 relative mb-3">
-                  {defaultBanner ? (
-                    <img src={defaultBanner} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-slate-600">Built-in default</div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all text-[10px] font-black uppercase tracking-widest text-cyan-200">
-                    <Upload className="w-3.5 h-3.5" />
-                    {defaultBannerBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : defaultBanner ? "Replace Default" : "Set Default"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={defaultBannerBusy}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        e.target.value = "";
-                        if (f) void handleDefaultBannerFile(f);
-                      }}
-                    />
-                  </label>
-                  {defaultBanner && (
-                    <button
-                      onClick={resetDefaultBanner}
-                      disabled={defaultBannerBusy}
-                      className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition-all text-[10px] font-black uppercase tracking-widest"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
 
-            {/* Name Color */}
             <div className="mt-6 pt-5 border-t border-blue-900/30">
               <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">
                 Name color <span className="text-slate-700 normal-case tracking-normal">(gradient or solid — applies everywhere)</span>
