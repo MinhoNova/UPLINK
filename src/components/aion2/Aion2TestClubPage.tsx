@@ -247,26 +247,12 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                         {Number(offer.pricePerRun) > 0 && (<div className="flex items-center gap-3"><span className="px-2 py-0.5 rounded-md bg-black/50 text-[10px] font-black text-amber-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span><span className="px-2 py-0.5 rounded-md bg-black/50 text-[9px] font-bold text-amber-200/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">{Number(offer.pricePerRun).toFixed(2)}M per run</span></div>)}
                       </div>
 
-                      {/* Avatar */}
+                      {/* Avatar Only - Details are in Banner */}
                       <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
                         <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer" onMouseEnter={(e) => { cancelHide(); if (!owner?.id) return; const r = e.currentTarget.getBoundingClientRect(); setHoveredUserId(String(owner.id)); setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic }); }} onMouseLeave={scheduleHide}>
                           {pic ? (<img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />) : (<Users className="w-6 h-6 text-cyan-400/70" />)}
                         </div>
                         <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
-                      </div>
-
-                      {/* Offer Details - Next to Avatar */}
-                      <div className="relative z-10 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</h4>
-                        </div>
-                        {Number(offer.pricePerRun) > 0 && (
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className="text-[10px] font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
-                            <span className="text-[9px] font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
-                          </div>
-                        )}
-                        {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
                       </div>
 
                       {/* Class Images - Dead Center of Card */}
