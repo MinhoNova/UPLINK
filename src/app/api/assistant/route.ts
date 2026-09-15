@@ -54,7 +54,10 @@ export async function POST(req: Request) {
 
     const model = process.env.ASSISTANT_MODEL || "@cf/zai-org/glm-4.7-flash";
 
-    type AiReply = { response?: string | Array<{ response?: string }> };
+    type AiReply = {
+      response?: string | Array<{ response?: string }>;
+      choices?: Array<{ message?: { content?: string } }>;
+    };
     let result: AiReply;
     try {
       result = (await ai.run(model, { messages, max_tokens: 768 })) as AiReply;
@@ -65,10 +68,15 @@ export async function POST(req: Request) {
       throw err;
     }
 
-    const reply =
-      typeof result?.response === "string" ? result.response.trim()
-      : Array.isArray(result?.response) ? String(result.response[0]?.response || "").trim()
-      : "";
+    const chatReply =
+      (Array.isArray(result?.choices) && result.choices[0]?.message?.content) || "";
+    const genReply =
+      typeof result?.response === "string"
+        ? result.response
+        : Array.isArray(result?.response)
+          ? String(result.response[0]?.response || "")
+          : "";
+    const reply = (chatReply || genReply).trim();
 
     if (!reply) {
       return NextResponse.json({ error: "The assistant returned an empty answer. Try rephrasing." }, { status: 502 });
