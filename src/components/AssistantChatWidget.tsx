@@ -71,7 +71,7 @@ export default function AssistantChatWidget() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="mb-4 w-[360px] max-w-[calc(100vw-3rem)] bg-[#0a0a16]/95 backdrop-blur-2xl border border-cyan-400/20 rounded-[1.5rem] shadow-[0_0_40px_rgba(0,255,255,0.08)] overflow-hidden"
+            className="mb-4 w-[420px] max-w-[calc(100vw-3rem)] bg-[#0a0a16]/95 backdrop-blur-2xl border border-cyan-400/20 rounded-[1.5rem] shadow-[0_0_40px_rgba(0,255,255,0.08)] overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-gradient-to-r from-cyan-400/[0.05] to-transparent">
@@ -99,7 +99,7 @@ export default function AssistantChatWidget() {
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="h-[320px] overflow-y-auto p-4 space-y-3">
+            <div ref={scrollRef} className="h-[420px] overflow-y-auto p-4 space-y-3">
               {messages.length === 0 && !loading && (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <div className="w-12 h-12 rounded-full bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center mb-4">
@@ -114,7 +114,8 @@ export default function AssistantChatWidget() {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-bold leading-relaxed ${
+                    dir="auto"
+                    className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-bold leading-relaxed break-words ${
                       msg.role === "user"
                         ? "bg-cyan-400/20 text-cyan-50 rounded-tr-none border border-cyan-400/20"
                         : "bg-white/[0.06] text-gray-200 rounded-tl-none border border-white/5"
@@ -153,8 +154,9 @@ export default function AssistantChatWidget() {
                       send();
                     }
                   }}
-                  placeholder="Ask about UPLINK..."
-                  className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-cyan-400/60 transition-all text-white placeholder:text-gray-600"
+                  dir="auto"
+                  placeholder="Ask about UPLINK / اسأل عن الموقع..."
+                  className="flex-1 min-w-0 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-400/60 transition-all text-white placeholder:text-gray-600"
                 />
                 <button
                   onClick={send}

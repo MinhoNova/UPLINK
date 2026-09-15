@@ -60,7 +60,14 @@ export async function POST(req: Request) {
     };
     let result: AiReply;
     try {
-      result = (await ai.run(model, { messages, max_tokens: 768 })) as AiReply;
+      result = (await ai.run(model, {
+        messages,
+        max_tokens: 512,
+        ...(model.includes("glm") && {
+          reasoning_effort: "low",
+          chat_template_kwargs: { enable_thinking: false },
+        }),
+      })) as AiReply;
     } catch (err: unknown) {
       if (/out of capacity|429|3040/i.test(String(err instanceof Error ? err.message : err))) {
         return NextResponse.json({ error: "The assistant is busy right now — try again in a moment." }, { status: 429 });
