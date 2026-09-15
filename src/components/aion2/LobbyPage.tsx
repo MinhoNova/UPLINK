@@ -304,7 +304,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         </div>
 
                         {/* Offer Details Next to Avatar */}
-                        <div className="min-w-0 max-w-[200px]">
+                        <div className="min-w-0 max-w-[280px]">
                           {/* Region Badge with Flag */}
                           {offer.serverRegion && (
                             <div className="flex items-center gap-1.5 mb-0.5">
@@ -322,7 +322,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</h4>
                           {/* Prices */}
                           {Number(offer.pricePerRun) > 0 && (
-                            <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-3 mt-1 whitespace-nowrap">
                               <span className="text-sm font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
                               <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
                             </div>
