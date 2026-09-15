@@ -1,1 +1,0 @@
-﻿fix(create-offer): hover-select services, per-player pricing, class validation, page spacing
