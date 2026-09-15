@@ -237,7 +237,7 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                       <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none"><div className="absolute inset-0 bg-[#070b1a]" /><div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]"><div className="absolute inset-0" style={offerBgStyle} />{offerBg && <img src={offerBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" loading="lazy" decoding="async" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}<div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" /></div></div>
 
                       {/* Left: Avatar + Details */}
-                      <div className="relative z-10 flex items-center gap-3 flex-1 min-w-0">
+                      <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
                         {/* Avatar */}
                         <div className={`flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
                           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer" onMouseEnter={(e) => { cancelHide(); if (!owner?.id) return; const r = e.currentTarget.getBoundingClientRect(); setHoveredUserId(String(owner.id)); setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic }); }} onMouseLeave={scheduleHide}>
@@ -262,9 +262,9 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                         </div>
                       </div>
 
-                      {/* Center: Class Images */}
+                      {/* Center: Class Images (absolutely centered) */}
                       {classSlots && classSlots.length > 0 && (
-                        <div className="relative z-10 flex items-center gap-2 flex-shrink-0">
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
                           {classSlots.map((s, i) => (
                             <div key={i} className="relative">
                               <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
