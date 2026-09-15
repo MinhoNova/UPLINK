@@ -8,6 +8,7 @@ import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
 import GlobalChatWidget from "@/components/GlobalChatWidget";
+import AssistantChatWidget from "@/components/AssistantChatWidget";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
 import "./globals.css";
@@ -165,6 +166,7 @@ export default function RootLayout({
             <CommunityNotificationsPanel />
             <PlayerProfileModal />
             <GlobalChatWidget />
+            <AssistantChatWidget />
             {children}
           </I18nProvider>
         </AuthProvider>

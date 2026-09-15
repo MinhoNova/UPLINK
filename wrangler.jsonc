@@ -31,6 +31,10 @@
       "id": "d14e5f2da43a43d18c1d5ad068c92d02"
     }
   ],
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
   "triggers": {
     "crons": ["* * * * *"]
   },

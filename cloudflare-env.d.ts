@@ -3,6 +3,7 @@
 interface CloudflareEnv {
   DB: D1Database;
   KV_BINDING: KVNamespace;
+  AI: Ai;
   AUTH_TRUST_HOST?: string;
   NEXTAUTH_URL?: string;
   NEXTAUTH_SECRET?: string;
