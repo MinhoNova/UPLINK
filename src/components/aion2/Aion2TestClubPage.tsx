@@ -239,7 +239,7 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                       {/* Left: Avatar + Details */}
                       <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
                         {/* Avatar */}
-                        <div className={`flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
+                        <div className={`relative flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
                           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer" onMouseEnter={(e) => { cancelHide(); if (!owner?.id) return; const r = e.currentTarget.getBoundingClientRect(); setHoveredUserId(String(owner.id)); setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic }); }} onMouseLeave={scheduleHide}>
                             {pic ? (<img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />) : (<Users className="w-6 h-6 text-cyan-400/70" />)}
                           </div>
