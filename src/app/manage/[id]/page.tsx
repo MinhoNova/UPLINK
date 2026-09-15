@@ -908,6 +908,52 @@ export default function ManagePage() {
 
   if (!lobbyId) return null;
 
+  /* ----- PERMISSION CHECK ----- */
+  const canView = targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle) || isAdmin);
+  useEffect(() => {
+    if (!dataLoaded) return;
+    if (!canView) {
+      addToast("You are no longer on this mission.", "error");
+      router.push("/");
+    }
+  }, [dataLoaded, canView]);
+
+  /* Show loading while data is loading — prevents crash from null targetLobby */
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-[#00ffff]/40 border-t-[#00ffff] rounded-full animate-spin mx-auto mb-6" />
+          <p className="text-xs font-black tracking-widest text-[#00ffff] uppercase">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* Don't render if no permission — causes crash in ManageContent */
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin mx-auto mb-6" />
+          <p className="text-xs font-black tracking-widest text-red-400 uppercase">Access Denied</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* Don't render if targetLobby not found — causes crash in ManageModal */
+  if (!targetLobby) {
+    return (
+      <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-yellow-500/40 border-t-yellow-500 rounded-full animate-spin mx-auto mb-6" />
+          <p className="text-xs font-black tracking-widest text-yellow-400 uppercase">Mission not found</p>
+        </div>
+      </div>
+    );
+  }
+
   const voiceConnected = !!voiceToken;
   const serverUrl = voiceServerUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || "wss://uplink-sist6urm.livekit.cloud";
 
