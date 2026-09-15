@@ -40,7 +40,6 @@ import {
   profileImgClass,
 } from "@/lib/profileImage";
 
-/* ── FILTER TABS ── */
 const FILTER_TABS = [
   { label: "ALL",       key: "All",       icon: Layers },
   { label: "DUNGEONS",  key: "Dungeons",  icon: Shield },
@@ -49,7 +48,6 @@ const FILTER_TABS = [
   { label: "PVP",       key: "PVP",       icon: Swords },
 ];
 
-/* ── REGION FILTER TABS ── */
 const REGION_TABS = [
   { label: "ALL",    key: "All",       flag: "" },
   { label: "EU",     key: "EU",        flag: "/flags/eu.svg" },
@@ -156,9 +154,7 @@ export default function Aion2TestClubPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile: { id: meId, offerNotificationSettings: next } }),
       });
-    } catch {
-      /* The next poll restores the saved setting if the request fails. */
-    }
+    } catch {}
   };
 
   const toggleOfferCategoryMute = (category: OfferNotificationCategory) => {
@@ -277,7 +273,7 @@ export default function Aion2TestClubPage({
     const owner = missionOwner(m);
     const bgPoster = resolveOfferBannerImage(m, owner, "showOnOngoing");
     const totalRuns = m.selectedDungeons
-      ? (Object.values(m.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
+      ? (Object.values(m.selectedDungeons) as number[]).reduce((a: number, b: number) => a + b, 0)
       : m.runsCount || 1;
     const shown = (m.accepted || []).length;
     const open = Math.max(0, 4 - shown);
@@ -296,7 +292,6 @@ export default function Aion2TestClubPage({
             : "border-cyan-500/20 hover:border-cyan-400/40"
         }`}
       >
-        {/* Dark readable zone — same as offer cards */}
         <div className="absolute inset-0 bg-[#070b1a]" />
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0" style={offerBgStyle} />
@@ -305,7 +300,6 @@ export default function Aion2TestClubPage({
           ) : null}
           <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
         </div>
-
         <div className="relative z-10 flex items-start justify-between gap-2">
           <p className="text-sm font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
             {m.category === "leveling" ? (
@@ -320,17 +314,15 @@ export default function Aion2TestClubPage({
             )}
           </p>
           <div className="shrink-0 flex items-center gap-1.5">
-            <span
-              className={`px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${
-                isUnpaid
-                  ? "border-red-500/40 bg-red-500/15 text-red-300"
-                  : m.status === "in_progress"
-                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-                    : m.status === "payment_pending"
-                      ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
-                      : "border-cyan-500/30 bg-black/50 text-cyan-300"
-              }`}
-            >
+            <span className={`px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${
+              isUnpaid
+                ? "border-red-500/40 bg-red-500/15 text-red-300"
+                : m.status === "in_progress"
+                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                  : m.status === "payment_pending"
+                    ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
+                    : "border-cyan-500/30 bg-black/50 text-cyan-300"
+            }`}>
               {isUnpaid ? "UNPAID" : m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
             </span>
             <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">
@@ -338,7 +330,6 @@ export default function Aion2TestClubPage({
             </span>
           </div>
         </div>
-
         <div className="relative z-10 mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
             {m.serverRegion && (
@@ -410,13 +401,9 @@ export default function Aion2TestClubPage({
       .filter((offer: any) => String(offer.ownerId) !== meId)
       .filter((offer: any) => !offerNotificationSettings.mutedCategories.includes(normalizeOfferCategory(offer.category)));
     if (audibleOffers.length === 0) return;
-
     const sound = new Audio("/Message.mp3");
     sound.volume = 0.55;
-    void sound.play().catch(() => {
-      /* Browsers can block audio until the visitor has interacted with the page. */
-    });
-
+    void sound.play().catch(() => {});
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     audibleOffers.forEach((offer: any) => {
         new Notification(`New ${normalizeOfferCategory(offer.category)} offer`, {
@@ -450,7 +437,7 @@ export default function Aion2TestClubPage({
     const req = l?.requiredClasses;
     if (Array.isArray(req)) {
       const acceptedClasses = new Set(
-        (l?.accepted || []).map((a: any) => String(a.aionClass || a.class || a.role || "").trim().toLowerCase())
+        (l?.accepted || []).map((a: any) => String(a.aionClass || a.className || a.role || "").trim().toLowerCase())
       );
       return req.map((cls: string) => ({
         cls,
@@ -480,7 +467,6 @@ export default function Aion2TestClubPage({
   const alreadyApplied = (l: any) =>
     meId && ((l.applicants || []).some((a: any) => String(a.applicantId || a.userId || a.id) === meId) || appliedIds.has(String(l.id)));
 
-  /* ── PROFILE CARD ACTIONS (friend / dm / block) ── */
   const getFriendStatus = (userId2: string) => {
     const entry = friends.find(
       (f: any) =>
@@ -723,9 +709,7 @@ export default function Aion2TestClubPage({
 
   return (
     <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-clip relative">
-
-      {/* Background Artwork — full page, behind all content, never cut.
-          Only allow-listed themes from heroBg.ts are ever rendered. */}
+      {/* Background Artwork */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {heroBg === "scenic" ? (
           <>
@@ -748,58 +732,33 @@ export default function Aion2TestClubPage({
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          HERO SECTION
-          ══════════════════════════════════════════════════════════ */}
+      {/* HERO SECTION */}
       <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
-
-        {/* Center glow — subtle, doesn't wash out the image */}
         <motion.div
-          animate={motionOn ? {
-            scale: [1, 1.12, 1],
-            opacity: [0.15, 0.28, 0.15],
-          } : undefined}
+          animate={motionOn ? { scale: [1, 1.12, 1], opacity: [0.15, 0.28, 0.15] } : undefined}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] rounded-full blur-[110px] pointer-events-none"
-          style={{
-            background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, rgba(168,85,247,0.10) 50%, transparent 75%)",
-          }}
+          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, rgba(168,85,247,0.10) 50%, transparent 75%)" }}
         />
-
-        {/* Left / Right aurora glows — very subtle */}
         <motion.div
-          animate={motionOn ? {
-            scale: [1, 1.12, 1],
-            opacity: [0.08, 0.18, 0.08],
-          } : undefined}
+          animate={motionOn ? { scale: [1, 1.12, 1], opacity: [0.08, 0.18, 0.08] } : undefined}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           className="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
-          style={{
-            background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)",
-          }}
+          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)" }}
         />
         <motion.div
-          animate={motionOn ? {
-            scale: [1, 1.15, 1],
-            opacity: [0.06, 0.15, 0.06],
-          } : undefined}
+          animate={motionOn ? { scale: [1, 1.15, 1], opacity: [0.06, 0.15, 0.06] } : undefined}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           className="absolute -top-[10%] -right-[10%] w-[50vw] h-[50vh] rounded-full blur-[140px]"
-          style={{
-            background: "radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)",
-          }}
+          style={{ background: "radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)" }}
         />
-
-        {/* Hero Content — no glass wrapper, transparent background */}
         <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 max-w-2xl mx-auto">
-
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="flex flex-col items-center"
           >
-            {/* FIND YOUR CREW with side lines */}
             <div className="flex items-center gap-6 mt-1">
               <span className="h-px w-16 bg-gradient-to-r from-transparent to-blue-400/60" />
               <h2 className="text-sm sm:text-base font-bold tracking-[0.4em] text-blue-100 uppercase drop-shadow-[0_0_12px_rgba(56,189,248,0.6)]">
@@ -807,8 +766,6 @@ export default function Aion2TestClubPage({
               </h2>
               <span className="h-px w-16 bg-gradient-to-l from-transparent to-blue-400/60" />
             </div>
-
-            {/* DUNGEONS · RAIDS · LEVELING */}
             <p className="mt-4 text-[11px] font-bold tracking-[0.3em] text-slate-300 uppercase">
               {((t("hero_tagline") || "DUNGEONS · RAIDS · LEVELING").split("·").map((part: string, i: number) => (
                 <span key={i}>
@@ -817,17 +774,11 @@ export default function Aion2TestClubPage({
                 </span>
               )))}
             </p>
-
-            {/* Subtext */}
             <p className="mt-2 text-xs text-slate-400 font-medium max-w-md">
               {t("hero_adventure") || "Find trusted players for your next adventure."}
             </p>
-
-            {/* Vertical Accent Line */}
             <div className="w-[1px] h-8 bg-gradient-to-b from-purple-500/60 to-transparent my-4" />
           </motion.div>
-
-          {/* CREATE YOUR OFFER Button — transparent, no glass */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -837,10 +788,7 @@ export default function Aion2TestClubPage({
               href="/create-offer"
               className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_35px_rgba(59,130,246,0.25)] hover:shadow-[0_0_55px_rgba(168,85,247,0.45)] transition-all duration-500 block hover:scale-105 active:scale-95"
             >
-              {/* Animated border gradient */}
               <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
-
-              {/* Button inner: transparent, no backdrop-blur */}
               <div className="relative bg-transparent px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-white/12 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] transition-all">
                 <span className="text-xs font-black tracking-[0.3em] uppercase text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.4)]">
                   {t("hero_create") || "CREATE YOUR OFFER"}
@@ -849,38 +797,34 @@ export default function Aion2TestClubPage({
               </div>
             </motion.a>
           </motion.div>
-
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════
-          MAIN CONTENT GRID
-          ══════════════════════════════════════════════════════════ */}
+      {/* MAIN CONTENT GRID */}
       <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-8">
-
           {/* Center Column: Offers */}
           <section className="min-w-0">
-            {/* Filter Tabs — category + region in one strip, mute button far right */}
+            {/* Filter Tabs */}
             <div className="relative z-30 mb-6 flex max-w-full items-center gap-2">
               <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-blue-900/40 bg-[#0a0f26]/70 p-1.5 pr-2 backdrop-blur-md shadow-[0_4px_24px_rgba(34,211,238,0.06)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {FILTER_TABS.map((tab) => {
-                const isActive = activeTab === tab.key;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${
-                      isActive
-                        ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40'
-                        : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
+                  const isActive = activeTab === tab.key;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${
+                        isActive
+                          ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40'
+                          : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
                 })}
                 <div className="mx-1 h-6 w-px shrink-0 bg-white/15" />
                 {REGION_TABS.map((rtab) => {
@@ -926,143 +870,130 @@ export default function Aion2TestClubPage({
                   const classSlots = classSlotsOf(offer);
                   const applied = alreadyApplied(offer);
                   return (
-                  <motion.div
-                    key={`${offer.id}-${offer.createdAt || ""}`}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ scale: 1.005 }}
-                    onDoubleClick={(e) => {
-                      if (isMine || isAdmin) {
-                        e.stopPropagation();
-                        setBgEditOfferId(String(offer.id));
-                        setBgError("");
-                      }
-                    }}
-                    className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
-                  >
-                    {/* Clipped visual layer — keeps rounded corners for dark zone + banner strip */}
-                    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
-                      {/* Dark readable zone — full card underlay */}
-                      <div className="absolute inset-0 bg-[#070b1a]" />
-                    {/* Banner Right Side - Title & Price */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] flex flex-col justify-between p-3 z-[5] pointer-events-none">
-                      {/* Top: Title + Region */}
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-sm font-black tracking-widest text-white uppercase drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] truncate">
-                          {offer.title || `${offer.runsCount || 1}× Boost`}
-                        </h4>
-                        {offer.serverRegion && (
-                          <span className="shrink-0 px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-[9px] font-black tracking-widest text-violet-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                            {String(offer.serverRegion).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      {/* Bottom: Prices */}
-                      {Number(offer.pricePerRun) > 0 && (
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-0.5 rounded-md bg-black/50 text-[10px] font-black text-amber-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                            Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-black/50 text-[9px] font-bold text-amber-200/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                            {Number(offer.pricePerRun).toFixed(2)}M per run
-                          </span>
+                    <motion.div
+                      key={`${offer.id}-${offer.createdAt || ""}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      whileHover={{ scale: 1.005 }}
+                      onDoubleClick={(e) => {
+                        if (isMine || isAdmin) {
+                          e.stopPropagation();
+                          setBgEditOfferId(String(offer.id));
+                          setBgError("");
+                        }
+                      }}
+                      className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all"
+                    >
+                      {/* Background + Banner */}
+                      <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                        <div className="absolute inset-0 bg-[#070b1a]" />
+                        <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]">
+                          <div className="absolute inset-0" style={offerBgStyle} />
+                          {offerBg && <img src={offerBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" loading="lazy" decoding="async" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
                         </div>
-                      )}
-                    </div>
-                    </div>
-
-                    {/* Creator avatar */}
-                    <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
-                      <div
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer"
-                        onMouseEnter={(e) => {
-                          cancelHide();
-                          if (!owner?.id) return;
-                          const r = e.currentTarget.getBoundingClientRect();
-                          setHoveredUserId(String(owner.id));
-                          setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic });
-                        }}
-                        onMouseLeave={scheduleHide}
-                      >
-                        {pic ? (
-                          <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                        ) : (
-                          <Users className="w-6 h-6 text-cyan-400/70" />
-                        )}
+                        {/* Banner Text Overlay */}
+                        <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] flex flex-col justify-between p-3 z-[5] pointer-events-none">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="text-sm font-black tracking-widest text-white uppercase drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] truncate">
+                              {offer.title || `${offer.runsCount || 1}× Boost`}
+                            </h4>
+                            {offer.serverRegion && (
+                              <span className="shrink-0 px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-[9px] font-black tracking-widest text-violet-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                {String(offer.serverRegion).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          {Number(offer.pricePerRun) > 0 && (
+                            <div className="flex items-center gap-3">
+                              <span className="px-2 py-0.5 rounded-md bg-black/50 text-[10px] font-black text-amber-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-black/50 text-[9px] font-bold text-amber-200/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                {Number(offer.pricePerRun).toFixed(2)}M per run
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
-                    </div>
 
-                    {/* Offer Details */}
-                    <div className="relative z-10 flex-1 min-w-0 lg:max-w-[42%]">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {!classSlots && openRoles.length > 0 && (
-                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
-                            <Users className="w-3.5 h-3.5 text-cyan-400" />
-                            {`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}
-                          </span>
-                        )}
-                        {owner?.team?.name && (
-                          <span
-                            className="flex max-w-[180px] items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/[0.08] px-2 py-0.5 text-[9px] font-black tracking-wide text-amber-200"
-                            title={`Team: ${owner.team.name}`}
-                          >
-                            <Users className="h-3 w-3 shrink-0 text-amber-300" />
-                            <span className="truncate">{owner.team.name}</span>
-                          </span>
-                        )}
+                      {/* Creator avatar */}
+                      <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
+                        <div
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer"
+                          onMouseEnter={(e) => {
+                            cancelHide();
+                            if (!owner?.id) return;
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setHoveredUserId(String(owner.id));
+                            setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic });
+                          }}
+                          onMouseLeave={scheduleHide}
+                        >
+                          {pic ? (
+                            <img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          ) : (
+                            <Users className="w-6 h-6 text-cyan-400/70" />
+                          )}
+                        </div>
+                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
                       </div>
-                    </div>
-                    {/* Required Classes */}
-                    {classSlots && classSlots.length > 0 && (
-                      <div className="relative z-10 w-full mt-2">
-                        <div className="flex items-center justify-center gap-3">
+
+                      {/* Required Classes (no names) */}
+                      {classSlots && classSlots.length > 0 && (
+                        <div className="relative z-10 flex items-center gap-2">
                           {classSlots.map((s, i) => (
-                            <div key={i} className="flex flex-col items-center gap-1 shrink-0">
-                              <div className="relative">
-                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                                {s.filled && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#070b1a]" />}
-                              </div>
-                              <span className={`text-[9px] font-black uppercase tracking-wider whitespace-nowrap ${s.filled ? 'text-emerald-300' : 'text-cyan-300'}`}>{s.cls}</span>
+                            <div key={i} className="relative">
+                              <img src={classThumbUrl(s.cls)} alt={s.cls} width={48} height={48} className={`w-12 h-12 object-contain drop-shadow-[0_2px_8px_rgba(34,211,238,0.5)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                              {s.filled && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-[#070b1a]" />}
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                    <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
-                      {applied ? (
-                        <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md">
-                          <Check className="w-3 h-3" /> Applied
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => { setApplyTarget(offer); setApplyError(""); }}
-                          disabled={!meId || applyingId === String(offer.id)}
-                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"
-                        >
-                          <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
-                        </button>
                       )}
-                      {(isMine || isAdmin) && (
-                        confirmId === String(offer.id) ? (
-                          <button
-                            onClick={() => deleteOffer(offer)}
-                            disabled={deletingId === String(offer.id)}
-                            className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md"
-                          >
-                            {deletingId === String(offer.id) ? "Deleting..." : "Confirm Delete?"}
-                          </button>
+
+                      {/* Open Roles (no classes) */}
+                      {!classSlots && openRoles.length > 0 && (
+                        <div className="relative z-10 flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                          <Users className="w-3.5 h-3.5 text-cyan-400" />
+                          {`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
+                        {applied ? (
+                          <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md">
+                            <Check className="w-3 h-3" /> Applied
+                          </span>
                         ) : (
                           <button
-                            onClick={() => { setConfirmId(String(offer.id)); setDeleteError(""); window.setTimeout(() => setConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }}
-                            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 hover:backdrop-blur-xl transition-all backdrop-blur-md"
+                            onClick={() => { setApplyTarget(offer); setApplyError(""); }}
+                            disabled={!meId || applyingId === String(offer.id)}
+                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"
                           >
-                            <Trash2 className="w-3 h-3" /> Delete
+                            <Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}
                           </button>
-                        )
-                      )}
-                    </div>
-                  </motion.div>
+                        )}
+                        {(isMine || isAdmin) && (
+                          confirmId === String(offer.id) ? (
+                            <button
+                              onClick={() => deleteOffer(offer)}
+                              disabled={deletingId === String(offer.id)}
+                              className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md"
+                            >
+                              {deletingId === String(offer.id) ? "Deleting..." : "Confirm Delete?"}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => { setConfirmId(String(offer.id)); setDeleteError(""); window.setTimeout(() => setConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }}
+                              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 hover:backdrop-blur-xl transition-all backdrop-blur-md"
+                            >
+                              <Trash2 className="w-3 h-3" /> Delete
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </motion.div>
                   );
                 })}
               </AnimatePresence>
@@ -1085,10 +1016,9 @@ export default function Aion2TestClubPage({
             </div>
           </section>
 
-          {/* 3. Right Sidebar: Ongoing Missions */}
+          {/* Right Sidebar: Ongoing Missions */}
           <aside className="w-full">
             <div className="tn-light relative w-full min-h-[360px] h-full flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
-              {/* Widget Header — slim */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">
                   {t("missions_header") || "ONGOING MISSIONS"}
@@ -1151,7 +1081,7 @@ export default function Aion2TestClubPage({
             </div>
           </aside>
 
-          {/* 4. History (completed & paid threads) */}
+          {/* History (completed & paid threads) */}
           {historyOffers.length > 0 && (
             <div className="w-full">
               <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-emerald-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
@@ -1171,7 +1101,7 @@ export default function Aion2TestClubPage({
                     const owner = lobbyOwner(h);
                     const pic = ownerPic(h) || null;
                     const totalRuns = h.selectedDungeons
-                      ? (Object.values(h.selectedDungeons) as number[]).reduce((a, b) => a + b, 0)
+                      ? (Object.values(h.selectedDungeons) as number[]).reduce((a: number, b: number) => a + b, 0)
                       : h.runsCount || 1;
                     return (
                       <motion.div
@@ -1215,11 +1145,10 @@ export default function Aion2TestClubPage({
               </div>
             </div>
           )}
-
         </div>
       </main>
 
-      {/* ── APPLY TO OFFER MODAL ── */}
+      {/* APPLY TO OFFER MODAL */}
       <AnimatePresence>
         {applyTarget && (
           <motion.div
@@ -1239,7 +1168,6 @@ export default function Aion2TestClubPage({
               className="tn-light relative w-full max-w-lg rounded-3xl border border-cyan-500/25 bg-[#0a0f26]/95 p-6 shadow-[0_0_60px_rgba(0,229,255,0.18)]"
             >
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
-
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-500/10">
@@ -1259,8 +1187,6 @@ export default function Aion2TestClubPage({
                   <X className="h-4 w-4" />
                 </button>
               </div>
-
-              {/* Class — same module as the auto-apply gear */}
               <p className="mt-5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
                 <Users className="h-3 w-3 text-cyan-400" /> Your class
               </p>
@@ -1286,8 +1212,6 @@ export default function Aion2TestClubPage({
                   );
                 })}
               </div>
-
-              {/* Item Level — same stepper as the auto-apply gear */}
               <div className="mt-5">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Item Level</p>
                 <div className="mt-2 flex items-center gap-3">
@@ -1315,8 +1239,6 @@ export default function Aion2TestClubPage({
                   </button>
                 </div>
               </div>
-
-              {/* Note (optional) */}
               <div className="mt-5">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Note (optional)</p>
                 <input
@@ -1328,11 +1250,9 @@ export default function Aion2TestClubPage({
                   className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none transition-all focus:border-cyan-400/50"
                 />
               </div>
-
               {applyError && (
                 <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>
               )}
-
               <div className="mt-5 flex items-center gap-2">
                 <button
                   onClick={submitApply}
@@ -1347,7 +1267,7 @@ export default function Aion2TestClubPage({
         )}
       </AnimatePresence>
 
-      {/* ── OFFER NOTIFICATION POPOVER — detached from the scrolling tabs ── */}
+      {/* OFFER NOTIFICATION POPOVER */}
       {typeof document !== "undefined" && showNotificationSettings && muteButtonRef.current && createPortal(
         (() => {
           const rect = muteButtonRef.current!.getBoundingClientRect();
@@ -1384,7 +1304,7 @@ export default function Aion2TestClubPage({
         document.body
       )}
 
-      {/* ── HOVER PROFILE CARD (portal — floats above everything) ── */}
+      {/* HOVER PROFILE CARD */}
       {typeof document !== "undefined" && hoverCard && hoverCard.rect && hoverCard.owner && hoveredUserId === hoverCard.userId && (
         createPortal(
           (() => {
@@ -1413,20 +1333,12 @@ export default function Aion2TestClubPage({
                 onMouseEnter={cancelHide}
                 onMouseLeave={scheduleHide}
               >
-                {/* Banner — full card width, Discord 5:2 */}
                 <div className="relative aspect-[5/2] w-full bg-[#080810]">
                   {hBanner ? (
-                    <img
-                      src={hBanner}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                    />
+                    <img src={hBanner} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                   ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-[#080810]/20 to-transparent pointer-events-none" />
                 </div>
-
-                {/* Avatar + name */}
                 <div className="px-5 -mt-10 relative z-10 flex items-end gap-3">
                   <div
                     className={`rounded-full overflow-hidden border-[3px] border-[#080810] shadow-[0_0_24px_rgba(255,0,127,0.25)] bg-black shrink-0 ${hint && hEffect === "none" ? "ring-1 ring-purple-500/30" : ""}`}
@@ -1442,11 +1354,7 @@ export default function Aion2TestClubPage({
                     <h3 className="text-base font-black text-white uppercase truncate leading-tight" style={hNameColor ? { ...toNameStyle(hNameColor), textShadow: `0 0 14px ${nameGlowColor(hNameColor)}77` } : undefined}>
                       {hDisplayName}
                     </h3>
-                    <RankBadge
-                      stats={owner?.stats}
-                      ratings={owner?.ratings}
-                      rankOverride={owner?.rankOverride}
-                    />
+                    <RankBadge stats={owner?.stats} ratings={owner?.ratings} rankOverride={owner?.rankOverride} />
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {owner?.team?.name && (
                         <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
@@ -1464,72 +1372,34 @@ export default function Aion2TestClubPage({
                     </div>
                   </div>
                 </div>
-
                 <div className="px-5 pb-4 pt-2">
                   {oid === meId ? (
-                    <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest py-1">
-                      Your profile
-                    </p>
+                    <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest py-1">Your profile</p>
                   ) : (
                     <>
                       {friendStatus === "pending_received" && (
                         <div className="flex gap-2 mb-3">
-                          <button
-                            type="button"
-                            onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }}
-                            className="flex-1 py-2 bg-green-500/15 text-green-400 border border-green-500/35 rounded-xl hover:bg-green-500 hover:text-black transition text-[9px] font-black uppercase tracking-widest"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendDecline(f.id); }}
-                            className="flex-1 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition text-[9px] font-black uppercase tracking-widest"
-                          >
-                            Decline
-                          </button>
+                          <button type="button" onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendAccept(f.id); }} className="flex-1 py-2 bg-green-500/15 text-green-400 border border-green-500/35 rounded-xl hover:bg-green-500 hover:text-black transition text-[9px] font-black uppercase tracking-widest">Accept</button>
+                          <button type="button" onClick={() => { const f = friends.find((fs: any) => (fs.requester === oid && fs.target === meId)); if (f) handleFriendDecline(f.id); }} className="flex-1 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500 hover:text-white transition text-[9px] font-black uppercase tracking-widest">Decline</button>
                         </div>
                       )}
-
                       <div className="flex items-center justify-center gap-8 py-1.5">
                         <div className="flex flex-col items-center gap-0.5" title={`${getMutualFriendsCount(oid)} mutual friends`}>
                           <Users className="w-4 h-4 text-[#00ffff]" />
-                          <span className="text-[10px] font-black text-white tabular-nums">
-                            {getMutualFriendsCount(oid)}
-                          </span>
+                          <span className="text-[10px] font-black text-white tabular-nums">{getMutualFriendsCount(oid)}</span>
                         </div>
-
-                        <button
-                          type="button"
-                          disabled={isUserBlocked(oid)}
-                          onClick={() => openDm(oid)}
-                          title="Send message"
-                          className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        >
+                        <button type="button" disabled={isUserBlocked(oid)} onClick={() => openDm(oid)} title="Send message" className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100">
                           <MessageCircle className="w-4 h-4" />
                           <span className="text-[9px] font-black uppercase tracking-widest">Message</span>
                         </button>
-
-                        <button
-                          type="button"
-                          onClick={() => toggleBlock(oid)}
-                          title={isUserBlocked(oid) ? "Unblock" : "Block"}
-                          className={`flex items-center gap-1.5 hover:scale-110 transition ${
-                            isUserBlocked(oid) ? "text-yellow-400" : "text-red-400"
-                          }`}
-                        >
+                        <button type="button" onClick={() => toggleBlock(oid)} title={isUserBlocked(oid) ? "Unblock" : "Block"} className={`flex items-center gap-1.5 hover:scale-110 transition ${isUserBlocked(oid) ? "text-yellow-400" : "text-red-400"}`}>
                           <Ban className="w-4 h-4" />
                           <span className="text-[9px] font-black uppercase tracking-widest">Block</span>
                         </button>
                       </div>
-
                       <div className="mt-2">
                         {friendStatus === "friends" && (
-                          <button
-                            type="button"
-                            onClick={() => unfriend(oid)}
-                            className="group/fbtn w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all"
-                          >
+                          <button type="button" onClick={() => unfriend(oid)} className="group/fbtn w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff] text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-all">
                             <UserCheck className="w-3 h-3 group-hover/fbtn:hidden" />
                             <UserMinus className="w-3 h-3 hidden group-hover/fbtn:inline-block" />
                             <span className="group-hover/fbtn:hidden">Friends</span>
@@ -1537,19 +1407,12 @@ export default function Aion2TestClubPage({
                           </button>
                         )}
                         {friendStatus === "none" && (
-                          <button
-                            type="button"
-                            disabled={isUserBlocked(oid)}
-                            onClick={() => sendFriendRequest(oid)}
-                            className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40"
-                          >
+                          <button type="button" disabled={isUserBlocked(oid)} onClick={() => sendFriendRequest(oid)} className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40">
                             <UserPlus className="w-3 h-3" /> Add Friend
                           </button>
                         )}
                         {friendStatus === "pending_sent" && (
-                          <span className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
-                            Pending
-                          </span>
+                          <span className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">Pending</span>
                         )}
                       </div>
                     </>
@@ -1562,7 +1425,7 @@ export default function Aion2TestClubPage({
         )
       )}
 
-      {/* ── OFFER BANNER BACKGROUND PICKER ── */}
+      {/* OFFER BANNER BACKGROUND PICKER */}
       {bgEditOfferId && (() => {
         const edOffer = lobbies.find((l: { id?: string }) => String(l.id) === bgEditOfferId) || null;
         const edOwner = edOffer ? lobbyOwner(edOffer) : null;
@@ -1572,11 +1435,7 @@ export default function Aion2TestClubPage({
           .filter((t) => Boolean(t.src) && Boolean(t.thumb));
         return (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0a0f26] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.7)]"
-            >
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0a0f26] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
               <div className="flex items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-[#ff007f]" />
@@ -1586,32 +1445,17 @@ export default function Aion2TestClubPage({
                   <X className="h-4 w-4" />
                 </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => applyOfferBg(bgEditOfferId!, "")}
-                disabled={bgSavingOfferId === bgEditOfferId}
-                className={`w-full rounded-2xl border p-4 text-left transition-all disabled:opacity-50 ${!edCurrent ? "border-cyan-400/60 bg-cyan-500/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}
-              >
+              <button type="button" onClick={() => applyOfferBg(bgEditOfferId!, "")} disabled={bgSavingOfferId === bgEditOfferId} className={`w-full rounded-2xl border p-4 text-left transition-all disabled:opacity-50 ${!edCurrent ? "border-cyan-400/60 bg-cyan-500/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}>
                 <p className="text-[10px] font-black uppercase tracking-widest text-white/90">Default</p>
-                <p className="text-[8px] text-white/45 mt-1">My active background (or the offer&apos;s own image)</p>
+                <p className="text-[8px] text-white/45 mt-1">My active background (or the offer's own image)</p>
               </button>
-
               <p className="mt-4 mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">My backgrounds</p>
               {edThumbs.length === 0 ? (
-                <p className="rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-4 text-center text-[9px] leading-relaxed text-white/40">
-                  No custom backgrounds yet — upload from My Profile → Lobby Store, then pick here.
-                </p>
+                <p className="rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-4 text-center text-[9px] leading-relaxed text-white/40">No custom backgrounds yet — upload from My Profile → Lobby Store, then pick here.</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2 max-h-[38vh] overflow-y-auto pr-1">
                   {edThumbs.map((t) => (
-                    <button
-                      key={t.src}
-                      type="button"
-                      onClick={() => applyOfferBg(bgEditOfferId!, t.src)}
-                      disabled={bgSavingOfferId === bgEditOfferId}
-                      className={`relative aspect-video overflow-hidden rounded-xl border-2 transition-all disabled:opacity-50 ${edCurrent === t.src ? "border-[#ff007f]/70 shadow-[0_0_18px_rgba(255,0,127,0.25)]" : "border-white/10 hover:border-white/30"}`}
-                    >
+                    <button key={t.src} type="button" onClick={() => applyOfferBg(bgEditOfferId!, t.src)} disabled={bgSavingOfferId === bgEditOfferId} className={`relative aspect-video overflow-hidden rounded-xl border-2 transition-all disabled:opacity-50 ${edCurrent === t.src ? "border-[#ff007f]/70 shadow-[0_0_18px_rgba(255,0,127,0.25)]" : "border-white/10 hover:border-white/30"}`}>
                       <img src={t.thumb} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       {edCurrent === t.src && (
                         <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff007f] text-black">
@@ -1622,20 +1466,14 @@ export default function Aion2TestClubPage({
                   ))}
                 </div>
               )}
-
               {bgError && <p className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-red-400">{bgError}</p>}
             </motion.div>
           </div>
         );
       })()}
 
-      {/* ── AUTO-APPLY SETTINGS MODAL ── */}
-      <AionAutoApplyModal
-        registeredUsers={registeredUsers}
-        meId={meId}
-        meName={meName || ""}
-        onSave={saveAutoApply}
-      />
+      {/* AUTO-APPLY SETTINGS MODAL */}
+      <AionAutoApplyModal registeredUsers={registeredUsers} meId={meId} meName={meName || ""} onSave={saveAutoApply} />
     </div>
   );
 }
