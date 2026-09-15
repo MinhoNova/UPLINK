@@ -233,32 +233,48 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                   const applied = alreadyApplied(offer);
                   return (
                     <motion.div key={`${offer.id}-${offer.createdAt || ""}`} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ scale: 1.005 }} onDoubleClick={(e) => { if (isMine || isAdmin) { e.stopPropagation(); setBgEditOfferId(String(offer.id)); setBgError(""); } }} className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex items-center justify-between gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all">
-                      {/* Banner BG */}
-                      <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none"><div className="absolute inset-0 bg-[#070b1a]" /><div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]"><div className="absolute inset-0" style={offerBgStyle} />{offerBg && <img src={offerBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" loading="lazy" decoding="async" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}<div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" /></div></div>
+                      {/* Banner BG with Region + Title + Prices */}
+                      <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                        <div className="absolute inset-0 bg-[#070b1a]" />
+                        <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]">
+                          <div className="absolute inset-0" style={offerBgStyle} />
+                          {offerBg && <img src={offerBg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" loading="lazy" decoding="async" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
+                        </div>
+                        {/* Overlay: Region + Title + Prices inside banner */}
+                        <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] flex flex-col justify-between p-3 z-[5] pointer-events-none">
+                          {/* Top: Region + Title */}
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="text-sm font-black tracking-widest text-white uppercase drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] truncate">
+                              {offer.title || `${offer.runsCount || 1}× Boost`}
+                            </h4>
+                            {offer.serverRegion && (
+                              <span className="shrink-0 px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-[9px] font-black tracking-widest text-violet-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                {String(offer.serverRegion).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          {/* Bottom: Prices */}
+                          {Number(offer.pricePerRun) > 0 && (
+                            <div className="flex items-center gap-3">
+                              <span className="px-2 py-0.5 rounded-md bg-black/50 text-[10px] font-black text-amber-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-black/50 text-[9px] font-bold text-amber-200/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                                {Number(offer.pricePerRun).toFixed(2)}M per run
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-                      {/* Left: Avatar + Details */}
-                      <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
-                        {/* Avatar */}
-                        <div className={`relative flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
+                      {/* Left: Avatar only (details are in banner) */}
+                      <div className={`relative z-10 flex-shrink-0 ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
+                        <div className="relative">
                           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer" onMouseEnter={(e) => { cancelHide(); if (!owner?.id) return; const r = e.currentTarget.getBoundingClientRect(); setHoveredUserId(String(owner.id)); setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic }); }} onMouseLeave={scheduleHide}>
                             {pic ? (<img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />) : (<Users className="w-6 h-6 text-cyan-400/70" />)}
                           </div>
                           <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
-                        </div>
-
-                        {/* Offer Details */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</h4>
-                            {offer.serverRegion && (<span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">{String(offer.serverRegion).toUpperCase()}</span>)}
-                          </div>
-                          {Number(offer.pricePerRun) > 0 && (
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className="text-[10px] font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
-                              <span className="text-[9px] font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
-                            </div>
-                          )}
-                          {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
                         </div>
                       </div>
 
