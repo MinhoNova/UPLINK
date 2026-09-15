@@ -40,14 +40,10 @@ const STEP_HINTS: Record<Step, string> = {
   details: "Configure your offer",
 };
 
-const AUTO_CLASSES = ["Templar", "Cleric", "Assassin", "Ranger"];
-
 function autoPickClasses(count: number): string[] {
   if (count <= 0) return [];
-  if (count >= 4) return [...AUTO_CLASSES];
-  if (count === 3) return ["Templar", "Cleric", "Assassin"];
-  if (count === 2) return ["Templar", "Assassin"];
-  return ["Assassin"];
+  const pool = ["Assassin", "Templar", "Cleric", "Ranger", "Sorcerer", "Spiritmaster", "Gladiator", "Chanter"];
+  return pool.slice(0, Math.min(count, pool.length));
 }
 
 /* ── Dungeon flip — iOS app-switcher style, full portrait images ──────────── */
@@ -55,10 +51,12 @@ function DungeonFlip({
   items,
   initialId,
   onPick,
+  onHover,
 }: {
   items: AionService[];
   initialId: string | null;
   onPick: (s: AionService) => void;
+  onHover: (s: AionService) => void;
 }) {
   const CARD_W = typeof window !== "undefined" ? Math.min(280, Math.max(210, Math.round(window.innerWidth * 0.26))) : 250;
   const CARD_H = Math.round(CARD_W * (1619 / 972));
@@ -122,6 +120,7 @@ function DungeonFlip({
             <button
               key={s.id}
               type="button"
+              onMouseEnter={() => { if (movedRef.current) return; onHover(s); }}
               onClick={() => { if (movedRef.current) return; if (d === 0) onPick(s); else jumpTo(i); }}
               className="absolute left-1/2 top-1/2 overflow-hidden rounded-2xl border bg-black/70 shadow-[0_18px_50px_rgba(0,0,0,0.65)]"
               style={{
@@ -513,6 +512,10 @@ export default function CreateOfferPage() {
   const publishOffer = async () => {
     if (!session?.user) { setPubError("Sign in to publish an offer"); return; }
     if (!sel) return;
+    if (maxBoosters > 1 && requiredClasses.length < Math.min(maxBoosters, AION_CLASSES.length)) {
+      setPubError(`Select ${Math.min(maxBoosters, AION_CLASSES.length)} classes — one per player`);
+      return;
+    }
     setPublishing(true);
     setPubError("");
     try {
@@ -677,7 +680,7 @@ roles: requiredClasses.length > 0
             {/* header removed — board starts directly */}
 
             {/* ── FORGE GRID ── */}
-            <main className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-8">
+            <main className="mx-auto max-w-[1400px] px-5 pb-20 pt-6 sm:px-8 sm:pt-10">
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
                 {/* ── LEFT: BUILDER ── */}
                 <section className="tn-light rounded-2xl border border-white/[0.09] bg-[#070a1c]/80 shadow-[0_20px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl">
@@ -769,6 +772,7 @@ roles: requiredClasses.length > 0
                                 <DungeonFlip
                                   items={flipItems[activeCat]}
                                   initialId={sel?.id ?? null}
+                                  onHover={(svc) => { if (sel?.id !== svc.id) { setSel(svc); setShowOptions(false); setPickedOption(null); setPickedVariant(null); } }}
                                   onPick={(svc) => {
                                     setSel(svc);
                                     if (svc.options && svc.options.length > 0) {
@@ -794,6 +798,7 @@ roles: requiredClasses.length > 0
                                       <button
                                         key={svc.id}
                                         type="button"
+                                        onMouseEnter={() => { if (sel?.id !== svc.id) { setSel(svc); setShowOptions(false); setPickedOption(null); setPickedVariant(null); } }}
                                         onClick={() => {
                                           setSel(svc);
                                           if (svc.options && svc.options.length > 0) {
@@ -895,7 +900,7 @@ roles: requiredClasses.length > 0
                                   <span className="block text-2xl font-black tabular-nums text-white">{maxBoosters}</span>
                                   <span className="text-[9px] font-black tracking-[0.18em] uppercase text-gray-500">{maxBoosters > 1 ? "Boosters" : "Booster"}</span>
                                 </div>
-                                <button type="button" onClick={() => setMaxBoosters(Math.min(10, maxBoosters + 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-base font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
+                                <button type="button" onClick={() => setMaxBoosters(Math.min(AION_CLASSES.length, maxBoosters + 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.06] text-base font-black text-gray-200 transition-all hover:border-white/25 hover:text-white cursor-pointer">+</button>
                               </div>
                             </div>
                             </div>
@@ -982,7 +987,7 @@ roles: requiredClasses.length > 0
                             {/* REQUIRED CLASS SLOTS */}
                             <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
                               <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                <Shield className="h-3.5 w-3.5 text-cyan-400" /> Required Classes (up to 4)
+                                <Shield className="h-3.5 w-3.5 text-cyan-400" /> Required Classes ({Math.min(maxBoosters, AION_CLASSES.length)})
                               </p>
                               <div className="grid grid-cols-4 gap-1.5">
                                 {AION_CLASSES.map((cls) => {
@@ -995,7 +1000,7 @@ roles: requiredClasses.length > 0
                                       onClick={() => {
                                         if (isSelected) {
                                           setRequiredClasses(requiredClasses.filter((c) => c !== cls));
-                                        } else if (requiredClasses.length < 4) {
+                                        } else if (requiredClasses.length < maxBoosters) {
                                           setRequiredClasses([...requiredClasses, cls]);
                                         }
                                       }}
@@ -1019,7 +1024,7 @@ roles: requiredClasses.length > 0
                                 })}
                               </div>
                               <p className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
-                                {requiredClasses.length}/4 selected — accepted players fill these slots
+                                {requiredClasses.length}/{Math.min(maxBoosters, AION_CLASSES.length)} selected — pick a class for each of the {maxBoosters} player{maxBoosters > 1 ? "s" : ""}
                               </p>
                             </div>
                           </motion.div>
@@ -1094,8 +1099,8 @@ roles: requiredClasses.length > 0
 
                       {/* detail rows */}
                       <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
-{[
-                          ["Price / Run / Player", sel ? `${(pricePerRun / Math.max(maxBoosters, 1)).toFixed(2)}M Kinah` : "—"],
+{[ 
+                          ["Price / Run / Player", sel ? `${pricePerRun.toFixed(2)}M Kinah` : "—"],
                           ["Difficulty", sel && pickedOption?.variants?.length ? difficulty : "—"],
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
                           ["Boosters", sel ? `${maxBoosters} player${maxBoosters > 1 ? "s" : ""}` : "—"],
@@ -1114,9 +1119,10 @@ roles: requiredClasses.length > 0
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price / Player</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"} · split between {Math.max(maxBoosters, 1)} player{maxBoosters > 1 ? "s" : ""}{pickedOption && difficulty !== "Average" ? ` · ${pickedOption.label} ${difficulty}` : pickedOption ? ` · ${pickedOption.label}` : " · Base"}</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{pricePerRun.toFixed(2)}M per run{pickedOption && difficulty !== "Average" ? <span> · {pickedOption.label} {difficulty}</span> : pickedOption ? <span> · {pickedOption.label}</span> : " · Base"}</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"} · Offer total across {maxBoosters} player{maxBoosters > 1 ? "s" : ""}: {(pricePerRun * qty * maxBoosters).toFixed(2)}M</p>
                           </div>
-                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? ((pricePerRun * qty) / Math.max(maxBoosters, 1)).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
+                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? (pricePerRun * qty).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
                         </div>
                       </div>
 
