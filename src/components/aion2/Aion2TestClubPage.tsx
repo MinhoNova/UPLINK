@@ -16,7 +16,7 @@ import { resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
-import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed } from "@/lib/lobbyLifecycle";
+import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -161,7 +161,7 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
     const open = Math.max(0, 4 - shown);
     const isUnpaid = (m.status || "standby") === "unpaid";
     return (
-      <motion.div key={String(m.id)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.01 }} onClick={() => router.push(`/manage/${String(m.id)}`)} className={`tn-light relative w-full min-h-[110px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${isUnpaid ? "border-red-500/30 hover:border-red-400/50" : "border-cyan-500/20 hover:border-cyan-400/40"}`}>
+      <motion.div key={String(m.id)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.01 }} onClick={() => { if (userCanViewOfferThread(m, meId) || isAdmin) { router.push(`/manage/${String(m.id)}`); } }} className={`tn-light relative w-full min-h-[110px] rounded-2xl border overflow-hidden flex flex-col justify-center px-3 py-3 cursor-pointer group shadow-[0_4px_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_24px_rgba(34,211,238,0.12)] transition-all ${isUnpaid ? "border-red-500/30 hover:border-red-400/50" : "border-cyan-500/20 hover:border-cyan-400/40"}`}>
         <div className="absolute inset-0 bg-[#070b1a]" />
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0" style={offerBgStyle} />
@@ -425,7 +425,7 @@ export default function Aion2TestClubPage({ initialHeroBg }: { initialHeroBg?: s
                     const pic = ownerPic(h) || null;
                     const totalRuns = h.selectedDungeons ? (Object.values(h.selectedDungeons) as number[]).reduce((a: number, b: number) => a + b, 0) : h.runsCount || 1;
                     return (
-                      <motion.div key={String(h.id)} whileHover={{ x: 5 }} onClick={() => router.push(`/manage/${String(h.id)}`)} className="tn-light relative w-full rounded-2xl border border-emerald-500/20 overflow-hidden flex items-center gap-3 px-4 py-3 cursor-pointer group hover:border-emerald-400/40 hover:shadow-[0_0_24px_rgba(16,185,129,0.12)] transition-all">
+                      <motion.div key={String(h.id)} whileHover={{ x: 5 }} onClick={() => { if (userCanViewOfferThread(h, meId) || isAdmin) { router.push(`/manage/${String(h.id)}`); } }} className="tn-light relative w-full rounded-2xl border border-emerald-500/20 overflow-hidden flex items-center gap-3 px-4 py-3 cursor-pointer group hover:border-emerald-400/40 hover:shadow-[0_0_24px_rgba(16,185,129,0.12)] transition-all">
                         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/50">
                           {pic ? (<img src={pic} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />) : (<span className="flex h-full w-full items-center justify-center text-[10px] font-black text-emerald-300/60 uppercase">{String(ownerName(h) || "?").slice(0, 1)}</span>)}
                         </div>
