@@ -944,21 +944,31 @@ export default function Aion2TestClubPage({
                     <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                       {/* Dark readable zone — full card underlay */}
                       <div className="absolute inset-0 bg-[#070b1a]" />
-                      {/* Faction VFX banner / gradient — right panel only */}
-                      <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%]">
-                        <div className="absolute inset-0" style={offerBgStyle} />
-                        {offerBg ? (
-                          <img
-                            src={offerBg}
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                          />
-                        ) : null}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#070b1a] via-[#070b1a]/70 to-transparent" />
+                    {/* Banner Right Side - Title & Price */}
+                    <div className="absolute right-0 top-0 bottom-0 w-[640px] max-w-[50%] flex flex-col justify-between p-3 z-[5] pointer-events-none">
+                      {/* Top: Title + Region */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-sm font-black tracking-widest text-white uppercase drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] truncate">
+                          {offer.title || `${offer.runsCount || 1}× Boost`}
+                        </h4>
+                        {offer.serverRegion && (
+                          <span className="shrink-0 px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-[9px] font-black tracking-widest text-violet-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                            {String(offer.serverRegion).toUpperCase()}
+                          </span>
+                        )}
                       </div>
+                      {/* Bottom: Prices */}
+                      {Number(offer.pricePerRun) > 0 && (
+                        <div className="flex items-center gap-3">
+                          <span className="px-2 py-0.5 rounded-md bg-black/50 text-[10px] font-black text-amber-300 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                            Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-black/50 text-[9px] font-bold text-amber-200/80 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                            {Number(offer.pricePerRun).toFixed(2)}M per run
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     </div>
 
                     {/* Creator avatar */}
@@ -985,18 +995,11 @@ export default function Aion2TestClubPage({
 
                     {/* Offer Details */}
                     <div className="relative z-10 flex-1 min-w-0 lg:max-w-[42%]">
-                      <h4 className="mt-1.5 text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
-                        {offer.title || `${offer.runsCount || 1}× Boost`}
-                      </h4>
-                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        {offer.serverRegion && (
-                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">
-                            {String(offer.serverRegion).toUpperCase()}
-                          </span>
-                        )}
-                        {Number(offer.pricePerRun) > 0 && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black tracking-widest text-amber-300">
-                            {Number(offer.pricePerRun).toFixed(2)}M <span className="text-[7px] font-bold text-amber-400/70">per run</span>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {!classSlots && openRoles.length > 0 && (
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                            <Users className="w-3.5 h-3.5 text-cyan-400" />
+                            {`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}
                           </span>
                         )}
                         {owner?.team?.name && (
@@ -1008,27 +1011,19 @@ export default function Aion2TestClubPage({
                             <span className="truncate">{owner.team.name}</span>
                           </span>
                         )}
-                        {!classSlots && (
-                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
-                            <Users className="w-3.5 h-3.5 text-cyan-400" />
-                            {openRoles.length > 0
-                              ? `OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`
-                              : "FULL"}
-                          </span>
-                        )}
                       </div>
                     </div>
                     {/* Required Classes */}
                     {classSlots && classSlots.length > 0 && (
                       <div className="relative z-10 w-full mt-2">
-                        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1">
+                        <div className="flex items-center justify-center gap-3">
                           {classSlots.map((s, i) => (
                             <div key={i} className="flex flex-col items-center gap-1 shrink-0">
                               <div className="relative">
-                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={40} height={40} className={`w-10 h-10 object-contain drop-shadow-[0_2px_8px_rgba(34,211,238,0.45)] ${s.filled ? 'brightness-110 saturate-125' : 'opacity-60'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                                {s.filled && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border border-[#070b1a]" />}
+                                <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'opacity-40 grayscale'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                                {s.filled && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#070b1a]" />}
                               </div>
-                              <span className={`text-[7px] font-black uppercase tracking-wider whitespace-nowrap ${s.filled ? 'text-emerald-300' : 'text-cyan-300'}`}>{s.cls}</span>
+                              <span className={`text-[9px] font-black uppercase tracking-wider whitespace-nowrap ${s.filled ? 'text-emerald-300' : 'text-gray-500'}`}>{s.cls}</span>
                             </div>
                           ))}
                         </div>
