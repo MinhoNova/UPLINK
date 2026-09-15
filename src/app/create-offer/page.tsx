@@ -416,10 +416,10 @@ export default function CreateOfferPage() {
   const [autoClasses, setAutoClasses] = useState(true);
 
   useEffect(() => {
-    if (autoClasses && qty > 0) {
-      setRequiredClasses(autoPickClasses(qty));
+    if (autoClasses && maxBoosters > 0) {
+      setRequiredClasses(autoPickClasses(maxBoosters));
     }
-  }, [qty, autoClasses]);
+  }, [maxBoosters, autoClasses]);
   const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
 
   /* Standalone premium page — hide the global UPLINK navbar */
@@ -547,11 +547,11 @@ export default function CreateOfferPage() {
         selectedOption: difficulty !== "Average" ? difficulty : pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
         selectedOptionGroup: (difficulty !== "Average" || pickedVariant) ? pickedOption?.label || undefined : undefined,
         serverRegion: region,
-        roles: requiredClasses.length > 0
-          ? requiredClasses.reduce((acc: Record<string, number>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
+roles: requiredClasses.length > 0
+          ? requiredClasses.reduce((acc: Record<string, string>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
           : category === "leveling"
-            ? { tank: 0, dps: qty }
-            : { tank: 0, healer: 0, dps: qty },
+            ? { tank: 0, dps: Math.max(maxBoosters, 1) }
+            : { tank: 0, healer: 0, dps: Math.max(maxBoosters, 1) },
         applicants: [],
         invited: [],
         accepted: [],
@@ -674,34 +674,7 @@ export default function CreateOfferPage() {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="relative z-20"
           >
-            {/* ── HUD HEADER ── */}
-            <section className="mx-auto px-5 pt-9 pb-6 sm:px-8 max-w-[1400px]">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <p className="flex items-center gap-2 text-xs font-black tracking-[0.3em] text-cyan-300 uppercase">
-                    <Gem className="h-3.5 w-3.5" /> Aion 2 · Offer Forge
-                  </p>
-                  <h1 className="mt-3 bg-gradient-to-b from-white via-cyan-50 to-cyan-400 bg-clip-text text-5xl font-black tracking-tight text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.35)] sm:text-6xl">
-                    Create Your Offer
-                  </h1>
-                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-400">
-                    Post a mission and let the best players apply. You set the price, you pick the squad.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { icon: Shield, label: "24/7 Trusted", color: "text-cyan-300" },
-                    { icon: Lock, label: "Escrow Ready", color: "text-amber-300" },
-                    { icon: Zap, label: "Instant Post", color: "text-purple-300" },
-                  ].map((chip) => (
-                    <span key={chip.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-black/40 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-gray-300 backdrop-blur-md">
-                      <chip.icon className={`h-3 w-3 ${chip.color}`} /> {chip.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </section>
+            {/* header removed — board starts directly */}
 
             {/* ── FORGE GRID ── */}
             <main className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-8">
@@ -1122,7 +1095,7 @@ export default function CreateOfferPage() {
                       {/* detail rows */}
                       <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-2.5">
 {[
-                          ["Price", sel ? `${pricePerRun.toFixed(2)}M Kinah` : "—"],
+                          ["Price / Run / Player", sel ? `${(pricePerRun / Math.max(maxBoosters, 1)).toFixed(2)}M Kinah` : "—"],
                           ["Difficulty", sel && pickedOption?.variants?.length ? difficulty : "—"],
                           ["Quantity", sel ? `${qty} × ${sel.priceUnit || "runs"}` : "—"],
                           ["Boosters", sel ? `${maxBoosters} player${maxBoosters > 1 ? "s" : ""}` : "—"],
@@ -1140,10 +1113,10 @@ export default function CreateOfferPage() {
                       <div className="mt-4 overflow-hidden rounded-xl border border-cyan-400/35 bg-gradient-to-r from-cyan-500/[0.12] to-purple-600/[0.12]">
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"}{pickedOption && difficulty !== "Average" ? ` · ${pickedOption.label} ${difficulty}` : pickedOption ? ` · ${pickedOption.label}` : " · Base"}</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price / Player</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× {sel?.priceUnit || "runs"} · split between {Math.max(maxBoosters, 1)} player{maxBoosters > 1 ? "s" : ""}{pickedOption && difficulty !== "Average" ? ` · ${pickedOption.label} ${difficulty}` : pickedOption ? ` · ${pickedOption.label}` : " · Base"}</p>
                           </div>
-                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? (pricePerRun * qty).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
+                          <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? ((pricePerRun * qty) / Math.max(maxBoosters, 1)).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
                         </div>
                       </div>
 

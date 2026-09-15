@@ -323,8 +323,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           {/* Prices */}
                           {Number(offer.pricePerRun) > 0 && (
                             <div className="flex items-center gap-3 mt-1 whitespace-nowrap">
-                              <span className="text-sm font-black text-amber-300">Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
-                              <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
+                              <span className="text-sm font-black text-amber-300">Total/Player: {((Number(offer.pricePerRun) * (offer.runsCount || 1)) / Math.max(Number(offer.maxBoosters) || 1, 1)).toFixed(2)}M</span>
+                              <span className="text-sm font-bold text-amber-200/80">{(Number(offer.pricePerRun) / Math.max(Number(offer.maxBoosters) || 1, 1)).toFixed(2)}M per run</span>
                             </div>
                           )}
                           {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
@@ -420,7 +420,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           <p className="truncate text-[9px] font-bold uppercase tracking-widest text-gray-500">{ownerName(h)}{h.serverRegion ? ` · ${String(h.serverRegion).toUpperCase()}` : ""}</p>
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-1">
-                          {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{Number(h.pricePerRun).toFixed(2)}M</span>)}
+                          {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{(Number(h.pricePerRun) / Math.max(Number(h.maxBoosters) || 1, 1)).toFixed(2)}M/player</span>)}
                           <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">PAID</span>
                         </div>
                       </motion.div>
