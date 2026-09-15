@@ -261,22 +261,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
 
-      {/* Hero */}
-      <section className="tn-hero relative w-full min-h-[620px] flex items-center justify-center py-12 px-4">
-        <div className="relative z-10 flex flex-col items-center text-center mt-6 px-8 sm:px-14 py-10 max-w-2xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="flex flex-col items-center">
-            <div className="flex items-center gap-6 mt-1"><span className="h-px w-16 bg-gradient-to-r from-transparent to-blue-400/60" /><h2 className="text-sm sm:text-base font-bold tracking-[0.4em] text-blue-100 uppercase drop-shadow-[0_0_12px_rgba(56,189,248,0.6)]">{t("hero_crew") || "FIND YOUR CREW"}</h2><span className="h-px w-16 bg-gradient-to-l from-transparent to-blue-400/60" /></div>
-            <p className="mt-2 text-xs text-slate-400 font-medium max-w-md">{t("hero_adventure") || "Find trusted players for your next adventure."}</p>
-            <div className="w-[1px] h-8 bg-gradient-to-b from-purple-500/60 to-transparent my-4" />
-          </motion.div>
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.5 }}>
-            <motion.a href="/create-offer" className="relative group overflow-hidden rounded-full p-[1px] shadow-[0_0_35px_rgba(59,130,246,0.25)] hover:shadow-[0_0_55px_rgba(168,85,247,0.45)] transition-all duration-500 block hover:scale-105 active:scale-95">
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
-              <div className="relative bg-transparent px-16 py-4 rounded-full flex items-center justify-center gap-4 border border-white/12 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] transition-all"><span className="text-xs font-black tracking-[0.3em] uppercase text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.4)]">{t("hero_create") || "CREATE YOUR OFFER"}</span><span className="text-blue-300 group-hover:translate-x-1 transition-transform font-bold">›</span></div>
-            </motion.a>
-          </motion.div>
-        </div>
-      </section>
+      {/* Spacer — hero text removed; create-offer moved to navbar */}
+      <div className="h-28" />
 
       {/* Main */}
       <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">

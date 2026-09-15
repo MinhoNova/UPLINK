@@ -342,6 +342,13 @@ export default function Navbar() {
               ⚙️
             </motion.button>
             <a
+              href="/create-offer"
+              title="Create Offer"
+              className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff]/20 shadow-[0_0_12px_rgba(0,255,255,0.1)]"
+            >
+              <Zap className="w-4 h-4" /> {t('hero_create_short') || 'Create Offer'}
+            </a>
+            <a
               href={getDiscordInviteUrl()}
               target="_blank"
               rel="noopener noreferrer"
