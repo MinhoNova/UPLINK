@@ -939,6 +939,30 @@ export default function Aion2TestClubPage({
                         <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
                       </div>
 
+                      {/* Offer Details - Next to Avatar */}
+                      <div className="relative z-10 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-black tracking-widest text-white uppercase group-hover:text-cyan-200 transition-colors truncate">
+                            {offer.title || `${offer.runsCount || 1}× Boost`}
+                          </h4>
+                          {offer.serverRegion && (
+                            <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[9px] font-black tracking-widest text-violet-300">
+                              {String(offer.serverRegion).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        {Number(offer.pricePerRun) > 0 && (
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] font-black text-amber-300">
+                              Total: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M
+                            </span>
+                            <span className="text-[9px] font-bold text-amber-200/80">
+                              {Number(offer.pricePerRun).toFixed(2)}M per run
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Required Classes (no names) */}
                       {classSlots && classSlots.length > 0 && (
                         <div className="relative z-10 flex items-center gap-2">
