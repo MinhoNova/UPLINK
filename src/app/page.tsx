@@ -1,5 +1,5 @@
 import LobbyPage from "@/components/aion2/LobbyPage";
-import { getKVPairs } from "@/lib/db";
+import { getKV } from "@/lib/db";
 import { resolveHeroBg } from "@/lib/heroBg";
 
 function HomeSeoFooter() {
@@ -61,8 +61,8 @@ export const metadata = {
 export default async function HomePage() {
   let initialHeroBg: string | undefined;
   try {
-    const kv = await getKVPairs();
-    initialHeroBg = resolveHeroBg(kv.heroBg);
+    const heroBg = await getKV("heroBg");
+    initialHeroBg = resolveHeroBg(heroBg);
   } catch {
     initialHeroBg = "scenic";
   }
