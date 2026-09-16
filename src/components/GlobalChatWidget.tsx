@@ -85,7 +85,7 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
     if (!isOpen || !canChat) return;
     setLoading(true);
     loadMessages().finally(() => setLoading(false));
-    const id = setInterval(loadMessages, 4000);
+    const id = setInterval(loadMessages, 8000);
     return () => clearInterval(id);
   }, [isOpen, canChat, loadMessages]);
 

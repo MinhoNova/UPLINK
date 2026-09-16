@@ -345,7 +345,7 @@ export default function ManagePage() {
     load();
     window.addEventListener("focus", load);
     window.addEventListener("data-refresh", load);
-    const poll = setInterval(load, 8000);
+    const poll = setInterval(load, 15000);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", load);
@@ -397,8 +397,11 @@ export default function ManagePage() {
 
   /* ----- CONTEXT HELPERS ----- */
   const getUserTier = useCallback((userId?: any): "free" | "secret_club" => {
+    if (!userId) return "free";
+    const user = registeredUsers.find((u: any) => String(u.id) === String(userId));
+    if (!user && registeredUsers.length > 0) return "free";
     return "secret_club";
-  }, []);
+  }, [registeredUsers]);
 
   const getUserTierLabel = (userId?: any) => {
     const tier = getUserTier(userId);

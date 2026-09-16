@@ -164,7 +164,7 @@ export default function Navbar() {
     window.addEventListener("data-refresh", fetchData);
 
     // Poll for DM updates every 8 seconds
-    const pollInterval = setInterval(() => fetchData(), 8000);
+    const pollInterval = setInterval(() => fetchData(), 15000);
 
     return () => {
       window.removeEventListener("focus", onFocus);
@@ -256,6 +256,9 @@ export default function Navbar() {
   }, [currentUser, currentUserId, isAdmin]);
 
   const getUserTier = (userId: string) => {
+    if (!userId) return "free";
+    const user = registeredUsers.find((u: any) => String(u.id) === String(userId));
+    if (!user && registeredUsers.length > 0) return "free";
     return "secret_club";
   };
 

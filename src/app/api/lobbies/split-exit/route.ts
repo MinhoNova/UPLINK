@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
-import { getKVPairs, setKV, initTables } from "@/lib/db";
+import { initTables, updateKVAtomic } from "@/lib/db";
 import { isAdminUser } from "@/lib/secureDataWrite";
 import {
   memberIdentityKey,
@@ -28,44 +28,57 @@ export async function POST(req: Request) {
   }
 
   await initTables();
-  const existing = await getKVPairs();
-  const lobbies = Array.isArray(existing.lobbies) ? [...existing.lobbies] : [];
-  const lobby = lobbies.find((l: { id?: string }) => String(l.id) === String(lobbyId));
-  if (!lobby) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
-
   const uid = String(auth.user.id);
   const isAdmin = isAdminUser(uid, auth.user.username);
-  const isOwner = String((lobby as any).ownerId) === uid;
-  const isSelfLeave = memberIdentityKey(member) === uid;
 
-  if (!isAdmin && !isOwner && !(isSelfLeave && !isKick)) {
-    return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  let abortReason: string | null = null;
+  let focusLobbyId = String(lobbyId);
+  let childLobby: any | null = null;
+  const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
+    const cur = Array.isArray(lobbies) ? [...lobbies] : [];
+    const lobby = cur.find((l: { id?: string }) => String(l.id) === String(lobbyId));
+    if (!lobby) {
+      abortReason = "Lobby not found";
+      return undefined;
+    }
+    const isOwner = String((lobby as any).ownerId) === uid;
+    const isSelfLeave = memberIdentityKey(member) === uid;
+    if (!isAdmin && !isOwner && !(isSelfLeave && !isKick)) {
+      abortReason = "Not allowed";
+      return undefined;
+    }
+    if (isKick && !isAdmin && !isOwner) {
+      abortReason = "Not allowed";
+      return undefined;
+    }
+    const splitResult = splitLobbyAfterMemberExit(
+      cur,
+      String(lobbyId),
+      member,
+      completed,
+      isKick,
+      leaveMsg,
+      historySnapshot || member
+    );
+    if (!splitResult) {
+      abortReason = "Split failed";
+      return undefined;
+    }
+    focusLobbyId = splitResult.focusLobbyId;
+    childLobby = splitResult.childLobby;
+    return splitResult.lobbies.map(repairLobbyRoles);
+  });
+
+  if (!res.ok) {
+    const status = abortReason === "Lobby not found" ? 404 : 400;
+    return NextResponse.json({ error: abortReason || "Could not update — try again." }, { status });
   }
-  if (isKick && !isAdmin && !isOwner) {
-    return NextResponse.json({ error: "Not allowed" }, { status: 403 });
-  }
 
-  const splitResult = splitLobbyAfterMemberExit(
-    lobbies,
-    String(lobbyId),
-    member,
-    completed,
-    isKick,
-    leaveMsg,
-    historySnapshot || member
-  );
-
-  if (!splitResult) {
-    return NextResponse.json({ error: "Split failed" }, { status: 400 });
-  }
-
-  const nextLobbies = splitResult.lobbies.map(repairLobbyRoles);
-  await setKV("lobbies", nextLobbies);
-
+  const nextLobbies = res.value || [];
   return NextResponse.json({
     success: true,
     lobbies: nextLobbies,
-    focusLobbyId: splitResult.focusLobbyId,
-    childLobby: splitResult.childLobby,
+    focusLobbyId,
+    childLobby,
   });
 }

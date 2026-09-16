@@ -1,4 +1,4 @@
-import { getKV, setKV, initTables } from "@/lib/db";
+import { initTables, updateKVAtomic } from "@/lib/db";
 import { rateLimitByIp as rateLimitByIpDistributed } from "@/lib/rateLimitDistributed";
 
 type Bucket = { count: number; windowStart: number };
@@ -7,20 +7,28 @@ export type RateLimitResult = { ok: true } | { ok: false; retryAfterMs: number }
 
 async function checkKvBucket(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   await initTables();
-  const store: Record<string, Bucket> = (await getKV("rateLimits")) || {};
-  const now = Date.now();
-  const bucket = store[key];
-  if (!bucket || now - bucket.windowStart >= windowMs) {
-    store[key] = { count: 1, windowStart: now };
-    await setKV("rateLimits", store);
-    return { ok: true };
+
+  const res = await updateKVAtomic<Record<string, Bucket>>(
+    "rateLimits",
+    (store) => {
+      const cur = store ?? {};
+      const now = Date.now();
+      const bucket = cur[key];
+      if (!bucket || now - bucket.windowStart >= windowMs) {
+        return { ...cur, [key]: { count: 1, windowStart: now } };
+      }
+      if (bucket.count >= limit) return undefined; // abort: limited
+      return { ...cur, [key]: { count: bucket.count + 1, windowStart: bucket.windowStart } };
+    },
+    { maxAttempts: 3 }
+  );
+
+  if (!res.ok) {
+    // Either genuine rate limit (bucket.count was >= limit) or a write conflict
+    // after exhausting retries — treat both as "slow down".
+    return { ok: false, retryAfterMs: windowMs };
   }
-  if (bucket.count >= limit) {
-    return { ok: false, retryAfterMs: windowMs - (now - bucket.windowStart) };
-  }
-  bucket.count += 1;
-  store[key] = bucket;
-  await setKV("rateLimits", store);
+
   return { ok: true };
 }
 

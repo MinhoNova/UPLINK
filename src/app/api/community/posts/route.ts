@@ -5,6 +5,8 @@ import { posts, reactions, reports } from "@/db/schema";
 import { eq, and, inArray, gte } from "drizzle-orm";
 import { normalizeCommunityImage } from "@/lib/imageProcess";
 import { getKV, initTables } from "@/lib/db";
+import { getKVCached } from "@/lib/kvCache";
+import { rateLimitByUser } from "@/lib/rateLimit";
 import { canViewPost } from "@/lib/postVisibility";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
@@ -87,7 +89,7 @@ export async function GET(req: NextRequest) {
   }
 
   await initTables();
-  const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+  const registeredUsers = ((await getKVCached("registeredUsers")) || []) as any[];
 
   const result = rows.map((p: any) => {
     const author = registeredUsers.find((u: any) => String(u.id) === String(p.userId));
@@ -109,6 +111,9 @@ export async function POST(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = await rateLimitByUser(String((session.user as any).id), "community_post_create", 3, 60_000);
+  if (!rl.ok) return NextResponse.json({ error: "Slow down — too many posts." }, { status: 429 });
 
   const contentType = req.headers.get("content-type") || "";
   let content: string, tagsRaw: string, imageUrl: string | null, visibilityRaw: string;
@@ -201,7 +206,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await initTables();
-    const registeredUsers = ((await getKV("registeredUsers")) || []) as any[];
+    const registeredUsers = ((await getKVCached("registeredUsers")) || []) as any[];
     const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
     const authorFields = resolvePublicAuthorFields(me, {
       name: session.user.name || "Unknown",

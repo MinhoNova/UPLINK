@@ -1,4 +1,4 @@
-import { getKV, setKV, initTables } from "@/lib/db";
+import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { isSecretClubTier } from "@/lib/userProfile";
 
 /** Max offer actions per UTC day for non–Secret Club users (create + apply). */
@@ -45,17 +45,20 @@ export async function checkAndRecordOfferAction(
   if (isOfferLimitExempt(user)) return { ok: true };
 
   await initTables();
-  const store: Record<string, DailyRecord> = (await getKV("offerDailyUsage")) || {};
   const uid = String(userId);
   const day = utcDayKey();
-  const rec = store[uid];
-  const count = rec?.day === day ? rec.count : 0;
 
-  if (count >= FREE_DAILY_OFFER_LIMIT) {
-    return { ok: false, error: offerDailyLimitError() };
-  }
+  const res = await updateKVAtomic<Record<string, DailyRecord>>(
+    "offerDailyUsage",
+    (store) => {
+      const cur = store ?? {};
+      const rec = cur[uid];
+      const count = rec?.day === day ? rec.count : 0;
+      if (count >= FREE_DAILY_OFFER_LIMIT) return undefined; // abort: limit reached
+      return { ...cur, [uid]: { day, count: count + 1 } };
+    }
+  );
 
-  store[uid] = { day, count: count + 1 };
-  await setKV("offerDailyUsage", store);
+  if (!res.ok) return { ok: false, error: offerDailyLimitError() };
   return { ok: true };
 }

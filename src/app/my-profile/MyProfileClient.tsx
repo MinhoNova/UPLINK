@@ -64,7 +64,7 @@ export default function MyProfileClient() {
     refresh();
     window.addEventListener("focus", refresh);
     window.addEventListener("data-refresh", refresh);
-    const poll = setInterval(refresh, 8000);
+    const poll = setInterval(refresh, 15000);
     return () => {
       window.removeEventListener("focus", refresh);
       window.removeEventListener("data-refresh", refresh);

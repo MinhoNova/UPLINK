@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
-import { getKVPairs, setKV, initTables } from "@/lib/db";
+import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { withdrawApplicantFromOfferFamily } from "@/lib/lobbyLifecycle";
-import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
+import { checkAndRecordOfferAction, getOfferDailyUsage } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { getClientIp } from "@/lib/requestIp";
 import {
@@ -29,43 +29,13 @@ export async function POST(req: Request) {
   }
 
   await initTables();
-  const existing = await getKVPairs();
-  const lobbies = Array.isArray(existing.lobbies) ? [...existing.lobbies] : [];
-  const idx = lobbies.findIndex((l: { id?: string }) => String(l.id) === String(lobbyId));
-  if (idx === -1) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
-
-  const lobby = lobbies[idx] as any;
   const uid = String(auth.user.id);
 
-  if (String(lobby.ownerId) === uid) {
-    return NextResponse.json({ error: "You cannot apply to your own offer." }, { status: 403 });
-  }
-
-  const status = lobby.status || "standby";
-  if (status !== "standby") {
-    return NextResponse.json({ error: "Offer is no longer open" }, { status: 403 });
-  }
-
-  const applicants = lobby.applicants || [];
-  const accepted = lobby.accepted || [];
-
-  if (applicants.some((a: any) => memberId(a) === uid)) {
-    return NextResponse.json({ error: "Already applied" }, { status: 409 });
-  }
-  if (accepted.some((a: any) => memberId(a) === uid)) {
-    return NextResponse.json({ error: "Already in squad" }, { status: 409 });
-  }
-
-  const charId = String(applicant.id || "");
-  if (charId && applicants.some((a: any) => String(a.id) === charId)) {
-    return NextResponse.json({ error: "Character already applied" }, { status: 409 });
-  }
-
-  const registeredUsers: any[] = existing.registeredUsers || [];
+  const registeredUsers: any[] = (await getKV("registeredUsers")) || [];
   const user = registeredUsers.find((u) => String(u.id) === uid);
-  const limitCheck = await checkAndRecordOfferAction(uid, user || auth.user);
-  if (!limitCheck.ok) {
-    return NextResponse.json({ error: limitCheck.error }, { status: 429 });
+  const usage = await getOfferDailyUsage(uid);
+  if (!usage.exempt && usage.remaining <= 0) {
+    return NextResponse.json({ error: "Daily limit reached" }, { status: 429 });
   }
 
   const nextApplicant = {
@@ -78,12 +48,12 @@ export async function POST(req: Request) {
     cpAp: sanitizeAionCpAp(applicant.cpAp ?? applicant.applicantCpAp),
     role: aionClassRole(applicant.aionClass || applicant.className || applicant.class),
     ...(() => {
-      const user = registeredUsers.find((u) => String(u.id) === uid);
-      if (!user?.team?.name) return {};
+      const u = registeredUsers.find((x: any) => String(x.id) === uid);
+      if (!u?.team?.name) return {};
       return {
-        teamName: String(user.team.name).slice(0, 40),
-        teamMembers: Array.isArray(user.team.members)
-          ? user.team.members
+        teamName: String(u.team.name).slice(0, 40),
+        teamMembers: Array.isArray(u.team.members)
+          ? u.team.members
               .filter((m: any) => (m.status || "confirmed") === "confirmed")
               .slice(0, 3)
           : [],
@@ -91,15 +61,55 @@ export async function POST(req: Request) {
     })(),
   };
 
-  const updatedLobby = {
-    ...lobby,
-    applicants: [...applicants, nextApplicant],
-  };
+  let abortReason: string | null = null;
+  const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
+    const cur = Array.isArray(lobbies) ? [...lobbies] : [];
+    const idx = cur.findIndex((l: any) => String(l.id) === String(lobbyId));
+    if (idx === -1) {
+      abortReason = "Lobby not found";
+      return undefined;
+    }
+    const lobby = cur[idx] as any;
+    if (String(lobby.ownerId) === uid) {
+      abortReason = "You cannot apply to your own offer.";
+      return undefined;
+    }
+    if ((lobby.status || "standby") !== "standby") {
+      abortReason = "Offer is no longer open";
+      return undefined;
+    }
+    const applicants = lobby.applicants || [];
+    const accepted = lobby.accepted || [];
+    if (applicants.some((a: any) => memberId(a) === uid)) {
+      abortReason = "Already applied";
+      return undefined;
+    }
+    if (accepted.some((a: any) => memberId(a) === uid)) {
+      abortReason = "Already in squad";
+      return undefined;
+    }
+    const charId = String(applicant.id || "");
+    if (charId && applicants.some((a: any) => String(a.id) === charId)) {
+      abortReason = "Character already applied";
+      return undefined;
+    }
+    const updatedLobby = { ...lobby, applicants: [...applicants, nextApplicant] };
+    cur[idx] = updatedLobby;
+    return cur;
+  });
 
-  lobbies[idx] = updatedLobby;
-  await setKV("lobbies", lobbies);
+  if (!res.ok) {
+    const status = abortReason === "Lobby not found" ? 404 : 409;
+    return NextResponse.json({ error: abortReason || "Could not apply — try again." }, { status });
+  }
+
+  const limitCheck = await checkAndRecordOfferAction(uid, user || auth.user);
+  if (!limitCheck.ok) {
+    return NextResponse.json({ error: limitCheck.error }, { status: 429 });
+  }
+
   touchUserLastIp(uid, getClientIp(req)).catch(() => {});
-
+  const updatedLobby = (res.value || []).find((l: any) => String(l.id) === String(lobbyId));
   return NextResponse.json({ success: true, lobby: updatedLobby });
 }
 
@@ -115,47 +125,54 @@ export async function PATCH(req: Request) {
   }
 
   await initTables();
-  const existing = await getKVPairs();
-  const lobbies = Array.isArray(existing.lobbies) ? [...existing.lobbies] : [];
-  const idx = lobbies.findIndex((l: { id?: string }) => String(l.id) === String(lobbyId));
-  if (idx === -1) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
-
-  const lobby = lobbies[idx] as any;
   const uid = String(auth.user.id);
 
-  if (String(lobby.ownerId) === uid) {
-    return NextResponse.json({ error: "Cannot update your own offer application" }, { status: 403 });
+  let abortReason: string | null = null;
+  const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
+    const cur = Array.isArray(lobbies) ? [...lobbies] : [];
+    const idx = cur.findIndex((l: any) => String(l.id) === String(lobbyId));
+    if (idx === -1) {
+      abortReason = "Lobby not found";
+      return undefined;
+    }
+    const lobby = cur[idx] as any;
+    if (String(lobby.ownerId) === uid) {
+      abortReason = "Cannot update your own offer application";
+      return undefined;
+    }
+    if ((lobby.status || "standby") !== "standby") {
+      abortReason = "Offer is no longer open";
+      return undefined;
+    }
+    const applicants = lobby.applicants || [];
+    const appIdx = applicants.findIndex((a: any) => memberId(a) === uid);
+    if (appIdx === -1) {
+      abortReason = "Application not found";
+      return undefined;
+    }
+    const prev = applicants[appIdx];
+    const nextApplicant = {
+      ...prev,
+      ...applicant,
+      applicantId: uid,
+      applicantName: applicant.applicantName || prev.applicantName || auth.user.name || "Operative",
+      applicantNote:
+        applicant.applicantNote != null
+          ? sanitizeApplicantNote(applicant.applicantNote)
+          : prev.applicantNote,
+    };
+    const nextApplicants = [...applicants];
+    nextApplicants[appIdx] = nextApplicant;
+    const updatedLobby = { ...lobby, applicants: nextApplicants };
+    cur[idx] = updatedLobby;
+    return cur;
+  });
+
+  if (!res.ok) {
+    return NextResponse.json({ error: abortReason || "Could not update — try again." }, { status: 400 });
   }
 
-  if ((lobby.status || "standby") !== "standby") {
-    return NextResponse.json({ error: "Offer is no longer open" }, { status: 403 });
-  }
-
-  const applicants = lobby.applicants || [];
-  const appIdx = applicants.findIndex((a: any) => memberId(a) === uid);
-  if (appIdx === -1) {
-    return NextResponse.json({ error: "Application not found" }, { status: 404 });
-  }
-
-  const prev = applicants[appIdx];
-  const nextApplicant = {
-    ...prev,
-    ...applicant,
-    applicantId: uid,
-    applicantName: applicant.applicantName || prev.applicantName || auth.user.name || "Operative",
-    applicantNote:
-      applicant.applicantNote != null
-        ? sanitizeApplicantNote(applicant.applicantNote)
-        : prev.applicantNote,
-  };
-
-  const nextApplicants = [...applicants];
-  nextApplicants[appIdx] = nextApplicant;
-
-  const updatedLobby = { ...lobby, applicants: nextApplicants };
-  lobbies[idx] = updatedLobby;
-  await setKV("lobbies", lobbies);
-
+  const updatedLobby = (res.value || []).find((l: any) => String(l.id) === String(lobbyId));
   return NextResponse.json({ success: true, lobby: updatedLobby });
 }
 
@@ -168,18 +185,17 @@ export async function DELETE(req: Request) {
   if (!lobbyId) return NextResponse.json({ error: "lobbyId required" }, { status: 400 });
 
   await initTables();
-  const existing = await getKVPairs();
-  const lobbies = Array.isArray(existing.lobbies) ? [...existing.lobbies] : [];
-  const idx = lobbies.findIndex((l: { id?: string }) => String(l.id) === String(lobbyId));
-  if (idx === -1) return NextResponse.json({ error: "Lobby not found" }, { status: 404 });
-
-  const lobby = lobbies[idx] as any;
   const uid = String(auth.user.id);
 
-  const updatedLobbies = withdrawApplicantFromOfferFamily(lobbies, lobbyId, uid);
-  const updatedLobby = updatedLobbies.find((l: { id?: string }) => String(l.id) === String(lobbyId));
+  const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
+    const cur = Array.isArray(lobbies) ? [...lobbies] : [];
+    return withdrawApplicantFromOfferFamily(cur, lobbyId, uid);
+  });
 
-  await setKV("lobbies", updatedLobbies);
+  if (!res.ok) {
+    return NextResponse.json({ error: "Could not withdraw — try again." }, { status: 409 });
+  }
 
-  return NextResponse.json({ success: true, lobby: updatedLobby ?? lobby });
+  const updatedLobby = (res.value || []).find((l: any) => String(l.id) === String(lobbyId));
+  return NextResponse.json({ success: true, lobby: updatedLobby });
 }

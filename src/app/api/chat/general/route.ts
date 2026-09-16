@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
+import { getKVCached } from "@/lib/kvCache";
 import { rateLimitByUser } from "@/lib/rateLimit";
 import { isUserBanned, bannedResponse } from "@/lib/banCheck";
 import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
@@ -21,6 +22,7 @@ import { sanitizePlainText, sanitizeShortText, sanitizeImageUrl } from "@/lib/sa
 const KV_KEY = "generalChat";
 const MAX_MESSAGES = 200;
 const MAX_TEXT = 500;
+const USERS_KEY = "registeredUsers";
 
 function findUser(users: any[], userId: string) {
   return users.find((u) => String(u.id) === String(userId));
@@ -41,7 +43,7 @@ async function requireChatUser(req: Request) {
   }
 
   await initTables();
-  const users: any[] = (await getKV("registeredUsers")) || [];
+  const users: any[] = (await getKVCached(USERS_KEY)) || [];
   const profile = findUser(users, userId);
 
   return { session, userId, handle, profile, users };

@@ -125,3 +125,106 @@ export async function deleteKV(key: string) {
   const sqlite = await getSqliteDb();
   sqlite.prepare("DELETE FROM kv_store WHERE key = ?").run(key);
 }
+
+async function invalidatePublicIfNeeded(key: string) {
+  if (PUBLIC_DATA_KEYS.has(key)) await invalidatePublicDataCache();
+}
+
+/**
+ * Atomic read-modify-write (compare-and-swap) on a single kv_store key.
+ *
+ * Reads the current value, passes it to `mutate`, then writes the result back
+ * ONLY if the stored value has not changed since the read. If a concurrent
+ * writer won the race, the whole cycle retries with the fresh value (bounded
+ * by `maxAttempts`).
+ *
+ * Contract: `mutate` MUST be a pure function — it may be invoked more than
+ * once with different inputs. Return `null`/`undefined` to abort without
+ * writing. Use this instead of `getKV`+`setKV` where a lost update would be
+ * destructive (lobbies, daily limits, rate limit buckets).
+ */
+export async function updateKVAtomic<T>(
+  key: string,
+  mutate: (current: T | null) => T | null | undefined,
+  opts: { maxAttempts?: number; abortOnSetKVError?: boolean } = {}
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  const maxAttempts = opts.maxAttempts ?? 6;
+  await initTables();
+  const d1 = await getD1();
+
+  if (!d1) {
+    // Local SQLite: better-sqlite3 transactions are synchronous and serialized,
+    // so a read-modify-write inside one transaction cannot race.
+    const sqlite = await getSqliteDb();
+    const outcome = sqlite.transaction((): { ok: true; value: T } | { ok: false } => {
+      const row = sqlite
+        .prepare("SELECT value FROM kv_store WHERE key = ?")
+        .get(key) as { value: string } | undefined;
+      const raw = row?.value ?? null;
+      let current: T | null = null;
+      if (raw !== null) {
+        try {
+          current = JSON.parse(raw) as T;
+        } catch {
+          current = null;
+        }
+      }
+      const next = mutate(current);
+      if (next === null || next === undefined) return { ok: false };
+      const serialized = JSON.stringify(next);
+      if (serialized === raw) return { ok: true, value: next };
+      if (raw === null) {
+        sqlite.prepare("INSERT INTO kv_store (key, value) VALUES (?, ?)").run(key, serialized);
+      } else {
+        sqlite.prepare("UPDATE kv_store SET value = ? WHERE key = ? AND value = ?").run(serialized, key, raw);
+      }
+      return { ok: true, value: next };
+    })();
+    if (outcome.ok) await invalidatePublicIfNeeded(key);
+    return outcome;
+  }
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const row = await d1
+      .prepare("SELECT value FROM kv_store WHERE key = ?")
+      .bind(key)
+      .first<{ value: string }>();
+    const raw = row?.value ?? null;
+    let current: T | null = null;
+    if (raw !== null) {
+      try {
+        current = JSON.parse(raw) as T;
+      } catch {
+        current = null;
+      }
+    }
+
+    const next = mutate(current);
+    if (next === null || next === undefined) return { ok: false };
+    const serialized = JSON.stringify(next);
+    if (serialized === raw) return { ok: true, value: next };
+
+    let written = false;
+    if (raw === null) {
+      const res = await d1
+        .prepare("INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING")
+        .bind(key, serialized)
+        .run();
+      written = (res.meta.changes ?? 0) === 1;
+    } else {
+      const res = await d1
+        .prepare("UPDATE kv_store SET value = ? WHERE key = ? AND value = ?")
+        .bind(serialized, key, raw)
+        .run();
+      written = (res.meta.changes ?? 0) === 1;
+    }
+
+    if (written) {
+      await invalidatePublicIfNeeded(key);
+      return { ok: true, value: next };
+    }
+    // Lost the race — loop and retry with the fresh value.
+  }
+
+  return { ok: false };
+}
