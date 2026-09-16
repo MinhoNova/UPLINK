@@ -1,10 +1,22 @@
 import path from "path";
 import fs from "fs";
 import { ensureD1Schema, getD1, KV_SCHEMA_SQL } from "@/lib/d1";
+import { invalidatePublicDataCache } from "@/lib/cloudflareBindings";
 
 const DB_DIR = path.join(process.cwd(), "src", "data");
 const DB_PATH = path.join(DB_DIR, "uplink.db");
 const SEED_PATH = path.join(DB_DIR, "db.json");
+
+const PUBLIC_DATA_KEYS = new Set([
+  "lobbies",
+  "goldOffers",
+  "notifications",
+  "registeredUsers",
+  "characters",
+  "applications",
+  "bannedUsers",
+  "bannedUserIds",
+]);
 
 type SqliteDatabase = import("better-sqlite3").Database;
 
@@ -92,6 +104,7 @@ export async function setKV(key: string, value: any) {
       .prepare("INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
       .bind(key, serialized)
       .run();
+    if (PUBLIC_DATA_KEYS.has(key)) await invalidatePublicDataCache();
     return;
   }
 
@@ -106,6 +119,7 @@ export async function deleteKV(key: string) {
   const d1 = await getD1();
   if (d1) {
     await d1.prepare("DELETE FROM kv_store WHERE key = ?").bind(key).run();
+    if (PUBLIC_DATA_KEYS.has(key)) await invalidatePublicDataCache();
     return;
   }
   const sqlite = await getSqliteDb();

@@ -14,6 +14,7 @@ import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards } from '@/lib/rankAwards';
 import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
 import { DEFAULT_PROFILE_BANNER } from '@/lib/profileImage';
+import { getPublicDataCached, setPublicDataCached, FULL_DATA_CACHE_KEY } from '@/lib/cloudflareBindings';
 
 /* Cache disabled — was causing stale data to be served to users */
 
@@ -22,6 +23,13 @@ export async function GET(req: Request) {
     const auth = await requireSession(req);
     if (!auth.ok) {
       // Public read for homepage display
+      const cached = await getPublicDataCached(FULL_DATA_CACHE_KEY);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: { "Cache-Control": "no-store, max-age=0" },
+        });
+      }
+
       await initTables();
       const data = await getKVPairs();
       // Fallback: if lobbies empty, query D1 directly
@@ -41,6 +49,7 @@ export async function GET(req: Request) {
           }
         } catch {}
       }
+      await setPublicDataCached(FULL_DATA_CACHE_KEY, data);
       return NextResponse.json(data, {
         headers: { "Cache-Control": "no-store, max-age=0" },
       });
