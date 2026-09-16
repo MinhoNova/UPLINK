@@ -300,7 +300,7 @@ export default function ManagePage() {
     return resolveProfileDisplayName(me, session?.user?.name || "Guest");
   }, [registeredUsers, currentUserId, session?.user?.name]);
   const currentUserDiscordHandle = (session?.user as any)?.username || "";
-  const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471";
+  const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471" || (session?.user as any)?.role === "admin";
   const myVfxBg = useMemo(() => registeredUsers.find((u: any) => u.id === currentUserId)?.activeVfx, [registeredUsers, currentUserId]);
 
   const targetLobby = useMemo(() => {

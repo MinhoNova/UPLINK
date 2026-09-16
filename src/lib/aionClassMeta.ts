@@ -47,7 +47,7 @@ export function sanitizeAionClass(c: unknown): string {
   return "";
 }
 
-export const AION2_LEVEL_MAX = 99;
+export const AION2_LEVEL_MAX = 9999;
 export const AION2_CPAP_MAX = 100000;
 
 export function sanitizeAionLevel(raw: unknown): number {

@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
-import { isAionClass, sanitizeAionLevel } from "@/lib/aionClassMeta";
+import { isAionClass, sanitizeAionCpAp, sanitizeAionLevel } from "@/lib/aionClassMeta";
 
 /** Per-user auto-apply preference. */
 export interface AionAutoApply {
   enabled: boolean;
   aionClass: string;
   itemLevel: number;
+  combatPower: number;
 }
 
 export const DEFAULT_AUTO_APPLY: AionAutoApply = {
   enabled: false,
   aionClass: "",
   itemLevel: 60,
+  combatPower: 0,
 };
 
 function sanitizeAutoApply(raw: any): AionAutoApply {
@@ -23,6 +25,7 @@ function sanitizeAutoApply(raw: any): AionAutoApply {
     enabled: r.enabled === true,
     aionClass: isAionClass(cls) ? cls : "",
     itemLevel: sanitizeAionLevel(r.itemLevel),
+    combatPower: sanitizeAionCpAp(r.combatPower),
   };
 }
 

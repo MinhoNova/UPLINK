@@ -150,6 +150,7 @@ const ManageModal = ({
    );
    const isFootArchive = isEmbeddedFootArchive(targetLobby);
    const effectiveStatus = getEffectiveOfferStatus(targetLobby);
+   const canSeeApplicants = String(targetLobby?.ownerId) === String(currentUserId) || isAdmin;
 
    const familyMessages = useMemo(
       () => (targetLobby ? getOfferFamilyMessages(targetLobby, lobbies) : []),
@@ -722,14 +723,14 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                  <div className="w-full mt-2">
 
                                             {/* DUAL MODE: APPLICANTS or COMPLETED RUNS */}
-                                            {(!targetLobby.status || targetLobby.status === 'standby') && (
+                                            {canSeeApplicants && (!targetLobby.status || targetLobby.status === 'standby') && (
                                                <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 flex items-center gap-2 ${targetLobby.category === 'leveling' ? 'text-[#8a2be2]' : 'text-[#00ffff]'}`}>
                                                   <Users className="w-3.5 h-3.5" />
                                                   Applications ({targetLobby.applicants?.length || 0})
                                                </h3>
                                             )}
                                             <div className="flex flex-col max-h-[200px] bg-white/[0.02] border border-white/5 rounded-[2rem] p-3">
-                                             {(!targetLobby.status || targetLobby.status === 'standby') ? (
+                                             {canSeeApplicants && (!targetLobby.status || targetLobby.status === 'standby') ? (
                                                 <>
                                                    <div className="overflow-y-auto space-y-2 pr-1 custom-scrollbar flex-1">
                                                       {targetLobby.applicants?.length > 0 ? (
@@ -751,6 +752,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                             const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
    const aionClass = app.aionClass || app.className || app.class || "";
 const aionLevel = app.level || app.applicantLevel || "";
+const aionCp = app.cpAp || app.applicantCpAp || "";
                                                               const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
                                                               const avgRate = getAverageRating(profileUser?.ratings);
                                                               const rating10 = avgRate > 0 ? Math.round(avgRate * 2 * 10) / 10 : 0;
@@ -833,10 +835,13 @@ const aionLevel = app.level || app.applicantLevel || "";
                                                                               loading="lazy"
                                                                               onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(aionClass || app.role || "C")}&background=0b1020&color=00ffff&size=128`; }}
                                                                            />
-                                                                           <div className="flex flex-col items-start leading-none">
-                                                                              <span className="text-sm sm:text-base font-black text-[#00ffff] tabular-nums drop-shadow-[0_0_8px_rgba(0,255,255,0.3)]">{aionLevel || "—"}</span>
-                                                                              <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-300">Item Level</span>
-                                                                           </div>
+<div className="flex flex-col items-start leading-none">
+                                                                               <span className="text-sm sm:text-base font-black text-[#00ffff] tabular-nums drop-shadow-[0_0_8px_rgba(0,255,255,0.3)]">{aionLevel || "—"}</span>
+                                                                               <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-300">Item Level</span>
+                                                                               {aionCp ? (
+                                                                                  <span className="text-[11px] font-black text-amber-300 tabular-nums mt-0.5 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">{aionCp}</span>
+                                                                               ) : null}
+                                                                            </div>
                                                                         </div>
                                                                         {/* right — reviews (opposite the name) + post stat */}
                                                                         <div className="flex-1 min-w-0 flex flex-col items-end gap-0.5">

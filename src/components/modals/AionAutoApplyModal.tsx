@@ -9,6 +9,7 @@ export interface AionAutoApply {
   enabled: boolean;
   aionClass: string;
   itemLevel: number;
+  combatPower: number;
 }
 
 export interface AionAutoApplyModalProps {
@@ -33,6 +34,7 @@ export default function AionAutoApplyModal({
     enabled: false,
     aionClass: "",
     itemLevel: 60,
+    combatPower: 0,
   });
 
   useEffect(() => {
@@ -48,9 +50,10 @@ export default function AionAutoApplyModal({
         enabled: stored.enabled === true,
         aionClass: typeof stored.aionClass === "string" ? stored.aionClass : "",
         itemLevel: Number(stored.itemLevel) || 60,
+        combatPower: Number(stored.combatPower) || 0,
       });
     } else {
-      setCfg({ enabled: false, aionClass: "", itemLevel: 60 });
+      setCfg({ enabled: false, aionClass: "", itemLevel: 60, combatPower: 0 });
     }
   }, [meId, registeredUsers, isOpen]);
 
@@ -79,6 +82,9 @@ export default function AionAutoApplyModal({
 
   const clampLevel = (v: number) =>
     Math.min(AION2_LEVEL_MAX, Math.max(1, Math.round(v) || 1));
+
+  const clampCp = (v: number) =>
+    Math.min(100000, Math.max(0, Math.round(v) || 0));
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !saving && setIsOpen(false)}>
@@ -192,6 +198,35 @@ export default function AionAutoApplyModal({
           </div>
         </div>
 
+        {/* Combat Power */}
+        <div className="mt-4">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Combat Power</p>
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => set({ combatPower: clampCp(cfg.combatPower - 1000) })}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min={0}
+              max={100000}
+              value={cfg.combatPower}
+              onChange={(e) => set({ combatPower: clampCp(Number(e.target.value) || 0) })}
+              className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none transition-all focus:border-cyan-400/50"
+            />
+            <button
+              type="button"
+              onClick={() => set({ combatPower: clampCp(cfg.combatPower + 1000) })}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
         {error && (
           <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{error}</p>
         )}
@@ -203,7 +238,8 @@ export default function AionAutoApplyModal({
         )}
         {!saving && cfg.enabled && cfg.aionClass && (
           <p className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-emerald-400">
-            Will auto-apply <span className="text-cyan-300">{cfg.aionClass}</span> · ilvl {cfg.itemLevel} to open offers
+            Will auto-apply <span className="text-cyan-300">{cfg.aionClass}</span> · ilvl {cfg.itemLevel}
+            {cfg.combatPower > 0 ? ` · CP ${cfg.combatPower.toLocaleString()}` : ""} to open offers
           </p>
         )}
 
