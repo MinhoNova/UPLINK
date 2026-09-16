@@ -11,7 +11,7 @@ About the site:
 - The site ranks the top players per class & region (CR leaderboards) so the best players can be found and applied to.
 - There's a Player Profile system with stats, ratings, and ranks. Players can review each other.
 - There's a global chat and a community feed.
-- There's a Discord server (discord.gg/dJUPJ6xXXn) where players coordinate squad hunting. Server members self-verify by choosing their region, which unlocks the region's channels.
+- There's a Discord server (discord.gg/aion2lfg) where players coordinate squad hunting. Server members self-verify by choosing their region, which unlocks the region's channels.
 - Entry-level game info: class names include Templar, Gladiator, Assassin, Ranger, Sorcerer, Spiritmaster, Chanter, Cleric. EU / NA East / NA West are the supported regions.
 
 Your job:
