@@ -39,7 +39,6 @@ const REGION_TABS = [
   { label: "NA EAST", key: "NA (EAST)", flag: "/flags/us.svg" },
   { label: "NA WEST", key: "NA (WEST)", flag: "/flags/us.svg" },
 ];
-
 const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling", "pvp"] as const;
 type OfferNotificationCategory = (typeof OFFER_NOTIFICATION_CATEGORIES)[number];
 type OfferNotificationSettings = { mutedAll: boolean; mutedCategories: OfferNotificationCategory[] };
@@ -90,6 +89,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const muteButtonRef = useRef<HTMLButtonElement>(null);
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
+  const filterLabel = (key: string) => ({ All: t("tab_all"), Dungeons: t("tab_dungeons"), Raids: t("tab_raids"), Leveling: t("tab_leveling"), PVP: t("tab_pvp") }[key] || key);
+  const regionLabel = (key: string) => ({ All: t("region_all"), EU: "EU", "NA (EAST)": t("region_naEast"), "NA (WEST)": t("region_naWest") }[key] || key);
 
   useEffect(() => {
     const me = registeredUsers.find((u: any) => String(u.id) === meId);
@@ -171,13 +172,13 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         </div>
         <div className="relative z-10 flex items-start justify-between gap-2">
           <p className="text-sm font-black uppercase tracking-tight leading-none text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
-            {m.category === "leveling" ? (<><span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">Leveling</span><span className="text-[#00ffff]">{m.startLevel || "1"}-{m.endLevel || "80"}</span></>) : (<><span className="mr-1 text-[#00ffff]">{totalRuns}x</span> RUN</>)}
+            {m.category === "leveling" ? (<><span className="text-[9px] font-black text-cyan-300/90 align-middle mr-1">{t("mission_leveling")}</span><span className="text-[#00ffff]">{m.startLevel || "1"}-{m.endLevel || "80"}</span></>) : (<><span className="mr-1 text-[#00ffff]">{totalRuns}x</span> {t("mission_run")}</>)}
           </p>
           <div className="shrink-0 flex items-center gap-1.5">
             <span className={`px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border ${isUnpaid ? "border-red-500/40 bg-red-500/15 text-red-300" : m.status === "in_progress" ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : m.status === "payment_pending" ? "border-orange-500/40 bg-orange-500/15 text-orange-300" : "border-cyan-500/30 bg-black/50 text-cyan-300"}`}>
-              {isUnpaid ? "UNPAID" : m.status === "in_progress" ? "ACTIVE" : m.status === "payment_pending" ? "PAYMENT PENDING" : "RUNNING"}
+              {isUnpaid ? t("mission_unpaid") : m.status === "in_progress" ? t("mission_active") : m.status === "payment_pending" ? t("mission_paymentPending") : t("mission_running")}
             </span>
-            <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">Open Thread ›</span>
+            <span className="px-2 py-1 rounded-full text-[7px] font-black uppercase tracking-widest border border-cyan-400/40 bg-cyan-500/15 text-cyan-200 group-hover:bg-cyan-500/30 transition-colors">{t("mission_openThread")}</span>
           </div>
         </div>
         <div className="relative z-10 mt-2 flex items-center justify-between gap-2">
@@ -185,7 +186,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
             {m.serverRegion && (<span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300">{String(m.serverRegion).toUpperCase()}</span>)}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[7px] font-black text-slate-400 uppercase tracking-[0.15em] mr-0.5">Squad {shown}/4</span>
+            <span className="text-[7px] font-black text-slate-400 uppercase tracking-[0.15em] mr-0.5">{t("mission_squad")} {shown}/4</span>
             <div className="flex -space-x-1">
               {(m.accepted || []).slice(0, 4).map((a: any, i: number) => (
                 <div key={i} className="w-5 h-5 rounded-md border border-white/15 bg-black/70 flex items-center justify-center overflow-hidden">
@@ -225,8 +226,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     setBgSavingOfferId(offerId); setBgError("");
     try {
       const res = await fetch("/api/lobbies", { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ lobbyId: offerId, customBg: bg }) });
-      if (res.ok) { setLobbies((prev) => prev.map((l: any) => (String(l.id) === offerId ? { ...l, customBg: bg } : l))); setBgEditOfferId(null); } else { const d: any = await res.json().catch(() => ({})); setBgError(d?.error || "Could not update banner"); }
-    } catch { setBgError("Network error"); } finally { setBgSavingOfferId(null); }
+      if (res.ok) { setLobbies((prev) => prev.map((l: any) => (String(l.id) === offerId ? { ...l, customBg: bg } : l))); setBgEditOfferId(null); } else { const d: any = await res.json().catch(() => ({})); setBgError(d?.error || t("err_couldNotUpdateBanner")); }
+    } catch { setBgError(t("err_network")); } finally { setBgSavingOfferId(null); }
   };
 
   const deleteOffer = async (l: any) => {
@@ -234,19 +235,19 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     setDeletingId(String(l.id)); setDeleteError("");
     try {
       const res = await fetch("/api/lobbies/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id }) });
-      if (res.ok) { setLobbies((prev) => prev.filter((x: any) => String(x.id) !== String(l.id))); setConfirmId(null); window.dispatchEvent(new Event("data-refresh")); } else { const d = await res.json().catch(() => ({})); setDeleteError(d.error || "Could not delete"); }
-    } catch { setDeleteError("Network error"); } finally { setDeletingId(null); }
+      if (res.ok) { setLobbies((prev) => prev.filter((x: any) => String(x.id) !== String(l.id))); setConfirmId(null); window.dispatchEvent(new Event("data-refresh")); } else { const d = await res.json().catch(() => ({})); setDeleteError(d.error || t("err_couldNotDelete")); }
+    } catch { setDeleteError(t("err_network")); } finally { setDeletingId(null); }
   };
 
   const submitApply = async () => {
     const l = applyTarget;
     if (!meId || !l || applyingId) return;
-    if (!applyAionClass) { setApplyError("Pick your class first"); return; }
+    if (!applyAionClass) { setApplyError(t("err_pickClass")); return; }
     setApplyingId(String(l.id)); setApplyError("");
     try {
       const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: `${meId}-main`, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName } }) });
-      if (res.ok) { setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); window.dispatchEvent(new Event("data-refresh")); } else { const d = await res.json().catch(() => ({})); setApplyError(d.error || "Could not apply"); }
-    } catch { setApplyError("Network error"); } finally { setApplyingId(null); }
+      if (res.ok) { setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); window.dispatchEvent(new Event("data-refresh")); } else { const d = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
+    } catch { setApplyError(t("err_network")); } finally { setApplyingId(null); }
   };
 
   const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
@@ -272,9 +273,9 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
             {/* Filters */}
             <div className="relative z-30 mb-6 flex max-w-full items-center gap-2">
               <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-blue-900/40 bg-[#0a0f26]/70 p-1.5 pr-2 backdrop-blur-md shadow-[0_4px_24px_rgba(34,211,238,0.06)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {FILTER_TABS.map((tab) => { const isActive = activeTab === tab.key; const Icon = tab.icon; return (<button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${isActive ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40' : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'}`}><Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} /><span>{tab.label}</span></button>); })}
+                {FILTER_TABS.map((tab) => { const isActive = activeTab === tab.key; const Icon = tab.icon; return (<button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${isActive ? 'bg-[#151c3d] text-white shadow-[inset_0_0_20px_rgba(59,130,246,0.2)] border border-blue-500/40' : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'}`}><Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} /><span>{filterLabel(tab.key)}</span></button>); })}
                 <div className="mx-1 h-6 w-px shrink-0 bg-white/15" />
-                {REGION_TABS.map((rtab) => { const isActive = regionTab === rtab.key; return (<button key={rtab.key} onClick={() => setRegionTab(rtab.key)} className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${isActive ? 'bg-[#0c132a] text-cyan-300 shadow-[inset_0_0_20px_rgba(34,211,238,0.15)] border border-cyan-500/40' : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'}`}>{rtab.flag ? (<img src={rtab.flag} alt="" className="w-4 h-4 rounded-sm object-cover" loading="lazy" decoding="async" />) : (<span className="w-4 h-4 rounded-sm bg-cyan-400/15 border border-cyan-400/30" />)}<span>{rtab.label}</span></button>); })}
+                {REGION_TABS.map((rtab) => { const isActive = regionTab === rtab.key; return (<button key={rtab.key} onClick={() => setRegionTab(rtab.key)} className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${isActive ? 'bg-[#0c132a] text-cyan-300 shadow-[inset_0_0_20px_rgba(34,211,238,0.15)] border border-cyan-500/40' : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'}`}>{rtab.flag ? (<img src={rtab.flag} alt="" className="w-4 h-4 rounded-sm object-cover" loading="lazy" decoding="async" />) : (<span className="w-4 h-4 rounded-sm bg-cyan-400/15 border border-cyan-400/30" />)}<span>{regionLabel(rtab.key)}</span></button>); })}
               </div>
               {meId && (<div className="ml-auto shrink-0"><button ref={muteButtonRef} type="button" onClick={() => setShowNotificationSettings((o) => !o)} className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>{offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}</button></div>)}
             </div>
@@ -320,15 +321,15 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                             </div>
                           )}
                           {/* Title */}
-                          <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× Boost`}</h4>
+                          <h4 className="text-sm font-black tracking-widest text-white uppercase truncate">{offer.title || `${offer.runsCount || 1}× ${t("offer_titleBoost")}`}</h4>
                           {/* Prices */}
                           {Number(offer.pricePerRun) > 0 && (
                             <div className="flex items-center gap-3 mt-1 whitespace-nowrap">
-                              <span className="text-sm font-black text-amber-300">Total/Player: {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
-                              <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M per run</span>
+                              <span className="text-sm font-black text-amber-300">{t("offer_totalPlayer")} {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
+                              <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M {t("offer_perRun")}</span>
                             </div>
                           )}
-                          {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`OPEN: ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
+                          {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`${t("offer_open")} ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
                         </div>
                       </div>
 
@@ -347,15 +348,15 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       {/* Actions */}
                       <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                         {applied ? (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> Applied</span>
+                          <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> {t("offer_applied")}</span>
                         ) : (
-                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? "Applying..." : "Apply"}</button>
+                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
                         )}
                         {(isMine || isAdmin) && (
                           confirmId === String(offer.id) ? (
-                            <button onClick={() => deleteOffer(offer)} disabled={deletingId === String(offer.id)} className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md">{deletingId === String(offer.id) ? "Deleting..." : "Confirm Delete?"}</button>
+                            <button onClick={() => deleteOffer(offer)} disabled={deletingId === String(offer.id)} className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md">{deletingId === String(offer.id) ? t("offer_deleting") : t("offer_confirmDelete")}</button>
                           ) : (
-                            <button onClick={() => { setConfirmId(String(offer.id)); setDeleteError(""); window.setTimeout(() => setConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 hover:backdrop-blur-xl transition-all backdrop-blur-md"><Trash2 className="w-3 h-3" /> Delete</button>
+                            <button onClick={() => { setConfirmId(String(offer.id)); setDeleteError(""); window.setTimeout(() => setConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 hover:backdrop-blur-xl transition-all backdrop-blur-md"><Trash2 className="w-3 h-3" /> {t("offer_delete")}</button>
                           )
                         )}
                       </div>
@@ -374,7 +375,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
             <div className="tn-light relative w-full min-h-[360px] h-full flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">{t("missions_header") || "ONGOING MISSIONS"}</h3>
-                {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : "LIVE"}</span></span>) : null}
+                {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : t("missions_live")}</span></span>) : null}
               </div>
               {missions.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
@@ -382,13 +383,13 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                 <div className="flex-1 flex flex-col space-y-4">
                   {activeMissions.length > 0 && (
                     <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 px-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">LIVE RUNS</span><span className="ml-auto rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">{activeMissions.length}</span></div>
+                      <div className="flex items-center gap-2 px-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">{t("missions_liveRuns")}</span><span className="ml-auto rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">{activeMissions.length}</span></div>
                       <AnimatePresence mode="popLayout">{activeMissions.map((m) => renderMissionCard(m))}</AnimatePresence>
                     </div>
                   )}
                   {unpaidMissions.length > 0 && (
                     <div className="pt-3 border-t border-red-500/20">
-                      <div className="flex items-center gap-2 mb-2.5 px-1"><span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-red-300">UNPAID RUNS</span><span className="ml-auto rounded-full bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[8px] font-black tracking-widest text-red-300">{unpaidMissions.length}/{missions.length}</span></div>
+                      <div className="flex items-center gap-2 mb-2.5 px-1"><span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-red-300">{t("missions_unpaidRuns")}</span><span className="ml-auto rounded-full bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[8px] font-black tracking-widest text-red-300">{unpaidMissions.length}/{missions.length}</span></div>
                       <AnimatePresence mode="popLayout">{unpaidMissions.map((m) => renderMissionCard(m))}</AnimatePresence>
                     </div>
                   )}
@@ -403,8 +404,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
               <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-emerald-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
                 <div className="flex items-center gap-3 pb-4 mb-5 border-b border-emerald-900/30">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10"><HistoryIcon className="w-4 h-4 text-emerald-300" /></span>
-                  <h3 className="text-xs font-black tracking-[0.2em] uppercase text-emerald-100">HISTORY</h3>
-                  <span className="ml-auto text-[8px] font-black tracking-widest text-slate-500 uppercase">{historyOffers.length} completed</span>
+                  <h3 className="text-xs font-black tracking-[0.2em] uppercase text-emerald-100">{t("history_header")}</h3>
+                  <span className="ml-auto text-[8px] font-black tracking-widest text-slate-500 uppercase">{historyOffers.length} {t("history_completed")}</span>
                 </div>
                 <div className="space-y-3">
                   {historyOffers.map((h) => {
@@ -417,12 +418,12 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           {pic ? (<img src={pic} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />) : (<span className="flex h-full w-full items-center justify-center text-[10px] font-black text-emerald-300/60 uppercase">{String(ownerName(h) || "?").slice(0, 1)}</span>)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-black uppercase tracking-wide text-white">{h.title || `${totalRuns}× Run`}</p>
+                          <p className="truncate text-sm font-black uppercase tracking-wide text-white">{h.title || `${totalRuns}× ${t("history_runFallback")}`}</p>
                           <p className="truncate text-[9px] font-bold uppercase tracking-widest text-gray-500">{ownerName(h)}{h.serverRegion ? ` · ${String(h.serverRegion).toUpperCase()}` : ""}</p>
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-1">
-                          {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{Number(h.pricePerRun).toFixed(2)}M/run</span>)}
-                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">PAID</span>
+                          {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{Number(h.pricePerRun).toFixed(2)}M{t("history_slashRun")}</span>)}
+                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">{t("history_paid")}</span>
                         </div>
                       </motion.div>
                     );
@@ -440,16 +441,16 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
           <motion.div key="apply-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !applyingId && setApplyTarget(null)}>
             <motion.div initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2 }} onClick={(e) => e.stopPropagation()} className="tn-light relative w-full max-w-lg rounded-3xl border border-cyan-500/25 bg-[#0a0f26]/95 p-6 shadow-[0_0_60px_rgba(0,229,255,0.18)]">
               <div className="flex items-start justify-between gap-3 mb-4">
-                <h3 className="text-base font-black uppercase tracking-widest text-white">Apply to Offer</h3>
+                <h3 className="text-base font-black uppercase tracking-widest text-white">{t("apply_title")}</h3>
                 <button onClick={() => !applyingId && setApplyTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Your class</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_yourClass")}</p>
               <div className="grid grid-cols-2 gap-2">{AION2_CLASSES.map((c) => { const isActive = applyAionClass === c; return (<button key={c} type="button" onClick={() => setApplyAionClass(c)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15" : "border-white/10 bg-white/[0.02] hover:border-white/25"}`}><img src={`/classes/${c === "Spiritmaster" ? "Elementalist" : c}.png`} alt="" className="h-6 w-6 object-contain" onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} /><span className={`text-xs font-black ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span></button>); })}</div>
-              <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Item Level</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) - 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={1} max={AION2_LEVEL_MAX} value={applyLevel} onChange={(e) => setApplyLevel(e.target.value)} className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) + 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
-              <div className="mt-3"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Combat Power</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyCp(String(Math.max(0, (Number(applyCp) || 0) - 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={0} max={100000} value={applyCp} onChange={(e) => setApplyCp(e.target.value)} placeholder="0" className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyCp(String(Math.min(100000, (Number(applyCp) || 0) + 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
-              <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Note</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder="Gear, availability..." className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
+              <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_itemLevel")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) - 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={1} max={AION2_LEVEL_MAX} value={applyLevel} onChange={(e) => setApplyLevel(e.target.value)} className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) + 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
+              <div className="mt-3"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_combatPower")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyCp(String(Math.max(0, (Number(applyCp) || 0) - 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={0} max={100000} value={applyCp} onChange={(e) => setApplyCp(e.target.value)} placeholder="0" className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyCp(String(Math.min(100000, (Number(applyCp) || 0) + 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
+              <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_note")}</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder={t("apply_notePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
               {applyError && (<p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>)}
-              <button onClick={submitApply} disabled={!applyAionClass || applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? "Submitting..." : "Send Application"}</button>
+              <button onClick={submitApply} disabled={!applyAionClass || applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : t("apply_send")}</button>
             </motion.div>
           </motion.div>
         )}
@@ -495,7 +496,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                     <RankBadge stats={owner?.stats} ratings={owner?.ratings} rankOverride={owner?.rankOverride} />
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {owner?.team?.name && (<span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">{owner.team.name}</span>)}
-                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#8ea1ff]">Discord: @{owner?.username || "—"}</span>
+                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#8ea1ff]">{t("hp_discord")} {owner?.username || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -507,7 +508,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                     </div>
                     <button type="button" className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition">
                       <MessageCircle className="w-4 h-4" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">Message</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_message")}</span>
                     </button>
                   </div>
                 </div>
@@ -526,10 +527,10 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         return (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0a0f26] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
-              <div className="flex items-center justify-between gap-2 mb-4"><div className="flex items-center gap-2"><Palette className="h-4 w-4 text-[#ff007f]" /><h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-100">Banner Background</h3></div><button onClick={() => setBgEditOfferId(null)} className="text-white/50 hover:text-white"><X className="h-4 w-4" /></button></div>
-              <button onClick={() => applyOfferBg(bgEditOfferId!, "")} disabled={bgSavingOfferId === bgEditOfferId} className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:border-white/25"><p className="text-[10px] font-black uppercase tracking-widest text-white/90">Default</p></button>
-              <p className="mt-4 mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">My backgrounds</p>
-              {edThumbs.length === 0 ? (<p className="rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-4 text-center text-[9px] text-white/40">No custom backgrounds yet</p>) : (
+              <div className="flex items-center justify-between gap-2 mb-4"><div className="flex items-center gap-2"><Palette className="h-4 w-4 text-[#ff007f]" /><h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-100">{t("bg_title")}</h3></div><button onClick={() => setBgEditOfferId(null)} className="text-white/50 hover:text-white"><X className="h-4 w-4" /></button></div>
+              <button onClick={() => applyOfferBg(bgEditOfferId!, "")} disabled={bgSavingOfferId === bgEditOfferId} className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:border-white/25"><p className="text-[10px] font-black uppercase tracking-widest text-white/90">{t("bg_default")}</p></button>
+              <p className="mt-4 mb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{t("bg_mine")}</p>
+              {edThumbs.length === 0 ? (<p className="rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-4 text-center text-[9px] text-white/40">{t("bg_empty")}</p>) : (
                 <div className="grid grid-cols-3 gap-2 max-h-[38vh] overflow-y-auto pr-1">{edThumbs.map((t) => (<button key={t.src} onClick={() => applyOfferBg(bgEditOfferId!, t.src)} disabled={bgSavingOfferId === bgEditOfferId} className="relative aspect-video overflow-hidden rounded-xl border-2 border-white/10 hover:border-white/30"><img src={t.thumb} alt="" className="h-full w-full object-cover" /></button>))}</div>
               )}
               {bgError && (<p className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-red-400">{bgError}</p>)}
