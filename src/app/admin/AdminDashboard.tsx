@@ -47,7 +47,6 @@ export default function AdminDashboard() {
   const [rankMsg, setRankMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
-  const [wipeConfirm, setWipeConfirm] = useState(false);
   const [lobbiesConfirm, setLobbiesConfirm] = useState(false);
 
   const friendlyDate = (ts: number | string | undefined) => {
@@ -104,22 +103,6 @@ export default function AdminDashboard() {
     setResetConfirm(false);
   };
 
-  const wipeAllUsers = async () => {
-    try {
-      const res = await fetch("/api/admin/wipe-users", { method: "POST" });
-      const d = await res.json();
-      if (res.ok) {
-        setActionMsg(`Removed ${d.removed} registered user(s)`);
-        setUsers((prev: any[]) => prev.filter((u: any) => String(u.id) === String(d?.keptAdminId || "")));
-      } else {
-        setActionMsg(d.error || "Failed");
-      }
-    } catch {
-      setActionMsg("Network error");
-    }
-    setWipeConfirm(false);
-  };
-
   const wipeAllLobbies = async () => {
     try {
       const res = await fetch("/api/admin/wipe-lobbies", { method: "POST" });
@@ -161,7 +144,7 @@ export default function AdminDashboard() {
         <div className="absolute bottom-[-10%] right-1/4 w-[500px] h-[500px] bg-[#ff007f]/[0.03] blur-[140px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pt-32 pb-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link href="/" className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition">
@@ -222,30 +205,6 @@ export default function AdminDashboard() {
                 className="px-4 py-2 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition"
               >
                 Reset All Offers
-              </button>
-            )}
-            {wipeConfirm ? (
-              <div className="flex items-center gap-2 bg-red-900/30 border border-red-500/40 rounded-xl px-3 py-2">
-                <span className="text-[10px] font-black text-red-300 uppercase tracking-widest">Wipe ALL removed? (you keep admin)</span>
-                <button
-                  onClick={wipeAllUsers}
-                  className="px-3 py-2 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setWipeConfirm(false)}
-                  className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setWipeConfirm(true)}
-                className="px-4 py-2 rounded-xl bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition"
-              >
-                Wipe All Users
               </button>
             )}
             {actionMsg && <p className="text-[9px] text-emerald-300 font-bold">{actionMsg}</p>}
