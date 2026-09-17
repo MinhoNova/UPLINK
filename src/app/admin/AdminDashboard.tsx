@@ -46,8 +46,6 @@ export default function AdminDashboard() {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [rankMsg, setRankMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
-  const [resetConfirm, setResetConfirm] = useState(false);
-  const [lobbiesConfirm, setLobbiesConfirm] = useState(false);
 
   const friendlyDate = (ts: number | string | undefined) => {
     if (!ts) return "—";
@@ -75,43 +73,6 @@ export default function AdminDashboard() {
     } catch {
       setActionMsg("Network error");
     }
-  };
-
-  const resetIdentities = async () => {
-    try {
-      const res = await fetch("/api/admin/reset-identities", { method: "POST" });
-      const d = await res.json();
-      if (res.ok) {
-        setActionMsg(`Reset ${d.reset} custom name(s)/avatar(s) for ${d.users} users`);
-        setUsers((prev: any[]) =>
-          prev.map((u: any) => {
-            const copy = { ...u };
-            delete copy.displayName;
-            delete copy.customAvatar;
-            delete copy.nameColor;
-            delete copy.profileGif;
-            delete copy.profileGifThumb;
-            return copy;
-          })
-        );
-      } else {
-        setActionMsg(d.error || "Failed");
-      }
-    } catch {
-      setActionMsg("Network error");
-    }
-    setResetConfirm(false);
-  };
-
-  const wipeAllLobbies = async () => {
-    try {
-      const res = await fetch("/api/admin/wipe-lobbies", { method: "POST" });
-      const d = (await res.json()) as { removedLobbies?: number; removedNotifications?: number; error?: string };
-      setActionMsg(res.ok ? `Reset complete — removed ${d.removedLobbies ?? 0} offer(s) and ${d.removedNotifications ?? 0} notification(s)` : d.error || "Failed");
-    } catch {
-      setActionMsg("Network error");
-    }
-    setLobbiesConfirm(false);
   };
 
   useEffect(() => {
@@ -158,57 +119,7 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">{totalUsers} registered users</p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            {resetConfirm ? (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Reset all custom names & avatars?</span>
-                <button
-                  onClick={resetIdentities}
-                  className="px-3 py-2 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setResetConfirm(false)}
-                  className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setResetConfirm(true)}
-                className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition"
-              >
-                Reset Names & Avatars
-              </button>
-            )}
-            {lobbiesConfirm ? (
-              <div className="flex items-center gap-2 bg-red-900/30 border border-red-500/40 rounded-xl px-3 py-2">
-                <span className="text-[10px] font-black text-red-300 uppercase tracking-widest">Wipe ALL offers, missions & history?</span>
-                <button
-                  onClick={wipeAllLobbies}
-                  className="px-3 py-2 rounded-xl bg-red-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-500 transition"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setLobbiesConfirm(false)}
-                  className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setLobbiesConfirm(true)}
-                className="px-4 py-2 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-orange-500 hover:text-white transition"
-              >
-                Reset All Offers
-              </button>
-            )}
-            {actionMsg && <p className="text-[9px] text-emerald-300 font-bold">{actionMsg}</p>}
-          </div>
+          {actionMsg && <p className="text-[9px] text-emerald-300 font-bold">{actionMsg}</p>}
         </div>
 
         <div className="flex flex-wrap gap-1.5 p-1.5 bg-black/40 rounded-2xl border border-white/5 mb-8 w-fit">
