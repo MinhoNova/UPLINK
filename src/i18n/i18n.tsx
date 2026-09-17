@@ -137,9 +137,36 @@ const en: Dict = {
   bg_default: "Default",
   bg_mine: "My backgrounds",
   bg_empty: "No custom backgrounds yet",
+  /* auto-apply settings modal */
+  auto_title: "Automatic Applying",
+  auto_descOn: "Applies to matching offers automatically",
+  auto_descOff: "Off — manual apply only",
+  auto_myClass: "My class",
+  auto_pickClass: "Pick a class first",
+  auto_saving: "Saving...",
+  auto_errorSave: "Could not save settings",
+  auto_errorNetwork: "Network error",
+  auto_unlinked: "Unlinked operative",
+  auto_done: "Done",
+  /* hidden identity */
+  hid_title: "Hidden Identity",
+  hid_hidden: "Hidden",
+  hid_encrypted: "Encrypted",
+  hid_session: "Session Remaining",
+  hid_usernameHidden: "Username hidden in party card",
+  hid_avatarReplaced: "Avatar replaced by Secret Card",
+  hid_hiddenFromAll: "Hidden from all players viewing you",
   /* hover card */
   hp_discord: "Discord:",
   hp_message: "Message",
+  auto_pickClass: "Pick your class first",
+  auto_canSave: "Could not save settings",
+  auto_unlinked: "Unlinked operative",
+  auto_myClass: "My class",
+  auto_autoApplying: "Automatic applying",
+  auto_applies: "Applies to matching offers automatically",
+  auto_offManual: "Off — manual apply only",
+  auto_pickClassFirst: "Pick a class first",
 };
 
 const ar: Dict = {
