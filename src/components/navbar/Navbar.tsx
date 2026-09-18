@@ -350,9 +350,6 @@ export default function Navbar() {
             >
               <Zap className="w-4 h-4" /> Create Offer
             </a>
-            <a href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "https://discord.gg/aion2lfg"} target="_blank" rel="noopener noreferrer" title="Join our Discord" className="px-4 py-2 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-[#5865F2]/20 text-[#9aa7ff] border border-[#5865F2]/40 hover:bg-[#5865F2]/30 hover:text-white hover:border-[#5865F2]/70 shadow-[0_0_12px_rgba(88,101,242,0.25)]">
-              <MessageCircle className="w-4 h-4" /> Discord
-            </a>
             <div className="relative" ref={langRef}>
               <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`px-4 py-2 min-w-[64px] justify-center rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff]/20 shadow-[0_0_12px_rgba(0,255,255,0.1)]`}>
                 <Languages className="w-4 h-4" /> {LANGS.find((l) => l.code === lang)?.short || "EN"}
