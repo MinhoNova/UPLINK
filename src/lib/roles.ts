@@ -9,7 +9,7 @@ export const OMARSALEH_ADMIN_HANDLE = "omarsaleh97";
 export const ADMIN_IDS = [LEGACY_ADMIN_ID, OMARSALEH_ADMIN_ID];
 export const ADMIN_HANDLES = [LEGACY_ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
 
-export type UserRole = "admin" | "moderator" | "user";
+export type UserRole = "admin" | "moderator" | "support" | "user";
 
 export function isLegacyAdmin(userId: string, handle: string): boolean {
   return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
@@ -41,7 +41,7 @@ export async function isAdminRole(userId: string, handle: string): Promise<boole
 
 export async function isModeratorOrAbove(userId: string, handle: string): Promise<boolean> {
   const role = await getUserRole(userId, handle);
-  return role === "admin" || role === "moderator";
+  return role === "admin" || role === "moderator" || role === "support";
 }
 
 export async function setUserRole(actorId: string, actorHandle: string, targetUserId: string, role: UserRole): Promise<void> {

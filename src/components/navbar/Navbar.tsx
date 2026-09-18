@@ -59,6 +59,7 @@ export default function Navbar() {
   const [dmUnreadCount, setDmUnreadCount] = useState(0);
   const [suspended, setSuspended] = useState(false);
   const [suspendedReason, setSuspendedReason] = useState("");
+  const [myRole, setMyRole] = useState<string>("");
   const notifRef = useRef<HTMLDivElement>(null);
 
   const currentUserId = (session?.user as any)?.id || "";
@@ -156,6 +157,16 @@ export default function Navbar() {
   }, [currentUserId, currentHandle]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    let cancelled = false;
+    fetch("/api/users/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: any) => { if (!cancelled) setMyRole(d?.role || ""); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUserId]);
 
   useEffect(() => {
     const onFocus = () => fetchData();
@@ -459,6 +470,7 @@ export default function Navbar() {
                     <a href="/my-profile" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-cyan-500/10 hover:text-cyan-200"><UserRound className="h-4 w-4" /> My Profile</a>
                     <a href="/history" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-cyan-500/10 hover:text-cyan-200"><History className="h-4 w-4" /> History</a>
                     {isAdmin && <a href="/admin" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/10"><ShieldAlert className="h-4 w-4" /> Admin</a>}
+                    {!isAdmin && (myRole === "moderator" || myRole === "support" || myRole === "admin") && <a href="/admin" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-cyan-300 transition hover:bg-cyan-500/10"><ShieldAlert className="h-4 w-4" /> {myRole === "support" ? "Support" : "Moderation"}</a>}
                     <div className="my-1 border-t border-white/10" />
                     <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); signOut({ callbackUrl: "/" }); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-red-300 transition hover:bg-red-500/15 hover:text-red-200"><LogOut className="h-4 w-4" /> Sign Out</button>
                   </div>

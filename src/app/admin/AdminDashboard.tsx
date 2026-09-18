@@ -39,12 +39,18 @@ const TABS = [
   { id: "visits", label: "Daily Visits", icon: UserCheck },
 ];
 
-export default function AdminDashboard() {
+const MODERATOR_TAB_IDS = new Set(["tickets", "moderation"]);
+
+export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "moderator" | "support" | "user" }) {
   const [activeTab, setActiveTab] = useState("users");
+  const tabs = (role === "admin" ? TABS : TABS.filter((t) => MODERATOR_TAB_IDS.has(t.id)));
+  const effectiveTab = tabs.some((t) => t.id === activeTab) ? activeTab : tabs[0]?.id ?? "users";
   const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [rankMsg, setRankMsg] = useState<string | null>(null);
+  const [roleMsg, setRoleMsg] = useState<string | null>(null);
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   const friendlyDate = (ts: number | string | undefined) => {
@@ -78,6 +84,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetch("/api/data", { credentials: "include" }).then((r) => r.json()).then((data) => {
       setUsers(data.registeredUsers || []);
+    }).catch(() => {});
+    fetch("/api/admin/roles", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d: any) => {
+      if (d?.roles) setUserRoles(d.roles);
     }).catch(() => {});
   }, []);
 
@@ -123,14 +132,14 @@ export default function AdminDashboard() {
         </div>
 
         <div className="flex flex-wrap gap-1.5 p-1.5 bg-black/40 rounded-2xl border border-white/5 mb-8 w-fit">
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                  activeTab === tab.id
+                  effectiveTab === tab.id
                     ? "bg-violet-600/20 text-violet-400 border border-violet-500/30"
                     : "text-gray-500 hover:text-white border border-transparent"
                 }`}
@@ -141,7 +150,7 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {activeTab === "users" && (
+        {effectiveTab === "users" && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-4">
@@ -293,6 +302,21 @@ export default function AdminDashboard() {
                       setRankMsg("Network error");
                     }
                   };
+                  const applyRole = async (role: string) => {
+                    try {
+                      const res = await fetch("/api/admin/roles", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: user.id, role }),
+                      });
+                      const d: any = await res.json();
+                      if (!res.ok) return setRoleMsg(`Error: ${d.error || "failed"}`);
+                      setRoleMsg(`Role set to ${role}`);
+                      setUserRoles((prev) => ({ ...prev, [String(user.id)]: role }));
+                    } catch {
+                      setRoleMsg("Network error");
+                    }
+                  };
                   const fields = [
                     { label: "Name", value: user.name },
                     { label: "Username", value: `@${user.username}` },
@@ -360,6 +384,35 @@ export default function AdminDashboard() {
                           </div>
                         ) : null}
 
+                        <div className="mt-4 border-t border-white/5 pt-4">
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-3">Site Role</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(["user", "support", "moderator", "admin"] as const).map((r) => {
+                              const current = userRoles[String(user.id)] || "user";
+                              return (
+                                <button
+                                  key={r}
+                                  onClick={() => applyRole(r)}
+                                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition ${
+                                    current === r
+                                      ? r === "admin"
+                                        ? "bg-violet-600/30 text-violet-200 border-violet-500/40"
+                                        : r === "moderator"
+                                          ? "bg-cyan-600/30 text-cyan-200 border-cyan-500/40"
+                                          : r === "support"
+                                            ? "bg-sky-600/30 text-sky-200 border-sky-500/40"
+                                            : "bg-emerald-600/30 text-emerald-200 border-emerald-500/40"
+                                      : "bg-white/[0.03] text-gray-400 border-white/10 hover:bg-white/10"
+                                  }`}
+                                >
+                                  {r === "user" ? "User" : r === "support" ? "Support" : r === "moderator" ? "Moderator" : "Admin"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {roleMsg && <p className="text-[10px] text-violet-300 mt-3 font-bold">{roleMsg}</p>}
+                        </div>
+
                         <div className="mt-4 border-t border-white/5 pt-4 flex items-center justify-between gap-3">
                           <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Account Status</p>
                           <button
@@ -391,48 +444,48 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {activeTab === "tickets" && (
+        {effectiveTab === "tickets" && (
           <div>
             <AdminTicketsPanel />
           </div>
         )}
 
-        {activeTab === "analytics" && (
+        {effectiveTab === "analytics" && (
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">Analytics</h2>
             <AdminAnalyticsPanel />
           </div>
         )}
 
-        {activeTab === "audit" && (
+        {effectiveTab === "audit" && (
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">Audit Log</h2>
             <AdminAuditPanel />
           </div>
         )}
 
-        {activeTab === "userbans" && (
+        {effectiveTab === "userbans" && (
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">User Ban Management</h2>
             <AdminUserBanPanel />
           </div>
         )}
 
-        {activeTab === "ipbans" && (
+        {effectiveTab === "ipbans" && (
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">IP Ban Management</h2>
             <AdminIpBanPanel />
           </div>
         )}
 
-        {activeTab === "moderation" && (
+        {effectiveTab === "moderation" && (
           <div className="bg-gradient-to-br from-[#0c0c18] to-black border border-white/5 rounded-2xl p-6">
             <h2 className="text-base font-black text-white mb-4">Community Reports</h2>
             <AdminModerationPanel />
           </div>
         )}
 
-        {activeTab === "visits" && (
+        {effectiveTab === "visits" && (
           <div>
             <AdminVisitsPanel />
           </div>

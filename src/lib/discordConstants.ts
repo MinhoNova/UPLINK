@@ -3,6 +3,7 @@ export const DISCORD_ROLE = {
   owner: "Owner",
   admin: "Administrators",
   moderator: "Moderators",
+  support: "Support",
   verified: "Verified",
   booster: "Premium",
   missionLead: "Community Management",

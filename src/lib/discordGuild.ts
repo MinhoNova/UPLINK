@@ -63,6 +63,12 @@ const ROLE_SPECS = [
     color: "#00ffff",
     permissions: String(2 + 1099511627776 + 8192),
   },
+  {
+    key: "support",
+    name: DISCORD_ROLE.support,
+    color: "#22d3ee",
+    permissions: "8584987863416823",
+  },
   { key: "missionLead", name: DISCORD_ROLE.missionLead, color: "#8a2be2", permissions: "8192" },
   { key: "booster", name: DISCORD_ROLE.booster, color: "#ff4500", permissions: "0" },
   { key: "secretClub", name: DISCORD_ROLE.secretClub, color: "#c084fc", permissions: "0" },

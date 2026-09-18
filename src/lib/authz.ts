@@ -86,7 +86,7 @@ export async function requireModerator(req?: Request): Promise<
 > {
   const auth = await requireSession(req);
   if (!auth.ok) return auth;
-  if (auth.user.role !== "admin" && auth.user.role !== "moderator") {
+  if (auth.user.role !== "admin" && auth.user.role !== "moderator" && auth.user.role !== "support") {
     return { ok: false, status: 403, error: "Moderator only" };
   }
   return auth;

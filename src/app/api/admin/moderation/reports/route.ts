@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/authz";
+import { requireModerator } from "@/lib/authz";
 import { getDb } from "@/db";
 import { reports, posts } from "@/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
@@ -7,7 +7,7 @@ import { getKV, initTables } from "@/lib/db";
 import { resolveProfileDisplayName } from "@/lib/profileImage";
 export async function GET() {
   const db = await getDb();
-  const auth = await requireAdmin();
+  const auth = await requireModerator();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const rows = await db.select().from(reports).orderBy(desc(reports.createdAt)).limit(100);
@@ -42,7 +42,7 @@ export async function GET() {
 
 export async function DELETE(req: Request) {
   const db = await getDb();
-  const auth = await requireAdmin();
+  const auth = await requireModerator();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { reportId } = (await req.json()) as { reportId?: number };

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getAppSession } from "@/lib/authEnv";
-import { isAdminRole } from "@/lib/roles";
+import { getUserRole } from "@/lib/roles";
 import AdminDashboard from "./AdminDashboard";
 
 const siteUrl = getSiteUrl();
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   const session = await getAppSession();
   if (!session?.user?.id) redirect("/");
-  const isAdmin = await isAdminRole(session.user.id, session.user.username);
-  if (!isAdmin) redirect("/");
-  return <AdminDashboard />;
+  const role = await getUserRole(session.user.id, session.user.username);
+  if (role !== "admin" && role !== "moderator" && role !== "support") redirect("/");
+  return <AdminDashboard role={role} />;
 }

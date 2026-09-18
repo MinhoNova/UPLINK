@@ -7,7 +7,7 @@ export const OMARSALEH_ADMIN_HANDLE = "omarsaleh97";
 export const ADMIN_IDS = [LEGACY_ADMIN_ID, OMARSALEH_ADMIN_ID];
 export const ADMIN_HANDLES = [LEGACY_ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
 
-export type UserRole = "admin" | "moderator" | "user";
+export type UserRole = "admin" | "moderator" | "support" | "user";
 
 export function isPrimaryAdmin(userId: string, handle: string): boolean {
   return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);

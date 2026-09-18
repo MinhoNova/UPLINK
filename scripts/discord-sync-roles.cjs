@@ -71,6 +71,15 @@ const ROLE_SPECS = [
     ],
   },
   {
+    key: "support",
+    name: "🕊️ Support",
+    color: "#22d3ee",
+    permissions:
+      Object.entries(PermissionsBitField.Flags)
+        .filter(([k]) => k !== "Administrator")
+        .map(([, v]) => v),
+  },
+  {
     key: "missionLead",
     name: "👑 Mission Lead",
     color: "#8a2be2",
@@ -157,6 +166,7 @@ client.once("ready", async () => {
     const order = [
       "owner",
       "admin",
+      "support",
       "moderator",
       "missionLead",
       "booster",
