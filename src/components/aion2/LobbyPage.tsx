@@ -263,8 +263,11 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
 
-      {/* Hero Discord CTA removed — replaced by a small Discord icon link */}
-      <div className="relative z-10 pt-24" />
+      {/* Hero spacer — keeps original height after removing the Discord CTA */}
+      <div className="relative z-10 pt-16 pb-10 px-6 text-center">
+        <div className="h-[3rem]" />
+      </div>
+      <div className="h-8" />
 
       {/* Main */}
       <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">
