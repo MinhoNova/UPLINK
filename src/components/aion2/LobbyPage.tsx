@@ -263,19 +263,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         <div className="aion-dotnet absolute inset-0 opacity-[0.10]" />
       </div>
 
-      {/* Hero Discord CTA — prominent join button on the homepage */}
-      <div className="relative z-10 flex flex-col items-center pt-16 pb-10 px-6 text-center">
-        <a
-          href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || "https://discord.gg/aion2lfg"}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={t("hp_discord")}
-          className="group inline-flex items-center gap-3 rounded-2xl px-7 py-4 font-black uppercase text-[11px] tracking-[0.2em] transition-all bg-[#5865F2]/25 text-white border border-[#5865F2]/60 shadow-[0_0_40px_rgba(88,101,242,0.4)] hover:bg-[#5865F2]/40 hover:shadow-[0_0_60px_rgba(88,101,242,0.7)] hover:scale-[1.03]"
-        >
-          <MessageCircle className="w-5 h-5" /> {t("hp_joinDiscord")}
-        </a>
-      </div>
-      <div className="h-8" />
+      {/* Hero Discord CTA removed — replaced by a small Discord icon link */}
+      <div className="relative z-10 pt-24" />
 
       {/* Main */}
       <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">

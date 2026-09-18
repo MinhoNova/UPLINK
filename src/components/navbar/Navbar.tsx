@@ -467,9 +467,15 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <motion.button onClick={() => signIn("discord")} className="px-8 py-4 rounded-xl border-2 border-[#00ffff] text-[#00ffff] font-black text-lg uppercase tracking-widest hover:bg-[#00ffff] hover:text-black transition-all shadow-xl">
-              {t('nav_access')}
-            </motion.button>
+            <button
+              type="button"
+              onClick={() => signIn("discord")}
+              title={t('nav_access')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#00ffff]/40 bg-[#00ffff]/10 text-[#00ffff] font-black uppercase text-[10px] tracking-widest transition-all hover:bg-[#00ffff]/20 hover:border-[#00ffff] shadow-[0_0_12px_rgba(0,255,255,0.1)]"
+            >
+              <MessageCircle className="w-4 h-4" />
+              {t('nav_login')}
+            </button>
           )}
         </div>
       </div>
