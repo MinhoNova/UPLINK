@@ -17,6 +17,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply uplink-db --remote",
     "db:seed:local": "node scripts/seed-d1.cjs --local",
     "db:seed:remote": "node scripts/seed-d1.cjs --remote",
+    "backup:d1": "node scripts/backup-d1.cjs --remote",
+    "loadtest": "node scripts/loadtest.cjs",
     "thumbs:regen": "node scripts/regenerate-class-thumbs.cjs",
     "discord:roles": "node scripts/discord-sync-roles.cjs",
     "discord:autorole": "node scripts/discord-autorole-bot.cjs",

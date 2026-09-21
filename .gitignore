@@ -85,3 +85,6 @@ MAGE*
 /logo-isolated.html
 /galaxy_profile_improved.html
 /void_smoke_profile.html
+
+# local D1 snapshots
+backups/
