@@ -40,13 +40,11 @@
   },
   "vars": {
     "AUTH_TRUST_HOST": "true",
-    "AUTH_DEBUG": "true",
+    "AUTH_DEBUG": "false",
     "NEXTAUTH_URL": "https://aion2lfg.com",
-    "NEXTAUTH_SECRET": "9ec2360d6e7a8f04a63274044e855e1c10aa723cf686f7b97dc0e401447bf599",
     "NEXT_PUBLIC_SITE_URL": "https://aion2lfg.com",
     "NEXT_PUBLIC_LIVEKIT_URL": "wss://uplink-sist6urm.livekit.cloud",
     "DISCORD_CLIENT_ID": "1387173936931803298",
-    "DISCORD_CLIENT_SECRET": "Qwo9tTaOEBCFQETf0XkaBuD-rEOV4TwR",
     "DISCORD_GUILD_ID": "1387155425710833674",
     "NEXT_PUBLIC_DISCORD_INVITE_URL": "https://discord.gg/aion2lfg",
     "BATTLENET_CLIENT_ID": "2d8396c3dfa2465fbc95c031cb453d2d"

@@ -1,0 +1,51 @@
+name: CI + Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build (OpenNext)
+        env:
+          NEXTAUTH_URL: "https://aion2lfg.com"
+          AUTH_TRUST_HOST: "true"
+          AUTH_DEBUG: "false"
+          NEXT_PUBLIC_SITE_URL: "https://aion2lfg.com"
+          NEXT_PUBLIC_LIVEKIT_URL: "wss://uplink-sist6urm.livekit.cloud"
+          NEXT_PUBLIC_DISCORD_INVITE_URL: "https://discord.gg/aion2lfg"
+          DISCORD_CLIENT_ID: "1387173936931803298"
+          DISCORD_GUILD_ID: "1387155425710833674"
+          BATTLENET_CLIENT_ID: "2d8396c3dfa2465fbc95c031cb453d2d"
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx opennextjs-cloudflare deploy

@@ -67,3 +67,21 @@ MAGE*
 
 # build/dev logs
 *.log
+
+# scratch / debug artifacts (were accidentally committed)
+/dev-error.txt
+/dev-log.txt
+/dev-output.txt
+/prod-log.txt
+/dev-output.txt
+/next-dev-debug.log
+/next-start.err.log
+/next-start.log
+/line4831.txt
+/line4832.txt
+/tmp_parse_tsx.js
+/hex_check.py
+/seed_final.py
+/logo-isolated.html
+/galaxy_profile_improved.html
+/void_smoke_profile.html
