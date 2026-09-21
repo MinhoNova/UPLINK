@@ -315,7 +315,7 @@ export default function ManagePage() {
       if (cancelled) return;
       fetch("/api/data", { credentials: "include" })
         .then((r) => r.json())
-        .then((d) => {
+        .then((d: any) => {
           if (cancelled) return;
           if (!dataLoadedRef.current) {
             dataLoadedRef.current = true;
@@ -724,7 +724,7 @@ export default function ManagePage() {
     try {
       const res = await fetch("/api/lobbies/split-exit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId, member, completed: Math.max(0, completed), isKick, leaveMsg, historySnapshot }) });
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         if (Array.isArray(data.lobbies)) setLobbies(data.lobbies.map(repairLobbyRoles));
       } else {
         await saveGlobalData({ lobbies: updated });
@@ -776,7 +776,7 @@ export default function ManagePage() {
     setIsJoiningVoice(true);
     try {
       const resp = await fetch(`/api/livekit?room=${encodeURIComponent(String(lobbyId))}`, { credentials: "include" });
-      const data = await resp.json().catch(() => ({}));
+      const data: any = await resp.json().catch(() => ({}));
       if (data.token) {
         setVoiceToken(data.token);
         if (data.serverUrl) setVoiceServerUrl(String(data.serverUrl));

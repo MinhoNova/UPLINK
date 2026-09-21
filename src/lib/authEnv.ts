@@ -24,7 +24,7 @@ export type AppSession = {
 export async function syncAuthEnvFromCloudflare(): Promise<void> {
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    let env: Record<string, unknown>;
+    let env: any;
     try {
       ({ env } = getCloudflareContext());
     } catch {
@@ -44,7 +44,7 @@ export async function syncAuthEnvFromCloudflare(): Promise<void> {
       ) {
         value = trimmed.slice(1, -1);
       }
-      process.env[key] = value;
+      process.env[key] = value as string;
     }
   } catch {
     // Local dev without Cloudflare context

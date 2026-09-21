@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const post = await db.select().from(posts).where(eq(posts.id, Number(id))).limit(1).then((r) => r[0]);
   if (!post) return { title: "Post not found" };
 
-  const title = post.title || post.content.slice(0, 60);
+  const title = (post as any).title || post.content.slice(0, 60);
   const tags = JSON.parse(post.tags || "[]") as string[];
   const tagStr = tags.map((t) => `#${t}`).join(" ");
 
@@ -52,8 +52,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Title */}
-          {post.title && (
-            <h1 className="text-xl font-black text-white mb-3">{post.title}</h1>
+          {(post as any).title && (
+            <h1 className="text-xl font-black text-white mb-3">{(post as any).title}</h1>
           )}
 
           {/* Content */}

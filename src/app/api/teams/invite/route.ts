@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Too many team actions", retryAfterMs: rl.retryAfterMs }, { status: 429 });
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
   const ownerId = String(body?.ownerId || "");
   if (!ownerId || String(ownerId) !== String(auth.user.id)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

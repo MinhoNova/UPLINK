@@ -74,7 +74,7 @@ export default function DirectCommsPanel() {
       } else {
         fetch("/api/data")
           .then((r) => r.json())
-          .then((d) => {
+          .then((d: any) => {
             setData(d);
             resolveChat(d.registeredUsers || []);
           })
@@ -239,7 +239,7 @@ export default function DirectCommsPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json().catch(() => ({}));
+    const data: any = await res.json().catch(() => ({}));
     if (!res.ok) {
       const err = new Error(data.error || "Request failed") as Error & { retryAfterMs?: number; suspended?: boolean };
       err.retryAfterMs = data.retryAfterMs;
@@ -444,7 +444,7 @@ export default function DirectCommsPanel() {
         body: JSON.stringify({ action: "request", targetId }),
       });
       if (res.ok) {
-        const result = await res.json();
+        const result: any = await res.json();
         setData({ ...data, friends: [...friends, result.friend] });
       }
     } catch {}

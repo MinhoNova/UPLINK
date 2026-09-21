@@ -36,7 +36,7 @@ export default function WelcomePlansModal({ isOpen, onClose, onClaimed, addToast
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "claim_free" }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok) {
         addToast?.(data.error || "Could not activate free month", "error");
         return;
@@ -59,7 +59,7 @@ export default function WelcomePlansModal({ isOpen, onClose, onClaimed, addToast
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ months, days, paymentMethod }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok) {
         addToast?.(data.error || "Purchase request failed", "error");
         return;

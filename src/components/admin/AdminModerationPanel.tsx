@@ -24,7 +24,7 @@ export default function AdminModerationPanel() {
     setLoading(true);
     fetch("/api/admin/moderation/reports")
       .then((r) => r.json())
-      .then((d) => setReports(d.reports || []))
+      .then((d: any) => setReports(d.reports || []))
       .catch(() => setReports([]))
       .finally(() => setLoading(false));
   }, []);

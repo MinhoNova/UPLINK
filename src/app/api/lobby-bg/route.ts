@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { action, url } = await request.json();
+    const { action, url } = (await request.json() as any);
     await initTables();
 
     if (action === "setActive") {
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { url } = await request.json();
+    const { url } = (await request.json() as any);
     await initTables();
     const lobbyBackgrounds = (await getKV("lobbyBackgrounds")) || [];
     const updated = lobbyBackgrounds.filter((bg: string) => bg !== url);

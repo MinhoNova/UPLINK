@@ -37,7 +37,7 @@ export default function AdminAuditPanel() {
     setLoading(true);
     fetch("/api/admin/audit?limit=150")
       .then((r) => r.json())
-      .then((d) => setLogs(d.logs || []))
+      .then((d: any) => setLogs(d.logs || []))
       .catch(() => setLogs([]))
       .finally(() => setLoading(false));
   }, []);

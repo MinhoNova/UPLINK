@@ -128,7 +128,6 @@ export function getAuthOptions(): NextAuthOptions {
       },
     },
     secret: process.env.NEXTAUTH_SECRET,
-    trustHost: true,
     debug: process.env.AUTH_DEBUG === "true",
   };
 }

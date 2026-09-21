@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { commentId, type } = await req.json();
+  const { commentId, type }: any = await req.json();
   if (!commentId || !type) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   const userId = (session.user as any).id;

@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const userId = (session.user as any).id;
   if (await isUserBanned(handle, userId)) return bannedResponse();
 
-  const body = await req.json();
+  const body: any = await req.json();
   const { action, targetId } = body;
 
   if (!action) return NextResponse.json({ error: "action required" }, { status: 400 });

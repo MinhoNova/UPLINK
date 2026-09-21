@@ -38,7 +38,7 @@ export function usePostActivity(userId: string) {
     try {
       const res = await fetch("/api/community/activity");
       if (res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         setActivity(data.activity || []);
       }
     } catch {

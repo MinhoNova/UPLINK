@@ -74,7 +74,7 @@ export default function DmThreadView({
     fd.append("file", file);
     fd.append("field", "chatImage");
     const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-    const data = await res.json().catch(() => ({}));
+    const data: any = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) throw new Error(data.error || "Upload failed");
     return data.url as string;
   };

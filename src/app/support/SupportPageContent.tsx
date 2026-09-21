@@ -24,7 +24,7 @@ export default function SupportPageContent() {
   const load = () => {
     fetch("/api/data")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         setTickets(
           (Array.isArray(d.tickets) ? d.tickets : []).filter((t: any) => !isTicketExpired(t))
         );

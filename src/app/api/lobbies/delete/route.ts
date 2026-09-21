@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const lobbyId = body?.lobbyId;
   if (!lobbyId) return NextResponse.json({ error: "lobbyId required" }, { status: 400 });
 

@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Too many team actions", retryAfterMs: rl.retryAfterMs }, { status: 429 });
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
   const ownerId = String(body?.ownerId || "");
   const action = String(body?.action || "");
   if (!ownerId || (action !== "accept" && action !== "decline")) {

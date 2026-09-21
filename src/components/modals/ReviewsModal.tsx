@@ -36,7 +36,7 @@ export default function ReviewsModal({ isOpen, onClose, currentUserId, isAdmin =
     setLoading(true);
     fetch("/api/reviews")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         setReviews(d.reviews || []);
         setAverage(d.average || 0);
         const mine = (d.reviews || []).find((r: SiteReview) => r.userId === currentUserId);
@@ -66,7 +66,7 @@ export default function ReviewsModal({ isOpen, onClose, currentUserId, isAdmin =
         loadReviews();
         setTab("all");
       } else {
-        const err = await res.json().catch(() => ({}));
+        const err: any = await res.json().catch(() => ({}));
         alert(err.error || "Failed to submit review");
       }
     } finally {
@@ -83,7 +83,7 @@ export default function ReviewsModal({ isOpen, onClose, currentUserId, isAdmin =
     });
     if (res.ok) loadReviews();
     else {
-      const err = await res.json().catch(() => ({}));
+      const err: any = await res.json().catch(() => ({}));
       alert(err.error || "Failed to delete review");
     }
   };

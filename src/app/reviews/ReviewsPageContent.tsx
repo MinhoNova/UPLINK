@@ -18,7 +18,7 @@ type SiteReview = {
 
 export default function ReviewsPageContent() {
   const { data: session } = useSession();
-  const currentUserId = session?.user?.id || "";
+  const currentUserId = (session?.user as any)?.id || "";
   const isAdmin = false; // admin check can be added if needed
 
   const [reviews, setReviews] = useState<SiteReview[]>([]);
@@ -33,7 +33,7 @@ export default function ReviewsPageContent() {
     setLoading(true);
     fetch("/api/reviews")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         setReviews(d.reviews || []);
         setAverage(d.average || 0);
         const mine = (d.reviews || []).find((r: SiteReview) => r.userId === currentUserId);
@@ -63,7 +63,7 @@ export default function ReviewsPageContent() {
         loadReviews();
         setTab("all");
       } else {
-        const err = await res.json().catch(() => ({}));
+        const err: any = await res.json().catch(() => ({}));
         alert(err.error || "Failed to submit review");
       }
     } finally {
@@ -80,7 +80,7 @@ export default function ReviewsPageContent() {
     });
     if (res.ok) loadReviews();
     else {
-      const err = await res.json().catch(() => ({}));
+      const err: any = await res.json().catch(() => ({}));
       alert(err.error || "Failed to delete review");
     }
   };

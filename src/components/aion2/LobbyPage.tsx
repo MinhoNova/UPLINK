@@ -113,7 +113,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      fetch("/api/public-data").then((r) => r.json()).then((d) => {
+      fetch("/api/public-data").then((r) => r.json()).then((d: any) => {
         if (cancelled) return;
         if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
         if (d.friends) setFriends(d.friends);
@@ -218,7 +218,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   useEffect(() => {
     if (!meId) { setIsAdmin(false); return; }
     let cancelled = false;
-    fetch("/api/users/me", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (!cancelled) setIsAdmin(d?.role === "admin"); }).catch(() => {});
+    fetch("/api/users/me", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d: any) => { if (!cancelled) setIsAdmin(d?.role === "admin"); }).catch(() => {});
     return () => { cancelled = true; };
   }, [meId]);
 
@@ -235,7 +235,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     setDeletingId(String(l.id)); setDeleteError("");
     try {
       const res = await fetch("/api/lobbies/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id }) });
-      if (res.ok) { setLobbies((prev) => prev.filter((x: any) => String(x.id) !== String(l.id))); setConfirmId(null); window.dispatchEvent(new Event("data-refresh")); } else { const d = await res.json().catch(() => ({})); setDeleteError(d.error || t("err_couldNotDelete")); }
+      if (res.ok) { setLobbies((prev) => prev.filter((x: any) => String(x.id) !== String(l.id))); setConfirmId(null); window.dispatchEvent(new Event("data-refresh")); } else { const d: any = await res.json().catch(() => ({})); setDeleteError(d.error || t("err_couldNotDelete")); }
     } catch { setDeleteError(t("err_network")); } finally { setDeletingId(null); }
   };
 
@@ -246,7 +246,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     setApplyingId(String(l.id)); setApplyError("");
     try {
       const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: `${meId}-main`, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName } }) });
-      if (res.ok) { setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); window.dispatchEvent(new Event("data-refresh")); } else { const d = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
+      if (res.ok) { setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); window.dispatchEvent(new Event("data-refresh")); } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
     } catch { setApplyError(t("err_network")); } finally { setApplyingId(null); }
   };
 
@@ -453,7 +453,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
               <div className="mt-3"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_combatPower")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyCp(String(Math.max(0, (Number(applyCp) || 0) - 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={0} max={100000} value={applyCp} onChange={(e) => setApplyCp(e.target.value)} placeholder="0" className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyCp(String(Math.min(100000, (Number(applyCp) || 0) + 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
               <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_note")}</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder={t("apply_notePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
               {applyError && (<p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>)}
-              <button onClick={submitApply} disabled={!applyAionClass || applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : t("apply_send")}</button>
+              <button onClick={submitApply} disabled={!applyAionClass || !!applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : t("apply_send")}</button>
             </motion.div>
           </motion.div>
         )}

@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   if ("error" in auth && auth.error) return auth.error;
 
   const { userId, session, profile } = auth;
-  const body = await req.json().catch(() => ({}));
+  const body: any = await req.json().catch(() => ({}));
   const messages: CommunityChatMessage[] = (await getKV(KV_KEY)) || [];
 
   if (body?.action === "react") {

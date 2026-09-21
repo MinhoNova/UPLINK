@@ -23,7 +23,7 @@ export default function AdminIpBanPanel() {
     setLoading(true);
     fetch("/api/admin/banned-ips")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         setIps(d.ips || []);
         setRecent(d.recent || []);
       })
@@ -49,7 +49,7 @@ export default function AdminIpBanPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ip, reason: reason.trim() || undefined }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok) {
         setMessage(data.error || "Failed to ban IP");
         return;
@@ -75,7 +75,7 @@ export default function AdminIpBanPanel() {
         body: JSON.stringify({ ip }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data: any = await res.json();
         setMessage(data.error || "Failed to unban IP");
         return;
       }

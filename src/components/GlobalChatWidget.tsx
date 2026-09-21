@@ -74,7 +74,7 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
     try {
       const res = await fetch("/api/chat/general", { credentials: "include" });
       if (!res.ok) return;
-      const data = await res.json();
+      const data: any = await res.json();
       setMessages(data.messages || []);
     } catch {
       /* ignore */
@@ -99,7 +99,7 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
     fd.append("file", file);
     fd.append("field", "chatImage");
     const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-    const data = await res.json().catch(() => ({}));
+    const data: any = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) throw new Error(data.error || "Upload failed");
     return data.url as string;
   };
@@ -151,7 +151,7 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
           ...(replyTo ? { replyTo } : {}),
         }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data: any = await res.json().catch(() => ({}));
       if (res.ok) {
         setDraft("");
         setImagePreview(null);
@@ -187,7 +187,7 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
         credentials: "include",
         body: JSON.stringify({ action: "edit", messageId: editingId, text }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data: any = await res.json().catch(() => ({}));
       if (res.ok) {
         setEditingId(null);
         setEditingText("");
@@ -215,7 +215,7 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
         setDeleteConfirmId(null);
         setMessages((prev) => prev.filter((m) => m.id !== messageId));
       } else {
-        const data = await res.json().catch(() => ({}));
+        const data: any = await res.json().catch(() => ({}));
         setErrorMsg(data?.error || "Could not delete message");
       }
     } catch {

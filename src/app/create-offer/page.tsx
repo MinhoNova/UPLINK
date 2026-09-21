@@ -447,7 +447,7 @@ export default function CreateOfferPage() {
   useEffect(() => {
     fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         if (d && typeof d.marketPrices === "object") setMarketPrices(d.marketPrices);
       })
       .catch(() => {});
@@ -520,7 +520,7 @@ export default function CreateOfferPage() {
     setPubError("");
     try {
       const me = session.user as any;
-      const live = await fetch("/api/data", { credentials: "include" })
+      const live: any = await fetch("/api/data", { credentials: "include" })
         .then((r) => r.json())
         .catch(() => ({ lobbies: [] }));
       const lobbies = Array.isArray(live.lobbies) ? live.lobbies : [];
@@ -551,7 +551,7 @@ export default function CreateOfferPage() {
         selectedOptionGroup: (difficulty !== "Average" || pickedVariant) ? pickedOption?.label || undefined : undefined,
         serverRegion: region,
 roles: requiredClasses.length > 0
-          ? requiredClasses.reduce((acc: Record<string, string>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
+          ? requiredClasses.reduce((acc: Record<string, number>, cls) => { acc[cls] = (acc[cls] || 0) + 1; return acc; }, {})
           : category === "leveling"
             ? { tank: 0, dps: Math.max(maxBoosters, 1) }
             : { tank: 0, healer: 0, dps: Math.max(maxBoosters, 1) },

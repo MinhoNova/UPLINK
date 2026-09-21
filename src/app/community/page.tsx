@@ -94,9 +94,9 @@ export default function CommunityPage() {
         fetch("/api/community/check-access"),
         fetch("/api/data"),
       ]);
-      const d = await accessRes.json();
+      const d: any = await accessRes.json();
       setAccess(d.access);
-      const db = await dataRes.json();
+      const db: any = await dataRes.json();
       setRegisteredUsers(db.registeredUsers || []);
       setFriends(db.friends || []);
       if (!d.access) setLoading(false);
@@ -156,7 +156,7 @@ export default function CommunityPage() {
       console.log("Fetching posts...");
       const res = await fetch(`/api/community/posts${filterTag ? `?tag=${filterTag}` : ""}`);
       if (res.ok) {
-        let allPosts = await res.json();
+        let allPosts: any[] = await res.json();
         if (showMyPosts) {
           allPosts = allPosts.filter((p: any) => String(p.userId) === String(currentUserId));
         }
@@ -220,7 +220,7 @@ export default function CommunityPage() {
     formData.append("field", "banner");
     const res = await fetch("/api/user/upload", { method: "POST", body: formData });
     if (res.ok) {
-      const data = await res.json();
+      const data: any = await res.json();
       const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
       if (me) {
         const updated = { ...me, banner: data.url };
@@ -233,7 +233,7 @@ export default function CommunityPage() {
         });
       }
     } else {
-      const err = await res.json().catch(() => ({}));
+      const err: any = await res.json().catch(() => ({}));
       alert(err.error || "Upload failed");
     }
     e.target.value = "";
@@ -294,7 +294,7 @@ export default function CommunityPage() {
         res = await fetch("/api/community/posts", { method: "POST", body: formData });
       }
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const err: any = await res.json().catch(() => ({}));
         setPostError(err.error || `Failed to post (${res.status})`);
         return;
       }
@@ -350,14 +350,14 @@ export default function CommunityPage() {
   const fetchComments = async (postId: number) => {
     const res = await fetch(`/api/community/comments?postId=${postId}`);
     if (res.ok) {
-      const data = await res.json();
+      const data: any = await res.json();
       setComments((prev) => ({ ...prev, [postId]: data }));
       // Load reactions for all comments
       const ids = data.map((c: any) => c.id);
       if (ids.length > 0) {
         const rr = await fetch(`/api/community/comment-reactions?commentIds=${ids.join(",")}`);
         if (rr.ok) {
-          const rData = await rr.json();
+          const rData: any = await rr.json();
           setCommentReactions((prev) => ({ ...prev, ...rData }));
         }
       }
@@ -387,7 +387,7 @@ export default function CommunityPage() {
     });
     const rr = await fetch(`/api/community/comment-reactions?commentIds=${commentId}`);
     if (rr.ok) {
-      const data = await rr.json();
+      const data: any = await rr.json();
       setCommentReactions((prev) => ({ ...prev, ...data }));
     }
   };

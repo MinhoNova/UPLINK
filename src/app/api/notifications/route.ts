@@ -21,7 +21,7 @@ export async function PUT(req: Request) {
     );
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
   if (!Array.isArray(body?.notifications)) {
     return NextResponse.json({ error: "Invalid notifications" }, { status: 400 });
   }

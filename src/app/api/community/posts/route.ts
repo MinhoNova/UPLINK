@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
   let file: File | null = null;
 
   if (contentType.includes("application/json")) {
-    const json = await req.json();
+    const json: any = await req.json();
     content = json.content || "";
     tagsRaw = typeof json.tags === "string" ? json.tags : JSON.stringify(json.tags ?? []);
     imageUrl = json.imageUrl || null;
@@ -236,7 +236,7 @@ export async function DELETE(req: NextRequest) {
   const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { postId } = await req.json();
+  const { postId } = (await req.json() as any);
   if (!postId) return NextResponse.json({ error: "Missing postId" }, { status: 400 });
 
   const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);

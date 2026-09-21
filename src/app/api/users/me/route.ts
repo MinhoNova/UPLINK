@@ -36,7 +36,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
   const incoming = body?.profile;
   if (!incoming || typeof incoming !== "object" || String(incoming.id) !== String(auth.user.id)) {
     return NextResponse.json({ error: "Invalid profile" }, { status: 400 });

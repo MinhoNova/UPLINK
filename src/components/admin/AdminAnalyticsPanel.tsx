@@ -17,7 +17,7 @@ export default function AdminAnalyticsPanel() {
     setLoading(true);
     try {
       const res = await fetch("/api/analytics/view");
-      const data = await res.json();
+      const data: any = await res.json();
       setStats(data);
     } catch {
       setStats(null);

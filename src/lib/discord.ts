@@ -6,7 +6,7 @@ let cachedGuildId: string | null = null;
 let cachedChannels: { id: string; name: string }[] | null = null;
 let lastFetch = 0;
 
-async function discordFetch(path: string, options?: RequestInit) {
+async function discordFetch(path: string, options?: RequestInit): Promise<any | null> {
    const token = process.env.DISCORD_BOT_TOKEN;
    if (!token) return null;
    const res = await fetch(`${API}${path}`, {

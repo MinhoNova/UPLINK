@@ -71,7 +71,7 @@ export default function ClubLoungeChatWidget({
     try {
       const res = await fetch("/api/chat/lounge", { credentials: "include" });
       if (!res.ok) return;
-      const data = await res.json();
+      const data: any = await res.json();
       setMessages(data.messages || []);
     } catch {
       /* ignore */
@@ -96,7 +96,7 @@ export default function ClubLoungeChatWidget({
     fd.append("file", file);
     fd.append("field", "chatImage");
     const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-    const data = await res.json().catch(() => ({}));
+    const data: any = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) throw new Error(data.error || "Upload failed");
     return data.url as string;
   };

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getKVPairs, setKV, initTables } from '@/lib/db';
+import { getKVPairs, getKV, setKV, initTables } from '@/lib/db';
 import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
           const { getCloudflareContext } = await import("@opennextjs/cloudflare");
           let env;
           try { ({ env } = getCloudflareContext()); } catch { ({ env } = await getCloudflareContext({ async: true })); }
-          const d1 = (env as any)?.DB;
+          const d1 = (env as any)?.DB as D1Database | undefined;
           if (d1) {
             const { results } = await d1.prepare("SELECT key, value FROM kv_store").all<{ key: string; value: string }>();
             if (results) {
@@ -118,7 +118,7 @@ export async function GET(req: Request) {
           id: auth.user.id,
           username: auth.user.username,
           name: auth.user.name ?? null,
-          avatar: auth.user.image ?? null,
+          avatar: (auth.user as any).image ?? null,
           banner: siteDefaultBanner,
           lastSeenAt: Date.now(),
           lastKnownIp: null,
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
     touchUserLastIp(auth.user.id, clientIp).catch(() => {});
 
     await initTables();
-    const raw = await req.json();
+    const raw: any = await req.json();
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }

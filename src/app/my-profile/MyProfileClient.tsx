@@ -51,7 +51,7 @@ export default function MyProfileClient() {
     if (!myId) return;
     fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
         if (d.notifications) setNotifications(d.notifications);
@@ -125,7 +125,7 @@ export default function MyProfileClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile: { id: myId, ...patch } }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok) {
         flash(data.error || "Save failed", "err");
         return false;
@@ -156,7 +156,7 @@ export default function MyProfileClient() {
         if (poster) fd.append("poster", poster, "poster.webp");
       }
       const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok || !data.url) {
         flash(data.error || "Upload failed", "err");
         return;
@@ -206,7 +206,7 @@ export default function MyProfileClient() {
       fd.append("file", file, file.name);
       fd.append("field", "banner");
       const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok || !data.url) {
         flash(data.error || "Upload failed", "err");
         return;
@@ -389,7 +389,7 @@ export default function MyProfileClient() {
         window.dispatchEvent(new Event("data-refresh"));
         flash(action === "accept" ? "Team invite accepted" : "Team invite declined");
       } else {
-        const d = await res.json().catch(() => ({}));
+        const d: any = await res.json().catch(() => ({}));
         flash(d.error || "Request failed", "err");
       }
     } catch {

@@ -3,7 +3,7 @@ import type { KVNamespace } from "@cloudflare/workers-types";
 export async function getKVBinding(): Promise<KVNamespace | null> {
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    let env: { KV_BINDING?: KVNamespace };
+    let env: any;
     try {
       ({ env } = getCloudflareContext());
     } catch {

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     return bannedResponse();
   }
 
-  const body = await req.json();
+  const body: any = await req.json();
   const action = body?.action as string;
 
   await initTables();

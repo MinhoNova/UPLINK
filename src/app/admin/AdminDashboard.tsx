@@ -67,7 +67,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "m
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
-      const d = await res.json();
+      const d: any = await res.json();
       setActionMsg(res.ok ? "Rename cooldown cleared" : d.error || "Failed");
       setUsers((prev: any[]) =>
         prev.map((u) =>
@@ -82,7 +82,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "m
   };
 
   useEffect(() => {
-    fetch("/api/data", { credentials: "include" }).then((r) => r.json()).then((data) => {
+    fetch("/api/data", { credentials: "include" }).then((r) => r.json()).then((data: any) => {
       setUsers(data.registeredUsers || []);
     }).catch(() => {});
     fetch("/api/admin/roles", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d: any) => {
@@ -294,7 +294,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "m
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ userId: user.id, rank: tier }),
                       });
-                      const data = await res.json();
+                      const data: any = await res.json();
                       if (!res.ok) return setRankMsg(`Error: ${data.error || "failed"}`);
                       setRankMsg(`Rank set to ${data.rank || "auto"}`);
                       setUsers((prev: any[]) => prev.map((u: any) => (String(u.id) === String(user.id) ? (tier ? { ...u, rankOverride: tier } : (() => { const { rankOverride: _r, ...rest } = u; return rest; })()) : u)));
@@ -425,7 +425,7 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "m
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ action: "ban", userId: user.id, reason: reason.trim() || undefined }),
                                 });
-                                const d = await res.json();
+                                const d: any = await res.json();
                                 setActionMsg(res.ok ? `Banned @${user.username || user.name}` : d.error || "Ban failed");
                               } catch {
                                 setActionMsg("Network error");

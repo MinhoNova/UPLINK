@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const postId = Number(body.postId);
   const pinned = body.pinned !== false;
 

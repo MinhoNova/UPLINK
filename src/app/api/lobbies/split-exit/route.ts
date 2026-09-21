@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const lobbyId = body?.lobbyId;
   const member = body?.member;
   const completed = Math.max(0, Number(body?.completed) || 0);

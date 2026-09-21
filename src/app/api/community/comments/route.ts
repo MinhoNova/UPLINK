@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const rl = await rateLimitByUser(String((session.user as any).id), "community_comment", 10, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down — too many comments." }, { status: 429 });
 
-  const { postId, content, parentId } = await req.json();
+  const { postId, content, parentId }: any = await req.json();
   if (!postId || !content?.trim()) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   const cleanContent = sanitizePlainText(content, 1000);
 
@@ -81,7 +81,7 @@ export async function DELETE(req: NextRequest) {
   const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { commentId } = await req.json();
+  const { commentId }: any = await req.json();
   if (!commentId) return NextResponse.json({ error: "Missing commentId" }, { status: 400 });
 
   const comment = await db.select().from(comments).where(eq(comments.id, commentId)).limit(1);

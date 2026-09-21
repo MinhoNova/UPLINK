@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const rl = await rateLimitByUser(String((session.user as any).id), "community_report", 5, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down." }, { status: 429 });
 
-  const { postId, reason } = await req.json();
+  const { postId, reason }: any = await req.json();
   if (!postId || !reason?.trim()) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   const userId = (session.user as any).id;

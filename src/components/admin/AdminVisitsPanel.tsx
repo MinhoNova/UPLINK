@@ -48,7 +48,7 @@ export default function AdminVisitsPanel() {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/visits?date=${d}`);
-      const data = await res.json();
+      const data: any = await res.json();
       setVisits(Array.isArray(data.visits) ? data.visits : []);
     } catch {
       setVisits([]);

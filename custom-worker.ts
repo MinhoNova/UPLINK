@@ -8,7 +8,7 @@ export default {
     return handler.fetch(request, env, ctx);
   },
 
-  async scheduled(_event: ScheduledEvent, env: CloudflareEnv, ctx: ExecutionContext) {
+  async scheduled(_event: ScheduledController, env: CloudflareEnv, ctx: ExecutionContext) {
     ctx.waitUntil(
       (async () => {
         // Auto-role sync (background, with timeout)

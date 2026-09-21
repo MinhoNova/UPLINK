@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = (session.user as { id?: string }).id || "";
-  const body = await req.json();
+  const body: any = await req.json();
   const months = Number(body.months);
   const days = Number(body.days) || months * 30;
   const paymentMethod: SubscriptionPaymentMethod = body.paymentMethod === "gold" ? "gold" : "usd";

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   const rl = await rateLimitByUser(userId, "site_review", 3, 86_400_000);
   if (!rl.ok) return NextResponse.json({ error: "You can only submit 3 reviews per day" }, { status: 429 });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const rating = Number(body.rating);
   const text = String(body.text || "").trim();
 
@@ -91,7 +91,7 @@ export async function DELETE(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const { reviewId } = await req.json();
+  const { reviewId } = (await req.json() as any);
   if (!reviewId) return NextResponse.json({ error: "reviewId required" }, { status: 400 });
 
   await initTables();

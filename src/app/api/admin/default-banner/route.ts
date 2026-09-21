@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 
-  const body = await req.json().catch(() => null);
+  const body: any = await req.json().catch(() => null);
   const incoming = typeof body?.banner === "string" ? body.banner.trim() : "";
   const banner = sanitizeUrlField(incoming) || null;
   if (incoming && !banner) {

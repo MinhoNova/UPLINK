@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const lobbyId = body?.lobbyId;
   const applicant = body?.applicant;
   if (!lobbyId || !applicant || typeof applicant !== "object") {
@@ -117,7 +117,7 @@ export async function PATCH(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const lobbyId = body?.lobbyId;
   const applicant = body?.applicant;
   if (!lobbyId || !applicant || typeof applicant !== "object") {

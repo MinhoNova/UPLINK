@@ -58,7 +58,7 @@ export default function ShopModal({ isOpen, onClose }: Props) {
           paymentMethod,
         }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (res.ok) {
         setDone(`Request sent! Check Support ticket #${data.ticketId?.slice(-6) || ""} for payment details.`);
       } else {

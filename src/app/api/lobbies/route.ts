@@ -6,7 +6,7 @@ export async function PATCH(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   const lobbyId = body?.lobbyId;
   const customBg = body?.customBg;
   if (!lobbyId || typeof customBg !== "string") {
@@ -46,7 +46,7 @@ export async function PUT(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const body = await req.json();
+  const body: any = await req.json();
   if (!Array.isArray(body?.lobbies)) {
     return NextResponse.json({ error: "Invalid lobbies" }, { status: 400 });
   }

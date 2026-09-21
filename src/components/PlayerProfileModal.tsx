@@ -58,7 +58,7 @@ export default function PlayerProfileModal() {
   const loadData = useCallback(() => {
     fetch("/api/data")
       .then((r) => r.json())
-      .then((d) => setData(d))
+      .then((d: any) => setData(d))
       .catch(() => {});
   }, []);
 
@@ -79,7 +79,7 @@ export default function PlayerProfileModal() {
       } else {
         fetch("/api/data")
           .then((r) => r.json())
-          .then((d) => {
+          .then((d: any) => {
             setData(d);
             resolve(d.registeredUsers || []);
           })
@@ -139,7 +139,7 @@ export default function PlayerProfileModal() {
         body: JSON.stringify({ action: "request", targetId }),
       });
       if (res.ok) {
-        const result = await res.json();
+        const result: any = await res.json();
         setData((prev: any) => ({ ...prev, friends: [...(prev?.friends || []), result.friend] }));
       }
     } catch {}

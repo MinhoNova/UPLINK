@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     } catch {
       ({ env } = await getCloudflareContext({ async: true }));
     }
-    const d1 = env?.DB;
+    const d1 = env?.DB as D1Database | undefined;
     if (d1) {
       result.d1 = true;
       const { results } = await d1.prepare("SELECT COUNT(*) as c FROM kv_store").all();

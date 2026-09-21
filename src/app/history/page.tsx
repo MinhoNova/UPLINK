@@ -32,7 +32,7 @@ export default function HistoryPage() {
     }
     fetch("/api/history", { credentials: "include" })
       .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((data) => {
+      .then((data: any) => {
         setLobbies(Array.isArray(data.lobbies) ? data.lobbies : []);
         setUsers(Array.isArray(data.registeredUsers) ? data.registeredUsers : []);
       })

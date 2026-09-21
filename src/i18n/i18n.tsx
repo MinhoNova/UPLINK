@@ -143,12 +143,9 @@ const en: Dict = {
   auto_title: "Automatic Applying",
   auto_descOn: "Applies to matching offers automatically",
   auto_descOff: "Off — manual apply only",
-  auto_myClass: "My class",
-  auto_pickClass: "Pick a class first",
   auto_saving: "Saving...",
   auto_errorSave: "Could not save settings",
   auto_errorNetwork: "Network error",
-  auto_unlinked: "Unlinked operative",
   auto_done: "Done",
   /* hidden identity */
   hid_title: "Hidden Identity",

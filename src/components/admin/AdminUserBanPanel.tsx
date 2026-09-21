@@ -38,7 +38,7 @@ export default function AdminUserBanPanel() {
     setLoading(true);
     fetch("/api/admin/user-bans")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: any) => {
         setBans(d.bans || []);
         setLegacyHandles(d.legacyHandles || []);
       })
@@ -62,7 +62,7 @@ export default function AdminUserBanPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...payload }),
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok) {
         setMessage(data.error || `Failed to ${action}`);
         return;

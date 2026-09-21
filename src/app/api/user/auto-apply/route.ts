@@ -4,14 +4,14 @@ import { getKV, setKV, initTables } from "@/lib/db";
 import { isAionClass, sanitizeAionCpAp, sanitizeAionLevel } from "@/lib/aionClassMeta";
 
 /** Per-user auto-apply preference. */
-export interface AionAutoApply {
+interface AionAutoApply {
   enabled: boolean;
   aionClass: string;
   itemLevel: number;
   combatPower: number;
 }
 
-export const DEFAULT_AUTO_APPLY: AionAutoApply = {
+const DEFAULT_AUTO_APPLY: AionAutoApply = {
   enabled: false,
   aionClass: "",
   itemLevel: 60,

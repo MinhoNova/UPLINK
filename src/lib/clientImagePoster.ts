@@ -68,9 +68,9 @@ export async function uploadLobbyVfxBlob(blob: Blob, filename: string): Promise<
     if (poster) fd.append("poster", poster, "poster.webp");
   }
   const res = await fetch("/api/user/lobby-vfx", { method: "POST", body: fd });
-  const data = await res.json();
+  const data: any = await res.json();
   if (!res.ok || !data.entry) throw new Error(data.error || "Upload failed");
-  return data;
+  return data as { entry: { src: string; poster?: string } };
 }
 
 /**
@@ -85,7 +85,7 @@ export async function importProfileGifFromUrl(url: string): Promise<{ url: strin
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: trimmed, field: "profileGif" }),
   });
-  const serverData = await serverRes.json().catch(() => ({}));
+  const serverData: any = await serverRes.json().catch(() => ({}));
   if (serverRes.ok && serverData.url) {
     return { url: serverData.url, thumbUrl: serverData.thumbUrl };
   }
@@ -104,7 +104,7 @@ export async function importProfileGifFromUrl(url: string): Promise<{ url: strin
       const poster = await extractGifPosterBlob(blob);
       if (poster) fd.append("poster", poster, "poster.webp");
       const res = await fetch("/api/user/upload", { method: "POST", body: fd });
-      const data = await res.json();
+      const data: any = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error || serverMsg || "Upload failed");
       return { url: data.url, thumbUrl: data.thumbUrl };
     } catch {
@@ -130,9 +130,9 @@ export async function importLobbyVfxFromUrl(url: string): Promise<{
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: trimmed }),
   });
-  const serverData = await serverRes.json();
+  const serverData: any = await serverRes.json();
   if (serverRes.ok && serverData.entry) {
-    return serverData;
+    return serverData as { entry: { src: string; poster?: string } };
   }
 
   const blob = await fetchImageBlob(trimmed);

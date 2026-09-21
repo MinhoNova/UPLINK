@@ -19,7 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@next-auth/core": ["./node_modules/next-auth/core/index.d.ts"],
+      "next-auth/core": ["./node_modules/next-auth/core/index.d.ts"],
+      "next-auth/core/*": ["./node_modules/next-auth/core/*"]
     }
   },
   "include": [

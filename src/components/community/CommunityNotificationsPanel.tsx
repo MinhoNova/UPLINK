@@ -73,7 +73,7 @@ export default function CommunityNotificationsPanel() {
         setSearch("");
       };
       if (data?.registeredUsers?.length) resolve(data.registeredUsers);
-      else fetch("/api/data").then((r) => r.json()).then((d) => { setData(d); resolve(d.registeredUsers || []); }).catch(() => {});
+      else fetch("/api/data").then((r) => r.json()).then((d: any) => { setData(d); resolve(d.registeredUsers || []); }).catch(() => {});
     };
     window.addEventListener("open-dm-chat", handler);
     return () => window.removeEventListener("open-dm-chat", handler);
@@ -147,7 +147,7 @@ export default function CommunityNotificationsPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json().catch(() => ({}));
+    const data: any = await res.json().catch(() => ({}));
     if (!res.ok) {
       const err = new Error(data.error || "Request failed") as Error & { retryAfterMs?: number; suspended?: boolean };
       err.retryAfterMs = data.retryAfterMs;

@@ -101,7 +101,7 @@ export default function Navbar() {
     if (!currentUserId) return;
     fetch("/api/data", { credentials: "include" })
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: any) => {
         if ((data as any)?.suspended) {
           setSuspended(true);
           setSuspendedReason((data as any)?.error || "");

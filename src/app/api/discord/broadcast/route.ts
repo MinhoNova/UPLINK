@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
    }
 
    try {
-      const { lobby } = await req.json();
+      const { lobby }: any = await req.json();
       if (!lobby?.id) {
          return NextResponse.json({ ok: false, reason: "Invalid lobby data" }, { status: 400 });
       }
