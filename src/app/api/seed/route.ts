@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getD1 } from "@/lib/d1";
+import { requireAdmin } from "@/lib/authz";
 import fs from "fs";
 import path from "path";
 
@@ -9,7 +10,10 @@ export async function GET() {
   return Response.redirect(new URL("/api/seed", "https://aion2lfg.com").toString(), 307);
 }
 
-export async function POST() {
+export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const d1 = await getD1();
     if (!d1) return NextResponse.json({ error: "D1 not available" }, { status: 500 });

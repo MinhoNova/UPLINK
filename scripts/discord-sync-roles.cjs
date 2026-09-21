@@ -43,6 +43,7 @@ const ROLE_SPECS = [
     key: "owner",
     name: "👑 UPLINK Owner",
     color: "#ffd700",
+    hoist: true,
     permissions: [
       PermissionsBitField.Flags.Administrator,
     ],
@@ -51,6 +52,7 @@ const ROLE_SPECS = [
     key: "admin",
     name: "⚡ Admin",
     color: "#ff007f",
+    hoist: true,
     permissions: [
       PermissionsBitField.Flags.ManageGuild,
       PermissionsBitField.Flags.ManageRoles,
@@ -63,7 +65,8 @@ const ROLE_SPECS = [
   {
     key: "moderator",
     name: "🛡️ Moderator",
-    color: "#00ffff",
+    color: "#06b6d4",
+    hoist: true,
     permissions: [
       PermissionsBitField.Flags.KickMembers,
       PermissionsBitField.Flags.ModerateMembers,
@@ -83,6 +86,7 @@ const ROLE_SPECS = [
     key: "missionLead",
     name: "👑 Mission Lead",
     color: "#8a2be2",
+    hoist: true,
     permissions: [PermissionsBitField.Flags.ManageMessages],
   },
   {
@@ -106,7 +110,7 @@ const ROLE_SPECS = [
   {
     key: "verified",
     name: "💠 Verified Operative",
-    color: "#00ffff",
+    color: "#0ea5e9",
     permissions: [],
   },
 ];
@@ -141,21 +145,30 @@ client.once("ready", async () => {
 
     for (const spec of ROLE_SPECS) {
       let role = guild.roles.cache.find((r) => r.name === spec.name);
-      if (!role) {
-        role = await guild.roles.create({
-          name: spec.name,
-          color: spec.color,
-          permissions: spec.permissions,
-          reason: "UPLINK role sync",
-        });
-        console.log(`Created role: ${spec.name}`);
-      } else {
-        await role.edit({
-          color: spec.color,
-          permissions: spec.permissions,
-          reason: "UPLINK role sync",
-        });
-        console.log(`Updated role: ${spec.name}`);
+      try {
+        if (!role) {
+          role = await guild.roles.create({
+            name: spec.name,
+            color: spec.color,
+            permissions: spec.permissions,
+            hoist: spec.hoist ?? false,
+            reason: "UPLINK role sync",
+          });
+          console.log(`Created role: ${spec.name}`);
+        } else {
+          await role.edit({
+            color: spec.color,
+            permissions: spec.permissions,
+            hoist: spec.hoist ?? false,
+            reason: "UPLINK role sync",
+          });
+          console.log(`Updated role: ${spec.name}`);
+        }
+      } catch (err) {
+        console.warn(
+          `Skipped ${spec.name} — not permitted (${err.message}). Move the bot role above it or edit manually.`
+        );
+        continue;
       }
       created[spec.key] = role;
     }
@@ -177,7 +190,11 @@ client.once("ready", async () => {
     for (const key of order) {
       const role = created[key];
       if (!role || position < 1) continue;
-      await role.setPosition(position, { reason: "UPLINK role hierarchy" });
+      try {
+        await role.setPosition(position, { reason: "UPLINK role hierarchy" });
+      } catch {
+        console.warn(`Could not reposition ${role.name} — not permitted (above the bot role).`);
+      }
       position -= 1;
     }
 
@@ -185,8 +202,14 @@ client.once("ready", async () => {
     if (ownerRole) {
       const member = await guild.members.fetch(OWNER_USER_ID).catch(() => null);
       if (member) {
-        await member.roles.add(ownerRole, "UPLINK owner assignment");
-        console.log(`Assigned ${ownerRole.name} to ${member.user.tag}`);
+        try {
+          await member.roles.add(ownerRole, "UPLINK owner assignment");
+          console.log(`Assigned ${ownerRole.name} to ${member.user.tag}`);
+        } catch {
+          console.warn(
+            `Could not assign ${ownerRole.name} — the bot role sits below it. Assign it manually in Discord.`
+          );
+        }
       } else {
         console.warn(
           `Could not find member ${OWNER_USER_ID} in guild — join the server first, then re-run.`
