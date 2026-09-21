@@ -1,9 +1,11 @@
 import { initTables, updateKVAtomic } from "@/lib/db";
 import { rateLimitByIp as rateLimitByIpDistributed } from "@/lib/rateLimitDistributed";
+import { rateLimitResponse, type RateLimitResult } from "@/lib/rateLimitHttp";
+
+export { rateLimitResponse };
+export type { RateLimitResult };
 
 type Bucket = { count: number; windowStart: number };
-
-export type RateLimitResult = { ok: true } | { ok: false; retryAfterMs: number };
 
 async function checkKvBucket(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   await initTables();
@@ -49,14 +51,4 @@ export async function rateLimitByUser(
   windowMs = 60_000
 ): Promise<RateLimitResult> {
   return checkKvBucket(`user:${userId}:${action}`, limit, windowMs);
-}
-
-export function rateLimitResponse(result: { ok: false; retryAfterMs: number }) {
-  return new Response(JSON.stringify({ error: "Too many requests", retryAfterMs: result.retryAfterMs }), {
-    status: 429,
-    headers: {
-      "Content-Type": "application/json",
-      "Retry-After": String(Math.ceil(result.retryAfterMs / 1000)),
-    },
-  });
 }

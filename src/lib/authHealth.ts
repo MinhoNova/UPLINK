@@ -1,11 +1,11 @@
 import { syncAuthEnvFromCloudflare } from "@/lib/authEnv";
 import { getKV, setKV } from "@/lib/db";
 import { DISCORD_OWNER_USER_ID } from "@/lib/discordConstants";
+import { failureHint, needsRealert } from "@/lib/authHealthLogic";
 
 const API = "https://discord.com/api/v10";
 const KV_KEY = "authHealth";
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const RE_ALERT_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 export type AuthHealthRecord = {
   ok: boolean;
@@ -47,25 +47,6 @@ async function discordClientCredentialsOk(): Promise<{
   } catch {
     return { ok: false, status: 0, error: "fetch_failed", errorDescription: null };
   }
-}
-
-function failureHint(
-  error: string | null,
-  errorDescription: string | null,
-  hasAuthSecret: boolean,
-  status: number
-): string {
-  if (!hasAuthSecret) {
-    return "NEXTAUTH_SECRET is missing in the Cloudflare Worker env.";
-  }
-  if (error === "invalid_client") {
-    return "DISCORD_CLIENT_SECRET in Cloudflare does not match the Discord Developer Portal app. Discord login fails with OAuthCallback (login loop).";
-  }
-  if (error) {
-    const extra = errorDescription ? ` — ${errorDescription}` : "";
-    return `${error} (HTTP ${status})${extra}`;
-  }
-  return `unexpected failure (HTTP ${status})`;
 }
 
 async function sendOwnerDm(text: string): Promise<boolean> {
@@ -151,7 +132,7 @@ export async function runAuthHealthCheck(opts?: {
   };
 
   if (!ok) {
-    const needAlert = !record.alertedAt || now - record.alertedAt >= RE_ALERT_INTERVAL_MS;
+    const needAlert = needsRealert(record.alertedAt, now);
     if (needAlert) {
       const sent = await sendOwnerDm(
         [
