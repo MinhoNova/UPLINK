@@ -47,16 +47,27 @@ jobs:
           BATTLENET_CLIENT_ID: "2d8396c3dfa2465fbc95c031cb453d2d"
         run: npm run build 2>&1 | tee "$RUNNER_TEMP/build.log"
 
-      - name: Report build failure log
-        if: steps.build.outcome == 'failure'
-        run: |
-          jq -n --arg s "$(tail -c 12000 "$RUNNER_TEMP/build.log")" --arg sha "${{ github.sha }}" \
-            '{name: "build-debug-log", head_sha: $sha, status: "completed", conclusion: "neutral", output: {title: "OpenNext build failure log", summary: $s}}' \
-            | gh api -X POST "repos/${{ github.repository }}/check-runs" --input -
-
-      - name: Deploy to Cloudflare Workers
-        if: steps.build.outcome == 'success'
+      - name: Report failure log
+        if: steps.build.outcome == 'failure' || steps.deploy.outcome == 'failure'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx opennextjs-cloudflare deploy
+        run: |
+          LOG=""
+          if [ -f "$RUNNER_TEMP/build.log" ]; then LOG="[BUILD]$(tail -c 6000 "$RUNNER_TEMP/build.log")"; fi
+          if [ -f "$RUNNER_TEMP/deploy.log" ]; then LOG="${LOG}[DEPLOY]$(tail -c 6000 "$RUNNER_TEMP/deploy.log")"; fi
+          TOK="CLOUDFLARE_API_TOKEN=$([ -z "$CLOUDFLARE_API_TOKEN" ] && echo EMPTY || echo SET)"
+          ACC="CLOUDFLARE_ACCOUNT_ID=$([ -z "$CLOUDFLARE_ACCOUNT_ID" ] && echo EMPTY || echo SET)"
+          jq -n --arg s "$LOG" --arg flags "${TOK} ${ACC}" --arg sha "${{ github.sha }}" \
+            '{name: "build-debug-log", head_sha: $sha, status: "completed", conclusion: "neutral", output: {title: "Pipeline failure details", summary: ($flags + "\n---\n" + $s)}}' \
+            | gh api -X POST "repos/${{ github.repository }}/check-runs" --input -
+          exit 1
+
+      - name: Deploy to Cloudflare Workers
+        id: deploy
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx opennextjs-cloudflare deploy 2>&1 | tee "$RUNNER_TEMP/deploy.log"
