@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
+import EditOfferModal from "@/components/modals/EditOfferModal";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { classThumbUrl } from "@/lib/classThumb";
@@ -138,7 +139,8 @@ const ManageModal = ({
   const users = registeredUsers;
   const holdTimerRef = useRef<any>(null);
    const [isCompletedRunsPickerOpen, setIsCompletedRunsPickerOpen] = useState(false);
-   const [isLeavePickerOpen, setIsLeavePickerOpen] = useState(false);
+  const [isLeavePickerOpen, setIsLeavePickerOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
    const [runsPage, setRunsPage] = useState(1);
    const RUNS_PER_PAGE = 4;
    const totalRuns = Math.max(1, parseInt(targetLobby?.runsCount || "1") || 1);
@@ -151,6 +153,7 @@ const ManageModal = ({
    const isFootArchive = isEmbeddedFootArchive(targetLobby);
    const effectiveStatus = getEffectiveOfferStatus(targetLobby);
    const canSeeApplicants = String(targetLobby?.ownerId) === String(currentUserId) || isAdmin;
+   const canEditOffer = !isFootArchive && !["unpaid", "completed", "cancelled", "payment_pending", "failed"].includes(effectiveStatus) && (!targetLobby?.status || targetLobby.status === "standby" || targetLobby.status === "in_progress");
 
    const familyMessages = useMemo(
       () => (targetLobby ? getOfferFamilyMessages(targetLobby, lobbies) : []),
@@ -415,8 +418,8 @@ return bgUrl ? (
                                    <div className="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
                                      {(currentUserId === targetLobby.ownerId || isAdmin) ? (
                                         <>
-                                             {(!targetLobby.status || targetLobby.status === 'standby') && (
-                                                 <motion.button onClick={() => onEdit?.()} className={`h-11 px-5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 ${targetLobby.category === 'leveling' ? 'bg-[#8a2be2]/10 text-[#8a2be2] border border-[#8a2be2]/30 hover:bg-[#8a2be2] hover:text-white' : 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff] hover:text-black'}`}>
+{canEditOffer && (
+                                                  <motion.button onClick={() => setEditOpen(true)} className={`h-11 px-5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 ${targetLobby.category === 'leveling' ? 'bg-[#8a2be2]/10 text-[#8a2be2] border border-[#8a2be2]/30 hover:bg-[#8a2be2] hover:text-white' : 'bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff] hover:text-black'}`}>
                                                     <Zap className="w-4 h-4" /> EDIT
                                                  </motion.button>
                                              )}
@@ -1120,10 +1123,28 @@ const aionCp = app.cpAp || app.applicantCpAp || "";
                                        </div>
                                     </div>
                                  )}
-                                 </motion.div>
-                          </motion.div>
-                       )}
-                </AnimatePresence>
+</motion.div>
+                           </motion.div>
+                        )}
+                   {editOpen && targetLobby && (
+                     <EditOfferModal
+                       lobby={targetLobby}
+                       registeredUsers={registeredUsers}
+                       onClose={() => setEditOpen(false)}
+                       onSaved={(updated) => {
+                         if (!updated || !targetLobby) { setEditOpen(false); return; }
+                         const isoId = String(updated.id || targetLobby.id);
+                         const updLobbies = lobbies.map((l) => (String(l.id) === isoId ? { ...updated } : l));
+                         setLobbies(updLobbies);
+                         setTargetLobby(updated);
+                         handleUpdateLobby?.(updated);
+                         saveGlobalData({ lobbies: updLobbies });
+                         setEditOpen(false);
+                         addToast("Offer updated.", "success");
+                       }}
+                     />
+                   )}
+                 </AnimatePresence>
               );
 };
 

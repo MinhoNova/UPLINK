@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { withdrawApplicantFromOfferFamily } from "@/lib/lobbyLifecycle";
+import { withdrawApplicantFromOfferFamily, acceptApplicantAcrossLobbies } from "@/lib/lobbyLifecycle";
+import { resolveNotificationRecipient } from "@/lib/userProfile";
 import { checkAndRecordOfferAction, getOfferDailyUsage } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { getClientIp } from "@/lib/requestIp";
@@ -109,8 +110,70 @@ export async function POST(req: Request) {
   }
 
   touchUserLastIp(uid, getClientIp(req)).catch(() => {});
-  const updatedLobby = (res.value || []).find((l: any) => String(l.id) === String(lobbyId));
-  return NextResponse.json({ success: true, lobby: updatedLobby });
+
+  let updatedLobby = (res.value || []).find((l: any) => String(l.id) === String(lobbyId));
+  const ownerId = String(updatedLobby?.ownerId || "");
+  const ownerUser = registeredUsers.find((u: any) => String(u.id) === ownerId);
+  const meUser = registeredUsers.find((u: any) => String(u.id) === uid);
+
+  let autoAccepted = false;
+
+  if (ownerId && String(ownerId) !== uid && ownerUser?.autoAccept === true) {
+    const acceptedRes = await updateKVAtomic<any[]>("lobbies", (ls) => {
+      const next = acceptApplicantAcrossLobbies(Array.isArray(ls) ? ls : [], String(lobbyId), nextApplicant);
+      const cur = next.find((l: any) => String(l.id) === String(lobbyId));
+      if (!cur || !(cur.accepted || []).some((a: any) => memberId(a) === uid)) return undefined;
+      return next;
+    });
+    if (acceptedRes.ok) {
+      autoAccepted = true;
+      updatedLobby = (acceptedRes.value || []).find((l: any) => String(l.id) === String(lobbyId));
+      await updateKVAtomic<any[]>("notifications", (arr) => {
+        const next = Array.isArray(arr) ? arr : [];
+        const notifId = Date.now();
+        const entry = {
+          id: notifId,
+          toUser: resolveNotificationRecipient(nextApplicant, registeredUsers),
+          fromUser: String(ownerUser?.displayName || ownerUser?.name || updatedLobby?.ownerDiscordName || "Commander"),
+          fromHandle: String(ownerUser?.username || ""),
+          fromAvatar: String(ownerUser?.image || ownerUser?.avatar || ""),
+          message: `Accepted to ${updatedLobby?.title || "your offer"}!`,
+          type: "lobby_accept",
+          lobbyId: String(lobbyId),
+          applicantId: nextApplicant.id,
+          applicantName: nextApplicant.applicantName,
+          applicantData: nextApplicant,
+          autoAccepted: true,
+          timestamp: Date.now(),
+        };
+        return [...next, entry].slice(-300);
+      });
+    }
+  } else if (ownerId && String(ownerId) !== uid) {
+    const ownerHandle = String(ownerUser?.username || "");
+    if (ownerHandle) {
+      await updateKVAtomic<any[]>("notifications", (arr) => {
+        const next = Array.isArray(arr) ? arr : [];
+        const entry = {
+          id: Date.now(),
+          toUser: ownerHandle,
+          fromUser: String(meUser?.displayName || meUser?.name || nextApplicant.applicantName || "Operative"),
+          fromHandle: String(meUser?.username || ""),
+          fromAvatar: String(meUser?.image || meUser?.avatar || ""),
+          message: String(updatedLobby?.title || "New applicant"),
+          type: "lobby_apply",
+          lobbyId: String(lobbyId),
+          applicantId: nextApplicant.id,
+          applicantName: nextApplicant.applicantName,
+          applicantData: nextApplicant,
+          timestamp: Date.now(),
+        };
+        return [...next, entry].slice(-300);
+      });
+    }
+  }
+
+  return NextResponse.json({ success: true, lobby: updatedLobby, autoAccepted });
 }
 
 export async function PATCH(req: Request) {

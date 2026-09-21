@@ -7,11 +7,13 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, Loader2
+  Bell, BellOff, Palette, Loader2, BadgeCheck, ScanLine, RefreshCw, Star, ExternalLink
 } from "lucide-react";
+import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
+import { saveDataSmart } from "@/lib/saveDataRouter";
 import { resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
@@ -19,6 +21,7 @@ import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEn
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
+import { portraitProxyPath, type GameServer, type VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
@@ -69,6 +72,14 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const [applyLevel, setApplyLevel] = useState("60");
   const [applyCp, setApplyCp] = useState("");
   const [applyNote, setApplyNote] = useState("");
+  const [autoAccept, setAutoAccept] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifyName, setVerifyName] = useState("");
+  const [verifyServers, setVerifyServers] = useState<GameServer[]>([]);
+  const [verifyServerId, setVerifyServerId] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+  const [verifiedChar, setVerifiedChar] = useState<VerifiedGameCharacter | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -79,6 +90,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const autoAttemptedRef = useRef<Set<string>>(new Set());
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
   const [hoverCard, setHoverCard] = useState<{ userId: string; rect: { top: number; left: number; bottom: number } | null; owner: any; pic: string | null } | null>(null);
+  const [reviewOffer, setReviewOffer] = useState<any>(null);
   const hoverHideTimer = useRef<number | null>(null);
   const scheduleHide = () => { if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current); hoverHideTimer.current = window.setTimeout(() => { setHoveredUserId(null); setHoverCard(null); }, 250); };
   const cancelHide = () => { if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current); hoverHideTimer.current = null; };
@@ -89,6 +101,11 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const muteButtonRef = useRef<HTMLButtonElement>(null);
   const meId = String((session?.user as any)?.id || "");
   const meName = String((session?.user as any)?.name || "Operative");
+
+  useEffect(() => {
+    if (!meId) return;
+    fetch("/api/user/auto-apply").then((r) => r.json()).then((d: any) => { if (d && typeof d.autoAccept === "boolean") setAutoAccept(d.autoAccept); }).catch(() => {});
+  }, [meId]);
   const filterLabel = (key: string) => ({ All: t("tab_all"), Dungeons: t("tab_dungeons"), Raids: t("tab_raids"), Leveling: t("tab_leveling"), PVP: t("tab_pvp") }[key] || key);
   const regionLabel = (key: string) => ({ All: t("region_all"), EU: "EU", "NA (EAST)": t("region_naEast"), "NA (WEST)": t("region_naWest") }[key] || key);
 
@@ -205,7 +222,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
 
   const historyOffers = useMemo(() => {
     if (!meId) return [];
-    return (lobbies || []).filter((l: any) => l.status === "completed" && l.payoutStatus === "paid").sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 8);
+    return (lobbies || []).filter((l: any) => l.status === "completed" || l.status === "failed").sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
   }, [lobbies, meId]);
 
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"], PVP: ["pvp"] };
@@ -239,15 +256,77 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     } catch { setDeleteError(t("err_network")); } finally { setDeletingId(null); }
   };
 
+  const reapplyCharId = verifiedChar ? `game:${verifiedChar.characterId}` : `${meId}-main`;
+
+  const saveVerifiedCharacter = async (vc: VerifiedGameCharacter | null) => {
+    if (!vc || !meId) return;
+    try {
+      const d: any = await fetch("/api/public-data").then((r) => r.json()).catch(() => ({}));
+      const existing = (Array.isArray(d.characters) ? d.characters : []) as any[];
+      const id = `game:${vc.characterId}`;
+      const idx = existing.findIndex((c: any) => String(c.id) === id);
+      const entry = {
+        id,
+        userId: meId,
+        name: vc.name,
+        aionClass: vc.siteClass || "",
+        gameClassLabel: vc.gameClassLabel,
+        level: vc.level,
+        cpAp: vc.combatPower,
+        combatPower: vc.combatPower,
+        itemLevel: vc.itemLevel,
+        serverId: vc.serverId,
+        serverName: vc.serverName,
+        raceId: vc.raceId,
+        raceName: vc.raceName,
+        portraitUrl: portraitProxyPath(vc.portraitUrl || ""),
+        verifiedAt: vc.verifiedAt,
+      };
+      const next = idx >= 0 ? existing.map((c, i) => (i === idx ? entry : c)) : [...existing, entry];
+      await saveDataSmart({ characters: next });
+    } catch {}
+  };
+
   const submitApply = async () => {
     const l = applyTarget;
     if (!meId || !l || applyingId) return;
     if (!applyAionClass) { setApplyError(t("err_pickClass")); return; }
     setApplyingId(String(l.id)); setApplyError("");
+    const charId = reapplyCharId;
     try {
-      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: `${meId}-main`, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName } }) });
-      if (res.ok) { setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); window.dispatchEvent(new Event("data-refresh")); } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
+      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(verifiedChar ? { gameCharacterId: verifiedChar.characterId, itemLevel: verifiedChar.itemLevel, serverId: verifiedChar.serverId, serverName: verifiedChar.serverName, portraitUrl: portraitProxyPath(verifiedChar.portraitUrl || "") } : {}) } }) });
+      if (res.ok) {
+        if (verifiedChar) { await saveVerifiedCharacter(verifiedChar); }
+        setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setVerifiedChar(null); setVerifyName(""); setVerifyOpen(false); window.dispatchEvent(new Event("data-refresh"));
+      } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
     } catch { setApplyError(t("err_network")); } finally { setApplyingId(null); }
+  };
+
+  const loadVerifyServers = async () => {
+    if (verifyServers.length > 0) return;
+    try {
+      const d: any = await fetch("/api/aion2/servers").then((r) => r.json()).catch(() => ({}));
+      if (Array.isArray(d.servers)) {
+        setVerifyServers(d.servers);
+        const first = d.servers.find((s: any) => s.serverId === 1001) || d.servers[0];
+        if (first) setVerifyServerId(String(first.serverId));
+      }
+    } catch {}
+  };
+
+  const runVerify = async () => {
+    if (!verifyName.trim() || verifyBusy) return;
+    setVerifyBusy(true); setVerifyError(""); setVerifiedChar(null);
+    try {
+      const res = await fetch("/api/aion2/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: verifyName.trim().slice(0, 32), serverId: verifyServerId ? Number(verifyServerId) : undefined }) });
+      const d: any = await res.json().catch(() => ({}));
+      if (!res.ok) { setVerifyError(d.error || t("verify_notFound")); return; }
+      const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
+      setVerifiedChar(vc);
+      if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
+      if (vc.level) setApplyLevel(String(vc.level));
+      if (vc.combatPower) setApplyCp(String(vc.combatPower));
+    } catch { setVerifyError(t("err_network")); } finally { setVerifyBusy(false); }
   };
 
   const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
@@ -341,8 +420,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 z-20">
                           {classSlots.map((s, i) => (
                             <div key={i} className="relative">
-                              <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] ${s.filled ? 'brightness-125 saturate-150' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                              {s.filled && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#070b1a]" />}
+                              <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] transition-all duration-300 ${s.filled ? 'opacity-25 grayscale brightness-[0.45] saturate-0' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                              {s.filled && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500/80 border-2 border-[#070b1a] shadow-[0_0_8px_rgba(239,68,68,0.7)]" />}
                             </div>
                           ))}
                         </div>
@@ -426,7 +505,13 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-1">
                           {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{Number(h.pricePerRun).toFixed(2)}M{t("history_slashRun")}</span>)}
-                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">{t("history_paid")}</span>
+                          <span className={`text-[8px] font-black uppercase tracking-widest ${h.status === "failed" ? "text-red-400" : h.payoutStatus === "paid" ? "text-emerald-400" : "text-amber-400"}`}>{h.status === "failed" ? t("history_failed") || "Failed" : h.payoutStatus === "paid" ? t("history_paid") : t("history_unpaid") || "Unpaid"}</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setReviewOffer(h); }}
+                            className="inline-flex items-center gap-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-yellow-300 hover:bg-yellow-500/20 transition-all"
+                          >
+                            <Star className="w-3 h-3" /> {t("history_review") || "Review"}
+                          </button>
                         </div>
                       </motion.div>
                     );
@@ -449,6 +534,36 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
               </div>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_yourClass")}</p>
               <div className="grid grid-cols-2 gap-2">{AION2_CLASSES.map((c) => { const isActive = applyAionClass === c; return (<button key={c} type="button" onClick={() => setApplyAionClass(c)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15" : "border-white/10 bg-white/[0.02] hover:border-white/25"}`}><img src={`/classes/${c === "Spiritmaster" ? "Elementalist" : c}.png`} alt="" className="h-6 w-6 object-contain" onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} /><span className={`text-xs font-black ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span></button>); })}</div>
+              <div className="mt-4 rounded-2xl border border-violet-500/25 bg-violet-500/[0.04] p-3">
+                <button type="button" onClick={() => { setVerifyOpen((o) => !o); if (!verifyOpen) { loadVerifyServers(); } }} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-300">
+                  <BadgeCheck className="w-3.5 h-3.5" /> {verifyOpen ? (t("verify_hide") || "Hide game data lookup") : (t("verify_open") || "Pull my real game data (NCSoft)")} <RefreshCw className={`w-3 h-3 ${verifyBusy ? "animate-spin text-violet-400" : ""}`} />
+                </button>
+                {verifyOpen && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex gap-2">
+                      <input value={verifyName} onChange={(e) => setVerifyName(e.target.value)} placeholder={t("verify_placeholder") || "Character name"} className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#050814]/70 px-3 py-2 text-sm text-white outline-none focus:border-violet-400/60" />
+                      <select value={verifyServerId} onChange={(e) => setVerifyServerId(e.target.value)} className="max-w-[40%] rounded-lg border border-white/10 bg-[#050814]/70 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/60">
+                        {verifyServers.length === 0 ? (<option value="">{t("verify_servers") || "Loading servers…"}</option>) : (<><option value="">{t("verify_anyServer") || "Any server"}</option>{verifyServers.map((s) => (<option key={s.serverId} value={String(s.serverId)}>{s.serverName}</option>))}</>)}
+                      </select>
+                      <button type="button" disabled={verifyBusy} onClick={runVerify} className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white disabled:opacity-50 shrink-0">
+                        {verifyBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanLine className="w-3 h-3" />} {verifyBusy ? (t("verify_checking") || "Checking") : (t("verify_button") || "Verify")}
+                      </button>
+                    </div>
+                    {verifyError && (<p className="text-center text-[9px] font-bold uppercase tracking-widest text-red-400">{verifyError}</p>)}
+                    {verifiedChar && (
+                      <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-2.5">
+                        {verifiedChar.portraitUrl ? (<img src={portraitProxyPath(verifiedChar.portraitUrl)} alt="" className="h-10 w-10 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-black text-emerald-200">{verifiedChar.name}</p>
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{verifiedChar.siteClass || verifiedChar.gameClassLabel || "Unknown class"} · LVL {verifiedChar.level} · {verifiedChar.serverName}</p>
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-amber-300/90">CP {verifiedChar.combatPower.toLocaleString()}{verifiedChar.itemLevel > 0 ? ` · ILVL ${verifiedChar.itemLevel.toLocaleString()}` : ""}</p>
+                        </div>
+                        <BadgeCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_itemLevel")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) - 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={1} max={AION2_LEVEL_MAX} value={applyLevel} onChange={(e) => setApplyLevel(e.target.value)} className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) + 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
               <div className="mt-3"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_combatPower")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyCp(String(Math.max(0, (Number(applyCp) || 0) - 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={0} max={100000} value={applyCp} onChange={(e) => setApplyCp(e.target.value)} placeholder="0" className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyCp(String(Math.min(100000, (Number(applyCp) || 0) + 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
               <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_note")}</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder={t("apply_notePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
@@ -513,6 +628,16 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       <MessageCircle className="w-4 h-4" />
                       <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_message")}</span>
                     </button>
+                    {owner?.username ? (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/player/${encodeURIComponent(String(owner.username))}`)}
+                        className="flex items-center gap-1.5 text-[#00ffff] hover:scale-110 transition"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_page") || "View page"}</span>
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -542,7 +667,25 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         );
       })()}
 
-      <AionAutoApplyModal registeredUsers={registeredUsers} meId={meId} meName={meName || ""} onSave={async () => {}} />
+      {reviewOffer && (<SquadReviewModal lobby={reviewOffer} meId={meId} registeredUsers={registeredUsers} onClose={() => setReviewOffer(null)} />)}
+
+      <AionAutoApplyModal
+        registeredUsers={registeredUsers}
+        meId={meId}
+        meName={meName || ""}
+        autoAccept={autoAccept}
+        onAutoAcceptChange={async (next) => {
+          setAutoAccept(next);
+          try {
+            const d: any = await fetch("/api/user/auto-apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ autoAccept: next }) }).then((r) => r.json());
+            if (!d?.success) setAutoAccept(!next);
+          } catch { setAutoAccept(!next); }
+        }}
+        onSave={async (next) => {
+          const d: any = await fetch("/api/user/auto-apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aionAutoApply: next }) }).then((r) => r.json());
+          if (!d?.success) throw new Error("save_failed");
+        }}
+      />
     </div>
   );
 }

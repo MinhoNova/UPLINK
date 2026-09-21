@@ -17,6 +17,8 @@ export interface AionAutoApplyModalProps {
   meId: string;
   meName?: string;
   onSave: (next: AionAutoApply) => Promise<void> | void;
+  autoAccept?: boolean;
+  onAutoAcceptChange?: (next: boolean) => Promise<void> | void;
 }
 
 export default function AionAutoApplyModal({
@@ -24,6 +26,8 @@ export default function AionAutoApplyModal({
   meId,
   meName,
   onSave,
+  autoAccept = false,
+  onAutoAcceptChange,
 }: AionAutoApplyModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -138,6 +142,30 @@ export default function AionAutoApplyModal({
           >
             <span
               className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${cfg.enabled ? "left-[26px]" : "left-1"}`}
+            />
+          </button>
+        </div>
+
+        {/* Auto-accept toggle */}
+        <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <Zap className={`h-4 w-4 ${autoAccept ? "text-fuchsia-400" : "text-gray-500"}`} />
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-white">Auto-accept applicants</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">
+                {autoAccept ? "Accept matching applicants instantly" : "Popup + sound to review each offer"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onAutoAcceptChange?.(!autoAccept)}
+            disabled={saving}
+            className={`relative h-7 rounded-full transition-all cursor-pointer disabled:opacity-50 ${autoAccept ? "bg-fuchsia-500" : "bg-white/15"}`}
+            style={{ width: 52 }}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${autoAccept ? "left-[26px]" : "left-1"}`}
             />
           </button>
         </div>

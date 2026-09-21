@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, UserCheck, UserPlus, Ban, MessageCircle, Users, UserMinus,
+  X, UserCheck, UserPlus, Ban, MessageCircle, Users, UserMinus, ExternalLink,
 } from "lucide-react";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
@@ -48,6 +49,7 @@ function ProfileAvatarCircle({ src, effect, size = 88 }: { src: string; effect: 
 
 export default function PlayerProfileModal() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
@@ -396,6 +398,20 @@ export default function PlayerProfileModal() {
                     }`}
                   >
                     <Ban className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!profileUser?.username}
+                    onClick={() => {
+                      if (!profileUser?.username) return;
+                      setOpen(false);
+                      router.push(`/player/${encodeURIComponent(String(profileUser.username))}`);
+                    }}
+                    title="View public player page"
+                    className="p-1 text-cyan-300 hover:scale-110 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ExternalLink className="w-5 h-5" />
                   </button>
                 </div>
               )}

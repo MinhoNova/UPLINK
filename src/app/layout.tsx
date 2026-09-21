@@ -6,6 +6,7 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { I18nProvider } from "@/i18n/i18n";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
+import OfferApplyAlertHost from "@/components/OfferApplyAlertHost";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
 import GlobalChatWidget from "@/components/GlobalChatWidget";
 import AssistantChatWidget from "@/components/AssistantChatWidget";
@@ -164,6 +165,7 @@ export default function RootLayout({
             <Navbar />
             <DirectCommsPanel />
             <CommunityNotificationsPanel />
+            <OfferApplyAlertHost />
             <PlayerProfileModal />
             <GlobalChatWidget />
             <AssistantChatWidget />
