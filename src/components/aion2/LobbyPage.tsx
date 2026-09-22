@@ -477,16 +477,16 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
           </section>
 
           {/* Sidebar - Ongoing Missions */}
-          <aside className="w-full">
-            <div className="tn-light relative w-full min-h-[360px] h-full flex flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30">
+          <aside className="w-full lg:self-start">
+            <div className="tn-light relative flex w-full max-h-[calc(100vh-7.5rem)] flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all lg:sticky lg:top-[6.5rem] overflow-hidden">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30 shrink-0">
                 <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">{t("missions_header") || "ONGOING MISSIONS"}</h3>
                 {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : t("missions_live")}</span></span>) : null}
               </div>
               {missions.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
+                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
               ) : (
-                <div className="flex-1 flex flex-col space-y-4">
+                <div className="custom-scrollbar -m-1 flex-1 min-h-0 space-y-4 overflow-y-auto p-1">
                   {activeMissions.length > 0 && (
                     <div className="space-y-2.5">
                       <div className="flex items-center gap-2 px-1"><span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" /><span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">{t("missions_liveRuns")}</span><span className="ml-auto rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">{activeMissions.length}</span></div>
