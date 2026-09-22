@@ -383,12 +383,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                 <div className="mx-1 h-6 w-px shrink-0 bg-white/15" />
                 {REGION_TABS.map((rtab) => { const isActive = regionTab === rtab.key; return (<button key={rtab.key} onClick={() => setRegionTab(rtab.key)} className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black tracking-[0.18em] transition-all duration-300 shrink-0 ${isActive ? 'bg-[#0c132a] text-cyan-300 shadow-[inset_0_0_20px_rgba(34,211,238,0.15)] border border-cyan-500/40' : 'text-slate-400 hover:text-white border border-transparent hover:bg-white/5'}`}>{rtab.flag ? (<img src={rtab.flag} alt="" className="w-4 h-4 rounded-sm object-cover" loading="lazy" decoding="async" />) : (<span className="w-4 h-4 rounded-sm bg-cyan-400/15 border border-cyan-400/30" />)}<span>{regionLabel(rtab.key)}</span></button>); })}
               </div>
-              <div className="ml-auto shrink-0 flex items-center gap-2">
-                <a href="/character" className="flex h-11 items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 text-[9px] font-black uppercase tracking-widest text-emerald-300 transition-all hover:bg-emerald-500/20 hover:border-emerald-400/60">
-                  <Link2 className="w-4 h-4" /> Character Profile
-                </a>
-                {meId && (<button ref={muteButtonRef} type="button" onClick={() => setShowNotificationSettings((o) => !o)} className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>{offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}</button>)}
-              </div>
+              {meId && (<div className="ml-auto shrink-0"><button ref={muteButtonRef} type="button" onClick={() => setShowNotificationSettings((o) => !o)} className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all ${offerNotificationSettings.mutedAll ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-cyan-500/30 bg-[#0a0f26]/80 text-cyan-200 hover:border-cyan-300/60 hover:bg-cyan-500/10"}`}>{offerNotificationSettings.mutedAll ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}</button></div>)}
             </div>
 
             {/* Offers */}
@@ -592,7 +587,11 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-black text-emerald-200">{verifiedChar.name}</p>
                           <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{verifiedChar.siteClass || verifiedChar.gameClassLabel || "Unknown class"} · LVL {verifiedChar.level} · {verifiedChar.serverName}</p>
-                          <p className="text-[8px] font-bold uppercase tracking-widest text-amber-300/90">CP {verifiedChar.combatPower.toLocaleString()}{verifiedChar.itemLevel > 0 ? ` · ILVL ${verifiedChar.itemLevel.toLocaleString()}` : ""}</p>
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-amber-300/90">
+                            <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-3 w-auto align-[-1px] mr-1" loading="lazy" />
+                            {verifiedChar.combatPower.toLocaleString()}
+                            {verifiedChar.itemLevel > 0 ? (<span className="text-slate-400"> · <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-3 w-auto align-[-1px] mr-0.5" loading="lazy" /> ILVL {verifiedChar.itemLevel.toLocaleString()}</span>) : ""}
+                          </p>
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <BadgeCheck className="h-4 w-4 text-emerald-400" />

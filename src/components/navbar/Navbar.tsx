@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, ChevronDown, History, Languages, LifeBuoy, LogOut, MessageCircle, Pause, Play, ShieldAlert, ShieldX, TicketCheck, UserRound, Zap } from "lucide-react";
+import { Bell, ChevronDown, History, Languages, LifeBuoy, LogOut, MessageCircle, Pause, Play, ScanLine, ShieldAlert, ShieldX, TicketCheck, UserRound, Zap } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -469,6 +469,7 @@ export default function Navbar() {
                   <div role="menu" className="absolute right-0 top-[calc(100%+0.6rem)] z-[90] w-48 overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#0a0f26]/95 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                     <a href="/my-profile" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-cyan-500/10 hover:text-cyan-200"><UserRound className="h-4 w-4" /> My Profile</a>
                     <a href="/history" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-cyan-500/10 hover:text-cyan-200"><History className="h-4 w-4" /> History</a>
+                    <a href="/character" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-emerald-300 transition hover:bg-emerald-500/10"><ScanLine className="h-4 w-4" /> Character</a>
                     {isAdmin && <a href="/admin" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/10"><ShieldAlert className="h-4 w-4" /> Admin</a>}
                     {!isAdmin && (myRole === "moderator" || myRole === "support" || myRole === "admin") && <a href="/admin" role="menuitem" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-cyan-300 transition hover:bg-cyan-500/10"><ShieldAlert className="h-4 w-4" /> {myRole === "support" ? "Support" : "Moderation"}</a>}
                     <div className="my-1 border-t border-white/10" />

@@ -189,13 +189,15 @@ export default async function PlayerPage({
                           </span>
                         )}
                         {c.itemLevel > 0 && (
-                          <span className="rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-violet-300">
-                            ILVL {Number(c.itemLevel).toLocaleString()}
+                          <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-violet-300">
+                            <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-3 w-auto" loading="lazy" />
+                            {Number(c.itemLevel).toLocaleString()}
                           </span>
                         )}
                         {Number(c.cpAp) > 0 && (
-                          <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-amber-300">
-                            CP {Number(c.cpAp).toLocaleString()}
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-amber-300">
+                            <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-3 w-auto" loading="lazy" />
+                            {Number(c.cpAp).toLocaleString()}
                           </span>
                         )}
                         <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">

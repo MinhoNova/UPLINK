@@ -86,6 +86,40 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
+const POWER_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png";
+const LEVEL_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png";
+
+function CharacterPortrait({ url, name }: { url: string | null; name: string }) {
+  const [src, setSrc] = useState<string | null>(url ? portraitProxyPath(url) || url : null);
+  const [hidden, setHidden] = useState(false);
+  if (hidden || !src) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-3xl font-black text-cyan-400/40 uppercase">{String(name || "?").slice(0, 1)}</div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className="h-full w-full object-cover"
+      onError={() => {
+        if (src !== url) setSrc(url);
+        else setHidden(true);
+      }}
+    />
+  );
+}
+
+function StatChip({ icon, value, accent, children }: { icon: string; value: string; accent: string; children?: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-black ${accent}`}>
+      <img src={icon} alt="" className="h-4 w-auto" loading="lazy" />
+      {value}
+      {children}
+    </span>
+  );
+}
+
 export default function CharacterPage() {
   const [input, setInput] = useState("");
   const [link, setLink] = useState("");
@@ -179,16 +213,7 @@ export default function CharacterPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-violet-500/10" />
                 <div className="relative flex flex-wrap items-center gap-5 p-6">
                   <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl border-2 border-cyan-400/30 bg-black shadow-[0_0_30px_rgba(34,211,238,0.2)]">
-                    {d.profile.portraitUrl ? (
-                      <img
-                        src={portraitProxyPath(d.profile.portraitUrl)}
-                        alt=""
-                        className="h-full w-full object-cover"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-3xl font-black text-cyan-400/40 uppercase">{String(d.profile.name || "?").slice(0, 1)}</div>
-                    )}
+                    <CharacterPortrait url={d.profile.portraitUrl} name={d.profile.name} />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -211,8 +236,8 @@ export default function CharacterPage() {
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">LVL {d.profile.level}</span>
-                      {d.profile.combatPower > 0 && <span className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black text-amber-300">CP {d.profile.combatPower.toLocaleString()}</span>}
-                      {d.profile.itemLevel > 0 && <span className="rounded-lg border border-violet-500/40 bg-violet-500/10 px-2.5 py-1 text-[10px] font-black text-violet-300">ILVL {d.profile.itemLevel.toLocaleString()}</span>}
+                      {d.profile.combatPower > 0 && <StatChip icon={POWER_ICON} value={d.profile.combatPower.toLocaleString()} accent="border-amber-500/40 bg-amber-500/10 text-amber-300" />}
+                      {d.profile.itemLevel > 0 && <StatChip icon={LEVEL_ICON} value={d.profile.itemLevel.toLocaleString()} accent="border-violet-500/40 bg-violet-500/10 text-violet-300" />}
                     </div>
                   </div>
 
