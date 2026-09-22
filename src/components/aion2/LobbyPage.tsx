@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, Loader2, BadgeCheck, ScanLine, RefreshCw, Star, ExternalLink, Link2
+  Bell, BellOff, Palette, Loader2, BadgeCheck, RefreshCw, Star, ExternalLink, Link2
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
@@ -21,7 +21,7 @@ import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEn
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
-import { portraitProxyPath, type GameServer, type VerifiedGameCharacter } from "@/lib/aion2ClassIds";
+import { portraitProxyPath, type VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
@@ -73,10 +73,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const [applyCp, setApplyCp] = useState("");
   const [applyNote, setApplyNote] = useState("");
   const [autoAccept, setAutoAccept] = useState(false);
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [verifyName, setVerifyName] = useState("");
-  const [verifyServers, setVerifyServers] = useState<GameServer[]>([]);
-  const [verifyServerId, setVerifyServerId] = useState("");
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [verifiedChar, setVerifiedChar] = useState<VerifiedGameCharacter | null>(null);
@@ -306,38 +302,9 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(verifiedChar ? { gameCharacterId: verifiedChar.characterId, itemLevel: verifiedChar.itemLevel, serverId: verifiedChar.serverId, serverName: verifiedChar.serverName, region: verifiedChar.region || "kr", portraitUrl: portraitProxyPath(verifiedChar.portraitUrl || ""), siteClass: verifiedChar.siteClass || "", raceName: verifiedChar.raceName || "", genderName: verifiedChar.genderName || "", level: Number(applyLevel) || verifiedChar.level, cpAp: Number(applyCp) || verifiedChar.combatPower } : {}) } }) });
       if (res.ok) {
         if (verifiedChar) { await saveVerifiedCharacter(verifiedChar); }
-        setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setVerifiedChar(null); setVerifyName(""); setVerifyOpen(false); window.dispatchEvent(new Event("data-refresh"));
+        setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setVerifiedChar(null); window.dispatchEvent(new Event("data-refresh"));
       } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
     } catch { setApplyError(t("err_network")); } finally { setApplyingId(null); }
-  };
-
-  const loadVerifyServers = async () => {
-    if (verifyServers.length > 0) return;
-    try {
-      const d: any = await fetch("/api/aion2/servers").then((r) => r.json()).catch(() => ({}));
-      if (Array.isArray(d.servers)) {
-        setVerifyServers(d.servers);
-        const first = d.servers.find((s: any) => s.serverId === 1001) || d.servers[0];
-        if (first) setVerifyServerId(String(first.serverId));
-      }
-    } catch {}
-  };
-
-  const runVerify = async () => {
-    if (!verifyName.trim() || verifyBusy) return;
-    setVerifyBusy(true); setVerifyError(""); setVerifiedChar(null);
-    try {
-      const res = await fetch("/api/aion2/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: verifyName.trim().slice(0, 32), serverId: verifyServerId ? Number(verifyServerId) : undefined }) });
-      const d: any = await res.json().catch(() => ({}));
-      if (!res.ok) { setVerifyError(d.error || t("verify_notFound")); return; }
-      if (d.alreadyLinked) { setVerifyError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
-      const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
-      setVerifiedChar(vc);
-      saveVerifiedCharacter(vc);
-      if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
-      if (vc.level) setApplyLevel(String(vc.level));
-      if (vc.combatPower) setApplyCp(String(vc.combatPower));
-    } catch { setVerifyError(t("err_network")); } finally { setVerifyBusy(false); }
   };
 
   const runResolveLink = async () => {
@@ -460,7 +427,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         {applied ? (
                           <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> {t("offer_applied")}</span>
                         ) : (
-                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); loadVerifyServers(); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
+                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
                         )}
                         {(isMine || isAdmin) && (
                           confirmId === String(offer.id) ? (
@@ -573,15 +540,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       </button>
                     </div>
                     <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-500">{t("verify_linkHint") || "Open your character on the official site and copy its link"}</p>
-                    <div className="flex gap-2">
-                      <input value={verifyName} onChange={(e) => setVerifyName(e.target.value)} placeholder={t("verify_placeholder") || "Character name"} className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#050814]/70 px-3 py-2 text-sm text-white outline-none focus:border-violet-400/60" />
-                      <select value={verifyServerId} onChange={(e) => setVerifyServerId(e.target.value)} className="max-w-[40%] rounded-lg border border-white/10 bg-[#050814]/70 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/60">
-                        {verifyServers.length === 0 ? (<option value="">{t("verify_servers") || "Loading servers…"}</option>) : (<><option value="">{t("verify_anyServer") || "Any server"}</option>{verifyServers.map((s) => (<option key={s.serverId} value={String(s.serverId)}>{s.serverName}</option>))}</>)}
-                      </select>
-                      <button type="button" disabled={verifyBusy} onClick={runVerify} className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white disabled:opacity-50 shrink-0">
-                        {verifyBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanLine className="w-3 h-3" />} {verifyBusy ? (t("verify_checking") || "Checking") : (t("verify_button") || "Verify")}
-                      </button>
-                    </div>
                     {verifyError && (<p className="text-center text-[9px] font-bold uppercase tracking-widest text-red-400">{verifyError}</p>)}
                     {verifiedChar && (
                       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-2.5">
