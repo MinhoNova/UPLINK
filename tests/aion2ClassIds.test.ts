@@ -57,7 +57,7 @@ describe("aion2ClassIds", () => {
       );
       expect(ref).not.toBeNull();
       expect(ref?.baseUrl).toBe("https://tw.ncsoft.com/aion2");
-      expect(ref?.lang).toBe("language=zh-TW");
+      expect(ref?.lang).toBe("lang=en");
       expect(ref?.region).toBe("tw");
       expect(ref?.serverId).toBe(1001);
       expect(ref?.characterId).toBe("A1pIWbd0UKoTYJ2XbL_Cw57uCNxoM4sk4CUqtC5yJ0E=");
@@ -66,7 +66,7 @@ describe("aion2ClassIds", () => {
     it("parses a kr aion2.plaync.com character page link with locale prefix", () => {
       const ref = parseCharacterShareUrl("https://aion2.plaync.com/ko-kr/characters/1001/abc123%3D");
       expect(ref?.baseUrl).toBe("https://aion2.plaync.com");
-      expect(ref?.lang).toBe("lang=ko");
+      expect(ref?.lang).toBe("lang=en");
       expect(ref?.region).toBe("kr");
       expect(ref?.serverId).toBe(1001);
       expect(ref?.characterId).toBe("abc123=");

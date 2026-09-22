@@ -1,6 +1,6 @@
 ﻿"use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Zap, ShieldCheck, CircleDollarSign, Star } from "lucide-react";
+import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Zap, ShieldCheck, CircleDollarSign, Star, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { usePage } from "@/contexts/PageContext";
 import LongPressButton from "@/components/LongPressButton";
@@ -11,6 +11,12 @@ import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { classThumbUrl } from "@/lib/classThumb";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
+
+function applicantProfileHref(a: any): string {
+  if (!a?.gameCharacterId || !a?.serverId) return "";
+  const base = a.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
+  return `/character?u=${encodeURIComponent(`${base}/characters/${a.serverId}/${encodeURIComponent(a.gameCharacterId)}`)}`;
+}
 
 interface ManageModalProps {
   isOpen: boolean;
@@ -756,6 +762,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
    const aionClass = app.aionClass || app.className || app.class || "";
 const aionLevel = app.level || app.applicantLevel || "";
 const aionCp = app.cpAp || app.applicantCpAp || "";
+const applicantProfile = applicantProfileHref(app);
                                                               const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
                                                               const avgRate = getAverageRating(profileUser?.ratings);
                                                               const rating10 = avgRate > 0 ? Math.round(avgRate * 2 * 10) / 10 : 0;
@@ -878,6 +885,16 @@ const aionCp = app.cpAp || app.applicantCpAp || "";
    
 {/* actions — right */}
                                                                  <div className="relative z-10 flex-shrink-0 flex items-center">
+                                                                    {applicantProfile ? (
+                                                                       <a
+                                                                          href={applicantProfile}
+                                                                          target="_blank"
+                                                                          rel="noreferrer"
+                                                                          className="mr-2 inline-flex items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-500/20 whitespace-nowrap"
+                                                                       >
+                                                                          <ExternalLink className="w-3 h-3" /> Profile
+                                                                       </a>
+                                                                    ) : null}
                                                                     {ownerAutoAcceptActive ? (
                                                                        <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap">Auto</span>
                                                                     ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (

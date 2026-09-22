@@ -16,6 +16,7 @@ export type { GameServer, GameCharacterSearchHit, VerifiedGameCharacter } from "
 export type GameClass = { id: number; name: string; text: string };
 
 const CACHE_TTL = 6 * 60 * 60 * 1000;
+const EN_LANG = "lang=en";
 let serversCache: { at: number; data: GameServer[] } | null = null;
 let classesCache: { at: number; data: GameClass[] } | null = null;
 
@@ -38,7 +39,7 @@ function serverRaceOf(serverId: number): number {
 
 export async function getGameServers(): Promise<GameServer[]> {
   if (serversCache && Date.now() - serversCache.at < CACHE_TTL) return serversCache.data;
-  const data = await jsonFetch(`${API_BASE}/api/gameinfo/servers?lang=ko`);
+  const data = await jsonFetch(`${API_BASE}/api/gameinfo/servers?${EN_LANG}`);
   const raw: any[] = Array.isArray(data?.serverList) ? data.serverList : [];
   const servers: GameServer[] = raw.map((s: any) => ({
     raceId: Number(s.raceId) || serverRaceOf(Number(s.serverId)),
@@ -57,7 +58,7 @@ export async function getGameServersCached(): Promise<GameServer[]> {
       {
         raceId: 1,
         serverId: 1001,
-        serverName: "시엘",
+        serverName: "Siel",
       },
     ];
   }
@@ -65,7 +66,7 @@ export async function getGameServersCached(): Promise<GameServer[]> {
 
 export async function getGameClasses(): Promise<GameClass[]> {
   if (classesCache && Date.now() - classesCache.at < CACHE_TTL) return classesCache.data;
-  const data = await jsonFetch(`${API_BASE}/api/gameinfo/classes?lang=ko`);
+  const data = await jsonFetch(`${API_BASE}/api/gameinfo/classes?${EN_LANG}`);
   const raw: any[] = Array.isArray(data?.classList) ? data.classList : [];
   const classes: GameClass[] = raw.map((c: any) => ({
     id: Number(c.id),
@@ -159,7 +160,7 @@ async function fetchGameCharacterInfoRaw(
   characterId: string,
   serverId: number,
   base = API_BASE,
-  lang = "lang=ko"
+  lang = EN_LANG
 ): Promise<any> {
   const url = `${base}/api/character/info?${lang}&characterId=${encodeURIComponent(
     characterId
@@ -202,7 +203,7 @@ export async function fetchGameCharacterProfile(
   characterId: string,
   serverId: number,
   base = API_BASE,
-  lang = "lang=ko",
+  lang = EN_LANG,
   region: "tw" | "kr" = "kr"
 ): Promise<VerifiedGameCharacter | null> {
   const data = await fetchGameCharacterInfoRaw(characterId, serverId, base, lang);
@@ -231,11 +232,11 @@ export function parseCharacterShareUrl(link: string): CharacterShareRef | null {
   let region: "tw" | "kr";
   if (host === "tw.ncsoft.com") {
     baseUrl = "https://tw.ncsoft.com/aion2";
-    lang = "language=zh-TW";
+    lang = EN_LANG;
     region = "tw";
   } else if (host === "aion2.plaync.com") {
     baseUrl = API_BASE;
-    lang = "lang=ko";
+    lang = EN_LANG;
     region = "kr";
   } else {
     return null;
