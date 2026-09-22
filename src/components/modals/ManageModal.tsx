@@ -831,14 +831,11 @@ const applicantProfile = applicantProfileHref(app);
                                                                        ) : (
                                                                           <Users className="w-6 h-6 text-cyan-400/70" />
                                                                        )}
-                                                                       {app.portraitUrl && app.gameCharacterId ? (
-                                                                          <GamePortrait
-                                                                             src={app.portraitUrl}
-                                                                             className="absolute -bottom-0.5 -right-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 border-cyan-400/50 bg-black object-cover shadow-[0_0_12px_rgba(34,211,238,0.35)]"
-                                                                             alt=""
-                                                                             title={app.serverName ? `Game character · ${app.serverName}` : "Game character"}
-                                                                          />
-                                                                       ) : null}
+{app.gameCharacterId ? (
+                                                                           <span className="absolute -bottom-0.5 -right-0.5 flex items-center gap-0.5 rounded-md border border-emerald-400/50 bg-black/90 px-1 py-px text-[6px] font-black uppercase tracking-widest text-emerald-300">
+                                                                              <ShieldCheck className="w-2.5 h-2.5" /> VER
+                                                                           </span>
+                                                                        ) : null}
                                                                     </div>
                                                                  </div>
    
@@ -904,21 +901,58 @@ const applicantProfile = applicantProfileHref(app);
                                                                            </span>
                                                                         </div>
                                                                      </div>
-                                                                     {/* character detail line — verified game char info */}
-                                                                      {app.gameCharacterId && (
-                                                                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] font-black uppercase tracking-widest">
-                                                                            {Number(app.itemLevel) > 0 && (
-                                                                               <span className="text-violet-300" title="Item level">
-                                                                                  <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />
-                                                                                  ILVL {Number(app.itemLevel).toLocaleString()}
-                                                                               </span>
-                                                                            )}
-                                                                            {app.raceName ? <span className="text-slate-300">{app.raceName}</span> : null}
-                                                                            {app.genderName ? <span className="text-slate-500">{app.genderName}</span> : null}
-                                                                            {app.serverName ? <span className="text-slate-400">{app.serverName}</span> : null}
-                                                                            {app.region ? <span className="rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
-                                                                         </div>
-                                                                      )}
+{/* character panel — big portrait w/ class icon + level overlay, ILVL • CP, full profile */}
+                                                                       {app.gameCharacterId && (
+                                                                          <div className="mt-2 flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.04] p-2">
+                                                                             <div className="relative shrink-0">
+                                                                                <GamePortrait
+                                                                                   src={app.portraitUrl}
+                                                                                   className="h-16 w-16 rounded-xl border-2 border-cyan-400/40 bg-black object-cover shadow-[0_0_16px_rgba(0,255,255,0.25)]"
+                                                                                   alt=""
+                                                                                   title={app.serverName ? `Game character · ${app.serverName}` : "Game character"}
+                                                                                />
+                                                                                {aionClass ? (
+                                                                                   <img
+                                                                                      src={classThumbUrl(aionClass)}
+                                                                                      alt=""
+                                                                                      title={aionClass}
+                                                                                      className="absolute -bottom-1 -right-1 h-6 w-6 rounded-md border border-white/20 bg-black/90 object-contain p-0.5"
+                                                                                      loading="lazy"
+                                                                                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                                   />
+                                                                                ) : null}
+                                                                                {aionLevel ? (
+                                                                                   <span className="absolute -left-1 -top-1 rounded-md border border-cyan-300/50 bg-black/90 px-1 py-px text-[8px] font-black text-cyan-300 tabular-nums shadow-[0_0_8px_rgba(0,229,255,0.3)]">{aionLevel}</span>
+                                                                                ) : null}
+                                                                             </div>
+                                                                             <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                                                                <span className="flex items-center gap-1 text-[7px] font-black uppercase tracking-widest text-emerald-300">
+                                                                                   <ShieldCheck className="w-3 h-3" /> Verified game character
+                                                                                </span>
+                                                                                <span className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-200">
+                                                                                   {aionClass || app.role || "—"}
+                                                                                   {app.serverName ? <span className="text-slate-400"> · {app.serverName}</span> : null}
+                                                                                   {app.region ? <span className="ml-1 rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
+                                                                                </span>
+                                                                                <span className="flex items-center gap-2 text-[8px] font-black tabular-nums">
+                                                                                   <span className="text-violet-300">ILVL {Number(app.itemLevel) > 0 ? Number(app.itemLevel).toLocaleString() : "—"}</span>
+                                                                                   <span className="text-slate-700">·</span>
+                                                                                   <span className="text-amber-300">CP {Number(app.cpAp) > 0 ? Number(app.cpAp).toLocaleString() : "—"}</span>
+                                                                                </span>
+                                                                             </div>
+                                                                             {applicantProfile ? (
+                                                                                <a
+                                                                                   href={applicantProfile}
+                                                                                   target="_blank"
+                                                                                   rel="noreferrer"
+                                                                                   className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-500/20 whitespace-nowrap"
+                                                                                   title="Open the full character profile — gear, stats, history"
+                                                                                >
+                                                                                   <ExternalLink className="w-3 h-3" /> Character
+                                                                                </a>
+                                                                             ) : null}
+                                                                          </div>
+                                                                       )}
                                                                       {/* note strip — auto-sized to the text; hidden when there is no note */}
                                                                      {note ? (
                                                                         <div className="mt-0.5 rounded-lg border border-[#8a2be2]/30 bg-[#8a2be2]/10 px-2 py-1">
@@ -928,18 +962,8 @@ const applicantProfile = applicantProfileHref(app);
                                                                   </div>
    
 {/* actions — right */}
-                                                                 <div className="relative z-10 flex-shrink-0 flex items-center">
-                                                                    {applicantProfile ? (
-                                                                       <a
-                                                                          href={applicantProfile}
-                                                                          target="_blank"
-                                                                          rel="noreferrer"
-                                                                          className="mr-2 inline-flex items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-500/20 whitespace-nowrap"
-                                                                       >
-                                                                          <ExternalLink className="w-3 h-3" /> Profile
-                                                                       </a>
-                                                                    ) : null}
-                                                                    {ownerAutoAcceptActive ? (
+<div className="relative z-10 flex-shrink-0 flex items-center">
+                                                                     {ownerAutoAcceptActive ? (
                                                                        <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap">Auto</span>
                                                                     ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
                                                                        <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
