@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, Loader2, BadgeCheck, ScanLine, RefreshCw, Star, ExternalLink
+  Bell, BellOff, Palette, Loader2, BadgeCheck, ScanLine, RefreshCw, Star, ExternalLink, Link2
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
@@ -80,6 +80,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [verifiedChar, setVerifiedChar] = useState<VerifiedGameCharacter | null>(null);
+  const [resolveLink, setResolveLink] = useState("");
+  const [resolveBusy, setResolveBusy] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -258,6 +260,12 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
 
   const reapplyCharId = verifiedChar ? `game:${verifiedChar.characterId}` : `${meId}-main`;
 
+  const charProfileHref = (vc: VerifiedGameCharacter): string => {
+    const regionBase = vc.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
+    const official = `${regionBase}/characters/${vc.serverId}/${encodeURIComponent(vc.characterId)}`;
+    return `/character?u=${encodeURIComponent(official)}`;
+  };
+
   const saveVerifiedCharacter = async (vc: VerifiedGameCharacter | null) => {
     if (!vc || !meId) return;
     try {
@@ -281,6 +289,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         raceName: vc.raceName,
         portraitUrl: portraitProxyPath(vc.portraitUrl || ""),
         verifiedAt: vc.verifiedAt,
+        region: vc.region || "kr",
       };
       const next = idx >= 0 ? existing.map((c, i) => (i === idx ? entry : c)) : [...existing, entry];
       await saveDataSmart({ characters: next });
@@ -327,6 +336,21 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       if (vc.level) setApplyLevel(String(vc.level));
       if (vc.combatPower) setApplyCp(String(vc.combatPower));
     } catch { setVerifyError(t("err_network")); } finally { setVerifyBusy(false); }
+  };
+
+  const runResolveLink = async () => {
+    if (!resolveLink.trim() || resolveBusy) return;
+    setResolveBusy(true); setVerifyError(""); setVerifiedChar(null);
+    try {
+      const res = await fetch("/api/aion2/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ link: resolveLink.trim().slice(0, 500) }) });
+      const d: any = await res.json().catch(() => ({}));
+      if (!res.ok) { setVerifyError(d.error || t("verify_notFound")); return; }
+      const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
+      setVerifiedChar(vc);
+      if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
+      if (vc.level) setApplyLevel(String(vc.level));
+      if (vc.combatPower) setApplyCp(String(vc.combatPower));
+    } catch { setVerifyError(t("err_network")); } finally { setResolveBusy(false); }
   };
 
   const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
@@ -541,6 +565,13 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                 {verifyOpen && (
                   <div className="mt-3 space-y-2">
                     <div className="flex gap-2">
+                      <input value={resolveLink} onChange={(e) => setResolveLink(e.target.value)} placeholder={t("verify_linkPlaceholder") || "Paste your official character page link (tw.ncsoft.com or aion2.plaync.com)"} className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#050814]/70 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60" />
+                      <button type="button" disabled={resolveBusy} onClick={runResolveLink} className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white disabled:opacity-50 shrink-0">
+                        {resolveBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />} {resolveBusy ? (t("verify_checking") || "Checking") : (t("verify_linkButton") || "Resolve")}
+                      </button>
+                    </div>
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-500">{t("verify_linkHint") || "Open your character on the official site and copy its link"}</p>
+                    <div className="flex gap-2">
                       <input value={verifyName} onChange={(e) => setVerifyName(e.target.value)} placeholder={t("verify_placeholder") || "Character name"} className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#050814]/70 px-3 py-2 text-sm text-white outline-none focus:border-violet-400/60" />
                       <select value={verifyServerId} onChange={(e) => setVerifyServerId(e.target.value)} className="max-w-[40%] rounded-lg border border-white/10 bg-[#050814]/70 px-2 py-2 text-xs text-white outline-none focus:border-violet-400/60">
                         {verifyServers.length === 0 ? (<option value="">{t("verify_servers") || "Loading servers…"}</option>) : (<><option value="">{t("verify_anyServer") || "Any server"}</option>{verifyServers.map((s) => (<option key={s.serverId} value={String(s.serverId)}>{s.serverName}</option>))}</>)}
@@ -558,7 +589,12 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{verifiedChar.siteClass || verifiedChar.gameClassLabel || "Unknown class"} · LVL {verifiedChar.level} · {verifiedChar.serverName}</p>
                           <p className="text-[8px] font-bold uppercase tracking-widest text-amber-300/90">CP {verifiedChar.combatPower.toLocaleString()}{verifiedChar.itemLevel > 0 ? ` · ILVL ${verifiedChar.itemLevel.toLocaleString()}` : ""}</p>
                         </div>
-                        <BadgeCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <BadgeCheck className="h-4 w-4 text-emerald-400" />
+                          <a href={charProfileHref(verifiedChar)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20 transition-all">
+                            <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full profile"}
+                          </a>
+                        </div>
                       </div>
                     )}
                   </div>

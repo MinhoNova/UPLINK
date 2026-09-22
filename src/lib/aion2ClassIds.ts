@@ -13,6 +13,20 @@ export const AION2_GAME_CLASS_BY_KO: Record<string, string> = {
   호법성: "Chanter",
 };
 
+/** zh-TW (tw.ncsoft.com) class labels → site class. */
+export const AION2_GAME_CLASS_BY_ZH: Record<string, string> = {
+  劍星: "Gladiator",
+  守護星: "Templar",
+  殺星: "Assassin",
+  弓星: "Ranger",
+  魔道星: "Sorcerer",
+  精靈星: "Spiritmaster",
+  治癒星: "Cleric",
+  護法星: "Chanter",
+  拳星: "",
+  執行官: "",
+};
+
 export const AION2_GAME_KO_BY_CLASS: Record<string, string> = {
   Gladiator: "검성",
   Templar: "수호성",
@@ -49,13 +63,14 @@ const ENGLISH_TO_SITE: Record<string, string> = {
 };
 
 /**
- * Map a raw game class label (Korean "마도성" or English "Elementalist"/"Fighter")
- * to a supported site class key. Unsupported classes → "" (caller shows raw label).
+ * Map a raw game class label (Korean "마도성", Chinese "魔道星" or English
+ * "Elementalist"/"Fighter") to a supported site class key. Unsupported → "".
  */
 export function mapGameClassToSite(raw: string | null | undefined): string {
   const name = String(raw || "").trim();
   if (!name) return "";
   if (AION2_GAME_CLASS_BY_KO[name]) return AION2_GAME_CLASS_BY_KO[name];
+  if (AION2_GAME_CLASS_BY_ZH[name] !== undefined) return AION2_GAME_CLASS_BY_ZH[name];
   return ENGLISH_TO_SITE[name.toLowerCase()] ?? "";
 }
 
@@ -90,6 +105,7 @@ export type VerifiedGameCharacter = {
   serverName: string;
   genderName: string;
   portraitUrl: string | null;
+  region: "tw" | "kr";
   verifiedAt: number;
 };
 

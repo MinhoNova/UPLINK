@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { parseCharacterShareUrl } from "@/lib/aion2GameApi";
 import {
   mapGameClassToSite,
   isGameClassSupported,
@@ -23,8 +24,21 @@ describe("aion2ClassIds", () => {
 
     it("returns empty string for unknown classes", () => {
       expect(mapGameClassToSite("권성")).toBe("");
+      expect(mapGameClassToSite("拳星")).toBe("");
+      expect(mapGameClassToSite("執行官")).toBe("");
       expect(mapGameClassToSite(null)).toBe("");
       expect(mapGameClassToSite(undefined)).toBe("");
+    });
+
+    it("maps known zh-TW class names to site classes", () => {
+      expect(mapGameClassToSite("劍星")).toBe("Gladiator");
+      expect(mapGameClassToSite("守護星")).toBe("Templar");
+      expect(mapGameClassToSite("殺星")).toBe("Assassin");
+      expect(mapGameClassToSite("弓星")).toBe("Ranger");
+      expect(mapGameClassToSite("魔道星")).toBe("Sorcerer");
+      expect(mapGameClassToSite("精靈星")).toBe("Spiritmaster");
+      expect(mapGameClassToSite("治癒星")).toBe("Cleric");
+      expect(mapGameClassToSite("護法星")).toBe("Chanter");
     });
 
     it("has consistent reverse mapping", () => {
@@ -33,6 +47,37 @@ describe("aion2ClassIds", () => {
         expect(mapGameClassToSite(ko)).toBe(site);
         expect(isGameClassSupported(site)).toBe(true);
       }
+    });
+  });
+
+  describe("character share-link parsing", () => {
+    it("parses a tw.ncsoft.com character page link", () => {
+      const ref = parseCharacterShareUrl(
+        "https://tw.ncsoft.com/aion2/characters/1001/A1pIWbd0UKoTYJ2XbL_Cw57uCNxoM4sk4CUqtC5yJ0E%3D"
+      );
+      expect(ref).not.toBeNull();
+      expect(ref?.baseUrl).toBe("https://tw.ncsoft.com/aion2");
+      expect(ref?.lang).toBe("language=zh-TW");
+      expect(ref?.region).toBe("tw");
+      expect(ref?.serverId).toBe(1001);
+      expect(ref?.characterId).toBe("A1pIWbd0UKoTYJ2XbL_Cw57uCNxoM4sk4CUqtC5yJ0E=");
+    });
+
+    it("parses a kr aion2.plaync.com character page link with locale prefix", () => {
+      const ref = parseCharacterShareUrl("https://aion2.plaync.com/ko-kr/characters/1001/abc123%3D");
+      expect(ref?.baseUrl).toBe("https://aion2.plaync.com");
+      expect(ref?.lang).toBe("lang=ko");
+      expect(ref?.region).toBe("kr");
+      expect(ref?.serverId).toBe(1001);
+      expect(ref?.characterId).toBe("abc123=");
+    });
+
+    it("rejects non-official hosts and malformed links", () => {
+      expect(parseCharacterShareUrl("https://evil.com/aion2/characters/1001/x")).toBeNull();
+      expect(parseCharacterShareUrl("https://tw.ncsoft.com/aion2/profile")).toBeNull();
+      expect(parseCharacterShareUrl("not a url")).toBeNull();
+      expect(parseCharacterShareUrl("")).toBeNull();
+      expect(parseCharacterShareUrl("https://tw.ncsoft.com/aion2/characters/abc")).toBeNull();
     });
   });
 

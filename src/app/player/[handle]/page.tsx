@@ -144,6 +144,12 @@ export default async function PlayerPage({
               {characters.map((c: any) => {
                 const cls = String(c.aionClass || c.className || "");
                 const role = cls ? aionClassRole(cls) : "";
+                const charId = String(c.id || "").replace(/^game:/, "");
+                const regionBase = c.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
+                const profHref =
+                  charId && c.serverId
+                    ? `/character?u=${encodeURIComponent(`${regionBase}/characters/${c.serverId}/${encodeURIComponent(charId)}`)}`
+                    : "";
                 return (
                   <div
                     key={String(c.id)}
@@ -162,7 +168,15 @@ export default async function PlayerPage({
                       <img src={classThumbUrl(cls)} alt="" className="h-16 w-16 object-contain" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-white">{String(c.name || "Character")}</p>
+                      <p className="truncate text-sm font-black text-white">
+                        {profHref ? (
+                          <a href={profHref} className="hover:text-cyan-300 transition-colors">
+                            {String(c.name || "Character")} <span className="text-[9px] font-black text-cyan-500/70">→</span>
+                          </a>
+                        ) : (
+                          String(c.name || "Character")
+                        )}
+                      </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {cls ? (
                           <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-200">
