@@ -303,7 +303,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     setApplyingId(String(l.id)); setApplyError("");
     const charId = reapplyCharId;
     try {
-      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(verifiedChar ? { gameCharacterId: verifiedChar.characterId, itemLevel: verifiedChar.itemLevel, serverId: verifiedChar.serverId, serverName: verifiedChar.serverName, region: verifiedChar.region || "kr", portraitUrl: portraitProxyPath(verifiedChar.portraitUrl || "") } : {}) } }) });
+      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(verifiedChar ? { gameCharacterId: verifiedChar.characterId, itemLevel: verifiedChar.itemLevel, serverId: verifiedChar.serverId, serverName: verifiedChar.serverName, region: verifiedChar.region || "kr", portraitUrl: portraitProxyPath(verifiedChar.portraitUrl || ""), siteClass: verifiedChar.siteClass || "", raceName: verifiedChar.raceName || "", genderName: verifiedChar.genderName || "", level: Number(applyLevel) || verifiedChar.level, cpAp: Number(applyCp) || verifiedChar.combatPower } : {}) } }) });
       if (res.ok) {
         if (verifiedChar) { await saveVerifiedCharacter(verifiedChar); }
         setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setVerifiedChar(null); setVerifyName(""); setVerifyOpen(false); window.dispatchEvent(new Event("data-refresh"));
@@ -330,6 +330,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       const res = await fetch("/api/aion2/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: verifyName.trim().slice(0, 32), serverId: verifyServerId ? Number(verifyServerId) : undefined }) });
       const d: any = await res.json().catch(() => ({}));
       if (!res.ok) { setVerifyError(d.error || t("verify_notFound")); return; }
+      if (d.alreadyLinked) { setVerifyError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
       const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
       setVerifiedChar(vc);
       if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
@@ -345,6 +346,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       const res = await fetch("/api/aion2/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ link: resolveLink.trim().slice(0, 500) }) });
       const d: any = await res.json().catch(() => ({}));
       if (!res.ok) { setVerifyError(d.error || t("verify_notFound")); return; }
+      if (d.alreadyLinked) { setVerifyError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
       const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
       setVerifiedChar(vc);
       if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);

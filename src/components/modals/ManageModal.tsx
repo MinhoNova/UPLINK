@@ -616,6 +616,18 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                 );
                                                              })()}
                                                           </div>
+                                                          {occupant.gameCharacterId && (
+                                                             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 px-1 text-[7px] font-black uppercase tracking-widest">
+                                                                {occupant.aionClass || occupant.className || occupant.siteClass ? (
+                                                                   <span className="text-cyan-300">{occupant.aionClass || occupant.className || occupant.siteClass}</span>
+                                                                ) : null}
+                                                                {occupant.level ? <span className="text-slate-300">· LVL {occupant.level}</span> : null}
+                                                                {Number(occupant.itemLevel) > 0 ? <span className="text-violet-300">· ILVL {Number(occupant.itemLevel).toLocaleString()}</span> : null}
+                                                                {Number(occupant.cpAp) > 0 ? <span className="text-amber-300">· CP {Number(occupant.cpAp).toLocaleString()}</span> : null}
+                                                                {occupant.raceName ? <span className="text-slate-400">· {occupant.raceName}</span> : null}
+                                                                {occupant.serverName ? <span className="text-slate-400">· {occupant.serverName}</span> : null}
+                                                             </div>
+                                                          )}
                                                          <div className="mt-auto flex flex-col gap-1.5 w-full pb-2 px-2 shrink-0">
                                                             {isPendingInvite && !ownerAutoAcceptActive && (currentUserId === targetLobby.ownerId || isAdmin) && occupant.inviteExpiresAt && (
                                                                <InviteTimer fullWidth expiresAt={occupant.inviteExpiresAt} onCancel={() => {
@@ -892,7 +904,22 @@ const applicantProfile = applicantProfileHref(app);
                                                                            </span>
                                                                         </div>
                                                                      </div>
-                                                                     {/* note strip — auto-sized to the text; hidden when there is no note */}
+                                                                     {/* character detail line — verified game char info */}
+                                                                      {app.gameCharacterId && (
+                                                                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[8px] font-black uppercase tracking-widest">
+                                                                            {Number(app.itemLevel) > 0 && (
+                                                                               <span className="text-violet-300" title="Item level">
+                                                                                  <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />
+                                                                                  ILVL {Number(app.itemLevel).toLocaleString()}
+                                                                               </span>
+                                                                            )}
+                                                                            {app.raceName ? <span className="text-slate-300">{app.raceName}</span> : null}
+                                                                            {app.genderName ? <span className="text-slate-500">{app.genderName}</span> : null}
+                                                                            {app.serverName ? <span className="text-slate-400">{app.serverName}</span> : null}
+                                                                            {app.region ? <span className="rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
+                                                                         </div>
+                                                                      )}
+                                                                      {/* note strip — auto-sized to the text; hidden when there is no note */}
                                                                      {note ? (
                                                                         <div className="mt-0.5 rounded-lg border border-[#8a2be2]/30 bg-[#8a2be2]/10 px-2 py-1">
                                                                            <p className="text-[10px] leading-snug break-words whitespace-pre-line font-semibold text-gray-100">{note}</p>

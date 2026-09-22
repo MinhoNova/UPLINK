@@ -245,7 +245,8 @@ export default function AionAutoApplyModal({
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black text-emerald-200">{selectedChar?.name || "—"}</p>
-                <p className="truncate text-[8px] font-black uppercase tracking-widest text-emerald-300/80">
+                <p className="truncate text-[8px] font-black uppercase tracking-widest text-cyan-300">{selectedChar?.aionClass || selectedChar?.gameClassLabel || "Class"}</p>
+                <p className="truncate text-[8px] font-bold uppercase tracking-widest text-emerald-300/80">
                   {selectedChar?.raceName ? `${selectedChar.raceName} · ` : ""}{selectedChar?.serverName || ""}{selectedChar?.region ? ` · ${String(selectedChar.region).toUpperCase()}` : ""}
                 </p>
               </div>

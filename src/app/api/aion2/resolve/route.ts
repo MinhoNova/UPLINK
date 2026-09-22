@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getClientIp } from "@/lib/requestIp";
 import { rateLimitByIp, rateLimitResponse } from "@/lib/rateLimit";
+import { requireSession } from "@/lib/authz";
 import { resolveCharacterFromShareUrl } from "@/lib/aion2GameApi";
+import { findCharacterLink } from "@/lib/aion2Uniqueness";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,12 @@ export async function POST(req: Request) {
     const character = await resolveCharacterFromShareUrl(link);
     if (!character) {
       return NextResponse.json({ error: "Character not found" }, { status: 404 });
+    }
+    const auth = await requireSession(req);
+    const uid = auth.ok ? String(auth.user.id) : "";
+    const linked = await findCharacterLink(character.characterId);
+    if (linked && String(linked.userId) !== uid) {
+      return NextResponse.json({ character, alreadyLinked: true }, { status: 200 });
     }
     return NextResponse.json({ character });
   } catch (e: any) {
