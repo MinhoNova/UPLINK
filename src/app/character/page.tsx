@@ -170,7 +170,7 @@ export default function CharacterPage() {
     <main className="min-h-screen bg-[#050814] text-slate-200 font-sans overflow-x-clip relative">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.08),transparent_55%)]" />
 
-      <div className="relative max-w-5xl mx-auto px-6 py-10">
+      <div className="relative max-w-5xl mx-auto px-6 pt-28 sm:pt-32 pb-10">
         <a href="/" className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-cyan-300">
           <ArrowLeft className="h-3.5 w-3.5" /> Aion 2 LFG
         </a>
