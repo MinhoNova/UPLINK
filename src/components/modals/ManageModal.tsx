@@ -9,6 +9,7 @@ import EditOfferModal from "@/components/modals/EditOfferModal";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { classThumbUrl } from "@/lib/classThumb";
+import GamePortrait from "@/components/aion2/GamePortrait";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
@@ -592,6 +593,14 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                     const isPendingInvite = occupant.status === "invited";
                                                     return (
                                                        <div key={`slot-${idx}`} className={`relative p-2 rounded-[1.2rem] border transition-all h-full min-h-[220px] flex flex-col ${isPendingInvite ? "bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-500/35 shadow-[0_0_20px_rgba(234,179,8,0.12)]" : "bg-gradient-to-b from-[#00ffff]/10 to-transparent border-[#00ffff]/35 shadow-[0_0_20px_rgba(0,255,255,0.08)]"}`}>
+                                                          {occupant.portraitUrl && occupant.gameCharacterId ? (
+                                                             <GamePortrait
+                                                                src={occupant.portraitUrl}
+                                                                className="absolute top-2 right-2 z-20 w-11 h-11 rounded-xl border-2 border-[#00ffff]/40 bg-black object-cover shadow-[0_0_14px_rgba(0,255,255,0.25)]"
+                                                                alt=""
+                                                                title={occupant.serverName ? `Game character · ${occupant.serverName}` : "Game character"}
+                                                             />
+                                                          ) : null}
                                                           <div className="flex flex-1 items-center justify-center pt-2 min-h-0">
                                                              {(() => {
                                                                 const occupantUser = registeredUsers.find((u: any) => String(u.id) === String(occupant.applicantId || occupant.userId));
@@ -795,23 +804,31 @@ const applicantProfile = applicantProfileHref(app);
                                                                    )}
                                                                 </div>
    
-                                                                {/* player avatar — left, like the lobby banner */}
-                                                                <div className="relative z-10 flex-shrink-0">
-                                                                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)]">
-                                                                      {profileImg ? (
-                                                                         <img
-                                                                            src={profileImg}
-                                                                            alt=""
-                                                                            className="w-full h-full object-cover"
-                                                                            loading="lazy"
-                                                                            decoding="async"
-                                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                         />
-                                                                      ) : (
-                                                                         <Users className="w-6 h-6 text-cyan-400/70" />
-                                                                      )}
-                                                                   </div>
-                                                                </div>
+{/* player avatar — left, like the lobby banner */}
+                                                                 <div className="relative z-10 flex-shrink-0">
+                                                                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)]">
+                                                                       {profileImg ? (
+                                                                          <img
+                                                                             src={profileImg}
+                                                                             alt=""
+                                                                             className="w-full h-full object-cover"
+                                                                             loading="lazy"
+                                                                             decoding="async"
+                                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                          />
+                                                                       ) : (
+                                                                          <Users className="w-6 h-6 text-cyan-400/70" />
+                                                                       )}
+                                                                       {app.portraitUrl && app.gameCharacterId ? (
+                                                                          <GamePortrait
+                                                                             src={app.portraitUrl}
+                                                                             className="absolute -bottom-0.5 -right-0.5 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 border-cyan-400/50 bg-black object-cover shadow-[0_0_12px_rgba(34,211,238,0.35)]"
+                                                                             alt=""
+                                                                             title={app.serverName ? `Game character · ${app.serverName}` : "Game character"}
+                                                                          />
+                                                                       ) : null}
+                                                                    </div>
+                                                                 </div>
    
 {/* details — middle */}
                                                                   <div className="relative z-10 flex-1 min-w-0 flex flex-col gap-1 py-0.5">

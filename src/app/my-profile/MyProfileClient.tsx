@@ -7,6 +7,7 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
+  Swords,
   Users,
   Upload,
   Link as LinkIcon,
@@ -24,6 +25,8 @@ import {
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
+import { classThumbUrl } from "@/lib/classThumb";
+import GamePortrait from "@/components/aion2/GamePortrait";
 import {
   importLobbyVfxFromUrl,
   uploadLobbyVfxBlob,
@@ -41,6 +44,7 @@ export default function MyProfileClient() {
 
   const [users, setUsers] = useState<any[]>([]);
   const [lobbies, setLobbies] = useState<any[]>([]);
+  const [chars, setChars] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
@@ -54,6 +58,7 @@ export default function MyProfileClient() {
       .then((d: any) => {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
+        if (d.characters) setChars(d.characters);
         if (d.notifications) setNotifications(d.notifications);
         setDataLoaded(true);
       })
@@ -109,6 +114,19 @@ export default function MyProfileClient() {
   }, [me]);
 
   const myVfx: any[] = me?.userVfx || [];
+
+  const myChars = useMemo(
+    () => chars.filter((c: any) => String(c.userId) === myId),
+    [chars, myId]
+  );
+
+  const charProfileHref = (c: any): string => {
+    const rid = String(c.id || "");
+    const charId = rid.startsWith("game:") ? rid.slice(5) : rid;
+    if (!charId || !c.serverId) return "";
+    const base = c.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
+    return `/character?u=${encodeURIComponent(`${base}/characters/${c.serverId}/${encodeURIComponent(charId)}`)}`;
+  };
 
   const publicUrl = `/community/${String(me?.username || "").toLowerCase()}`;
 
@@ -549,6 +567,65 @@ export default function MyProfileClient() {
             </div>
           </div>
         </div>
+
+        {/* ══ MY CHARACTERS ══ */}
+        {myChars.length > 0 && (
+          <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mb-8">
+            <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
+              <Swords className="w-4 h-4 text-cyan-400" />
+              <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">My Characters</h3>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{myChars.length} verified</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myChars.map((c: any) => {
+                const href = charProfileHref(c);
+                const cls = c.aionClass || c.gameClassLabel || "";
+                return (
+                  <div key={String(c.id)} className="relative rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-[#00ffff]/40 transition-all flex gap-3 p-3">
+                    <GamePortrait
+                      src={c.portraitUrl}
+                      className="w-16 h-16 rounded-xl border border-cyan-400/30 bg-black object-cover shrink-0"
+                      alt=""
+                      title={c.name || "Character"}
+                    />
+                    {!c.portraitUrl && (
+                      <img
+                        src={classThumbUrl(cls)}
+                        alt={cls}
+                        title={cls}
+                        className="w-16 h-16 rounded-xl border border-white/10 bg-black object-contain shrink-0"
+                        loading="lazy"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[12px] font-black text-white uppercase tracking-wider truncate">{c.name || "Character"}</span>
+                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full border border-white/15 bg-white/5 text-[7px] font-black uppercase tracking-widest text-slate-300">{c.region === "tw" ? "TW" : "KR"}</span>
+                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-cyan-300 truncate">{cls || c.gameClassLabel || "—"} · {c.serverName || "—"}</span>
+                      <span className="flex items-center gap-2 text-[9px] font-bold text-slate-400 tabular-nums">
+                        <span className="text-cyan-300">{c.level || "—"}</span> LVL
+                        <span className="text-violet-300">{Number(c.itemLevel) || "—"}</span> ILVL
+                        {Number(c.cpAp) ? <span className="text-amber-300">{c.cpAp}</span> : null}
+                      </span>
+                      {href && (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 self-start rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" /> Full Profile
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Picture */}
