@@ -358,9 +358,10 @@ export default function Navbar() {
             <a
               href="/create-offer"
               title="Create Offer"
-              className="h-10 px-4 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff]/20 shadow-[0_0_12px_rgba(0,255,255,0.1)]"
+              className="group relative h-10 inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#00ffff] via-[#7dd3fc] to-[#c4b5fd] px-5 font-black uppercase text-[10px] tracking-[0.18em] text-black shadow-[0_0_18px_rgba(34,211,238,0.35)] transition-all duration-300 hover:scale-[1.04] hover:shadow-[0_0_30px_rgba(34,211,238,0.55)] hover:brightness-105 active:scale-95"
             >
-              <Zap className="w-4 h-4" /> Create Offer
+              <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full transition-transform duration-500 group-hover:translate-x-full" />
+              <Zap className="w-4 h-4 shrink-0 transition-transform group-hover:rotate-12" /> Create Offer
             </a>
             <div className="relative" ref={langRef}>
               <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`h-10 min-w-[64px] justify-center rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff]/20 shadow-[0_0_12px_rgba(0,255,255,0.1)]`}>
