@@ -582,22 +582,37 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                     </div>
                     {verifyError && (<p className="text-center text-[9px] font-bold uppercase tracking-widest text-red-400">{verifyError}</p>)}
                     {verifiedChar && (
-                      <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-2.5">
-                        {verifiedChar.portraitUrl ? (<img src={portraitProxyPath(verifiedChar.portraitUrl)} alt="" className="h-10 w-10 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : null}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-black text-emerald-200">{verifiedChar.name}</p>
-                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{verifiedChar.siteClass || verifiedChar.gameClassLabel || "Unknown class"} · LVL {verifiedChar.level} · {verifiedChar.serverName}</p>
-                          <p className="text-[8px] font-bold uppercase tracking-widest text-amber-300/90">
-                            <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-3 w-auto align-[-1px] mr-1" loading="lazy" />
-                            {verifiedChar.combatPower.toLocaleString()}
-                            {verifiedChar.itemLevel > 0 ? (<span className="text-slate-400"> · <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-3 w-auto align-[-1px] mr-0.5" loading="lazy" /> ILVL {verifiedChar.itemLevel.toLocaleString()}</span>) : ""}
-                          </p>
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-2.5">
+                        <div className="flex items-center gap-3">
+                          {verifiedChar.portraitUrl ? (<img src={portraitProxyPath(verifiedChar.portraitUrl)} alt="" className="h-14 w-14 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : null}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-black text-emerald-200">{verifiedChar.name}</p>
+                            <p className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-300">{verifiedChar.siteClass || verifiedChar.gameClassLabel || "Unknown class"}</p>
+                            <p className="truncate text-[8px] font-bold uppercase tracking-widest text-slate-400">
+                              {verifiedChar.raceName || "—"}{verifiedChar.genderName ? ` · ${verifiedChar.genderName}` : ""} · {verifiedChar.serverName}
+                              <span className="ml-1.5 rounded border border-white/10 bg-white/5 px-1 py-px text-[7px] uppercase text-slate-300">{verifiedChar.region === "tw" ? "TW" : "KR"}</span>
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <BadgeCheck className="h-4 w-4 text-emerald-400" />
+                            <a href={charProfileHref(verifiedChar)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20 transition-all">
+                              <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full profile"}
+                            </a>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <BadgeCheck className="h-4 w-4 text-emerald-400" />
-                          <a href={charProfileHref(verifiedChar)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20 transition-all">
-                            <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full profile"}
-                          </a>
+                        <div className="mt-2 grid grid-cols-3 gap-1.5">
+                          <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-center">
+                            <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Lv</p>
+                            <p className="text-sm font-black text-white tabular-nums">{verifiedChar.level}</p>
+                          </div>
+                          <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2 py-1.5 text-center">
+                            <p className="text-[7px] font-black uppercase tracking-widest text-violet-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />Item Lv</p>
+                            <p className="text-sm font-black text-violet-300 tabular-nums">{verifiedChar.itemLevel > 0 ? verifiedChar.itemLevel.toLocaleString() : "—"}</p>
+                          </div>
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-center">
+                            <p className="text-[7px] font-black uppercase tracking-widest text-amber-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />CP</p>
+                            <p className="text-sm font-black text-amber-300 tabular-nums">{verifiedChar.combatPower.toLocaleString()}</p>
+                          </div>
                         </div>
                       </div>
                     )}

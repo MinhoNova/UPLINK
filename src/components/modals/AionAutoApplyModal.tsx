@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Zap, ShieldCheck, Users, Check } from "lucide-react";
+import { X, Zap, ShieldCheck, Users, Check, ChevronDown, IdCard, RefreshCw } from "lucide-react";
 import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
+import { classThumbUrl } from "@/lib/classThumb";
 
 export interface AionAutoApply {
   enabled: boolean;
@@ -32,6 +33,9 @@ export default function AionAutoApplyModal({
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [characters, setCharacters] = useState<any[]>([]);
+  const [selCharId, setSelCharId] = useState("");
+  const [charDropOpen, setCharDropOpen] = useState(false);
 
   const me = registeredUsers.find((u: any) => String(u.id) === String(meId));
   const [cfg, setCfg] = useState<AionAutoApply>({
@@ -61,6 +65,24 @@ export default function AionAutoApplyModal({
     }
   }, [meId, registeredUsers, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !meId) return;
+    let alive = true;
+    fetch("/api/public-data")
+      .then((r) => r.json())
+      .then((d: any) => {
+        if (!alive) return;
+        const list = (Array.isArray(d.characters) ? d.characters : []).filter((c: any) => String(c.userId) === String(meId));
+        setCharacters(list);
+        setSelCharId((prev) => {
+          if (prev && list.some((c: any) => String(c.id) === String(prev))) return prev;
+          return list[0] ? String(list[0].id) : "";
+        });
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [isOpen, meId]);
+
   if (!isOpen) return null;
 
   const commit = async (next: AionAutoApply) => {
@@ -82,6 +104,20 @@ export default function AionAutoApplyModal({
     const next = { ...cfg, ...patch };
     setCfg(next);
     commit(next);
+  };
+
+  const selectedChar = characters.find((c: any) => String(c.id) === String(selCharId)) || characters[0];
+
+  const pickChar = (c: any) => {
+    setSelCharId(String(c.id));
+    setCharDropOpen(false);
+    const cls = c.aionClass || c.gameClassLabel || c.class || cfg.aionClass;
+    const patch: Partial<AionAutoApply> = {};
+    if (cls) patch.aionClass = cls;
+    if (Number(c.itemLevel) > 0) patch.itemLevel = Number(c.itemLevel);
+    if (Number(c.combatPower) > 0) patch.combatPower = Number(c.combatPower);
+    patch.enabled = true;
+    set(patch);
   };
 
   const clampLevel = (v: number) =>
@@ -169,6 +205,94 @@ export default function AionAutoApplyModal({
             />
           </button>
         </div>
+
+        {/* My verified character */}
+        <p className="mt-5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+          <IdCard className="h-3 w-3 text-emerald-400" /> My character
+          {characters.length > 0 && (
+            <span className="ml-auto flex items-center gap-1 text-emerald-400/80">
+              <RefreshCw className="h-2.5 w-2.5" /> VERIFIED
+            </span>
+          )}
+        </p>
+        {characters.length === 0 ? (
+          <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+              Link a character in Apply / My Profile to auto-apply as them
+            </p>
+          </div>
+        ) : (
+          <div className="mt-2 relative">
+            <button
+              type="button"
+              onClick={() => setCharDropOpen((v) => !v)}
+              className="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 text-left transition-all hover:border-emerald-500/50 flex items-center gap-3"
+            >
+              {selectedChar?.portraitUrl ? (
+                <img
+                  src={selectedChar.portraitUrl}
+                  alt=""
+                  className="h-12 w-12 shrink-0 rounded-lg border border-white/10 bg-black object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <img
+                  src={classThumbUrl(selectedChar?.aionClass || selectedChar?.gameClassLabel || "dps")}
+                  alt=""
+                  className="h-12 w-12 shrink-0 rounded-lg border border-white/10 bg-black object-contain p-1"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-black text-emerald-200">{selectedChar?.name || "—"}</p>
+                <p className="truncate text-[8px] font-black uppercase tracking-widest text-emerald-300/80">
+                  {selectedChar?.raceName ? `${selectedChar.raceName} · ` : ""}{selectedChar?.serverName || ""}{selectedChar?.region ? ` · ${String(selectedChar.region).toUpperCase()}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 text-center">
+                <div>
+                  <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Lv</p>
+                  <p className="text-sm font-black text-white tabular-nums">{selectedChar?.level ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] font-black uppercase tracking-widest text-violet-400">Item Lv</p>
+                  <p className="text-sm font-black text-violet-300 tabular-nums">{Number(selectedChar?.itemLevel) > 0 ? Number(selectedChar.itemLevel).toLocaleString() : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[7px] font-black uppercase tracking-widest text-amber-400">CP</p>
+                  <p className="text-sm font-black text-amber-300 tabular-nums">{Number(selectedChar?.combatPower) > 0 ? Number(selectedChar.combatPower).toLocaleString() : "—"}</p>
+                </div>
+              </div>
+              <ChevronDown className={`h-4 w-4 shrink-0 text-emerald-300 transition-transform ${charDropOpen ? "rotate-180" : ""}`} />
+            </button>
+            {charDropOpen && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 overflow-y-auto custom-scrollbar rounded-xl border border-white/10 bg-[#0a0f26] shadow-2xl max-h-[200px]">
+                {characters.map((c: any) => {
+                  const isSel = String(c.id) === String(selectedChar?.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => pickChar(c)}
+                      className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"}`}
+                    >
+                      {c.portraitUrl ? (
+                        <img src={c.portraitUrl} alt="" className="h-8 w-8 shrink-0 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      ) : (
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black text-[8px] font-black text-cyan-300">{String(c.name || "?").charAt(0).toUpperCase()}</span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-black">{c.name}</span>
+                        <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
+                      </span>
+                      <span className="text-[8px] font-black text-violet-300 tabular-nums shrink-0">{Number(c.itemLevel) > 0 ? c.itemLevel : "—"} iLvl</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Class */}
         <p className="mt-5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
@@ -266,7 +390,8 @@ export default function AionAutoApplyModal({
         )}
         {!saving && cfg.enabled && cfg.aionClass && (
           <p className="mt-3 text-center text-[9px] font-black uppercase tracking-widest text-emerald-400">
-            Will auto-apply <span className="text-cyan-300">{cfg.aionClass}</span> · ilvl {cfg.itemLevel}
+            {selectedChar ? (<span className="text-white">{selectedChar.name}</span>) : null}
+            {selectedChar ? " · " : ""}will auto-apply <span className="text-cyan-300">{cfg.aionClass}</span> · ilvl {cfg.itemLevel}
             {cfg.combatPower > 0 ? ` · CP ${cfg.combatPower.toLocaleString()}` : ""} to open offers
           </p>
         )}
