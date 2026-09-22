@@ -366,6 +366,11 @@ export function validateLobbies(
   return { ok: true, value: sanitized };
 }
 
+/** A game character (`game:<id>`) may only ever be linked to one account. */
+function isGameCharId(id: string): boolean {
+  return typeof id === "string" && id.startsWith("game:");
+}
+
 export function validateCharacters(
   existing: unknown[],
   incoming: unknown,
@@ -375,15 +380,41 @@ export function validateCharacters(
   if (!Array.isArray(incoming)) return { ok: false, error: "Invalid characters" };
   if (isAdmin) return { ok: true, value: incoming };
 
-  const existingById = new Map((existing as any[]).map((c) => [c.id, c]));
+  const existingById = new Map((existing as any[]).map((c) => [String(c.id), c]));
 
   for (const ch of incoming as any[]) {
-    const ex = existingById.get(ch.id);
+    const id = String(ch.id || "");
+    if (!id) continue;
+    if (isGameCharId(id) && String(ch.userId) !== String(userId)) {
+      const ex = existingById.get(id);
+      if (ex) return { ok: false, error: "This in-game character is already linked to another account" };
+      return { ok: false, error: "Cannot add characters for other users" };
+    }
+  }
+
+  const seenOwners = new Map<string, string>();
+  for (const ch of incoming as any[]) {
+    const id = String(ch.id || "");
+    if (isGameCharId(id)) {
+      const owner = String(ch.userId || "");
+      const prev = seenOwners.get(id);
+      if (prev !== undefined && prev !== owner) {
+        return { ok: false, error: "The same in-game character cannot be linked to two accounts" };
+      }
+      seenOwners.set(id, owner);
+    }
+  }
+
+  for (const ch of incoming as any[]) {
+    const ex = existingById.get(String(ch.id));
     if (!ex) {
       if (String(ch.userId) !== String(userId)) return { ok: false, error: "Cannot add characters for other users" };
       continue;
     }
     if (JSON.stringify(ch) !== JSON.stringify(ex) && String((ex as any).userId) !== String(userId)) {
+      if (isGameCharId(String(ch.id))) {
+        return { ok: false, error: "This in-game character is already linked to another account" };
+      }
       return { ok: false, error: "Cannot modify other users' characters" };
     }
   }

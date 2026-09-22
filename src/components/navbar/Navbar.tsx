@@ -364,7 +364,7 @@ export default function Navbar() {
               <Zap className="w-4 h-4 shrink-0 transition-transform group-hover:rotate-12" /> Create Offer
             </a>
             <div className="relative" ref={langRef}>
-              <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`h-10 min-w-[64px] justify-center rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-[#00ffff]/10 text-[#00ffff] border border-[#00ffff]/30 hover:bg-[#00ffff]/20 shadow-[0_0_12px_rgba(0,255,255,0.1)]`}>
+              <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`h-10 min-w-[64px] justify-center rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${langOpen ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 shadow-[0_0_14px_rgba(234,179,8,0.25)] hover:bg-yellow-500/30" : "bg-white/[0.03] text-gray-500 border border-white/10 hover:text-gray-300 hover:border-white/25"}`}>
                 <Languages className="w-4 h-4" /> {LANGS.find((l) => l.code === lang)?.short || "EN"}
               </motion.button>
               {langOpen && (

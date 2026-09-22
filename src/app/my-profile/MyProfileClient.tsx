@@ -476,7 +476,7 @@ export default function MyProfileClient() {
         </div>
       )}
 
-      <main className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-24">
+      <main className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pt-32 sm:pt-36 pb-24">
         {/* ══ HERO ══ */}
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 overflow-hidden mb-8 shadow-[0_8px_32px_rgba(34,211,238,0.06)]">
           {resolveProfileBanner(me) && (

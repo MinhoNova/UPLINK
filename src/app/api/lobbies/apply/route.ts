@@ -18,6 +18,11 @@ function memberId(member: { applicantId?: string; userId?: string; id?: string }
   return String(member.applicantId || member.userId || member.id || "");
 }
 
+/** Verified game characters use `game:<characterId>` as their applicant id. */
+function isGameCharApplicantId(id: string): boolean {
+  return id.startsWith("game:");
+}
+
 export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -90,9 +95,19 @@ export async function POST(req: Request) {
       return undefined;
     }
     const charId = String(applicant.id || "");
-    if (charId && applicants.some((a: any) => String(a.id) === charId)) {
-      abortReason = "Character already applied";
-      return undefined;
+    if (charId) {
+      if (isGameCharApplicantId(charId) && applicants.some((a: any) => String(a.id) === charId)) {
+        abortReason = "Character already applied";
+        return undefined;
+      }
+      const dupOwner = cur.some((l: any) => {
+        const all = [...(l.applicants || []), ...(l.accepted || [])];
+        return all.some((a: any) => String(a.id) === charId && memberId(a) !== uid);
+      });
+      if (dupOwner) {
+        abortReason = "Character already used by another account";
+        return undefined;
+      }
     }
     const updatedLobby = { ...lobby, applicants: [...applicants, nextApplicant] };
     cur[idx] = updatedLobby;
