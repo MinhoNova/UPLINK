@@ -121,5 +121,5 @@ export function isAllowedPortraitUrl(url: string): boolean {
 /** The client-safe proxy URL for a whitelisted portrait (empty when not allowed). */
 export function portraitProxyPath(fullUrl: string): string {
   if (!fullUrl || !isAllowedPortraitUrl(fullUrl)) return "";
-  return `/api/aion2/portrait?u=${encodeURIComponent(fullUrl)}`;
+  return `/api/aion2/portrait?u=${encodeURIComponent(fullUrl)}&v=2`;
 }
