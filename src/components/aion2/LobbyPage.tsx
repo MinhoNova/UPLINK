@@ -333,6 +333,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       if (d.alreadyLinked) { setVerifyError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
       const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
       setVerifiedChar(vc);
+      saveVerifiedCharacter(vc);
       if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
       if (vc.level) setApplyLevel(String(vc.level));
       if (vc.combatPower) setApplyCp(String(vc.combatPower));
@@ -349,6 +350,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       if (d.alreadyLinked) { setVerifyError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
       const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
       setVerifiedChar(vc);
+      saveVerifiedCharacter(vc);
       if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
       if (vc.level) setApplyLevel(String(vc.level));
       if (vc.combatPower) setApplyCp(String(vc.combatPower));
@@ -458,7 +460,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         {applied ? (
                           <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> {t("offer_applied")}</span>
                         ) : (
-                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
+                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); loadVerifyServers(); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
                         )}
                         {(isMine || isAdmin) && (
                           confirmId === String(offer.id) ? (
@@ -558,14 +560,12 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                 <h3 className="text-base font-black uppercase tracking-widest text-white">{t("apply_title")}</h3>
                 <button onClick={() => !applyingId && setApplyTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_yourClass")}</p>
-              <div className="grid grid-cols-2 gap-2">{AION2_CLASSES.map((c) => { const isActive = applyAionClass === c; return (<button key={c} type="button" onClick={() => setApplyAionClass(c)} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15" : "border-white/10 bg-white/[0.02] hover:border-white/25"}`}><img src={`/classes/${c === "Spiritmaster" ? "Elementalist" : c}.png`} alt="" className="h-6 w-6 object-contain" onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} /><span className={`text-xs font-black ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span></button>); })}</div>
+              <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2"><BadgeCheck className="w-3.5 h-3.5 text-violet-300" /> {t("apply_linkRequired") || "Required — link your game character to apply"}</p>
               <div className="mt-4 rounded-2xl border border-violet-500/25 bg-violet-500/[0.04] p-3">
-                <button type="button" onClick={() => { setVerifyOpen((o) => !o); if (!verifyOpen) { loadVerifyServers(); } }} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-300">
-                  <BadgeCheck className="w-3.5 h-3.5" /> {verifyOpen ? (t("verify_hide") || "Hide game data lookup") : (t("verify_open") || "Pull my real game data (NCSoft)")} <RefreshCw className={`w-3 h-3 ${verifyBusy ? "animate-spin text-violet-400" : ""}`} />
-                </button>
-                {verifyOpen && (
-                  <div className="mt-3 space-y-2">
+                <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-300">
+                  <BadgeCheck className="w-3.5 h-3.5" /> {t("verify_paste") || "Paste your official character page link"} {verifyBusy ? (<RefreshCw className="w-3 h-3 animate-spin text-violet-400" />) : null}
+                </p>
+                <div className="mt-3 space-y-2">
                     <div className="flex gap-2">
                       <input value={resolveLink} onChange={(e) => setResolveLink(e.target.value)} placeholder={t("verify_linkPlaceholder") || "Paste your official character page link (tw.ncsoft.com or aion2.plaync.com)"} className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#050814]/70 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60" />
                       <button type="button" disabled={resolveBusy} onClick={runResolveLink} className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white disabled:opacity-50 shrink-0">
@@ -619,13 +619,15 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       </div>
                     )}
                   </div>
-                )}
               </div>
-              <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_itemLevel")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) - 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={1} max={AION2_LEVEL_MAX} value={applyLevel} onChange={(e) => setApplyLevel(e.target.value)} className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyLevel(String(Math.min(AION2_LEVEL_MAX, Math.max(1, (Number(applyLevel) || 1) + 1))))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
-              <div className="mt-3"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_combatPower")}</p><div className="flex items-center gap-3"><button type="button" onClick={() => setApplyCp(String(Math.max(0, (Number(applyCp) || 0) - 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">−</button><input type="number" min={0} max={100000} value={applyCp} onChange={(e) => setApplyCp(e.target.value)} placeholder="0" className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none" /><button type="button" onClick={() => setApplyCp(String(Math.min(100000, (Number(applyCp) || 0) + 1000)))} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300">+</button></div></div>
+              {!verifiedChar && (
+                <p className="mt-3 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-center text-[9px] font-bold uppercase tracking-widest text-red-400">
+                  {t("apply_linkNeeded") || "You must link your character above to apply"}
+                </p>
+              )}
               <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_note")}</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder={t("apply_notePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
               {applyError && (<p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>)}
-              <button onClick={submitApply} disabled={!applyAionClass || !!applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : t("apply_send")}</button>
+              <button onClick={submitApply} disabled={!verifiedChar || !applyAionClass || !!applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : (verifiedChar ? (t("apply_send") || "Apply") : (t("apply_linkFirst") || "Link Character First"))}</button>
             </motion.div>
           </motion.div>
         )}

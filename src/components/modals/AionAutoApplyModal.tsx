@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Zap, ShieldCheck, Users, Check, ChevronDown, IdCard, RefreshCw } from "lucide-react";
-import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
+import { X, Zap, ShieldCheck, Check, ChevronDown, IdCard, RefreshCw } from "lucide-react";
 import { classThumbUrl } from "@/lib/classThumb";
 
 export interface AionAutoApply {
@@ -78,6 +77,7 @@ export default function AionAutoApplyModal({
           if (prev && list.some((c: any) => String(c.id) === String(prev))) return prev;
           return list[0] ? String(list[0].id) : "";
         });
+        if (list[0]) setCfg((p) => ({ ...p, ...charPatch(list[0]) }));
       })
       .catch(() => {});
     return () => { alive = false; };
@@ -108,23 +108,20 @@ export default function AionAutoApplyModal({
 
   const selectedChar = characters.find((c: any) => String(c.id) === String(selCharId)) || characters[0];
 
+  const charPatch = (c: any): Partial<AionAutoApply> => {
+    const patch: Partial<AionAutoApply> = {};
+    const cls = c?.aionClass || c?.gameClassLabel || c?.class || "";
+    if (cls) patch.aionClass = cls;
+    if (Number(c?.itemLevel) > 0) patch.itemLevel = Number(c.itemLevel);
+    if (Number(c?.combatPower) > 0) patch.combatPower = Number(c.combatPower);
+    return patch;
+  };
+
   const pickChar = (c: any) => {
     setSelCharId(String(c.id));
     setCharDropOpen(false);
-    const cls = c.aionClass || c.gameClassLabel || c.class || cfg.aionClass;
-    const patch: Partial<AionAutoApply> = {};
-    if (cls) patch.aionClass = cls;
-    if (Number(c.itemLevel) > 0) patch.itemLevel = Number(c.itemLevel);
-    if (Number(c.combatPower) > 0) patch.combatPower = Number(c.combatPower);
-    patch.enabled = true;
-    set(patch);
+    set({ ...charPatch(c), enabled: true });
   };
-
-  const clampLevel = (v: number) =>
-    Math.min(AION2_LEVEL_MAX, Math.max(1, Math.round(v) || 1));
-
-  const clampCp = (v: number) =>
-    Math.min(100000, Math.max(0, Math.round(v) || 0));
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !saving && setIsOpen(false)}>
@@ -171,7 +168,11 @@ export default function AionAutoApplyModal({
           </div>
           <button
             type="button"
-            onClick={() => set({ enabled: !cfg.enabled })}
+            onClick={() => {
+              if (!meId) { setError("Sign in to use auto-apply"); return; }
+              if (!selectedChar) { setError("Link a character on an offer first — auto-apply needs your character"); return; }
+              set({ enabled: !cfg.enabled });
+            }}
             disabled={saving}
             className={`relative h-7 w-13 rounded-full transition-all cursor-pointer disabled:opacity-50 ${cfg.enabled ? "bg-emerald-500" : "bg-white/15"}`}
             style={{ width: 52 }}
@@ -216,10 +217,17 @@ export default function AionAutoApplyModal({
           )}
         </p>
         {characters.length === 0 ? (
-          <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-              Link a character in Apply / My Profile to auto-apply as them
+          <div className="mt-2 rounded-xl border border-orange-500/25 bg-orange-500/[0.06] p-3 text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-orange-300">
+              Required — you must link your official character page first (open an offer and paste your link)
             </p>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white"
+            >
+              <IdCard className="h-3 w-3" /> Open an offer & paste your link
+            </button>
           </div>
         ) : (
           <div className="mt-2 relative">
@@ -295,89 +303,17 @@ export default function AionAutoApplyModal({
           </div>
         )}
 
-        {/* Class */}
-        <p className="mt-5 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
-          <Users className="h-3 w-3 text-cyan-400" /> My class
-        </p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {AION2_CLASSES.map((c) => {
-            const isActive = cfg.aionClass === c;
-            return (
-              <button
-                key={c}
-                type="button"
-                onClick={() => set({ aionClass: c, enabled: true })}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-all ${isActive ? "border-cyan-400/60 bg-cyan-500/15 shadow-[0_0_16px_rgba(0,229,255,0.15)]" : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]"}`}
-              >
-                <img
-                  src={`/classes/${c === "Spiritmaster" ? "Elementalist" : c}.png`}
-                  alt=""
-                  className="h-6 w-6 object-contain"
-                  onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
-                />
-                <span className={`min-w-0 flex-1 truncate text-xs font-black ${isActive ? "text-cyan-200" : "text-gray-200"}`}>{c}</span>
-                <span className="text-[8px] font-black tracking-widest text-gray-500">{AION2_ROLE_LABEL[aionClassRole(c)] || aionClassRole(c).toUpperCase()}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Item Level */}
-        <div className="mt-5">
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Item Level</p>
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => set({ itemLevel: clampLevel(cfg.itemLevel - 1) })}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
-            >
-              −
-            </button>
-            <input
-              type="number"
-              min={1}
-              max={AION2_LEVEL_MAX}
-              value={cfg.itemLevel}
-              onChange={(e) => set({ itemLevel: clampLevel(Number(e.target.value) || 1) })}
-              className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none transition-all focus:border-cyan-400/50"
-            />
-            <button
-              type="button"
-              onClick={() => set({ itemLevel: clampLevel(cfg.itemLevel + 1) })}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Combat Power */}
-        <div className="mt-4">
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Combat Power</p>
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => set({ combatPower: clampCp(cfg.combatPower - 1000) })}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
-            >
-              −
-            </button>
-            <input
-              type="number"
-              min={0}
-              max={100000}
-              value={cfg.combatPower}
-              onChange={(e) => set({ combatPower: clampCp(Number(e.target.value) || 0) })}
-              className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-center text-sm font-black text-white outline-none transition-all focus:border-cyan-400/50"
-            />
-            <button
-              type="button"
-              onClick={() => set({ combatPower: clampCp(cfg.combatPower + 1000) })}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-lg font-black text-gray-300 transition-all hover:border-white/25 hover:text-white"
-            >
-              +
-            </button>
-          </div>
+        {/* Auto-applies as — values always come from the linked character */}
+        <div className="mt-5 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.05] p-3">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-1.5">
+            <IdCard className="h-3 w-3 text-cyan-400" /> Auto-applies as
+          </p>
+          <p className="mt-1.5 text-xs font-black text-white truncate">
+            {cfg.aionClass ? <span className="text-cyan-300">{cfg.aionClass}</span> : <span className="text-slate-500">{(selectedChar?.aionClass || selectedChar?.gameClassLabel || "—")}</span>}
+            <span className="text-slate-500"> · </span>
+            <span className="text-violet-300">ilvl {Number(cfg.itemLevel) > 0 ? Number(cfg.itemLevel).toLocaleString() : "—"}</span>
+            {Number(cfg.combatPower) > 0 ? (<><span className="text-slate-500"> · </span><span className="text-amber-300">CP {Number(cfg.combatPower).toLocaleString()}</span></>) : null}
+          </p>
         </div>
 
         {error && (
