@@ -1,9 +1,23 @@
 "use client";
 import { useState } from "react";
+import { portraitProxyPath } from "@/lib/aion2ClassIds";
 
-/** In-game character portrait (already routed through the site proxy).
- *  Retries once with a cache-bust param (old Cloudflare-broken caches),
- *  then hides so the caller's fallback box is what the user sees. */
+/** Extract the raw plaync URL out of a stored `/api/aion2/portrait?u=…` proxy path. */
+function rawUrlOf(src: string): string {
+  if (src.startsWith("/api/aion2/portrait?u=")) {
+    try {
+      const u = new URL(window.location.origin + src).searchParams.get("u") || "";
+      return u ? decodeURIComponent(u) : src;
+    } catch {
+      return src;
+    }
+  }
+  return src;
+}
+
+/** In-game character portrait. Tries the site proxy first, then falls back to
+ *  the direct plaync URL (same behaviour as the /character page), then hides so
+ *  the caller's letter fallback is what the user sees. */
 export default function CharacterPortrait({
   src,
   className = "",
@@ -15,17 +29,14 @@ export default function CharacterPortrait({
   alt?: string;
   title?: string;
 }) {
-  const [tryCount, setTryCount] = useState(0);
-  const [gone, setGone] = useState(!src);
-  if (!src || gone) return null;
-  const base = String(src);
-  const finalSrc =
-    tryCount === 0
-      ? base
-      : `${base}${base.includes("?") ? "&" : "?"}r=${Date.now()}`;
+  const raw = src ? rawUrlOf(String(src)) : "";
+  const proxied = raw ? portraitProxyPath(raw) : "";
+  const [mode, setMode] = useState<0 | 1 | 2>(proxied ? 0 : raw ? 1 : 2);
+  if (!raw || mode === 2) return null;
+  const current = mode === 0 ? proxied : raw;
   return (
     <img
-      src={finalSrc}
+      src={current}
       alt={alt}
       title={title}
       className={className}
@@ -33,8 +44,8 @@ export default function CharacterPortrait({
       decoding="async"
       referrerPolicy="no-referrer"
       onError={() => {
-        if (tryCount === 0) setTryCount(1);
-        else setGone(true);
+        if (mode === 0 && raw) setMode(1);
+        else setMode(2);
       }}
     />
   );

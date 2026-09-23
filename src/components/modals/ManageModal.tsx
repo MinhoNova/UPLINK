@@ -20,23 +20,8 @@ function applicantProfileHref(a: any): string {
   return `/character?u=${encodeURIComponent(`${base}/characters/${a.serverId}/${encodeURIComponent(a.gameCharacterId)}`)}`;
 }
 
-function ItemLevelIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 2.6a7.6 7.6 0 0 0-7.6 7.6v2.6a2.2 2.2 0 0 0 2.2 2.2h10.8a2.2 2.2 0 0 0 2.2-2.2V10.2A7.6 7.6 0 0 0 12 2.6Z" />
-      <path d="M6.2 7.6a7.6 7.6 0 0 1 2.1-3.4M5.4 15.2v3.2a2.4 2.4 0 0 0 2.4 2.4h8.4a2.4 2.4 0 0 0 2.4-2.4v-3.2" />
-    </svg>
-  );
-}
-
-function CombatPowerIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className}>
-      <path d="M12 2.4l2.3 5.3 5.7 1.5-4.1 4.2 1 5.9-4.9-2.8-4.9 2.8 1-5.9L4 9.2l5.7-1.5L12 2.4Z" fill="currentColor" />
-      <path d="M12 8.6l1.4 3.2 3.5.9-2.6 2.6.7 3.9L12 17.4 9 19.2l.7-3.9L7.1 12.7l3.5-.9L12 8.6Z" fill="#050814" opacity="0.85" />
-    </svg>
-  );
-}
+const POWER_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png";
+const LEVEL_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png";
 
 interface ManageModalProps {
   isOpen: boolean;
@@ -837,12 +822,7 @@ const profileImg = resolveProfileImage(profileUser || { name: displayName }, dis
                                                                                  <Users className="w-6 h-6 text-cyan-400/70" />
                                                                               )}
                                                                            </div>
-                                                                           {app.gameCharacterId ? (
-                                                                              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-md border border-emerald-400/50 bg-black/95 px-1.5 py-px text-[6px] font-black uppercase tracking-widest text-emerald-300 whitespace-nowrap">
-                                                                                 <ShieldCheck className="w-2.5 h-2.5" /> VERIFIED
-                                                                              </span>
-                                                                           ) : null}
-                                                                        </div>
+                                                                           </div>
                                                                         <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                                                                            <span className="max-w-full text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
                                                                            {ratingCount > 0 ? (
@@ -874,13 +854,9 @@ const profileImg = resolveProfileImage(profileUser || { name: displayName }, dis
                                                                      {/* character — middle of the banner: in-game portrait + class image beside it (NC style) */}
                                                                      <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.05] px-3 py-2">
                                                                         <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-xl overflow-hidden border-2 border-cyan-400/40 bg-black shadow-[0_0_16px_rgba(0,255,255,0.22)]">
-                                                                           <img
-                                                                              src={classThumbUrl(aionClass || app.role || "dps")}
-                                                                              alt=""
-                                                                              className="absolute inset-0 w-full h-full object-cover opacity-60"
-                                                                              loading="lazy"
-                                                                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                           />
+                                                                           <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-cyan-400/30 uppercase">
+                                                                              {String(displayName || "?").slice(0, 1)}
+                                                                           </span>
                                                                            <CharacterPortrait
                                                                               src={app.portraitUrl}
                                                                               className="absolute inset-0 w-full h-full object-cover"
@@ -908,12 +884,12 @@ const profileImg = resolveProfileImage(profileUser || { name: displayName }, dis
                                                                               {app.region ? <span className="ml-1 rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
                                                                            </span>
                                                                            <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-violet-300">
-                                                                              <ItemLevelIcon className="w-3.5 h-3.5" />
+                                                                              <img src={LEVEL_ICON} alt="" className="h-3.5 w-auto" loading="lazy" />
                                                                               {Number(app.itemLevel) > 0 ? Number(app.itemLevel).toLocaleString() : "—"}
                                                                               <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-400/80">Item Lv</span>
                                                                            </span>
                                                                            <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-amber-300">
-                                                                              <CombatPowerIcon className="w-3.5 h-3.5" />
+                                                                              <img src={POWER_ICON} alt="" className="h-3.5 w-auto" loading="lazy" />
                                                                               {Number(app.cpAp) > 0 ? Number(app.cpAp).toLocaleString() : "—"}
                                                                               <span className="text-[6px] font-black uppercase tracking-[0.2em] text-amber-400/80">Combat</span>
                                                                            </span>
@@ -964,14 +940,6 @@ const profileImg = resolveProfileImage(profileUser || { name: displayName }, dis
                                                                         )}
                                                                      </div>
                                                                   </div>
-
-                                                                  {app.gameCharacterId ? (
-                                                                     <div className="relative z-10 px-3 pb-3">
-                                                                        <div className="flex items-center gap-1 text-[7px] font-black uppercase tracking-widest text-emerald-300/90">
-                                                                           <ShieldCheck className="w-2.5 h-2.5" /> Verified game character
-                                                                        </div>
-                                                                     </div>
-                                                                  ) : null}
 
                                                                   {note ? (
                                                                      <div className="relative z-10 mx-3 mb-3 rounded-lg border border-[#8a2be2]/30 bg-[#8a2be2]/10 px-2 py-1">
