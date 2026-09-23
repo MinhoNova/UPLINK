@@ -10,6 +10,7 @@ import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileIma
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { classThumbUrl } from "@/lib/classThumb";
 import GamePortrait from "@/components/aion2/GamePortrait";
+import CharacterPortrait from "@/components/aion2/CharacterPortrait";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
@@ -797,7 +798,8 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                profileUser || { name: app.applicantName || app.name },
                                                                app.applicantName || app.name || "Applicant"
                                                             );
-const aionClass = app.aionClass || app.className || app.class || "";
+const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
+   const aionClass = app.aionClass || app.className || app.class || "";
  const aionLevel = app.level || app.applicantLevel || "";
  const applicantProfile = applicantProfileHref(app);
                                                               const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
@@ -810,139 +812,173 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                               const postStatLabel = targetLobby.category === 'leveling' ? 'Leveling' : (targetLobby.category === 'dungeon' ? 'Dungeons' : 'Posts');
    return (
 <div key={app.id} className="relative w-full rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden group hover:border-[#00ffff]/30 transition-all">
-                                                                 <div className="absolute inset-0 pointer-events-none">
-                                                                    <div className="absolute right-0 top-0 bottom-0 w-2/5">
-                                                                       <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
-                                                                       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
-                                                                    </div>
-                                                                 </div>
-                                                                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-3 px-3 py-2.5">
-                                                                    <div className="relative shrink-0 self-center lg:self-auto">
-                                                                       <div className="relative h-20 w-20 lg:h-24 lg:w-24 rounded-2xl border-2 border-cyan-400/40 bg-black overflow-hidden shadow-[0_0_18px_rgba(0,255,255,0.22)]">
-                                                                          {app.portraitUrl ? (
-                                                                             <img
-                                                                                src={app.portraitUrl}
-                                                                                alt=""
-                                                                                className="absolute inset-0 w-full h-full object-cover"
-                                                                                loading="lazy"
-                                                                                decoding="async"
-                                                                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                             />
-                                                                          ) : null}
-                                                                          <img
-                                                                             src={classThumbUrl(aionClass || app.role || "dps")}
-                                                                             alt={aionClass || app.role || "Class"}
-                                                                             title={aionClass || app.role || "Class"}
-                                                                             className="absolute bottom-1 right-1 h-6 w-6 sm:h-7 sm:w-7 rounded-md border border-white/20 bg-black/85 object-contain p-0.5"
-                                                                             loading="lazy"
-                                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                                                                          />
-                                                                          <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded-md border border-cyan-300/50 bg-black/85 px-1.5 py-0.5 text-[9px] font-black text-cyan-300 tabular-nums shadow-[0_0_8px_rgba(0,229,255,0.35)]">
-                                                                             {aionLevel || "—"}
-                                                                          </span>
-                                                                       </div>
-                                                                       {app.gameCharacterId ? (
-                                                                          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-md border border-emerald-400/50 bg-black/95 px-1.5 py-px text-[6px] font-black uppercase tracking-widest text-emerald-300 whitespace-nowrap">
-                                                                             <ShieldCheck className="w-2.5 h-2.5" /> VERIFIED
-                                                                          </span>
-                                                                       ) : null}
-                                                                    </div>
+                                                                  <div className="absolute inset-0 pointer-events-none">
+                                                                     <div className="absolute right-0 top-0 bottom-0 w-1/3">
+                                                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-800/50 via-violet-800/30 to-cyan-700/20" />
+                                                                        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f26] via-[#0a0f26]/60 to-transparent" />
+                                                                     </div>
+                                                                  </div>
 
-                                                                    <div className="flex-1 min-w-0 flex flex-col gap-1 py-0.5">
-                                                                       <div className="flex items-center gap-2 min-w-0">
-                                                                          <span className="max-w-full text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
-                                                                          {ratingCount > 0 ? (
-                                                                             <span className="flex items-center gap-1 text-[10px] font-black text-yellow-300 tracking-wide shrink-0">
-                                                                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                                                                                {rating10.toFixed(1)} <span className="text-gray-500">/ 10</span>
-                                                                                <span className="text-gray-500 font-semibold"> ({ratingCount})</span>
-                                                                             </span>
-                                                                          ) : (
-                                                                             <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 shrink-0">No reviews</span>
-                                                                          )}
-                                                                       </div>
-                                                                       {app.teamName ? (
-                                                                          <span
-                                                                             className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[110px] truncate"
-                                                                             title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
-                                                                                ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
-                                                                                : app.teamName}
-                                                                          >
-                                                                             <Users className="w-3 h-3 text-purple-400" />
-                                                                             {app.teamName}
-                                                                             {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
-                                                                                <span className="text-cyan-300">({app.teamMembers.length})</span>
-                                                                             )}
-                                                                          </span>
-                                                                       ) : null}
-                                                                       <span className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-200">
-                                                                          {aionClass || app.role || "—"}
-                                                                          {app.serverName ? <span className="text-slate-400"> · {app.serverName}</span> : null}
-                                                                          {app.region ? <span className="ml-1 rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
-                                                                       </span>
-                                                                       <span className="flex items-center gap-4 text-[9px] font-black tabular-nums">
-                                                                          <span className="flex items-center gap-1.5 text-violet-300">
-                                                                             <ItemLevelIcon className="w-3.5 h-3.5" />
-                                                                             {Number(app.itemLevel) > 0 ? Number(app.itemLevel).toLocaleString() : "—"}
-                                                                             <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-400/80">Item Lv</span>
-                                                                          </span>
-                                                                          <span className="flex items-center gap-1.5 text-amber-300">
-                                                                             <CombatPowerIcon className="w-3.5 h-3.5" />
-                                                                             {Number(app.cpAp) > 0 ? Number(app.cpAp).toLocaleString() : "—"}
-                                                                             <span className="text-[6px] font-black uppercase tracking-[0.2em] text-amber-400/80">Combat</span>
-                                                                          </span>
-                                                                       </span>
-                                                                       <span
-                                                                          className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap w-fit"
-                                                                          title={`${postStatCount} ${postStatLabel.toLowerCase()} on site`}
-                                                                       >
-                                                                          <Zap className="w-3 h-3 text-[#00ffff]" />
-                                                                          <span className="tabular-nums">{postStatCount}</span> {postStatLabel}
-                                                                       </span>
-                                                                       {note ? (
-                                                                          <div className="mt-0.5 rounded-lg border border-[#8a2be2]/30 bg-[#8a2be2]/10 px-2 py-1">
-                                                                             <p className="text-[10px] leading-snug break-words whitespace-pre-line font-semibold text-gray-100">{note}</p>
-                                                                          </div>
-                                                                       ) : null}
-                                                                    </div>
+                                                                  <div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-3 px-3 py-3">
+                                                                     {/* site avatar + identity */}
+                                                                     <div className="flex items-center gap-3 lg:w-52 shrink-0 min-w-0">
+                                                                        <div className="relative shrink-0">
+                                                                           <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)]">
+                                                                              {profileImg ? (
+                                                                                 <img
+                                                                                    src={profileImg}
+                                                                                    alt=""
+                                                                                    className="w-full h-full object-cover"
+                                                                                    loading="lazy"
+                                                                                    decoding="async"
+                                                                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                                 />
+                                                                              ) : (
+                                                                                 <Users className="w-6 h-6 text-cyan-400/70" />
+                                                                              )}
+                                                                           </div>
+                                                                           {app.gameCharacterId ? (
+                                                                              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-md border border-emerald-400/50 bg-black/95 px-1.5 py-px text-[6px] font-black uppercase tracking-widest text-emerald-300 whitespace-nowrap">
+                                                                                 <ShieldCheck className="w-2.5 h-2.5" /> VERIFIED
+                                                                              </span>
+                                                                           ) : null}
+                                                                        </div>
+                                                                        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                                                                           <span className="max-w-full text-[11px] font-black text-white uppercase tracking-widest truncate">{renderDualColorName(displayName)}</span>
+                                                                           {ratingCount > 0 ? (
+                                                                              <span className="flex items-center gap-1 text-[10px] font-black text-yellow-300 tracking-wide w-fit">
+                                                                                 <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                                                                 {rating10.toFixed(1)} <span className="text-gray-500">/ 10</span>
+                                                                                 <span className="text-gray-500 font-semibold"> ({ratingCount})</span>
+                                                                              </span>
+                                                                           ) : (
+                                                                              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 w-fit">No reviews</span>
+                                                                           )}
+                                                                           {app.teamName ? (
+                                                                              <span
+                                                                                 className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[120px] truncate"
+                                                                                 title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
+                                                                                    ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
+                                                                                    : app.teamName}
+                                                                              >
+                                                                                 <Users className="w-3 h-3 text-purple-400" />
+                                                                                 {app.teamName}
+                                                                                 {Array.isArray(app.teamMembers) && app.teamMembers.length > 0 && (
+                                                                                    <span className="text-cyan-300">({app.teamMembers.length})</span>
+                                                                                 )}
+                                                                              </span>
+                                                                           ) : null}
+                                                                        </div>
+                                                                     </div>
 
-                                                                    <div className="relative z-10 flex-shrink-0 flex lg:flex-col items-center lg:items-stretch gap-1.5 self-center lg:self-auto">
-                                                                       {applicantProfile ? (
-                                                                          <a
-                                                                             href={applicantProfile}
-                                                                             target="_blank"
-                                                                             rel="noreferrer"
-                                                                             className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-500/20 whitespace-nowrap"
-                                                                             title="Open the full character profile — gear, stats, history"
-                                                                          >
-                                                                             <ExternalLink className="w-3 h-3" /> Character
-                                                                          </a>
-                                                                       ) : null}
-                                                                       {ownerAutoAcceptActive ? (
-                                                                          <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap text-center">Auto</span>
-                                                                       ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
-                                                                          <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
-                                                                             const upd = lobbies.map(l => l.id === targetLobby.id ? { ...l, applicants: (l.applicants || []).map((a: any) => String(a.id) === String(app.id) ? { ...a, invitedAt: undefined, inviteExpiresAt: undefined, inviteNotifId: undefined } : a) } : l);
-                                                                             const notifId = app.inviteNotifId;
-                                                                             const updNotifs = notifId ? notifications.filter(n => n.id !== notifId) : notifications;
-                                                                             setLobbies(upd); setTargetLobby(upd.find(l => l.id === targetLobby.id)); setNotifications(updNotifs);
-                                                                             saveGlobalData({ lobbies: upd, notifications: updNotifs });
-                                                                             addToast("Invite cancelled.", "info");
-                                                                          }} />
-                                                                       ) : (
-                                                                          <motion.button
-                                                                             onClick={() => handleAccept(app)}
-                                                                             whileHover={{ scale: 1.05 }}
-                                                                             whileTap={{ scale: 0.95 }}
-                                                                             className="px-4 py-2.5 bg-gradient-to-br from-[#00ffcc] to-[#00b3ff] text-black font-black rounded-xl transition-all text-[9px] uppercase tracking-widest whitespace-nowrap shadow-[0_0_18px_rgba(0,255,204,0.35)] border border-cyan-300/40 flex items-center justify-center gap-1.5"
-                                                                          >
-                                                                             <Zap className="w-3 h-3" />
-                                                                             Invite
-                                                                          </motion.button>
-                                                                       )}
-                                                                    </div>
-                                                                 </div>
-                                                              </div>
+                                                                     {/* character — middle of the banner: in-game portrait + class image beside it (NC style) */}
+                                                                     <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.05] px-3 py-2">
+                                                                        <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-xl overflow-hidden border-2 border-cyan-400/40 bg-black shadow-[0_0_16px_rgba(0,255,255,0.22)]">
+                                                                           <img
+                                                                              src={classThumbUrl(aionClass || app.role || "dps")}
+                                                                              alt=""
+                                                                              className="absolute inset-0 w-full h-full object-cover opacity-60"
+                                                                              loading="lazy"
+                                                                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                                                           />
+                                                                           <CharacterPortrait
+                                                                              src={app.portraitUrl}
+                                                                              className="absolute inset-0 w-full h-full object-cover"
+                                                                              alt=""
+                                                                              title={app.serverName ? `Game character · ${app.serverName}` : "Game character"}
+                                                                           />
+                                                                           <span className="absolute left-1 top-1 rounded-md border border-cyan-300/50 bg-black/85 px-1.5 py-0.5 text-[9px] font-black text-cyan-300 tabular-nums shadow-[0_0_8px_rgba(0,229,255,0.35)]">
+                                                                              {aionLevel || "—"}
+                                                                           </span>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-center gap-1 shrink-0">
+                                                                           <img
+                                                                              src={classThumbUrl(aionClass || app.role || "dps")}
+                                                                              alt={aionClass || app.role || "Class"}
+                                                                              title={aionClass || app.role || "Class"}
+                                                                              className="h-8 w-8 sm:h-9 sm:w-9 object-contain drop-shadow-[0_0_10px_rgba(139,92,246,0.35)]"
+                                                                              loading="lazy"
+                                                                           />
+                                                                           <span className="text-[7px] font-black uppercase tracking-widest text-cyan-200 max-w-[70px] truncate">{aionClass || app.role || "—"}</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col gap-1 pl-2 border-l border-white/10 shrink-0 min-w-0">
+                                                                           <span className="truncate text-[8px] font-black uppercase tracking-widest text-cyan-200 max-w-[130px]">
+                                                                              {aionClass || app.role || "—"}
+                                                                              {app.serverName ? <span className="text-slate-400"> · {app.serverName}</span> : null}
+                                                                              {app.region ? <span className="ml-1 rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
+                                                                           </span>
+                                                                           <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-violet-300">
+                                                                              <ItemLevelIcon className="w-3.5 h-3.5" />
+                                                                              {Number(app.itemLevel) > 0 ? Number(app.itemLevel).toLocaleString() : "—"}
+                                                                              <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-400/80">Item Lv</span>
+                                                                           </span>
+                                                                           <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-amber-300">
+                                                                              <CombatPowerIcon className="w-3.5 h-3.5" />
+                                                                              {Number(app.cpAp) > 0 ? Number(app.cpAp).toLocaleString() : "—"}
+                                                                              <span className="text-[6px] font-black uppercase tracking-[0.2em] text-amber-400/80">Combat</span>
+                                                                           </span>
+                                                                        </div>
+                                                                        <span
+                                                                           className="hidden md:inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap shrink-0"
+                                                                           title={`${postStatCount} ${postStatLabel.toLowerCase()} on site`}
+                                                                        >
+                                                                           <Zap className="w-3 h-3 text-[#00ffff]" />
+                                                                           <span className="tabular-nums">{postStatCount}</span> {postStatLabel}
+                                                                        </span>
+                                                                     </div>
+
+                                                                     {/* actions */}
+                                                                     <div className="relative z-10 flex-shrink-0 flex lg:flex-col items-center lg:items-stretch gap-1.5 self-center lg:self-auto">
+                                                                        {applicantProfile ? (
+                                                                           <a
+                                                                              href={applicantProfile}
+                                                                              target="_blank"
+                                                                              rel="noreferrer"
+                                                                              className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-500/20 whitespace-nowrap"
+                                                                              title="Open the full character profile — gear, stats, history"
+                                                                           >
+                                                                              <ExternalLink className="w-3 h-3" /> Character
+                                                                           </a>
+                                                                        ) : null}
+                                                                        {ownerAutoAcceptActive ? (
+                                                                           <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#00ffff] border border-[#00ffff]/30 bg-[#00ffff]/10 whitespace-nowrap text-center">Auto</span>
+                                                                        ) : app.invitedAt && !(targetLobby.accepted || []).some((a: any) => memberIdentityKey(a) === memberIdentityKey(app)) ? (
+                                                                           <InviteTimer expiresAt={app.inviteExpiresAt} onCancel={() => {
+                                                                              const upd = lobbies.map(l => l.id === targetLobby.id ? { ...l, applicants: (l.applicants || []).map((a: any) => String(a.id) === String(app.id) ? { ...a, invitedAt: undefined, inviteExpiresAt: undefined, inviteNotifId: undefined } : a) } : l);
+                                                                              const notifId = app.inviteNotifId;
+                                                                              const updNotifs = notifId ? notifications.filter(n => n.id !== notifId) : notifications;
+                                                                              setLobbies(upd); setTargetLobby(upd.find(l => l.id === targetLobby.id)); setNotifications(updNotifs);
+                                                                              saveGlobalData({ lobbies: upd, notifications: updNotifs });
+                                                                              addToast("Invite cancelled.", "info");
+                                                                           }} />
+                                                                        ) : (
+                                                                           <motion.button
+                                                                              onClick={() => handleAccept(app)}
+                                                                              whileHover={{ scale: 1.05 }}
+                                                                              whileTap={{ scale: 0.95 }}
+                                                                              className="px-4 py-2.5 bg-gradient-to-br from-[#00ffcc] to-[#00b3ff] text-black font-black rounded-xl transition-all text-[9px] uppercase tracking-widest whitespace-nowrap shadow-[0_0_18px_rgba(0,255,204,0.35)] border border-cyan-300/40 flex items-center justify-center gap-1.5"
+                                                                           >
+                                                                              <Zap className="w-3 h-3" />
+                                                                              Invite
+                                                                           </motion.button>
+                                                                        )}
+                                                                     </div>
+                                                                  </div>
+
+                                                                  {app.gameCharacterId ? (
+                                                                     <div className="relative z-10 px-3 pb-3">
+                                                                        <div className="flex items-center gap-1 text-[7px] font-black uppercase tracking-widest text-emerald-300/90">
+                                                                           <ShieldCheck className="w-2.5 h-2.5" /> Verified game character
+                                                                        </div>
+                                                                     </div>
+                                                                  ) : null}
+
+                                                                  {note ? (
+                                                                     <div className="relative z-10 mx-3 mb-3 rounded-lg border border-[#8a2be2]/30 bg-[#8a2be2]/10 px-2 py-1">
+                                                                        <p className="text-[10px] leading-snug break-words whitespace-pre-line font-semibold text-gray-100">{note}</p>
+                                                                     </div>
+                                                                  ) : null}
+                                                               </div>
                                                           ); })
                                                       ) : (
                                                          <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
