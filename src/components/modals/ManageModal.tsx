@@ -8,9 +8,8 @@ import OfferThreadSelect from "@/components/OfferThreadSelect";
 import EditOfferModal from "@/components/modals/EditOfferModal";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { classThumbUrl } from "@/lib/classThumb";
 import GamePortrait from "@/components/aion2/GamePortrait";
-import CharacterPortrait from "@/components/aion2/CharacterPortrait";
+import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
@@ -851,33 +850,15 @@ const profileImg = resolveProfileImage(profileUser || { name: displayName }, dis
                                                                         </div>
                                                                      </div>
 
-                                                                     {/* character — middle of the banner: in-game portrait + class image beside it (NC style) */}
-                                                                     <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.05] px-3 py-2">
-                                                                        <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-xl overflow-hidden border-2 border-cyan-400/40 bg-black shadow-[0_0_16px_rgba(0,255,255,0.22)]">
-                                                                           <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-cyan-400/30 uppercase">
-                                                                              {String(displayName || "?").slice(0, 1)}
-                                                                           </span>
-                                                                           <CharacterPortrait
-                                                                              src={app.portraitUrl}
-                                                                              className="absolute inset-0 w-full h-full object-cover"
-                                                                              alt=""
-                                                                              title={app.serverName ? `Game character · ${app.serverName}` : "Game character"}
-                                                                           />
-                                                                           <span className="absolute left-1 top-1 rounded-md border border-cyan-300/50 bg-black/85 px-1.5 py-0.5 text-[9px] font-black text-cyan-300 tabular-nums shadow-[0_0_8px_rgba(0,229,255,0.35)]">
-                                                                              {aionLevel || "—"}
-                                                                           </span>
-                                                                        </div>
-                                                                        <div className="flex flex-col items-center gap-1 shrink-0">
-                                                                           <img
-                                                                              src={classThumbUrl(aionClass || app.role || "dps")}
-                                                                              alt={aionClass || app.role || "Class"}
-                                                                              title={aionClass || app.role || "Class"}
-                                                                              className="h-8 w-8 sm:h-9 sm:w-9 object-contain drop-shadow-[0_0_10px_rgba(139,92,246,0.35)]"
-                                                                              loading="lazy"
-                                                                           />
-                                                                           <span className="text-[7px] font-black uppercase tracking-widest text-cyan-200 max-w-[70px] truncate">{aionClass || app.role || "—"}</span>
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-1 pl-2 border-l border-white/10 shrink-0 min-w-0">
+{/* character — middle of the banner: circular in-game portrait with the class emblem riding bottom-right (NC style) */}
+                                                                      <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.05] px-3 py-2">
+                                                                         <CharacterPortraitBadge
+                                                                            src={app.portraitUrl}
+                                                                            aionClass={aionClass || app.role || "dps"}
+                                                                            level={aionLevel || "—"}
+                                                                            fallback={displayName || app.name || ""}
+                                                                         />
+                                                                         <div className="flex flex-col gap-1 pl-2 border-l border-white/10 shrink-0 min-w-0">
                                                                            <span className="truncate text-[8px] font-black uppercase tracking-widest text-cyan-200 max-w-[130px]">
                                                                               {aionClass || app.role || "—"}
                                                                               {app.serverName ? <span className="text-slate-400"> · {app.serverName}</span> : null}

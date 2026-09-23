@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { X, Zap, ShieldCheck, Check, ChevronDown, IdCard, RefreshCw } from "lucide-react";
-import { classThumbUrl } from "@/lib/classThumb";
+import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 
 export interface AionAutoApply {
   enabled: boolean;
@@ -236,21 +236,12 @@ export default function AionAutoApplyModal({
               onClick={() => setCharDropOpen((v) => !v)}
               className="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 text-left transition-all hover:border-emerald-500/50 flex items-center gap-3"
             >
-              {selectedChar?.portraitUrl ? (
-                <img
-                  src={selectedChar.portraitUrl}
-                  alt=""
-                  className="h-12 w-12 shrink-0 rounded-lg border border-white/10 bg-black object-cover"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                />
-              ) : (
-                <img
-                  src={classThumbUrl(selectedChar?.aionClass || selectedChar?.gameClassLabel || "dps")}
-                  alt=""
-                  className="h-12 w-12 shrink-0 rounded-lg border border-white/10 bg-black object-contain p-1"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                />
-              )}
+              <CharacterPortraitBadge
+                src={selectedChar?.portraitUrl}
+                aionClass={selectedChar?.aionClass || selectedChar?.gameClassLabel || "dps"}
+                level={selectedChar?.level ?? "—"}
+                size="sm"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black text-emerald-200">{selectedChar?.name || "—"}</p>
                 <p className="truncate text-[8px] font-black uppercase tracking-widest text-cyan-300">{selectedChar?.aionClass || selectedChar?.gameClassLabel || "Class"}</p>
@@ -285,11 +276,12 @@ export default function AionAutoApplyModal({
                       onClick={() => pickChar(c)}
                       className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"}`}
                     >
-                      {c.portraitUrl ? (
-                        <img src={c.portraitUrl} alt="" className="h-8 w-8 shrink-0 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                      ) : (
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black text-[8px] font-black text-cyan-300">{String(c.name || "?").charAt(0).toUpperCase()}</span>
-                      )}
+                      <CharacterPortraitBadge
+                        src={c.portraitUrl}
+                        aionClass={c.aionClass || c.gameClassLabel || "dps"}
+                        level={c.level ?? "—"}
+                        size="sm"
+                      />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-xs font-black">{c.name}</span>
                         <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
