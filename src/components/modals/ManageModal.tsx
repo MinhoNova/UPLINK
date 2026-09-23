@@ -849,8 +849,9 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                                         </div>
                                                                      </div>
 
-{/* character — middle of the banner: circular in-game portrait with the class emblem riding bottom-right (NC style) */}
-                                                                      <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.05] px-3 py-2">
+{/* character — middle of the banner: circular in-game portrait with the class emblem riding bottom-right (NC style). No inner box — merged into the single NC banner */}
+                                                                       <div className="hidden lg:block h-10 w-px bg-white/10 shrink-0" />
+                                                                       <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3">
                                                                          <CharacterPortraitBadge
                                                                             src={app.portraitUrl}
                                                                             aionClass={aionClass || app.role || "dps"}
@@ -867,11 +868,11 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                                               {Number(app.itemLevel) > 0 ? Number(app.itemLevel).toLocaleString() : "—"}
                                                                               <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-400/80">Item Lv</span>
                                                                            </span>
-                                                                           <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-amber-300">
-                                                                              <img src={POWER_ICON} alt="" className="h-3.5 w-auto" loading="lazy" />
-                                                                              {Number(app.cpAp) > 0 ? Number(app.cpAp).toLocaleString() : "—"}
-                                                                              <span className="text-[6px] font-black uppercase tracking-[0.2em] text-amber-400/80">Combat</span>
-                                                                           </span>
+                                                                            <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-amber-300 shrink-0 whitespace-nowrap min-w-0">
+                                                                               <img src={POWER_ICON} alt="" loading="eager" className="h-3.5 w-auto shrink-0" />
+                                                                               {Number(app.cpAp) > 0 ? <span className="tabular-nums whitespace-nowrap">{Number(app.cpAp).toLocaleString()}</span> : <span>—</span>}
+                                                                               <span className="text-[6px] font-black uppercase tracking-[0.2em] text-amber-400/80 shrink-0">Combat</span>
+                                                                            </span>
                                                                         </div>
                                                                         <span
                                                                            className="hidden md:inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap shrink-0"

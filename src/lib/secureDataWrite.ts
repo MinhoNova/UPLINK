@@ -420,7 +420,7 @@ export function validateCharacters(
   }
 
   for (const [id, ex] of existingById) {
-    if (!(incoming as any[]).some((c) => c.id === id) && String((ex as any).userId) !== String(userId)) {
+    if (!(incoming as any[]).some((c) => String(c.id) === id) && String((ex as any).userId) !== String(userId)) {
       return { ok: false, error: "Cannot delete other users' characters" };
     }
   }

@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { portraitProxyPath } from "@/lib/aion2ClassIds";
 
-/** Extract the raw plaync URL out of a stored `/api/aion2/portrait?u=…` proxy path. */
+/** Extract the raw plaync URL out of a stored `/api/aion2/portrait?u=ΓÇª` proxy path. */
 function rawUrlOf(src: string): string {
   if (src.startsWith("/api/aion2/portrait?u=")) {
     try {
