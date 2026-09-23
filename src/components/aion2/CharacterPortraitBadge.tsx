@@ -9,8 +9,8 @@ const SIZES = {
 } as const;
 
 /** NC-style character badge: circular in-game portrait with the class image
- *  floating freely on the bottom edge of the portrait and the level written
- *  on it in white (no disc behind it, exactly like the official site). */
+ *  hanging off the right edge of the portrait and the level written on the
+ *  class image itself in white (no disc behind it, like the official site). */
 export default function CharacterPortraitBadge({
   src,
   aionClass = "",
@@ -29,19 +29,19 @@ export default function CharacterPortraitBadge({
   const s = SIZES[size];
   const cls = aionClass || "dps";
   return (
-    <div className={`relative ${s.box} shrink-0 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shadow-[0_0_16px_rgba(0,255,255,0.22)] ${className}`}>
+    <div className={`relative ${s.box} shrink-0 rounded-full border-2 border-cyan-400/40 bg-black shadow-[0_0_16px_rgba(0,255,255,0.22)] ${className}`}>
       {fallback ? (
-        <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-cyan-400/30 uppercase">
+        <span className="absolute inset-0 flex items-center justify-center rounded-full text-lg font-black text-cyan-400/30 uppercase">
           {String(fallback || "?").slice(0, 1)}
         </span>
       ) : null}
       <CharacterPortrait
         src={src}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full rounded-full object-cover"
         alt=""
         title={cls ? `Game character · ${cls}` : "Game character"}
       />
-      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end justify-center ${s.thumb}`}>
+      <div className={`absolute -right-1.5 bottom-0 flex items-end justify-center ${s.thumb}`}>
         <img
           src={classThumbUrl(cls)}
           alt=""
@@ -50,7 +50,7 @@ export default function CharacterPortraitBadge({
           loading="lazy"
         />
         <span
-          className={`absolute ${s.level} font-black leading-none text-white tabular-nums [text-shadow:0_1px_2px_rgba(0,0,0,0.9),0_0_3px_rgba(0,0,0,0.5)] select-none pointer-events-none`}
+          className={`absolute inset-x-0 bottom-0.5 text-center ${s.level} font-black leading-none text-white tabular-nums [text-shadow:0_1px_2px_rgba(0,0,0,0.9),0_0_3px_rgba(0,0,0,0.5)] select-none pointer-events-none`}
         >
           {level || "—"}
         </span>
