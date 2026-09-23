@@ -239,7 +239,6 @@ export default function AionAutoApplyModal({
               <CharacterPortraitBadge
                 src={selectedChar?.portraitUrl}
                 aionClass={selectedChar?.aionClass || selectedChar?.gameClassLabel || "dps"}
-                level={selectedChar?.level ?? "—"}
                 size="sm"
               />
               <div className="min-w-0 flex-1">
@@ -279,7 +278,6 @@ export default function AionAutoApplyModal({
                       <CharacterPortraitBadge
                         src={c.portraitUrl}
                         aionClass={c.aionClass || c.gameClassLabel || "dps"}
-                        level={c.level ?? "—"}
                         size="sm"
                       />
                       <span className="min-w-0 flex-1">

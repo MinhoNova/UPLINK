@@ -783,9 +783,8 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                app.applicantName || app.name || "Applicant"
                                                             );
 const profileImg = resolveProfileImage(profileUser || { name: displayName }, displayName);
-   const aionClass = app.aionClass || app.className || app.class || "";
- const aionLevel = app.level || app.applicantLevel || "";
- const applicantProfile = applicantProfileHref(app);
+const aionClass = app.aionClass || app.className || app.class || "";
+  const applicantProfile = applicantProfileHref(app);
                                                               const note = sanitizeApplicantNote(app.applicantNote || app.note || "");
                                                               const avgRate = getAverageRating(profileUser?.ratings);
                                                               const rating10 = avgRate > 0 ? Math.round(avgRate * 2 * 10) / 10 : 0;
@@ -855,7 +854,6 @@ const profileImg = resolveProfileImage(profileUser || { name: displayName }, dis
                                                                          <CharacterPortraitBadge
                                                                             src={app.portraitUrl}
                                                                             aionClass={aionClass || app.role || "dps"}
-                                                                            level={aionLevel || "—"}
                                                                             fallback={displayName || app.name || ""}
                                                                          />
                                                                          <div className="flex flex-col gap-1 pl-2 border-l border-white/10 shrink-0 min-w-0">
