@@ -3,13 +3,14 @@ import CharacterPortrait from "./CharacterPortrait";
 import { classThumbUrl } from "@/lib/classThumb";
 
 const SIZES = {
-  sm: { box: "h-12 w-12", emblem: "h-7 w-7", thumb: "h-3.5 w-3.5", level: "text-[6px]" },
-  md: { box: "h-16 w-16 sm:h-20 sm:w-20", emblem: "h-9 w-9", thumb: "h-5 w-5 sm:h-5.5 sm:w-5.5", level: "text-[7px] sm:text-[8px]" },
-  lg: { box: "h-20 w-20 sm:h-24 sm:w-24", emblem: "h-10 w-10", thumb: "h-6 w-6", level: "text-[8px]" },
+  sm: { box: "h-12 w-12", thumb: "h-7 w-7", level: "text-[8px]" },
+  md: { box: "h-16 w-16 sm:h-20 sm:w-20", thumb: "h-9 w-9 sm:h-11 sm:w-11", level: "text-[9px] sm:text-[11px]" },
+  lg: { box: "h-20 w-20 sm:h-24 sm:w-24", thumb: "h-11 w-11 sm:h-14 sm:w-14", level: "text-[10px] sm:text-[13px]" },
 } as const;
 
-/** NC-style character badge: circular in-game portrait with the class emblem
- *  riding on the bottom-right corner (smaller) and the level written on it. */
+/** NC-style character badge: circular in-game portrait with the class image
+ *  floating freely on the bottom edge of the portrait and the level written
+ *  on it in white (no disc behind it, exactly like the official site). */
 export default function CharacterPortraitBadge({
   src,
   aionClass = "",
@@ -40,11 +41,19 @@ export default function CharacterPortraitBadge({
         alt=""
         title={cls ? `Game character · ${cls}` : "Game character"}
       />
-      <div
-        className={`absolute bottom-1 right-1 flex flex-col items-center justify-center gap-px rounded-full border-[1.5px] border-white/35 bg-black/95 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.65)] ${s.emblem}`}
-      >
-        <img src={classThumbUrl(cls)} alt="" title={cls} className={`${s.thumb} object-contain`} loading="lazy" />
-        <span className={`${s.level} font-black leading-none text-cyan-300 tabular-nums`}>{level || "—"}</span>
+      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end justify-center ${s.thumb}`}>
+        <img
+          src={classThumbUrl(cls)}
+          alt=""
+          title={cls}
+          className={`h-full w-full object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]`}
+          loading="lazy"
+        />
+        <span
+          className={`absolute ${s.level} font-black leading-none text-white tabular-nums [text-shadow:0_1px_2px_rgba(0,0,0,0.9),0_0_3px_rgba(0,0,0,0.5)] select-none pointer-events-none`}
+        >
+          {level || "—"}
+        </span>
       </div>
     </div>
   );
