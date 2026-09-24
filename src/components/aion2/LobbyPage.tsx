@@ -7,21 +7,19 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, Loader2, BadgeCheck, RefreshCw, Star, ExternalLink, Link2
+  Bell, BellOff, Palette, BadgeCheck, Star, ExternalLink, IdCard
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
-import { saveDataSmart } from "@/lib/saveDataRouter";
 import { resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
-import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
-import { portraitProxyPath, type VerifiedGameCharacter } from "@/lib/aion2ClassIds";
+import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
@@ -75,11 +73,9 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const [applyCp, setApplyCp] = useState("");
   const [applyNote, setApplyNote] = useState("");
   const [autoAccept, setAutoAccept] = useState(false);
-  const [verifyBusy, setVerifyBusy] = useState(false);
-  const [verifyError, setVerifyError] = useState("");
-  const [verifiedChar, setVerifiedChar] = useState<VerifiedGameCharacter | null>(null);
-  const [resolveLink, setResolveLink] = useState("");
-  const [resolveBusy, setResolveBusy] = useState(false);
+  const [applySelCharId, setApplySelCharId] = useState("");
+  const [applyCharOpen, setApplyCharOpen] = useState(false);
+  const [charactersList, setCharactersList] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -134,6 +130,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
         if (cancelled) return;
         if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
         if (d.lobbies) setLobbies(d.lobbies);
+        if (d.characters && Array.isArray(d.characters)) setCharactersList(d.characters);
         setSignalScan(false);
       }).catch(() => { if (!cancelled) setSignalScan(false); });
     };
@@ -255,55 +252,66 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     } catch { setDeleteError(t("err_network")); } finally { setDeletingId(null); }
   };
 
-  const reapplyCharId = verifiedChar ? `game:${verifiedChar.characterId}` : `${meId}-main`;
+  const applyMyChars = charactersList.filter((c: any) => String(c.userId) === String(meId));
+  const applyChar = applyMyChars.find((c: any) => String(c.id) === applySelCharId) || applyMyChars[0] || null;
 
-  const charProfileHref = (vc: VerifiedGameCharacter): string => {
-    const regionBase = vc.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
-    const official = `${regionBase}/characters/${vc.serverId}/${encodeURIComponent(vc.characterId)}`;
+  const applyGameCharId = (c: any): string => {
+    if (!c) return "";
+    const rid = String(c.id || "");
+    if (rid.startsWith("game:")) return rid.slice(5);
+    return String(c.gameCharacterId || c.characterId || "");
+  };
+
+  const reapplyCharId = applyChar ? `game:${applyGameCharId(applyChar)}` : `${meId}-main`;
+
+  const charProfileHref = (c: any): string => {
+    const charId = applyGameCharId(c);
+    if (!charId || !c?.serverId) return "";
+    const regionBase = c.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
+    const official = `${regionBase}/characters/${c.serverId}/${encodeURIComponent(charId)}`;
     return `/character?u=${encodeURIComponent(official)}`;
   };
 
-  const saveVerifiedCharacter = async (vc: VerifiedGameCharacter | null) => {
-    if (!vc || !meId) return;
-    try {
-      const d: any = await fetch("/api/public-data").then((r) => r.json()).catch(() => ({}));
-      const existing = (Array.isArray(d.characters) ? d.characters : []) as any[];
-      const id = `game:${vc.characterId}`;
-      const idx = existing.findIndex((c: any) => String(c.id) === id);
-      const entry = {
-        id,
-        userId: meId,
-        name: vc.name,
-        aionClass: vc.siteClass || "",
-        gameClassLabel: vc.gameClassLabel,
-        level: vc.level,
-        cpAp: vc.combatPower,
-        combatPower: vc.combatPower,
-        itemLevel: vc.itemLevel,
-        serverId: vc.serverId,
-        serverName: vc.serverName,
-        raceId: vc.raceId,
-        raceName: vc.raceName,
-        portraitUrl: portraitProxyPath(vc.portraitUrl || ""),
-        verifiedAt: vc.verifiedAt,
-        region: vc.region || "kr",
-      };
-      const next = idx >= 0 ? existing.map((c, i) => (i === idx ? entry : c)) : [...existing, entry];
-      await saveDataSmart({ characters: next });
-    } catch {}
+  const seedApplyFields = (c: any) => {
+    if (!c) return;
+    if (c.aionClass) setApplyAionClass(c.aionClass);
+    else if (c.gameClassLabel) setApplyAionClass(c.gameClassLabel);
+    if (Number(c.level) > 0) setApplyLevel(String(c.level));
+    else setApplyLevel("60");
+    if (Number(c.cpAp || c.combatPower) > 0) setApplyCp(String(c.cpAp || c.combatPower));
+    else setApplyCp("");
+  };
+
+  useEffect(() => {
+    if (!applyTarget) return;
+    const list = applyMyChars;
+    const current = applySelCharId && list.some((c: any) => String(c.id) === applySelCharId);
+    if (!current) {
+      const first = list[0] || null;
+      setApplySelCharId(first ? String(first.id) : "");
+      seedApplyFields(first);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyTarget?.id, charactersList]);
+
+  const pickApplyChar = (c: any) => {
+    setApplySelCharId(String(c.id));
+    setApplyCharOpen(false);
+    seedApplyFields(c);
   };
 
   const submitApply = async () => {
     const l = applyTarget;
     if (!meId || !l || applyingId) return;
+    if (!applyChar) { setApplyError(t("apply_noCharacter")); return; }
     if (!applyAionClass) { setApplyError(t("err_pickClass")); return; }
     setApplyingId(String(l.id)); setApplyError("");
     const charId = reapplyCharId;
+    const gid = applyGameCharId(applyChar);
     try {
-      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(verifiedChar ? { gameCharacterId: verifiedChar.characterId, itemLevel: verifiedChar.itemLevel, serverId: verifiedChar.serverId, serverName: verifiedChar.serverName, region: verifiedChar.region || "kr", portraitUrl: portraitProxyPath(verifiedChar.portraitUrl || ""), siteClass: verifiedChar.siteClass || "", raceName: verifiedChar.raceName || "", genderName: verifiedChar.genderName || "", level: Number(applyLevel) || verifiedChar.level, cpAp: Number(applyCp) || verifiedChar.combatPower } : {}) } }) });
+      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(gid ? { gameCharacterId: gid, itemLevel: Number(applyChar.itemLevel) || 0, serverId: applyChar.serverId, serverName: applyChar.serverName, region: applyChar.region || "kr", portraitUrl: String(applyChar.portraitUrl || ""), siteClass: applyChar.aionClass || "", raceName: applyChar.raceName || "", genderName: applyChar.genderName || "", level: Number(applyLevel) || Number(applyChar.level) || 1, cpAp: Number(applyCp) || Number(applyChar.cpAp || applyChar.combatPower) || 0 } : {}) } }) });
       if (res.ok) {
-        if (verifiedChar) { await saveVerifiedCharacter(verifiedChar); }
-        setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setVerifiedChar(null); window.dispatchEvent(new Event("data-refresh"));
+        setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setApplySelCharId(""); setApplyCharOpen(false); window.dispatchEvent(new Event("data-refresh"));
       } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
     } catch { setApplyError(t("err_network")); } finally { setApplyingId(null); }
   };
@@ -380,23 +388,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     setHoveredUserId(null);
     setHoverCard(null);
     window.dispatchEvent(new CustomEvent("open-dm-chat", { detail: { userId } }));
-  };
-
-  const runResolveLink = async () => {
-    if (!resolveLink.trim() || resolveBusy) return;
-    setResolveBusy(true); setVerifyError(""); setVerifiedChar(null);
-    try {
-      const res = await fetch("/api/aion2/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ link: resolveLink.trim().slice(0, 500) }) });
-      const d: any = await res.json().catch(() => ({}));
-      if (!res.ok) { setVerifyError(d.error || t("verify_notFound")); return; }
-      if (d.alreadyLinked) { setVerifyError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
-      const vc: VerifiedGameCharacter = d.character as VerifiedGameCharacter;
-      setVerifiedChar(vc);
-      saveVerifiedCharacter(vc);
-      if (vc.siteClass && (AION2_CLASSES as readonly string[]).includes(vc.siteClass)) setApplyAionClass(vc.siteClass);
-      if (vc.level) setApplyLevel(String(vc.level));
-      if (vc.combatPower) setApplyCp(String(vc.combatPower));
-    } catch { setVerifyError(t("err_network")); } finally { setResolveBusy(false); }
   };
 
   const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
@@ -606,65 +597,85 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                 <h3 className="text-base font-black uppercase tracking-widest text-white">{t("apply_title")}</h3>
                 <button onClick={() => !applyingId && setApplyTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
               </div>
-              <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2"><BadgeCheck className="w-3.5 h-3.5 text-violet-300" /> {t("apply_linkRequired") || "Required — link your game character to apply"}</p>
-              <div className="mt-4 rounded-2xl border border-violet-500/25 bg-violet-500/[0.04] p-3">
-                <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-violet-300">
-                  <BadgeCheck className="w-3.5 h-3.5" /> {t("verify_paste") || "Paste your official character page link"} {verifyBusy ? (<RefreshCw className="w-3 h-3 animate-spin text-violet-400" />) : null}
-                </p>
-                <div className="mt-3 space-y-2">
-                    <div className="flex gap-2">
-                      <input value={resolveLink} onChange={(e) => setResolveLink(e.target.value)} placeholder={t("verify_linkPlaceholder") || "Paste your official character page link (tw.ncsoft.com or aion2.plaync.com)"} className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#050814]/70 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60" />
-                      <button type="button" disabled={resolveBusy} onClick={runResolveLink} className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white disabled:opacity-50 shrink-0">
-                        {resolveBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />} {resolveBusy ? (t("verify_checking") || "Checking") : (t("verify_linkButton") || "Resolve")}
-                      </button>
+              <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2"><BadgeCheck className="w-3.5 h-3.5 text-violet-300" /> {t("apply_pickCharacter") || "Pick your character"}</p>
+              {applyChar ? (
+                <div className="mt-4 rounded-2xl border border-violet-500/25 bg-violet-500/[0.04] p-3 relative">
+                  <button
+                    type="button"
+                    onClick={() => setApplyCharOpen((v) => !v)}
+                    className="w-full flex items-center gap-3 text-left"
+                  >
+                    {applyChar.portraitUrl ? (<img src={String(applyChar.portraitUrl)} alt="" className="h-14 w-14 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : (<div className="h-14 w-14 rounded-lg border border-white/10 bg-black flex items-center justify-center"><Swords className="w-5 h-5 text-cyan-400/60" /></div>)}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-black text-emerald-200">{applyChar.name || "Character"}</p>
+                      <p className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-300">{applyChar.aionClass || applyChar.gameClassLabel || "Unknown class"}</p>
+                      <p className="truncate text-[8px] font-bold uppercase tracking-widest text-slate-400">
+                        {applyChar.raceName || "—"}{applyChar.genderName ? ` · ${applyChar.genderName}` : ""} · {applyChar.serverName}
+                        <span className="ml-1.5 rounded border border-white/10 bg-white/5 px-1 py-px text-[7px] uppercase text-slate-300">{applyChar.region === "tw" ? "TW" : "KR"}</span>
+                      </p>
                     </div>
-                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-500">{t("verify_linkHint") || "Open your character on the official site and copy its link"}</p>
-                    {verifyError && (<p className="text-center text-[9px] font-bold uppercase tracking-widest text-red-400">{verifyError}</p>)}
-                    {verifiedChar && (
-                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-2.5">
-                        <div className="flex items-center gap-3">
-                          {verifiedChar.portraitUrl ? (<img src={portraitProxyPath(verifiedChar.portraitUrl)} alt="" className="h-14 w-14 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : null}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-black text-emerald-200">{verifiedChar.name}</p>
-                            <p className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-300">{verifiedChar.siteClass || verifiedChar.gameClassLabel || "Unknown class"}</p>
-                            <p className="truncate text-[8px] font-bold uppercase tracking-widest text-slate-400">
-                              {verifiedChar.raceName || "—"}{verifiedChar.genderName ? ` · ${verifiedChar.genderName}` : ""} · {verifiedChar.serverName}
-                              <span className="ml-1.5 rounded border border-white/10 bg-white/5 px-1 py-px text-[7px] uppercase text-slate-300">{verifiedChar.region === "tw" ? "TW" : "KR"}</span>
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <BadgeCheck className="h-4 w-4 text-emerald-400" />
-                            <a href={charProfileHref(verifiedChar)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20 transition-all">
-                              <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full profile"}
-                            </a>
-                          </div>
-                        </div>
-                        <div className="mt-2 grid grid-cols-3 gap-1.5">
-                          <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-center">
-                            <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Lv</p>
-                            <p className="text-sm font-black text-white tabular-nums">{verifiedChar.level}</p>
-                          </div>
-                          <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2 py-1.5 text-center">
-                            <p className="text-[7px] font-black uppercase tracking-widest text-violet-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />Item Lv</p>
-                            <p className="text-sm font-black text-violet-300 tabular-nums">{verifiedChar.itemLevel > 0 ? verifiedChar.itemLevel.toLocaleString() : "—"}</p>
-                          </div>
-                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-center">
-                            <p className="text-[7px] font-black uppercase tracking-widest text-amber-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />CP</p>
-                            <p className="text-sm font-black text-amber-300 tabular-nums">{verifiedChar.combatPower.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <BadgeCheck className="h-4 w-4 text-emerald-400" />
+                      {(() => { const href = charProfileHref(applyChar); return href ? (
+                        <a href={href} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all">
+                          <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full profile"}
+                        </a>
+                      ) : null; })()}
+                    </div>
+                  </button>
+                  {applyCharOpen && applyMyChars.length > 1 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 overflow-y-auto custom-scrollbar rounded-xl border border-white/10 bg-[#0a0f26] shadow-2xl max-h-[220px]">
+                      {applyMyChars.map((c: any) => {
+                        const isSel = String(c.id) === String(applyChar?.id);
+                        return (
+                          <button
+                            key={String(c.id)}
+                            type="button"
+                            onClick={() => pickApplyChar(c)}
+                            className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"}`}
+                          >
+                            {c.portraitUrl ? (<img src={String(c.portraitUrl)} alt="" className="h-10 w-10 rounded-lg border border-white/10 bg-black object-cover shrink-0" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : (<div className="h-10 w-10 rounded-lg border border-white/10 bg-black flex items-center justify-center shrink-0"><Swords className="w-4 h-4 text-cyan-400/60" /></div>)}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-black">{c.name}</span>
+                              <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
+                            </span>
+                            <span className="text-[8px] font-black text-violet-300 tabular-nums shrink-0">{Number(c.itemLevel) > 0 ? Number(c.itemLevel).toLocaleString() : "—"} iLvl</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+                    <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-center">
+                      <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Lv</p>
+                      <p className="text-sm font-black text-white tabular-nums">{applyChar.level}</p>
+                    </div>
+                    <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2 py-1.5 text-center">
+                      <p className="text-[7px] font-black uppercase tracking-widest text-violet-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />Item Lv</p>
+                      <p className="text-sm font-black text-violet-300 tabular-nums">{Number(applyChar.itemLevel) > 0 ? Number(applyChar.itemLevel).toLocaleString() : "—"}</p>
+                    </div>
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-center">
+                      <p className="text-[7px] font-black uppercase tracking-widest text-amber-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />CP</p>
+                      <p className="text-sm font-black text-amber-300 tabular-nums">{Number(applyChar.cpAp || applyChar.combatPower) > 0 ? Number(applyChar.cpAp || applyChar.combatPower).toLocaleString() : "—"}</p>
+                    </div>
                   </div>
-              </div>
-              {!verifiedChar && (
-                <p className="mt-3 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-center text-[9px] font-bold uppercase tracking-widest text-red-400">
-                  {t("apply_linkNeeded") || "You must link your character above to apply"}
-                </p>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-4 text-center">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-orange-300">{t("apply_noCharacter") || "You don't have any linked characters yet"}</p>
+                  <p className="mt-1 text-[8px] font-bold uppercase tracking-widest text-slate-500">{t("apply_addCharacterHint") || "Link your character once in My Characters — then apply with it anywhere"}</p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/my-characters")}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white hover:from-emerald-500 hover:to-teal-500 transition-all"
+                  >
+                    <IdCard className="w-3.5 h-3.5" /> {t("apply_addCharacter") || "Add your character"}
+                  </button>
+                </div>
               )}
               <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_note")}</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder={t("apply_notePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
               {applyError && (<p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>)}
-              <button onClick={submitApply} disabled={!verifiedChar || !applyAionClass || !!applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : (verifiedChar ? (t("apply_send") || "Apply") : (t("apply_linkFirst") || "Link Character First"))}</button>
+              <button onClick={submitApply} disabled={!applyChar || !applyAionClass || !!applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : (applyChar ? (t("apply_send") || "Apply") : (t("apply_linkFirst") || "Link Character First"))}</button>
             </motion.div>
           </motion.div>
         )}

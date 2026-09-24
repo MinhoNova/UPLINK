@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { X, Zap, ShieldCheck, Check, ChevronDown, IdCard, RefreshCw } from "lucide-react";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 
@@ -29,6 +30,7 @@ export default function AionAutoApplyModal({
   autoAccept = false,
   onAutoAcceptChange,
 }: AionAutoApplyModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -67,20 +69,24 @@ export default function AionAutoApplyModal({
   useEffect(() => {
     if (!isOpen || !meId) return;
     let alive = true;
-    fetch("/api/public-data")
-      .then((r) => r.json())
-      .then((d: any) => {
-        if (!alive) return;
-        const list = (Array.isArray(d.characters) ? d.characters : []).filter((c: any) => String(c.userId) === String(meId));
-        setCharacters(list);
-        setSelCharId((prev) => {
-          if (prev && list.some((c: any) => String(c.id) === String(prev))) return prev;
-          return list[0] ? String(list[0].id) : "";
-        });
-        if (list[0]) setCfg((p) => ({ ...p, ...charPatch(list[0]) }));
-      })
-      .catch(() => {});
-    return () => { alive = false; };
+    const load = () => {
+      fetch("/api/data", { credentials: "include" })
+        .then((r) => r.json())
+        .then((d: any) => {
+          if (!alive) return;
+          const list = (Array.isArray(d.characters) ? d.characters : []).filter((c: any) => String(c.userId) === String(meId));
+          setCharacters(list);
+          setSelCharId((prev) => {
+            if (prev && list.some((c: any) => String(c.id) === String(prev))) return prev;
+            return list[0] ? String(list[0].id) : "";
+          });
+          if (list[0]) setCfg((p) => ({ ...p, ...charPatch(list[0]) }));
+        })
+        .catch(() => {});
+    };
+    load();
+    window.addEventListener("data-refresh", load);
+    return () => { alive = false; window.removeEventListener("data-refresh", load); };
   }, [isOpen, meId]);
 
   if (!isOpen) return null;
@@ -170,7 +176,7 @@ export default function AionAutoApplyModal({
             type="button"
             onClick={() => {
               if (!meId) { setError("Sign in to use auto-apply"); return; }
-              if (!selectedChar) { setError("Link a character on an offer first — auto-apply needs your character"); return; }
+              if (!selectedChar) { setError("Link a character first — add one in My Characters"); return; }
               set({ enabled: !cfg.enabled });
             }}
             disabled={saving}
@@ -219,14 +225,14 @@ export default function AionAutoApplyModal({
         {characters.length === 0 ? (
           <div className="mt-2 rounded-xl border border-orange-500/25 bg-orange-500/[0.06] p-3 text-center">
             <p className="text-[9px] font-black uppercase tracking-widest text-orange-300">
-              Required — you must link your official character page first (open an offer and paste your link)
+              Required — link your official character page first (add it in My Characters)
             </p>
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={() => { setIsOpen(false); router.push("/my-characters"); }}
               className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white"
             >
-              <IdCard className="h-3 w-3" /> Open an offer & paste your link
+              <IdCard className="h-3 w-3" /> Add your character
             </button>
           </div>
         ) : (

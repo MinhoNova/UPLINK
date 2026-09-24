@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Shield,
@@ -49,6 +50,7 @@ export default function MyProfileClient() {
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
   const myId = String((session?.user as any)?.id || "");
+  const router = useRouter();
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const refresh = useCallback(() => {
@@ -569,13 +571,33 @@ export default function MyProfileClient() {
         </div>
 
         {/* ══ MY CHARACTERS ══ */}
-        {myChars.length > 0 && (
-          <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mb-8">
-            <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
-              <Swords className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">My Characters</h3>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{myChars.length} verified</span>
+        <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mb-8">
+          <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
+            <Swords className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">My Characters</h3>
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{myChars.length} verified</span>
+            <button
+              type="button"
+              onClick={() => router.push("/my-characters")}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all"
+            >
+              <ExternalLink className="w-2.5 h-2.5" /> Manage
+            </button>
+          </div>
+          {myChars.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/15 bg-black/20 p-6 text-center">
+              <Swords className="mx-auto h-6 w-6 text-slate-600" />
+              <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-slate-300">No characters linked yet</p>
+              <p className="mt-1 text-[8px] font-bold uppercase tracking-widest text-slate-500">Link your official character page once — then apply to any offer with it</p>
+              <button
+                type="button"
+                onClick={() => router.push("/my-characters")}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#074f7b] to-[#41389f] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all"
+              >
+                <Swords className="w-3 h-3" /> Link your first character
+              </button>
             </div>
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {myChars.map((c: any) => {
                 const href = charProfileHref(c);
@@ -624,8 +646,8 @@ export default function MyProfileClient() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Picture */}
