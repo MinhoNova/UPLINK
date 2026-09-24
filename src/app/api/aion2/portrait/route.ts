@@ -20,7 +20,9 @@ interface EdgeCache {
   put(req: Request, res: Response): Promise<void>;
 }
 
-const edgeCache = (caches as unknown as { default: EdgeCache }).default;
+const edgeCache = (globalThis as unknown as { caches?: { default: EdgeCache } }).caches
+  ? (globalThis as unknown as { caches?: { default: EdgeCache } }).caches!.default ?? null
+  : null;
 
 export async function GET(req: Request) {
   const rl = await rateLimitByIp(getClientIp(req), "aion2:portrait", 240, 60_000);
@@ -32,11 +34,13 @@ export async function GET(req: Request) {
     return new Response("blocked", { status: 403 });
   }
 
-  try {
-    const cached = await edgeCache.match(req);
-    if (cached) return cached;
-  } catch {
-    // Cache API unavailable (e.g. local Node dev) — fall through to upstream.
+  if (edgeCache) {
+    try {
+      const cached = await edgeCache.match(req);
+      if (cached) return cached;
+    } catch {
+      // Cache API unavailable (e.g. local Node dev) — fall through to upstream.
+    }
   }
 
   try {
@@ -60,10 +64,12 @@ export async function GET(req: Request) {
         "Access-Control-Allow-Origin": "*",
       },
     });
-    try {
-      await edgeCache.put(req, res.clone());
-    } catch {
-      // best-effort edge cache — a miss still proxies fine.
+    if (edgeCache) {
+      try {
+        await edgeCache.put(req, res.clone());
+      } catch {
+        // best-effort edge cache — a miss still proxies fine.
+      }
     }
     return res;
   } catch {
