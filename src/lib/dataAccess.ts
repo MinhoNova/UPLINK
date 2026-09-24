@@ -20,7 +20,7 @@ export function filterDataForUser(
 
   if (Array.isArray(filtered.friends)) {
     filtered.friends = (filtered.friends as { requester?: string; target?: string }[]).filter(
-      (f) => f.requester === userId || f.target === userId
+      (f) => String(f.requester) === String(userId) || String(f.target) === String(userId)
     );
   }
 

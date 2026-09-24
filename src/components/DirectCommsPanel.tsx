@@ -180,7 +180,9 @@ export default function DirectCommsPanel() {
   const directMessages = data?.directMessages || [];
   const friends = data?.friends || [];
 
-  const pendingRequests = friends.filter((f: any) => f.status === "pending" && f.target === currentUserId);
+  const pendingRequests = friends.filter(
+    (f: any) => f.status === "pending" && String(f.target) === String(currentUserId)
+  );
 
   const playMessageSound = async () => {
     try {
@@ -364,26 +366,28 @@ export default function DirectCommsPanel() {
 
   const getFriendStatus = (userId2: string) => {
     const entry = friends.find((f: any) =>
-      (f.requester === currentUserId && f.target === userId2) ||
-      (f.requester === userId2 && f.target === currentUserId)
+      (String(f.requester) === String(currentUserId) && String(f.target) === String(userId2)) ||
+      (String(f.requester) === String(userId2) && String(f.target) === String(currentUserId))
     );
     if (!entry) return "none";
     if (entry.status === "accepted") return "friends";
-    if (entry.status === "pending" && entry.requester === currentUserId) return "pending_sent";
-    if (entry.status === "pending" && entry.target === currentUserId) return "pending_received";
+    if (entry.status === "pending" && String(entry.requester) === String(currentUserId)) return "pending_sent";
+    if (entry.status === "pending" && String(entry.target) === String(currentUserId)) return "pending_received";
     return "none";
   };
 
   const getMutualFriendsCount = (userId2: string) => {
+    const myId = String(currentUserId);
+    const theirId = String(userId2);
     const myFriendIds = new Set(
       friends
-        .filter((f: any) => f.status === "accepted" && (f.requester === currentUserId || f.target === currentUserId))
+        .filter((f: any) => f.status === "accepted" && (String(f.requester) === myId || String(f.target) === myId))
         .map((f: any) => String(f.requester === currentUserId ? f.target : f.requester))
     );
     const theirFriendIds = friends
-      .filter((f: any) => f.status === "accepted" && (f.requester === userId2 || f.target === userId2))
+      .filter((f: any) => f.status === "accepted" && (String(f.requester) === theirId || String(f.target) === theirId))
       .map((f: any) => String(f.requester === userId2 ? f.target : f.requester));
-    return theirFriendIds.filter((id: string) => myFriendIds.has(id) && id !== String(currentUserId) && id !== String(userId2)).length;
+    return theirFriendIds.filter((id: string) => myFriendIds.has(id) && id !== myId && id !== theirId).length;
   };
 
   const isUserBlocked = (userId: string) => {
@@ -446,6 +450,7 @@ export default function DirectCommsPanel() {
       if (res.ok) {
         const result: any = await res.json();
         setData({ ...data, friends: [...friends, result.friend] });
+        window.dispatchEvent(new CustomEvent("data-refresh"));
       }
     } catch {}
   };
@@ -457,13 +462,22 @@ export default function DirectCommsPanel() {
         body: JSON.stringify({ action, targetId: reqId }),
       });
       if (res.ok) {
-        const updated = { ...data };
         if (action === "accept") {
-          updated.friends = updated.friends.map((f: any) => f.id === reqId ? { ...f, status: "accepted" } : f);
+          setData((prev: any) => ({
+            ...prev,
+            friends: (prev.friends || []).map((f: any) =>
+              f.id === reqId || (f.status === "pending" && String(f.target) === String(currentUserId))
+                ? { ...f, status: "accepted" }
+                : f
+            ),
+          }));
         } else {
-          updated.friends = updated.friends.filter((f: any) => f.id !== reqId);
+          setData((prev: any) => ({
+            ...prev,
+            friends: (prev.friends || []).filter((f: any) => f.id !== reqId),
+          }));
         }
-        setData(updated);
+        window.dispatchEvent(new CustomEvent("data-refresh"));
       }
     } catch {}
   };

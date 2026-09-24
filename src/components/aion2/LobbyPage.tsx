@@ -377,6 +377,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       if (res.ok) {
         const result: any = await res.json();
         setFriends((prev: any[]) => [...(prev || []), result.friend]);
+        window.dispatchEvent(new CustomEvent("data-refresh"));
         flashFriendMsg(t("hp_requestSent") || "Friend request sent");
       } else {
         const d: any = await res.json().catch(() => ({}));
@@ -390,6 +391,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", targetId: reqId }) });
       if (res.ok) {
         setFriends((prev: any[]) => (prev || []).map((f: any) => (String(f.id) === String(reqId) ? { ...f, status: "accepted" } : f)));
+        window.dispatchEvent(new CustomEvent("data-refresh"));
         flashFriendMsg(t("hp_requestAccepted") || "You are now friends");
       } else {
         const d: any = await res.json().catch(() => ({}));
@@ -403,6 +405,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove", targetId }) });
       if (res.ok) {
         setFriends((prev: any[]) => (prev || []).filter((f: any) => !(String(f.requester) === meId && String(f.target) === String(targetId)) && !(String(f.requester) === String(targetId) && String(f.target) === meId)));
+        window.dispatchEvent(new CustomEvent("data-refresh"));
         flashFriendMsg(t("hp_unfriended") || "Removed from friends");
       } else {
         const d: any = await res.json().catch(() => ({}));

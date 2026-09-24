@@ -103,13 +103,13 @@ export default function PlayerProfileModal() {
   const getFriendStatus = (userId2: string) => {
     const entry = friends.find(
       (f) =>
-        (f.requester === currentUserId && f.target === userId2) ||
-        (f.requester === userId2 && f.target === currentUserId)
+        (String(f.requester) === String(currentUserId) && String(f.target) === String(userId2)) ||
+        (String(f.requester) === String(userId2) && String(f.target) === String(currentUserId))
     );
     if (!entry) return "none";
     if (entry.status === "accepted") return "friends";
-    if (entry.status === "pending" && entry.requester === currentUserId) return "pending_sent";
-    if (entry.status === "pending" && entry.target === currentUserId) return "pending_received";
+    if (entry.status === "pending" && String(entry.requester) === String(currentUserId)) return "pending_sent";
+    if (entry.status === "pending" && String(entry.target) === String(currentUserId)) return "pending_received";
     return "none";
   };
 

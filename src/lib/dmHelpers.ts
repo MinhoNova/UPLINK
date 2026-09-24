@@ -112,9 +112,10 @@ export function filterThreadMessages(messages: DmMessage[], handle: string, peer
 export type DmFriendEntry = { requester?: string; target?: string; status?: string };
 
 export function getAcceptedFriendIds(userId: string, friends: DmFriendEntry[]): Set<string> {
+  const myId = String(userId);
   return new Set(
     friends
-      .filter((f) => f.status === "accepted" && (f.requester === userId || f.target === userId))
+      .filter((f) => f.status === "accepted" && (String(f.requester) === myId || String(f.target) === myId))
       .map((f) => String(f.requester === userId ? f.target : f.requester))
   );
 }
