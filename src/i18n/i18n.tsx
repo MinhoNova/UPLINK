@@ -201,6 +201,8 @@ const en: Dict = {
   hp_accept: "Accept",
   hp_friends: "Friends",
   hp_unfriend: "Unfriend",
+  hp_block: "Block",
+  hp_unblock: "Unblock",
   auto_pickClass: "Pick your class first",
   auto_canSave: "Could not save settings",
   auto_unlinked: "Unlinked operative",
@@ -370,6 +372,8 @@ const ar: Dict = {
   hp_accept: "قبول",
   hp_friends: "أصدقاء",
   hp_unfriend: "إزالة الصداقة",
+  hp_block: "بلوك",
+  hp_unblock: "إلغاء البلوك",
 };
 
 const es: Dict = {

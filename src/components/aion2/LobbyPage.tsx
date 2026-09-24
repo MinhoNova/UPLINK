@@ -384,6 +384,23 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     } catch {}
   };
 
+  const toggleBlock = async (targetId: string) => {
+    if (!meId || !targetId) return;
+    const meIdx = registeredUsers.findIndex((u: any) => String(u.id) === meId);
+    if (meIdx === -1) return;
+    const me = registeredUsers[meIdx];
+    const blocked = Array.isArray(me.blocked) ? [...me.blocked.map(String)] : [];
+    const exists = blocked.includes(String(targetId));
+    const nextMe = { ...me, blocked: exists ? blocked.filter((id) => id !== String(targetId)) : [...blocked, String(targetId)] };
+    try {
+      const res = await fetch("/api/users/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile: nextMe }) });
+      if (res.ok) {
+        setRegisteredUsers((prev: any[]) => prev.map((u) => (String(u.id) === meId ? { ...u, blocked: nextMe.blocked } : u)));
+        window.dispatchEvent(new Event("data-refresh"));
+      }
+    } catch {}
+  };
+
   const openDm = (userId: string) => {
     setHoveredUserId(null);
     setHoverCard(null);
@@ -763,6 +780,16 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       <MessageCircle className="w-4 h-4" />
                       <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_message")}</span>
                     </button>
+                    {oid && String(oid) !== meId && (
+                      <button
+                        type="button"
+                        onClick={() => toggleBlock(oid)}
+                        className={`flex items-center gap-1.5 hover:scale-110 transition ${isUserBlocked(oid) ? "text-yellow-400" : "text-red-400"}`}
+                      >
+                        <Ban className="w-4 h-4" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">{isUserBlocked(oid) ? (t("hp_unblock") || "Unblock") : (t("hp_block") || "Block")}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
