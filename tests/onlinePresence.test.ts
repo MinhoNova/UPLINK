@@ -15,7 +15,7 @@ describe("isUserOnline", () => {
   it("returns false for missing / non-numeric lastSeenAt", () => {
     expect(isUserOnline(null, now)).toBe(false);
     expect(isUserOnline({}, now)).toBe(false);
-    expect(isUserOnline({ lastSeenAt: "recent" }, now)).toBe(false);
+    expect(isUserOnline({ lastSeenAt: "recent" as unknown as number }, now)).toBe(false);
   });
 });
 
