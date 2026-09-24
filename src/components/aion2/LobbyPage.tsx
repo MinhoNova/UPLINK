@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, BadgeCheck, Star, ExternalLink, IdCard
+  Bell, BellOff, Palette, BadgeCheck, Star, ExternalLink, IdCard, Clock
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
@@ -91,6 +91,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const scheduleHide = () => { if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current); hoverHideTimer.current = window.setTimeout(() => { setHoveredUserId(null); setHoverCard(null); }, 250); };
   const cancelHide = () => { if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current); hoverHideTimer.current = null; };
   const [friends, setFriends] = useState<any[]>([]);
+  const [friendActionMsg, setFriendActionMsg] = useState<string | null>(null);
+  const friendMsgTimer = useRef<number | null>(null);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [offerNotificationSettings, setOfferNotificationSettings] = useState<OfferNotificationSettings>(DEFAULT_OFFER_NOTIFICATION_SETTINGS);
   const knownOfferIdsRef = useRef<Set<string> | null>(null);
@@ -362,26 +364,51 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     return Array.isArray(me?.blocked) && me.blocked.map(String).includes(String(userId));
   };
 
+  const flashFriendMsg = (msg: string) => {
+    setFriendActionMsg(msg);
+    if (friendMsgTimer.current) window.clearTimeout(friendMsgTimer.current);
+    friendMsgTimer.current = window.setTimeout(() => setFriendActionMsg(null), 4000);
+  };
+
   const sendFriendRequest = async (targetId: string) => {
     if (!meId || String(targetId) === meId) return;
     try {
       const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", targetId }) });
-      if (res.ok) { const result: any = await res.json(); setFriends((prev: any[]) => [...(prev || []), result.friend]); }
-    } catch {}
+      if (res.ok) {
+        const result: any = await res.json();
+        setFriends((prev: any[]) => [...(prev || []), result.friend]);
+        flashFriendMsg(t("hp_requestSent") || "Friend request sent");
+      } else {
+        const d: any = await res.json().catch(() => ({}));
+        flashFriendMsg(d.error || t("hp_requestFailed") || "Could not send friend request");
+      }
+    } catch { flashFriendMsg(t("err_network")); }
   };
 
   const handleFriendAccept = async (reqId: string) => {
     try {
       const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", targetId: reqId }) });
-      if (res.ok) setFriends((prev: any[]) => (prev || []).map((f: any) => (String(f.id) === String(reqId) ? { ...f, status: "accepted" } : f)));
-    } catch {}
+      if (res.ok) {
+        setFriends((prev: any[]) => (prev || []).map((f: any) => (String(f.id) === String(reqId) ? { ...f, status: "accepted" } : f)));
+        flashFriendMsg(t("hp_requestAccepted") || "You are now friends");
+      } else {
+        const d: any = await res.json().catch(() => ({}));
+        flashFriendMsg(d.error || t("hp_requestFailed") || "Could not accept friend request");
+      }
+    } catch { flashFriendMsg(t("err_network")); }
   };
 
   const handleUnfriend = async (targetId: string) => {
     try {
       const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove", targetId }) });
-      if (res.ok) setFriends((prev: any[]) => (prev || []).filter((f: any) => !(String(f.requester) === meId && String(f.target) === String(targetId)) && !(String(f.requester) === String(targetId) && String(f.target) === meId)));
-    } catch {}
+      if (res.ok) {
+        setFriends((prev: any[]) => (prev || []).filter((f: any) => !(String(f.requester) === meId && String(f.target) === String(targetId)) && !(String(f.requester) === String(targetId) && String(f.target) === meId)));
+        flashFriendMsg(t("hp_unfriended") || "Removed from friends");
+      } else {
+        const d: any = await res.json().catch(() => ({}));
+        flashFriendMsg(d.error || t("hp_requestFailed") || "Could not remove friend");
+      }
+    } catch { flashFriendMsg(t("err_network")); }
   };
 
   const toggleBlock = async (targetId: string) => {
@@ -397,8 +424,12 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       if (res.ok) {
         setRegisteredUsers((prev: any[]) => prev.map((u) => (String(u.id) === meId ? { ...u, blocked: nextMe.blocked } : u)));
         window.dispatchEvent(new Event("data-refresh"));
+        flashFriendMsg(isUserBlocked(targetId) ? (t("hp_unblocked") || "Unblocked") : (t("hp_blocked") || "Blocked"));
+      } else {
+        const d: any = await res.json().catch(() => ({}));
+        flashFriendMsg(d.error || t("err_network"));
       }
-    } catch {}
+    } catch { flashFriendMsg(t("err_network")); }
   };
 
   const openDm = (userId: string) => {
@@ -729,6 +760,59 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                   {hBanner && <img src={hBanner} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-[#080810]/20 to-transparent pointer-events-none" />
                 </div>
+                {oid && String(oid) !== meId && (
+                  <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+                    {friendStatus === "none" && (
+                      <button
+                        type="button"
+                        title={!meId ? (t("hp_loginToAdd") || "Log in to add friends") : (isUserBlocked(oid) ? (t("hp_youBlocked") || "You blocked this player") : (t("hp_addFriend")))}
+                        disabled={!meId || isUserBlocked(oid)}
+                        onClick={() => sendFriendRequest(oid)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-[#00ffff]/40 bg-black/50 backdrop-blur text-[#00ffff] hover:scale-110 hover:bg-[#00ffff]/20 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-black/50"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </button>
+                    )}
+                    {friendStatus === "pending_sent" && (
+                      <span title={t("hp_pending")} className="flex h-9 w-9 items-center justify-center rounded-full border border-yellow-500/40 bg-black/50 backdrop-blur text-yellow-400 cursor-default">
+                        <Clock className="w-4 h-4" />
+                      </span>
+                    )}
+                    {friendStatus === "pending_received" && (
+                      <button
+                        type="button"
+                        onClick={() => { const f = friends.find((fs: any) => String(fs.requester) === oid && String(fs.target) === meId); if (f) handleFriendAccept(f.id); }}
+                        title={t("hp_accept")}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-green-500/40 bg-black/50 backdrop-blur text-green-400 hover:scale-110 hover:bg-green-500/20 transition"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                      </button>
+                    )}
+                    {friendStatus === "friends" && (
+                      <button
+                        type="button"
+                        onMouseEnter={() => setUnfriendHover(true)}
+                        onMouseLeave={() => setUnfriendHover(false)}
+                        onClick={() => handleUnfriend(oid)}
+                        title={unfriendHover ? (t("hp_unfriend")) : (t("hp_friends"))}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full border bg-black/50 backdrop-blur transition ${unfriendHover ? "border-red-500/50 text-red-400 hover:bg-red-500/20" : "border-[#1877f2]/40 text-[#5b9eff]"}`}
+                      >
+                        {unfriendHover ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      </button>
+                    )}
+                    <button type="button" onClick={() => oid && openDm(oid)} title={t("hp_message")} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#ff007f]/40 bg-black/50 backdrop-blur text-[#ff007f] hover:scale-110 hover:bg-[#ff007f]/15 transition">
+                      <MessageCircle className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleBlock(oid)}
+                      title={isUserBlocked(oid) ? (t("hp_unblock") || "Unblock") : (t("hp_block") || "Block")}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border bg-black/50 backdrop-blur transition ${isUserBlocked(oid) ? "border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/15" : "border-red-500/40 text-red-400 hover:bg-red-500/15 hover:scale-110"}`}
+                    >
+                      <Ban className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 <div className="px-5 -mt-10 relative z-10 flex items-end gap-3">
                   <div className="rounded-full overflow-hidden border-[3px] border-[#080810] shadow-[0_0_24px_rgba(255,0,127,0.25)] bg-black shrink-0" style={{ width: 80, height: 80 }}>
                     {hAvatar ? (<img src={hAvatar} alt="" className={profileImgClass(hAvatar, "w-full h-full rounded-full")} onError={(e) => { (e.currentTarget as HTMLImageElement).src = cardPic || ""; }} />) : (<div className="w-full h-full flex items-center justify-center"><Users className="w-6 h-6 text-gray-600" /></div>)}
@@ -745,52 +829,15 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                   </div>
                 </div>
                 <div className="px-5 pb-4 pt-2">
-                  <div className="flex items-center justify-center gap-2 py-1.5 flex-wrap">
+                  <div className="flex items-center justify-center gap-5 py-1.5">
                     <div className="flex flex-col items-center gap-0.5">
                       <Users className="w-4 h-4 text-[#00ffff]" />
                       <span className="text-[10px] font-black text-white tabular-nums">{owner?.friends?.length ?? 0}</span>
                     </div>
-                    {oid && String(oid) !== meId && friendStatus === "none" && (
-                      <button type="button" disabled={!meId || isUserBlocked(oid)} onClick={() => sendFriendRequest(oid)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40">
-                        <UserPlus className="w-3.5 h-3.5" /> {t("hp_addFriend")}
-                      </button>
-                    )}
-                    {oid && String(oid) !== meId && friendStatus === "pending_sent" && (
-                      <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
-                        <UserPlus className="w-3.5 h-3.5" /> {t("hp_pending")}
-                      </span>
-                    )}
-                    {oid && String(oid) !== meId && friendStatus === "pending_received" && (
-                      <button type="button" onClick={() => { const f = friends.find((fs: any) => String(fs.requester) === oid && String(fs.target) === meId); if (f) handleFriendAccept(f.id); }} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/35 text-green-400 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition">
-                        <UserPlus className="w-3.5 h-3.5" /> {t("hp_accept")}
-                      </button>
-                    )}
-                    {oid && String(oid) !== meId && friendStatus === "friends" && (
-                      <button
-                        type="button"
-                        onMouseEnter={() => setUnfriendHover(true)}
-                        onMouseLeave={() => setUnfriendHover(false)}
-                        onClick={() => handleUnfriend(oid)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition ${unfriendHover ? "bg-red-500/20 border-red-500/50 text-red-400" : "bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff]"}`}
-                      >
-                        {unfriendHover ? (<><UserMinus className="w-3.5 h-3.5" /> {t("hp_unfriend")}</>) : (<><UserCheck className="w-3.5 h-3.5" /> {t("hp_friends")}</>)}
-                      </button>
-                    )}
-                    <button type="button" onClick={() => oid && openDm(oid)} className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition">
-                      <MessageCircle className="w-4 h-4" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_message")}</span>
-                    </button>
-                    {oid && String(oid) !== meId && (
-                      <button
-                        type="button"
-                        onClick={() => toggleBlock(oid)}
-                        className={`flex items-center gap-1.5 hover:scale-110 transition ${isUserBlocked(oid) ? "text-yellow-400" : "text-red-400"}`}
-                      >
-                        <Ban className="w-4 h-4" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">{isUserBlocked(oid) ? (t("hp_unblock") || "Unblock") : (t("hp_block") || "Block")}</span>
-                      </button>
-                    )}
                   </div>
+                  {friendActionMsg && (
+                    <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-red-400">{friendActionMsg}</p>
+                  )}
                 </div>
               </div>
             );
