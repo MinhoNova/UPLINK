@@ -13,7 +13,7 @@ function HomeSeoFooter() {
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-400">
           <span className="font-bold text-slate-200">Aion 2 LFG</span> (aion2lfg.com) is the
           LFG group finder and boosting hub for NCsoft&apos;s Aion 2. Post an offer or join a
-          squad for daily dungeons, expeditions, Strongholds, Transcendence and Nightmare —
+          squad for expeditions and Transcendence clears —
           plus end-game raids like <span className="text-slate-200">Beritra Brigade Fortress</span>{" "}
           and <span className="text-slate-200">Abyssal Forge: Ludra</span>.
         </p>

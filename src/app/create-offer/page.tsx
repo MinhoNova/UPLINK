@@ -8,7 +8,7 @@ import {
   Check, Shield, Crown, Gem, Lock, Castle, Users,
   FlaskConical, TrendingUp, Hash, Globe, MapPin, ChevronRight, type LucideIcon,
 } from "lucide-react";
-import { AION_SERVICES, AION_CATEGORIES, AION_CLASSES, AionService, AionServiceOption } from "@/lib/aionServices";
+import { AION_SERVICES, AION_CATEGORIES, AION_CLASSES, AionService, AionServiceOption, isRemovedDungeonService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 
 const STEPS = ["service", "details"] as const;
@@ -431,7 +431,7 @@ export default function CreateOfferPage() {
 
   const grouped = useMemo(() => {
     const g: Record<string, AionService[]> = {};
-    for (const cat of AION_CATEGORIES) { g[cat] = AION_SERVICES.filter((s) => s.category === cat); }
+    for (const cat of AION_CATEGORIES) { g[cat] = AION_SERVICES.filter((s) => s.category === cat).filter((s) => !isRemovedDungeonService(s)); }
     return g;
   }, []);
 

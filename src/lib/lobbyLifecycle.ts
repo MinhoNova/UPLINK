@@ -371,11 +371,22 @@ function isRemovedOfferCategory(lobby: any): boolean {
   return String(lobby?.category || "").toLowerCase() === "pvp";
 }
 
+/** Solo dungeon offers were removed — only Transcendence / Expeditions stay. */
+const KEPT_DUNGEON_SERVICES = new Set(["Transcendence", "Expeditions"]);
+
+export function isRemovedDungeonOffer(lobby: any): boolean {
+  if (!lobby) return false;
+  const cat = String(lobby.category || "").toLowerCase();
+  if (cat !== "dungeon" && cat !== "dungeons") return false;
+  return !KEPT_DUNGEON_SERVICES.has(String(lobby.serviceName || ""));
+}
+
 export function getOwnerOngoingMissions(lobbies: any[], ownerId: string): any[] {
   const uid = String(ownerId);
   return sortOfferThreadsForDisplay(
     (lobbies || []).filter((l) => {
       if (isRemovedOfferCategory(l)) return false;
+      if (isRemovedDungeonOffer(l)) return false;
       if (String(l.ownerId) !== uid) return false;
       const status = l.status || "standby";
       if (!ACTIVE_ONGOING_STATUSES.has(status)) return false;
@@ -390,6 +401,7 @@ export function getJoinedOngoingMissions(lobbies: any[], userId: string): any[] 
   return sortOfferThreadsForDisplay(
     (lobbies || []).filter((l) => {
       if (isRemovedOfferCategory(l)) return false;
+      if (isRemovedDungeonOffer(l)) return false;
       const status = l.status || "standby";
       if (!ACTIVE_ONGOING_STATUSES.has(status)) return false;
       if (status === "completed" || status === "failed" || status === "cancelled") return false;
@@ -1454,6 +1466,8 @@ const PUBLIC_FEED_CATEGORIES = new Set(["dungeon", "dungeons", "raid", "raids", 
 
 export function isLobbyListedInPublicFeed(lobby: any): boolean {
   if (!lobby) return false;
+  if (isRemovedOfferCategory(lobby)) return false;
+  if (isRemovedDungeonOffer(lobby)) return false;
   const cat = lobby.category;
   if (cat && !PUBLIC_FEED_CATEGORIES.has(cat)) return false;
   const status = lobby.status || "standby";

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { memo, useMemo, useState, useCallback, useEffect, useReducer, useRef } from "react";
 import { createPortal } from "react-dom";
-import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService } from "@/lib/aionServices";
+import { AION_SERVICES, AION_CATEGORIES, formatUsd, AionService, isRemovedDungeonService } from "@/lib/aionServices";
 
 interface CreateOfferModalProps {
   isOpen: boolean;
@@ -119,7 +119,7 @@ const ServiceGrid = memo(function ServiceGrid({
   selectedId: string;
   onSelect: (s: AionService) => void;
 }) {
-  const services = AION_SERVICES.filter(s => s.category === category);
+  const services = AION_SERVICES.filter(s => s.category === category && !isRemovedDungeonService(s));
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
       {services.map(s => {

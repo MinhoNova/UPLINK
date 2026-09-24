@@ -17,7 +17,7 @@ import { resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
-import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
+import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -218,7 +218,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
 
   const historyOffers = useMemo(() => {
     if (!meId) return [];
-    return (lobbies || []).filter((l: any) => String(l.category || "").toLowerCase() !== "pvp" && (l.status === "completed" || l.status === "failed")).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
+    return (lobbies || []).filter((l: any) => String(l.category || "").toLowerCase() !== "pvp" && !isRemovedDungeonOffer(l) && (l.status === "completed" || l.status === "failed")).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
   }, [lobbies, meId]);
 
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"] };

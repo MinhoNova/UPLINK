@@ -273,6 +273,13 @@ export const SERVICE_BY_ID = Object.fromEntries(AION_SERVICES.map((s) => [s.id, 
 
 export const DUNGEON_PICKER = AION_SERVICES.filter((s) => s.category === "Dungeons" && s.img);
 
+/** Solo dungeon content is useless for LFG — only group content stays offerable. */
+export const DUNGEON_OFFER_KEEPERS = new Set(["Transcendence", "Expeditions"]);
+
+export function isRemovedDungeonService(service: AionService): boolean {
+  return service?.category === "Dungeons" && !DUNGEON_OFFER_KEEPERS.has(service.name);
+}
+
 export const AION_CLASSES = [
   "Templar",
   "Gladiator",
