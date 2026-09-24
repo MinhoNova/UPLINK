@@ -752,16 +752,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       <MessageCircle className="w-4 h-4" />
                       <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_message")}</span>
                     </button>
-                    {owner?.username ? (
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/player/${encodeURIComponent(String(owner.username))}`)}
-                        className="flex items-center gap-1.5 text-[#00ffff] hover:scale-110 transition"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_page") || "View page"}</span>
-                      </button>
-                    ) : null}
                   </div>
                 </div>
               </div>

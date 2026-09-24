@@ -178,7 +178,6 @@ const en: Dict = {
   /* hover card */
   hp_discord: "Discord:",
   hp_message: "Message",
-  hp_page: "View page",
   hp_addFriend: "Add Friend",
   hp_pending: "Pending",
   hp_accept: "Accept",
@@ -330,7 +329,6 @@ const ar: Dict = {
   bg_empty: "لا توجد خلفيات مخصصة بعد",
   hp_discord: "ديسكورد:",
   hp_message: "رسالة",
-  hp_page: "عرض الصفحة",
   hp_addFriend: "أضف صديق",
   hp_pending: "بالانتظار",
   hp_accept: "قبول",
