@@ -8,7 +8,7 @@ function HomeSeoFooter() {
     <footer className="relative mt-16 border-t border-white/[0.06] bg-[#050814] px-6 py-16 text-white">
       <div className="mx-auto max-w-[1400px]">
         <h2 className="text-xl font-black uppercase tracking-[0.18em] text-cyan-100 sm:text-2xl">
-          Aion 2 LFG — Find Your Squad for Every Dungeon, Raid &amp; PvP Battle
+          Aion 2 LFG — Find Your Squad for Every Dungeon, Raid &amp; Leveling Push
         </h2>
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-400">
           <span className="font-bold text-slate-200">Aion 2 LFG</span> (aion2lfg.com) is the
@@ -18,10 +18,9 @@ function HomeSeoFooter() {
           and <span className="text-slate-200">Abyssal Forge: Ludra</span>.
         </p>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-400">
-          Looking for PvP? Farm <span className="text-slate-200">Abyss Points</span> with a
-          coordinated squad. Need to progress? Leveling and profession boosts (Cooking,
-          Alchemy) are one post away. Set your class, region and difficulty, and let the best
-          players apply.
+          Need to progress? Leveling and profession boosts (Cooking, Alchemy) are one
+          post away. Set your class, region and difficulty, and let the best players
+          apply.
         </p>
         <p className="mt-3 max-w-3xl text-xs leading-relaxed text-slate-500">
           Aion 2 LFG is a fan-run community. We are not affiliated with, endorsed by, or otherwise
@@ -50,7 +49,6 @@ function HomeSeoFooter() {
             ["/about", "About Us"],
             ["/contact", "Contact"],
             ["/classes", "Classes"],
-            ["/pvp", "PvP"],
             ["/leveling", "Leveling"],
             ["/dungeons", "Dungeons"],
             ["/raids", "Raids"],
@@ -71,19 +69,19 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Aion 2 LFG | Group Finder for Dungeons, Raids & PvP",
+    absolute: "Aion 2 LFG | Group Finder for Dungeons, Raids & Leveling",
   },
   description:
-    "Aion 2 LFG (aion2lfg.com) — the free LFG group finder and boosting hub for Aion 2. Join or post offers for daily dungeons, expeditions, Strongholds, end-game raids (Beritra Brigade Fortress, Abyssal Forge: Ludra), Abyss Points PvP farm and leveling. Set your class, region and difficulty and let the best players apply.",
+    "Aion 2 LFG (aion2lfg.com) — the free LFG group finder and boosting hub for Aion 2. Join or post offers for daily dungeons, expeditions, Strongholds, end-game raids (Beritra Brigade Fortress, Abyssal Forge: Ludra) and leveling. Set your class, region and difficulty and let the best players apply.",
   alternates: { canonical: "https://aion2lfg.com" },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://aion2lfg.com",
     siteName: "Aion 2 LFG",
-    title: "Aion 2 LFG | Group Finder for Dungeons, Raids & PvP",
+    title: "Aion 2 LFG | Group Finder for Dungeons, Raids & Leveling",
     description:
-      "Find Aion 2 squads for dungeons, raids, PvP (Abyss Points farming) and leveling on aion2lfg.com.",
+      "Find Aion 2 squads for dungeons, raids, leveling and professions on aion2lfg.com.",
     images: [
       {
         url: "https://aion2lfg.com/og-live.png",
@@ -97,7 +95,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aion 2 LFG | Aion 2 Group Finder",
     description:
-      "Find Aion 2 squads — dungeons, raids, PvP and leveling. LFG made easy.",
+      "Find Aion 2 squads — dungeons, raids, leveling and professions. LFG made easy.",
     images: ["https://aion2lfg.com/og-live.png"],
   },
 };
@@ -145,10 +143,10 @@ export default async function HomePage() {
   return (
     <>
       <h1 className="sr-only">
-        Aion 2 LFG — Free Group Finder &amp; Boosting Hub for Dungeons, Raids &amp; PvP
+        Aion 2 LFG — Free Group Finder &amp; Boosting Hub for Dungeons, Raids &amp; Leveling
       </h1>
       <p className="sr-only" aria-hidden="true">
-        Find and join Aion 2 squads for daily dungeons, Abyss Points PvP farming, Leveling and end-game raids. Post an offer or apply in seconds on aion2lfg.com.
+        Find and join Aion 2 squads for daily dungeons, Leveling and end-game raids. Post an offer or apply in seconds on aion2lfg.com.
       </p>
       {topOffers.length > 0 && (
         <script

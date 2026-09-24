@@ -15,7 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/support", "monthly", 0.4],
     ["/terms", "monthly", 0.2],
     ["/privacy", "monthly", 0.2],
-    ["/pvp", "daily", 0.9],
     ["/classes", "weekly", 0.8],
     ["/dungeons", "weekly", 0.8],
     ["/raids", "weekly", 0.8],
@@ -24,11 +23,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/lfg/na", "daily", 0.7],
     ["/lfg/eu/dungeons", "daily", 0.7],
     ["/lfg/eu/raids", "daily", 0.7],
-    ["/lfg/eu/pvp", "daily", 0.7],
     ["/lfg/eu/leveling", "daily", 0.7],
     ["/lfg/na/dungeons", "daily", 0.7],
     ["/lfg/na/raids", "daily", 0.7],
-    ["/lfg/na/pvp", "daily", 0.7],
     ["/lfg/na/leveling", "daily", 0.7],
   ];
 

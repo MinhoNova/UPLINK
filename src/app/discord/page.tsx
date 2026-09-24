@@ -45,7 +45,7 @@ export default function DiscordServerPage() {
   };
 
   const features = [
-    { icon: Users, title: "Find Your Squad", desc: "Dungeons, raids, PvP and leveling squads — LFG right from Discord." },
+    { icon: Users, title: "Find Your Squad", desc: "Dungeons, raids, leveling and profession squads — LFG right from Discord." },
     { icon: Star, title: "Class Colour Roles", desc: "Pick your Aion 2 class colour and playstyle role on join." },
     { icon: MessageSquare, title: "Active Community", desc: "Chat, share runs and coordinate with other Aion 2 players." },
   ];
@@ -60,7 +60,7 @@ export default function DiscordServerPage() {
           Aion 2 LFG — Discord Server
         </h1>
         <p className="mt-4 text-center text-sm leading-relaxed text-slate-400">
-          {siteUrl.replace("https://", "")} — find squads for dungeons, raids and PvP, claim your
+          {siteUrl.replace("https://", "")} — find squads for dungeons, raids and leveling, claim your
           class colour role, and chat with fellow Aion 2 players.
         </p>
 

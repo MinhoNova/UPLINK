@@ -99,7 +99,6 @@ const CATEGORIES = [
       { name: "🚀・leveling-offers", type: ChannelType.GuildText, topic: "Leveling offers — posted automatically by UPLINK." },
       { name: "🏰・dungeon-offers", type: ChannelType.GuildText, topic: "Dungeon offers — posted automatically by UPLINK." },
       { name: "⚔️・raid-offers", type: ChannelType.GuildText, topic: "Raid offers — posted automatically by UPLINK." },
-      { name: "⚡・pvp-offers", type: ChannelType.GuildText, topic: "PvP offers — posted automatically by UPLINK." },
       { name: "🛠️・profession-offers", type: ChannelType.GuildText, topic: "Profession offers — posted automatically by UPLINK." },
       { name: "🤝・find-squad", type: ChannelType.GuildText, topic: "Looking for a group to play with? Post your request here." },
     ],

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Swords, ChevronLeft, Coins, Zap, ChevronDown, ArrowRight, Send, Play,
-  Check, Shield, Crown, Gem, Lock, Castle, Crosshair, Users,
+  Check, Shield, Crown, Gem, Lock, Castle, Users,
   FlaskConical, TrendingUp, Hash, Globe, MapPin, ChevronRight, type LucideIcon,
 } from "lucide-react";
 import { AION_SERVICES, AION_CATEGORIES, AION_CLASSES, AionService, AionServiceOption } from "@/lib/aionServices";
@@ -31,7 +31,6 @@ const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; tile: str
   Leveling: { icon: TrendingUp, color: "text-emerald-300", tile: "border-emerald-400/40 bg-emerald-500/10" },
   Raids: { icon: Swords, color: "text-rose-300", tile: "border-rose-400/40 bg-rose-500/10" },
   Dungeons: { icon: Castle, color: "text-cyan-300", tile: "border-cyan-400/40 bg-cyan-500/10" },
-  PVP: { icon: Crosshair, color: "text-orange-300", tile: "border-orange-400/40 bg-orange-500/10" },
   Professions: { icon: FlaskConical, color: "text-sky-300", tile: "border-sky-400/40 bg-sky-500/10" },
 };
 
@@ -436,7 +435,7 @@ export default function CreateOfferPage() {
     return g;
   }, []);
 
-  /* Categories whose services carry artwork cards (Dungeons / Raids / PVP) get the
+  /* Categories whose services carry artwork cards (Dungeons / Raids) get the
      portrait flip; the rest keep the plain grid. */
   const flipItems = useMemo(() => {
     const m: Record<string, AionService[]> = {};
@@ -528,7 +527,6 @@ export default function CreateOfferPage() {
         Leveling: "leveling",
         Dungeons: "dungeon",
         Raids: "raid",
-        PVP: "pvp",
         Professions: "professions",
       };
       const category = categoryByService[sel.category] ?? "dungeon";

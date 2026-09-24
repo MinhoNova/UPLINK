@@ -241,21 +241,6 @@ export const AION_SERVICES: AionService[] = [
     ],
   },
   {
-    id: "abyss-points",
-    name: "Abyss Points Farm",
-    category: "PVP",
-    description: "Farm Abyss Points for exclusive gear & items.",
-    basePriceKina: kinah(8.09),
-    img: "/dungeons/abyss-points-farm.png",
-    priceUnit: "per 10k points",
-    express: kinah(1.62),
-    superExpress: kinah(3.24),
-    extras: [
-      { label: "140 Empyrean Traces", priceKina: kinah(14.58) },
-      { label: "560 Empyrean Traces", priceKina: kinah(48.6) },
-    ],
-  },
-  {
     id: "cooking",
     name: "Cooking",
     category: "Professions",
@@ -281,7 +266,6 @@ export const AION_CATEGORIES = [
   "Leveling",
   "Raids",
   "Dungeons",
-  "PVP",
   "Professions",
 ];
 

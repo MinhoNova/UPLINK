@@ -27,11 +27,11 @@ const discordInviteUrl = getDiscordInviteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Aion 2 LFG | Group Finder for Dungeons, Raids & PvP",
+    default: "Aion 2 LFG | Group Finder for Dungeons, Raids & Leveling",
     template: "%s | Aion 2 LFG",
   },
   description:
-    "Aion 2 LFG (aion2lfg.com) — the LFG group finder for Aion 2. Find squads for dungeons, raids, Abyss Points (PvP) farming and leveling. Post an offer, set your class and region, and let the best players apply.",
+    "Aion 2 LFG (aion2lfg.com) — the LFG group finder for Aion 2. Find squads for dungeons, raids, leveling and professions. Post an offer, set your class and region, and let the best players apply.",
   keywords: [
     "aion2lfg",
     "aion 2 lfg",
@@ -40,7 +40,6 @@ export const metadata: Metadata = {
     "aion 2 lfg site",
     "aion 2 dungeon finder",
     "aion 2 raids",
-    "aion 2 pvp",
     "aion 2",
     "aion2",
     "aion 2 classes",
@@ -57,8 +56,6 @@ export const metadata: Metadata = {
     "aion 2 dps",
     "aion 2 boosting",
     "aion 2 carry",
-    "aion 2 abyss points",
-    "aion 2 pvp farm",
     "aion 2 leveling",
     "aion 2 guides",
     "aion 2 community",
@@ -74,9 +71,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: "Aion 2 LFG",
-    title: "Aion 2 LFG | Group Finder for Dungeons, Raids & PvP",
+    title: "Aion 2 LFG | Group Finder for Dungeons, Raids & Leveling",
     description:
-      "Find Aion 2 squads for dungeons, raids, PvP (Abyss Points farming) and leveling on aion2lfg.com.",
+      "Find Aion 2 squads for dungeons, raids, leveling and professions on aion2lfg.com.",
     images: [
       {
         url: `${siteUrl}/og-live.png`,
@@ -90,7 +87,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aion 2 LFG | Aion 2 Group Finder",
     description:
-      "Find Aion 2 squads — dungeons, raids, PvP and leveling. LFG made easy.",
+      "Find Aion 2 squads — dungeons, raids, leveling and professions. LFG made easy.",
     images: [`${siteUrl}/og-live.png`],
   },
   robots: {
@@ -108,7 +105,7 @@ const seoJsonLd = JSON.stringify({
       alternateName: ["aion2lfg", "aionlfg", "Aion 2 LFG", "Aion2LFG", "aion 2"],
       url: siteUrl,
       description:
-        "LFG group finder for Aion 2 — find squads for dungeons, raids, PvP (Abyss Points farming), and leveling.",
+        "LFG group finder for Aion 2 — find squads for dungeons, raids, leveling and professions.",
       inLanguage: "en",
       potentialAction: [
         {

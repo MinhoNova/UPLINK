@@ -1,6 +1,6 @@
 import { getSiteUrl } from "@/lib/siteUrl";
 
-const CATEGORIES = ["dungeons", "raids", "pvp", "leveling"] as const;
+const CATEGORIES = ["dungeons", "raids", "leveling"] as const;
 const REGIONS = ["eu", "na"] as const;
 
 export async function generateStaticParams() {

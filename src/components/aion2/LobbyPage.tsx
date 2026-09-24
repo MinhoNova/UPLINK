@@ -33,7 +33,6 @@ const FILTER_TABS = [
   { label: "DUNGEONS", key: "Dungeons", icon: Shield },
   { label: "RAIDS", key: "Raids", icon: Swords },
   { label: "LEVELING", key: "Leveling", icon: Sparkles },
-  { label: "PVP", key: "PVP", icon: Swords },
 ];
 
 const REGION_TABS = [
@@ -42,7 +41,7 @@ const REGION_TABS = [
   { label: "NA EAST", key: "NA (EAST)", flag: "/flags/us.svg" },
   { label: "NA WEST", key: "NA (WEST)", flag: "/flags/us.svg" },
 ];
-const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling", "pvp"] as const;
+const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling"] as const;
 type OfferNotificationCategory = (typeof OFFER_NOTIFICATION_CATEGORIES)[number];
 type OfferNotificationSettings = { mutedAll: boolean; mutedCategories: OfferNotificationCategory[] };
 const DEFAULT_OFFER_NOTIFICATION_SETTINGS: OfferNotificationSettings = { mutedAll: false, mutedCategories: [] };
@@ -104,7 +103,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     if (!meId) return;
     fetch("/api/user/auto-apply").then((r) => r.json()).then((d: any) => { if (d && typeof d.autoAccept === "boolean") setAutoAccept(d.autoAccept); }).catch(() => {});
   }, [meId]);
-  const filterLabel = (key: string) => ({ All: t("tab_all"), Dungeons: t("tab_dungeons"), Raids: t("tab_raids"), Leveling: t("tab_leveling"), PVP: t("tab_pvp") }[key] || key);
+  const filterLabel = (key: string) => ({ All: t("tab_all"), Dungeons: t("tab_dungeons"), Raids: t("tab_raids"), Leveling: t("tab_leveling") }[key] || key);
   const regionLabel = (key: string) => ({ All: t("region_all"), EU: "EU", "NA (EAST)": t("region_naEast"), "NA (WEST)": t("region_naWest") }[key] || key);
 
   useEffect(() => {
@@ -220,10 +219,10 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
 
   const historyOffers = useMemo(() => {
     if (!meId) return [];
-    return (lobbies || []).filter((l: any) => l.status === "completed" || l.status === "failed").sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
+    return (lobbies || []).filter((l: any) => String(l.category || "").toLowerCase() !== "pvp" && (l.status === "completed" || l.status === "failed")).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
   }, [lobbies, meId]);
 
-  const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"], PVP: ["pvp"] };
+  const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"] };
 
   const displayOffers = useMemo(() => {
     const cats = OPEN_TAB_CATEGORIES[activeTab] ?? null;

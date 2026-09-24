@@ -366,10 +366,16 @@ export function isLevelingOffer(lobby: any): boolean {
 }
 
 /** Owner ongoing sidebar — all active split threads, newest active above unpaid archives. */
+/** PVP offer category was removed from the site — never resurface legacy lobbies. */
+function isRemovedOfferCategory(lobby: any): boolean {
+  return String(lobby?.category || "").toLowerCase() === "pvp";
+}
+
 export function getOwnerOngoingMissions(lobbies: any[], ownerId: string): any[] {
   const uid = String(ownerId);
   return sortOfferThreadsForDisplay(
     (lobbies || []).filter((l) => {
+      if (isRemovedOfferCategory(l)) return false;
       if (String(l.ownerId) !== uid) return false;
       const status = l.status || "standby";
       if (!ACTIVE_ONGOING_STATUSES.has(status)) return false;
@@ -383,6 +389,7 @@ export function getJoinedOngoingMissions(lobbies: any[], userId: string): any[] 
   const uid = String(userId);
   return sortOfferThreadsForDisplay(
     (lobbies || []).filter((l) => {
+      if (isRemovedOfferCategory(l)) return false;
       const status = l.status || "standby";
       if (!ACTIVE_ONGOING_STATUSES.has(status)) return false;
       if (status === "completed" || status === "failed" || status === "cancelled") return false;
@@ -1443,7 +1450,7 @@ export function classSlotsFilled(lobby: any): boolean {
 }
 
 /** Public offer feed — open recruiting banners only (full squads move to Ongoing). */
-const PUBLIC_FEED_CATEGORIES = new Set(["dungeon", "dungeons", "raid", "raids", "leveling", "pvp"]);
+const PUBLIC_FEED_CATEGORIES = new Set(["dungeon", "dungeons", "raid", "raids", "leveling"]);
 
 export function isLobbyListedInPublicFeed(lobby: any): boolean {
   if (!lobby) return false;

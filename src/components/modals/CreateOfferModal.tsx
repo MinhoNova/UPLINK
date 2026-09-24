@@ -52,7 +52,6 @@ const CATEGORY_ICON: Record<string, string> = {
   Raids: "#ff007f",
   Dungeons: "#00ffff",
   Collections: "#22d3ee",
-  PVP: "#f97316",
   Professions: "#a855f7",
 };
 

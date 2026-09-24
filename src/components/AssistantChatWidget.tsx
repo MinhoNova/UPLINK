@@ -107,7 +107,7 @@ export default function AssistantChatWidget() {
                   </div>
                   <p className="text-sm font-black text-white/80 uppercase tracking-wider mb-2">Need a hand?</p>
                   <p className="text-[10px] text-gray-500 leading-relaxed">
-                    Ask me anything about UPLINK — dungeons, raids, PvP farming, leveling, regions, classes and the Discord server.
+                    Ask me anything about UPLINK — dungeons, raids, leveling, professions, regions, classes and the Discord server.
                   </p>
                 </div>
               )}

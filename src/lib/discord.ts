@@ -107,7 +107,6 @@ const CATEGORY_CHANNELS: Record<string, string[]> = {
    leveling: ["🚀・leveling-offers", "leveling-offers", "leveling-squads", "leveling"],
    dungeons: ["🏰・dungeon-offers", "dungeon-offers", "dungeons"],
    raids: ["⚔️・raid-offers", "raid-offers", "raids"],
-   pvp: ["⚡・pvp-offers", "pvp-offers", "pvp"],
    professions: ["🛠️・profession-offers", "profession-offers", "professions"],
 };
 
@@ -115,7 +114,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
    leveling: "🚀",
    dungeons: "🏰",
    raids: "⚔️",
-   pvp: "⚡",
    professions: "🛠️",
 };
 

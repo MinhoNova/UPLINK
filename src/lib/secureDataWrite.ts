@@ -103,7 +103,7 @@ function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Rec
   }
   if ("offerNotificationSettings" in merged) {
     const settings = merged.offerNotificationSettings;
-    const validCategories = new Set(["dungeon", "raid", "leveling", "pvp"]);
+    const validCategories = new Set(["dungeon", "raid", "leveling"]);
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
       delete merged.offerNotificationSettings;
     } else {

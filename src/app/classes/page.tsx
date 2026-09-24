@@ -80,7 +80,7 @@ export default async function ClassesPage({ searchParams }: { searchParams: Prom
         <p className="text-sm leading-relaxed text-slate-300 max-w-2xl mb-8">{cls.desc}</p>
         <h2 className="text-xl font-black uppercase tracking-widest text-white mb-4">Find {cls.name} LFG Groups</h2>
         <p className="text-sm leading-relaxed text-slate-400 max-w-2xl">
-          Looking for a {cls.name} for your dungeon, raid, or PvP squad? Post an offer on Aion 2 LFG and let the best {cls.name} players apply.
+          Looking for a {cls.name} for your dungeon or raid squad? Post an offer on Aion 2 LFG and let the best {cls.name} players apply.
         </p>
       </div>
     </main>

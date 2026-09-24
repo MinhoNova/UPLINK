@@ -56,7 +56,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="2. Description of Service">
-            <p>Aion 2 LFG is a community platform for Aion 2 players to find groups, post offers for dungeons, raids, PvP and leveling, and interact through community posts and comments.</p>
+            <p>Aion 2 LFG is a community platform for Aion 2 players to find groups, post offers for dungeons, raids, leveling and professions, and interact through community posts and comments.</p>
           </Section>
 
           <Section title="3. User Accounts">

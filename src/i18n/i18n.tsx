@@ -69,7 +69,6 @@ const en: Dict = {
   tab_dungeons: "DUNGEONS",
   tab_leveling: "LEVELING",
   tab_boosts: "BOOSTS",
-  tab_pvp: "PVP",
   tab_raids: "RAIDS",
   region_all: "ALL",
   region_eu: "EU",
@@ -235,7 +234,7 @@ const ar: Dict = {
   tab_dungeons: "الدانجنز",
   tab_leveling: "رفع المستوى",
   tab_boosts: "البوستات",
-  tab_pvp: "PVP",
+  
   tab_raids: "الرايدز",
   region_all: "الكل",
   region_eu: "EU",
@@ -354,7 +353,7 @@ const es: Dict = {
   tab_dungeons: "MAZMORRAS",
   tab_leveling: "NIVELEO",
   tab_boosts: "BOOSTS",
-  tab_pvp: "PVP",
+  
   dock_chat: "CHAT",
   dock_quests: "MISIONES",
   dock_favorites: "FAVORITOS",
@@ -405,7 +404,7 @@ const ko: Dict = {
   tab_dungeons: "던전",
   tab_leveling: "레벨링",
   tab_boosts: "부스트",
-  tab_pvp: "PVP",
+  
   dock_chat: "채팅",
   dock_quests: "퀘스트",
   dock_favorites: "즐겨찾기",
@@ -456,7 +455,7 @@ const ja: Dict = {
   tab_dungeons: "ダンジョン",
   tab_leveling: "レベル上げ",
   tab_boosts: "ブースト",
-  tab_pvp: "PVP",
+  
   dock_chat: "チャット",
   dock_quests: "クエスト",
   dock_favorites: "お気に入り",

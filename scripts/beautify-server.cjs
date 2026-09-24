@@ -58,7 +58,6 @@ const OFFER_CHANNEL_NAMES = new Set([
   "🚀・leveling-offers",
   "🏰・dungeon-offers",
   "⚔️・raid-offers",
-  "⚡・pvp-offers",
   "🛠️・profession-offers",
   "🎮・lfg",
 ]);
@@ -117,7 +116,6 @@ const TOPICS = {
   "🚀・leveling-offers": "Leveling squads listed on UPLINK — apply via the site.",
   "🏰・dungeon-offers": "Dungeon offers listed on UPLINK — apply via the site.",
   "⚔️・raid-offers": "Raid offers listed on UPLINK — apply via the site.",
-  "⚡・pvp-offers": "PvP offers listed on UPLINK — apply via the site.",
   "🛠️・profession-offers": "Profession offers listed on UPLINK — apply via the site.",
   "🎮・lfg": "Casual self-organized squads — find a group.",
   "🔒・mod-chat": "Staff coordination. Members can't read this channel.",

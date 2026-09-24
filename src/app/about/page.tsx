@@ -8,10 +8,10 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   title: "About Us — Aion 2 LFG",
   description:
-    "Aion 2 LFG (aion2lfg.com) is a free community LFG platform for Aion 2. Find squads for dungeons, raids, Abyss Points farming and leveling — transparent, community-first, and free.",
+    "Aion 2 LFG (aion2lfg.com) is a free community LFG platform for Aion 2. Find squads for dungeons, raids, leveling and professions — transparent, community-first, and free.",
   openGraph: {
     title: "About Aion 2 LFG",
-    description: "The Aion 2 group finder. Find dungeons, raids, PvP and leveling squads for free.",
+    description: "The Aion 2 group finder. Find dungeons, raids, leveling and profession squads for free.",
     siteName: "Aion 2 LFG",
   },
   alternates: { canonical: `${siteUrl}/about` },
@@ -51,8 +51,8 @@ export default function AboutPage() {
         <h1 className="text-4xl sm:text-5xl font-black text-white mb-6 tracking-tight">About <span className="text-[#00ffff]">Aion 2 LFG</span></h1>
         <p className="text-sm text-gray-400 leading-relaxed mb-8">
           Aion 2 LFG (aion2lfg.com) is a vibrant and growing community created for 
-          Aion 2 players to find groups, post offers for dungeons, raids, Abyss Points farming 
-          and leveling — and coordinate with teammates through Discord.
+          Aion 2 players to find groups, post offers for dungeons, raids, leveling 
+          and professions — and coordinate with teammates through Discord.
         </p>
 
         <div className="grid sm:grid-cols-2 gap-4 mb-12">
@@ -78,7 +78,7 @@ export default function AboutPage() {
             players post their runs and you join the best offer — all free, on the site and on Discord.
           </p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            Whether you are looking for a dungeon group, a raid squad, an Abyss Points farm, or a leveling 
+            Whether you are looking for a dungeon group, a raid squad, a leveling or profession 
             service — or you want to offer your own runs — Aion 2 LFG gives you the tools to connect, 
             coordinate, and build reputation, no subscriptions, no limits, no BS.
           </p>
