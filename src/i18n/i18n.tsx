@@ -178,6 +178,12 @@ const en: Dict = {
   /* hover card */
   hp_discord: "Discord:",
   hp_message: "Message",
+  hp_page: "View page",
+  hp_addFriend: "Add Friend",
+  hp_pending: "Pending",
+  hp_accept: "Accept",
+  hp_friends: "Friends",
+  hp_unfriend: "Unfriend",
   auto_pickClass: "Pick your class first",
   auto_canSave: "Could not save settings",
   auto_unlinked: "Unlinked operative",
@@ -324,6 +330,12 @@ const ar: Dict = {
   bg_empty: "لا توجد خلفيات مخصصة بعد",
   hp_discord: "ديسكورد:",
   hp_message: "رسالة",
+  hp_page: "عرض الصفحة",
+  hp_addFriend: "أضف صديق",
+  hp_pending: "بالانتظار",
+  hp_accept: "قبول",
+  hp_friends: "أصدقاء",
+  hp_unfriend: "إزالة الصداقة",
 };
 
 const es: Dict = {

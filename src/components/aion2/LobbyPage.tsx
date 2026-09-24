@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Trash2, Check, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
+  Trash2, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
   Bell, BellOff, Palette, Loader2, BadgeCheck, RefreshCw, Star, ExternalLink, Link2
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
@@ -67,6 +67,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [cancellingApplyId, setCancellingApplyId] = useState<string | null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [unfriendHover, setUnfriendHover] = useState(false);
   const [applyError, setApplyError] = useState("");
   const [applyTarget, setApplyTarget] = useState<any>(null);
   const [applyAionClass, setApplyAionClass] = useState("");
@@ -132,7 +133,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       fetch("/api/public-data").then((r) => r.json()).then((d: any) => {
         if (cancelled) return;
         if (d.registeredUsers) setRegisteredUsers(d.registeredUsers);
-        if (d.friends) setFriends(d.friends);
         if (d.lobbies) setLobbies(d.lobbies);
         setSignalScan(false);
       }).catch(() => { if (!cancelled) setSignalScan(false); });
@@ -321,6 +321,67 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     } catch { setApplyError(t("err_network")); } finally { setCancellingApplyId(null); }
   };
 
+  const loadFriends = () => {
+    if (!meId) return;
+    fetch("/api/friends")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: any) => { if (d?.friends) setFriends(d.friends); })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!meId) { setFriends([]); return; }
+    loadFriends();
+    window.addEventListener("data-refresh", loadFriends);
+    return () => window.removeEventListener("data-refresh", loadFriends);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meId]);
+
+  const getFriendStatus = (userId2: string) => {
+    const entry = friends.find((f: any) =>
+      (String(f.requester) === meId && String(f.target) === String(userId2)) ||
+      (String(f.requester) === String(userId2) && String(f.target) === meId)
+    );
+    if (!entry) return "none";
+    if (entry.status === "accepted") return "friends";
+    if (entry.status === "pending" && String(entry.requester) === meId) return "pending_sent";
+    if (entry.status === "pending" && String(entry.target) === meId) return "pending_received";
+    return "none";
+  };
+
+  const isUserBlocked = (userId: string) => {
+    const me = registeredUsers.find((u: any) => String(u.id) === meId);
+    return Array.isArray(me?.blocked) && me.blocked.map(String).includes(String(userId));
+  };
+
+  const sendFriendRequest = async (targetId: string) => {
+    if (!meId || String(targetId) === meId) return;
+    try {
+      const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", targetId }) });
+      if (res.ok) { const result: any = await res.json(); setFriends((prev: any[]) => [...(prev || []), result.friend]); }
+    } catch {}
+  };
+
+  const handleFriendAccept = async (reqId: string) => {
+    try {
+      const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", targetId: reqId }) });
+      if (res.ok) setFriends((prev: any[]) => (prev || []).map((f: any) => (String(f.id) === String(reqId) ? { ...f, status: "accepted" } : f)));
+    } catch {}
+  };
+
+  const handleUnfriend = async (targetId: string) => {
+    try {
+      const res = await fetch("/api/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove", targetId }) });
+      if (res.ok) setFriends((prev: any[]) => (prev || []).filter((f: any) => !(String(f.requester) === meId && String(f.target) === String(targetId)) && !(String(f.requester) === String(targetId) && String(f.target) === meId)));
+    } catch {}
+  };
+
+  const openDm = (userId: string) => {
+    setHoveredUserId(null);
+    setHoverCard(null);
+    window.dispatchEvent(new CustomEvent("open-dm-chat", { detail: { userId } }));
+  };
+
   const runResolveLink = async () => {
     if (!resolveLink.trim() || resolveBusy) return;
     setResolveBusy(true); setVerifyError(""); setVerifiedChar(null);
@@ -390,7 +451,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       {/* Creator avatar + Offer Details */}
                       <div className={`relative z-10 flex items-center gap-3 flex-shrink-0 max-w-[45%] ${hoveredUserId === String(owner?.id || "") ? "z-40" : ""}`}>
                         <div className="relative">
-                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer" onMouseEnter={(e) => { cancelHide(); if (!owner?.id) return; const r = e.currentTarget.getBoundingClientRect(); setHoveredUserId(String(owner.id)); setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic }); }} onMouseLeave={scheduleHide}>
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#050814]/80 border-2 border-cyan-400/40 flex items-center justify-center overflow-hidden shadow-[0_0_18px_rgba(59,130,246,0.25)] group-hover:border-cyan-300/70 transition-colors cursor-pointer" onMouseEnter={(e) => { cancelHide(); if (!owner?.id) return; const r = e.currentTarget.getBoundingClientRect(); setHoveredUserId(String(owner.id)); setHoverCard({ userId: String(owner.id), rect: { top: r.top, left: r.left, bottom: r.bottom }, owner, pic }); }} onMouseLeave={scheduleHide} onClick={() => { if (!owner?.id) return; setHoveredUserId(null); setHoverCard(null); window.dispatchEvent(new CustomEvent("open-player-profile", { detail: { userId: String(owner.id) } })); }}>
                             {pic ? (<img src={pic} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />) : (<Users className="w-6 h-6 text-cyan-400/70" />)}
                           </div>
                           <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0a0f26]" />
@@ -439,14 +500,11 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       {/* Actions */}
                       <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                         {applied ? (
-                          <>
-                            <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> {t("offer_applied")}</span>
-                            {cancelConfirmId === String(offer.id) ? (
-                              <button onClick={() => cancelApply(offer)} disabled={cancellingApplyId === String(offer.id)} className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md">{cancellingApplyId === String(offer.id) ? t("offer_cancellingApply") : t("offer_confirmCancelApply")}</button>
-                            ) : (
-                              <button onClick={() => { setCancelConfirmId(String(offer.id)); setApplyError(""); window.setTimeout(() => setCancelConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 transition-all backdrop-blur-md"><UserMinus className="w-3 h-3" /> {t("offer_cancelApply")}</button>
-                            )}
-                          </>
+                          cancelConfirmId === String(offer.id) ? (
+                            <button onClick={() => cancelApply(offer)} disabled={cancellingApplyId === String(offer.id)} className="px-5 py-2.5 rounded-xl border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 backdrop-blur-md"><UserMinus className="w-3 h-3" /> {cancellingApplyId === String(offer.id) ? t("offer_cancellingApply") : t("offer_confirmCancelApply")}</button>
+                          ) : (
+                            <button onClick={() => { setCancelConfirmId(String(offer.id)); setApplyError(""); window.setTimeout(() => setCancelConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }} className="px-5 py-2.5 rounded-xl border border-red-500/40 bg-[#050814]/85 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 hover:text-red-200 transition-all flex items-center justify-center gap-1.5 backdrop-blur-md"><UserMinus className="w-3 h-3" /> {t("offer_cancelApply")}</button>
+                          )
                         ) : (
                           <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
                         )}
@@ -619,6 +677,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
             const rect = hoverCard.rect!;
             const owner = hoverCard.owner;
             const cardPic = hoverCard.pic;
+            const oid = owner ? String(owner.id || "") : "";
+            const friendStatus = oid ? getFriendStatus(oid) : "none";
             const vw = window.innerWidth;
             const vh = window.innerHeight;
             const popW = Math.min(380, vw - 20);
@@ -657,12 +717,38 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                   </div>
                 </div>
                 <div className="px-5 pb-4 pt-2">
-                  <div className="flex items-center justify-center gap-8 py-1.5">
+                  <div className="flex items-center justify-center gap-2 py-1.5 flex-wrap">
                     <div className="flex flex-col items-center gap-0.5">
                       <Users className="w-4 h-4 text-[#00ffff]" />
                       <span className="text-[10px] font-black text-white tabular-nums">{owner?.friends?.length ?? 0}</span>
                     </div>
-                    <button type="button" className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition">
+                    {oid && String(oid) !== meId && friendStatus === "none" && (
+                      <button type="button" disabled={!meId || isUserBlocked(oid)} onClick={() => sendFriendRequest(oid)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00ffff]/15 border border-[#00ffff]/35 text-[#00ffff] text-[9px] font-black uppercase tracking-widest hover:bg-[#00ffff]/30 transition disabled:opacity-40">
+                        <UserPlus className="w-3.5 h-3.5" /> {t("hp_addFriend")}
+                      </button>
+                    )}
+                    {oid && String(oid) !== meId && friendStatus === "pending_sent" && (
+                      <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[9px] font-black uppercase tracking-widest">
+                        <UserPlus className="w-3.5 h-3.5" /> {t("hp_pending")}
+                      </span>
+                    )}
+                    {oid && String(oid) !== meId && friendStatus === "pending_received" && (
+                      <button type="button" onClick={() => { const f = friends.find((fs: any) => String(fs.requester) === oid && String(fs.target) === meId); if (f) handleFriendAccept(f.id); }} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/35 text-green-400 text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-black transition">
+                        <UserPlus className="w-3.5 h-3.5" /> {t("hp_accept")}
+                      </button>
+                    )}
+                    {oid && String(oid) !== meId && friendStatus === "friends" && (
+                      <button
+                        type="button"
+                        onMouseEnter={() => setUnfriendHover(true)}
+                        onMouseLeave={() => setUnfriendHover(false)}
+                        onClick={() => handleUnfriend(oid)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition ${unfriendHover ? "bg-red-500/20 border-red-500/50 text-red-400" : "bg-[#1877f2]/20 border-[#1877f2]/40 text-[#5b9eff]"}`}
+                      >
+                        {unfriendHover ? (<><UserMinus className="w-3.5 h-3.5" /> {t("hp_unfriend")}</>) : (<><UserCheck className="w-3.5 h-3.5" /> {t("hp_friends")}</>)}
+                      </button>
+                    )}
+                    <button type="button" onClick={() => oid && openDm(oid)} className="flex items-center gap-1.5 text-[#ff007f] hover:scale-110 transition">
                       <MessageCircle className="w-4 h-4" />
                       <span className="text-[9px] font-black uppercase tracking-widest">{t("hp_message")}</span>
                     </button>
