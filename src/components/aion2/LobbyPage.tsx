@@ -65,6 +65,8 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const [signalScan, setSignalScan] = useState(true);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [cancellingApplyId, setCancellingApplyId] = useState<string | null>(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
   const [applyError, setApplyError] = useState("");
   const [applyTarget, setApplyTarget] = useState<any>(null);
   const [applyAionClass, setApplyAionClass] = useState("");
@@ -306,6 +308,19 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     } catch { setApplyError(t("err_network")); } finally { setApplyingId(null); }
   };
 
+  const cancelApply = async (l: any) => {
+    if (!meId || !l || cancellingApplyId) return;
+    setCancellingApplyId(String(l.id)); setApplyError("");
+    try {
+      const res = await fetch(`/api/lobbies/apply?lobbyId=${encodeURIComponent(String(l.id))}`, { method: "DELETE" });
+      if (res.ok) {
+        setAppliedIds((prev) => { const next = new Set(prev); next.delete(String(l.id)); return next; });
+        setCancelConfirmId(null);
+        window.dispatchEvent(new Event("data-refresh"));
+      } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotCancelApply")); }
+    } catch { setApplyError(t("err_network")); } finally { setCancellingApplyId(null); }
+  };
+
   const runResolveLink = async () => {
     if (!resolveLink.trim() || resolveBusy) return;
     setResolveBusy(true); setVerifyError(""); setVerifiedChar(null);
@@ -424,7 +439,14 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       {/* Actions */}
                       <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                         {applied ? (
-                          <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> {t("offer_applied")}</span>
+                          <>
+                            <span className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-[#050814]/85 text-emerald-300 text-[9px] font-black uppercase tracking-widest backdrop-blur-md"><Check className="w-3 h-3" /> {t("offer_applied")}</span>
+                            {cancelConfirmId === String(offer.id) ? (
+                              <button onClick={() => cancelApply(offer)} disabled={cancellingApplyId === String(offer.id)} className="px-4 py-2 rounded-lg border border-red-500/40 bg-red-600/20 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 transition-all disabled:opacity-50 backdrop-blur-md">{cancellingApplyId === String(offer.id) ? t("offer_cancellingApply") : t("offer_confirmCancelApply")}</button>
+                            ) : (
+                              <button onClick={() => { setCancelConfirmId(String(offer.id)); setApplyError(""); window.setTimeout(() => setCancelConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-white/15 bg-[#050814]/80 text-gray-300 text-[9px] font-black uppercase tracking-widest hover:border-red-500/40 hover:text-red-300 hover:bg-red-600/15 transition-all backdrop-blur-md"><UserMinus className="w-3 h-3" /> {t("offer_cancelApply")}</button>
+                            )}
+                          </>
                         ) : (
                           <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
                         )}
