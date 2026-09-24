@@ -26,6 +26,12 @@ export default function AssistantChatWidget() {
   }, [open]);
 
   useEffect(() => {
+    const handler = () => setOpen((p) => !p);
+    window.addEventListener("toggle-assistant", handler);
+    return () => window.removeEventListener("toggle-assistant", handler);
+  }, []);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }

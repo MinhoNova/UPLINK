@@ -10,6 +10,7 @@ import OfferApplyAlertHost from "@/components/OfferApplyAlertHost";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
 import GlobalChatWidget from "@/components/GlobalChatWidget";
 import AssistantChatWidget from "@/components/AssistantChatWidget";
+import SideRail from "@/components/SideRail";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getDiscordInviteUrl } from "@/lib/discordConstants";
 import "./globals.css";
@@ -166,6 +167,7 @@ export default function RootLayout({
             <PlayerProfileModal />
             <GlobalChatWidget />
             <AssistantChatWidget />
+            <SideRail />
             {children}
           </I18nProvider>
         </AuthProvider>

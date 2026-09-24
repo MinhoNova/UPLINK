@@ -2,6 +2,12 @@ import { isAdminUser } from "@/lib/secureDataWrite";
 import { computeDeliveredReceiptsFrom, computeReadReceiptsFrom } from "@/lib/dmHelpers";
 import { notificationMatchesUser } from "@/lib/userProfile";
 
+export const ONLINE_WINDOW_MS = 10 * 60_000;
+
+export function isUserOnline(user: { lastSeenAt?: number } | null | undefined, now = Date.now()): boolean {
+  return Boolean(user?.lastSeenAt && typeof user.lastSeenAt === "number" && now - user.lastSeenAt <= ONLINE_WINDOW_MS);
+}
+
 const OTHER_USER_STRIP = ["blocked", "friendRequests", "email", "lastKnownIp", "lastSeenAt"] as const;
 
 export function filterDataForUser(
@@ -64,6 +70,9 @@ export function filterDataForUser(
     filtered.registeredUsers = (filtered.registeredUsers as Record<string, unknown>[]).map((u) => {
       if (String(u.id) === String(userId)) return u;
       const safe = { ...u };
+      const online = isUserOnline(u);
+      delete safe["lastSeenAt"];
+      safe.online = online;
       for (const field of OTHER_USER_STRIP) delete safe[field];
       if (safe.subscription && typeof safe.subscription === "object") {
         const sub = safe.subscription as { tier?: string };

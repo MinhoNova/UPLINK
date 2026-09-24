@@ -1,6 +1,6 @@
 import { getKV, setKV, initTables } from "@/lib/db";
 
-const TOUCH_INTERVAL_MS = 5 * 60_000;
+const TOUCH_INTERVAL_MS = 60_000;
 
 /** Record the user's last seen IP (server-only, throttled). */
 export async function touchUserLastIp(userId: string, ip: string): Promise<void> {

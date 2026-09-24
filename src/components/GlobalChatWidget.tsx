@@ -261,6 +261,13 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
     setIsOpen(!isOpen);
   };
 
+  useEffect(() => {
+    const handler = () => handleToggle();
+    window.addEventListener("toggle-global-chat", handler);
+    return () => window.removeEventListener("toggle-global-chat", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canChat, isOpen]);
+
   const renderReactions = (m: CommunityChatMessage) => {
     const reactions = m.reactions || {};
     const entries = Object.entries(reactions);
