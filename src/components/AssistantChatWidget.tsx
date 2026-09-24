@@ -180,17 +180,6 @@ export default function AssistantChatWidget() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* FAB Button */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setOpen(!open)}
-        aria-label="Open UPLINK assistant"
-        className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 text-black shadow-[0_0_30px_rgba(0,255,255,0.25)] hover:shadow-[0_0_40px_rgba(0,255,255,0.4)] transition-shadow flex items-center justify-center"
-      >
-        {open ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
-      </motion.button>
     </div>
   );
 }

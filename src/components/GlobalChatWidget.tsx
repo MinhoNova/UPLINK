@@ -598,18 +598,6 @@ export default function GlobalChatWidget({ open: controlledOpen, onOpenChange }:
           </motion.div>
         )}
       </AnimatePresence>
-
-      {!isFullscreen && (
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleToggle}
-          title="Global Chat"
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#00ffff] via-[#8a2be2] to-[#ff007f] text-black flex items-center justify-center relative shadow-[0_0_35px_rgba(0,255,255,0.25)]"
-        >
-          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-        </motion.button>
-      )}
     </div>
   );
 }
