@@ -20,8 +20,8 @@ import OfferThreadSelect from "@/components/OfferThreadSelect";
 import HoverStarRating from "@/components/HoverStarRating";
 import PaymentModal from "@/components/modals/PaymentModal";
 import ManageModal from "@/components/modals/ManageModal";
-import { acceptedExcludingMember, appendOfferFamilyMessage, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, getOfferFamilyMessages, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isLevelingOffer, isVoiceLobbyOpen, memberIdentityKey, mergeLobbiesFromServer, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userIsActiveInOtherDungeonOffer, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
-import { effectiveAvatarEffect, effectiveProfileGif, isSecretClubTier, mergeRegisteredUsersFromServer, resolveNotificationRecipient } from "@/lib/userProfile";
+import { acceptedExcludingMember, appendOfferFamilyMessage, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, getOfferFamilyMessages, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, mergeLobbiesFromServer, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userIsActiveInOtherDungeonOffer, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
+import { effectiveAvatarEffect, effectiveProfileGif, mergeRegisteredUsersFromServer, resolveNotificationRecipient } from "@/lib/userProfile";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
@@ -561,9 +561,12 @@ export default function ManagePage() {
       raiderRealm: applicant.raiderRealm || applicant.realm,
       raiderName: applicant.raiderName || applicant.name,
     };
-    const ownerUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
-    const isAuto = isSecretClubTier(ownerUser) && false;
-    const instantJoin = isAuto && isLevelingOffer(targetLobby);
+    const inviteeUser = registeredUsers.find((u: any) =>
+      String(u.id) === String(applicant.applicantId || applicant.userId)
+    );
+    // If the invited player has Auto-Accept enabled in their auto-apply settings,
+    // skip the invite popup entirely and confirm them into the squad instantly.
+    const instantJoin = inviteeUser?.autoAccept === true && String(targetLobby.ownerId) === String(currentUserId);
     const notifId = Date.now();
     let updated = lobbies.map((l) => {
       if (l.id === targetLobby.id) {
@@ -595,7 +598,7 @@ export default function ManagePage() {
     setNotifications(newNotifications);
     setLobbies(updated);
     await saveGlobalData({ lobbies: updated, ...(instantJoin ? {} : { notifications: newNotifications }) });
-    if (applicant.applicantId) {
+    if (applicant.applicantId && !instantJoin) {
       fetch("/api/discord/notify-invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: targetLobby.id, notifId, applicantDiscordId: String(applicant.applicantId || applicant.userId) }) }).catch(() => {});
     }
     addToast(instantJoin ? `${applicant.name} auto-accepted!` : `${applicant.name} invited! 60s.`, "success");

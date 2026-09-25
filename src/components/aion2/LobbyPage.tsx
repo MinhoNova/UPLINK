@@ -25,6 +25,7 @@ import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
 import type { AionAutoApply } from "@/components/modals/AionAutoApplyModal";
+import OfferInviteModal from "@/components/modals/OfferInviteModal";
 import { resolveProfileBanner, resolveProfileImage, resolveProfileDisplayName, resolveNameColor, isAnimatedImageUrl, profileImgClass } from "@/lib/profileImage";
 
 const FILTER_TABS = [
@@ -890,6 +891,13 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
           const d: any = await fetch("/api/user/auto-apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aionAutoApply: next }) }).then((r) => r.json());
           if (!d?.success) throw new Error("save_failed");
         }}
+      />
+
+      <OfferInviteModal
+        lobbies={lobbies}
+        registeredUsers={registeredUsers}
+        meId={meId}
+        meName={meName || ""}
       />
     </div>
   );
