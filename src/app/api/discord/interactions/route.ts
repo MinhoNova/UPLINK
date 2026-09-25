@@ -103,7 +103,7 @@ export async function POST(req: Request) {
       if (!result.ok) {
         if (result.reason === "max") {
           return ephemeral(
-            `⛔ You can hold up to **${DISCORD_MAX_ENTRY_ROLES}** channel roles (NA / EU / ARABIC CHAT). Remove one first by clicking your current buttons again.`
+            `⛔ You can hold up to **${DISCORD_MAX_ENTRY_ROLES}** channel roles (region + ARABIC CHAT). Remove one first by clicking your current buttons again.`
           );
         }
         if (result.reason === "notfound") {

@@ -129,7 +129,7 @@ async function getMemberRoleIds(
   return member?.roles ?? null;
 }
 
-/** Find a role id by exact name, falling back to a case/space-insensitive match. */
+/** Find a role id by exact name, falling back to a case/space-insensitive match (emoji-aware). */
 async function findEntryRoleId(guildId: string, roleName: string): Promise<string | null> {
   const roles: { id: string; name: string }[] | null = await discordBotFetch(
     `/guilds/${guildId}/roles`
@@ -137,9 +137,21 @@ async function findEntryRoleId(guildId: string, roleName: string): Promise<strin
   if (!roles) return null;
   const exact = roles.find((r) => r.name === roleName);
   if (exact) return exact.id;
-  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+  const norm = (s: string) =>
+    s
+      .replace(
+        /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}]/gu,
+        ""
+      )
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
   const wanted = norm(roleName);
-  return roles.find((r) => norm(r.name) === wanted)?.id ?? null;
+  const fallback = roles.find((r) => norm(r.name) === wanted);
+  if (fallback) return fallback.id;
+  return (
+    roles.find((r) => norm(r.name).includes(wanted) || wanted.includes(norm(r.name)))?.id ?? null
+  );
 }
 
 /** Which entry-channel roles the member currently holds (by spec). */
@@ -150,12 +162,14 @@ export async function getMemberEntryRoles(discordUserId: string): Promise<
   if (!guildId || !discordUserId) return [];
   const roleIds = await getMemberRoleIds(guildId, discordUserId);
   if (!roleIds) return [];
-  const roles: { id: string; name: string }[] | null = await discordBotFetch(
-    `/guilds/${guildId}/roles`
-  );
-  const nameById = new Map((roles ?? []).map((r) => [r.id, r.name]));
-  const names = new Set(roleIds.map((id) => nameById.get(id)).filter(Boolean));
-  return DISCORD_ENTRY_ROLES.filter((spec) => names.has(spec.name)).map((spec) => ({
+  const held = new Set<string>();
+  for (const spec of DISCORD_ENTRY_ROLES) {
+    const roleId = await findEntryRoleId(guildId, spec.name);
+    if (roleId && roleIds.includes(roleId)) {
+      held.add(spec.key);
+    }
+  }
+  return DISCORD_ENTRY_ROLES.filter((spec) => held.has(spec.key)).map((spec) => ({
     name: spec.name,
     key: spec.key,
   }));

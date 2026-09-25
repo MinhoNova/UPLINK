@@ -18,10 +18,10 @@ export const DISCORD_OWNER_USER_ID = "1497295886223544471";
 
 /**
  * Self-service entry roles: members pick these from the Discord picker to unlock
- * channels (NA / EU / ARABIC CHAT). Names must match the roles in the guild —
+ * channels (region helpers + ARABIC CHAT). Names must match the roles in the guild —
  * override per role via env vars if they differ.
  */
-export type EntryRoleKey = "na" | "eu" | "arabicChat";
+export type EntryRoleKey = "naEast" | "naWest" | "eu" | "arabicChat";
 
 export const DISCORD_ENTRY_ROLES: ReadonlyArray<{
   key: EntryRoleKey;
@@ -32,19 +32,27 @@ export const DISCORD_ENTRY_ROLES: ReadonlyArray<{
   description: string;
 }> = [
   {
-    key: "na",
-    name: process.env.DISCORD_ENTRY_ROLE_NA?.trim() || "NA",
-    customId: "role_na",
-    buttonLabel: "NA",
+    key: "naEast",
+    name: process.env.DISCORD_ENTRY_ROLE_NA_EAST?.trim() || "NA East",
+    customId: "role_naEast",
+    buttonLabel: "NA East",
     emoji: "🌎",
-    description: "North America channels",
+    description: "NA East channels",
+  },
+  {
+    key: "naWest",
+    name: process.env.DISCORD_ENTRY_ROLE_NA_WEST?.trim() || "NA West",
+    customId: "role_naWest",
+    buttonLabel: "NA West",
+    emoji: "🌍",
+    description: "NA West channels",
   },
   {
     key: "eu",
     name: process.env.DISCORD_ENTRY_ROLE_EU?.trim() || "EU",
     customId: "role_eu",
     buttonLabel: "EU",
-    emoji: "🌍",
+    emoji: "🇪🇺",
     description: "Europe channels",
   },
   {
