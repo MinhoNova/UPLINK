@@ -23,9 +23,14 @@ export async function GET(req: Request) {
     .filter((user: any) => ownerIds.has(String(user.id)))
     .map((user: any) => ({
       id: user.id,
-      activeVfx: user.activeVfx,
-      profileGif: user.profileGif,
-      vfxSettings: user.vfxSettings,
+      name: user.name ?? null,
+      username: user.username ?? null,
+      displayName: user.displayName ?? null,
+      avatar: user.avatar ?? null,
+      customAvatar: user.customAvatar ?? null,
+      profileGif: user.profileGif ?? null,
+      activeVfx: user.activeVfx ?? null,
+      vfxSettings: user.vfxSettings ?? null,
     }));
 
   return NextResponse.json({ lobbies: history, registeredUsers: users });

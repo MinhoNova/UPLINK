@@ -97,6 +97,23 @@ export default function HistoryPage() {
                         <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-cyan-300" /> {(lobby.accepted || []).length + 1} players</span>
                         <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-amber-300" /> {lobby.totalGold || (lobby.goldPerRun || 0) * (lobby.runsCount || 1)}K paid</span>
                       </div>
+                      <div className="mt-3 flex items-center gap-2.5 border-t border-white/10 pt-3">
+                        {(() => {
+                          const pic = String(owner?.customAvatar || owner?.profileGif || owner?.avatar || lobby.ownerImage || "");
+                          const ownerLabel = String(owner?.displayName || owner?.name || owner?.username || lobby.ownerDiscordName || "Commander");
+                          return (
+                            <>
+                              {pic ? (
+                                <img src={pic} alt="" loading="lazy" decoding="async" className="h-8 w-8 rounded-full border border-white/15 object-cover" />
+                              ) : (
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[11px] font-black uppercase text-cyan-300/70">{String(ownerLabel).slice(0, 1)}</span>
+                              )}
+                              <span className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest text-slate-200">{ownerLabel}</span>
+                              {lobby.serverRegion ? <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-500">· {String(lobby.serverRegion).toUpperCase()}</span> : null}
+                            </>
+                          );
+                        })()}
+                      </div>
                       <div className="mt-5 flex flex-wrap gap-2">
                         <button type="button" onClick={() => { window.location.href = `/manage/${lobby.id}`; }} className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#061019] transition hover:bg-cyan-300"><MessageCircle className="h-3.5 w-3.5" /> View thread</button>
                         <button type="button" onClick={() => setProof(String(lobby.paymentProof))} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-black/25 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:border-emerald-300/50 hover:bg-white/10"><ImageIcon className="h-3.5 w-3.5" /> Payment proof</button>
