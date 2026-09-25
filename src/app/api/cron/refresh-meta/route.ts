@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { syncEntryPickerDMs } from "@/lib/discordGuild";
 
 export async function GET(request: Request) {
   try {
@@ -8,9 +9,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const entry = await syncEntryPickerDMs().catch((err) => ({
+      checked: 0,
+      messaged: 0,
+      errors: 0,
+      error: String(err),
+    }));
+
     return NextResponse.json({
       ok: true,
       refreshed: { live: false, ptr: false },
+      entry,
       timestamp: Date.now(),
     });
   } catch (err) {

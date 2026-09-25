@@ -1,8 +1,16 @@
 import {
   DISCORD_AUTO_ROLE_NAME,
+  DISCORD_ENTRY_DM_MAX_PER_RUN,
+  DISCORD_ENTRY_PICKER_CHANNEL,
+  DISCORD_ENTRY_PICKER_FOOTER,
+  DISCORD_ENTRY_ROLES,
+  DISCORD_KV_ENTRY_DM_SENT,
+  DISCORD_MAX_ENTRY_ROLES,
   DISCORD_OWNER_USER_ID,
   DISCORD_ROLE,
+  type EntryRoleKey,
 } from "@/lib/discordConstants";
+import { getKV, setKV } from "@/lib/db";
 
 const API = "https://discord.com/api/v10";
 
@@ -108,6 +116,255 @@ export async function grantDiscordGuildRole(
     { method: "PUT" }
   );
   return result !== null;
+}
+
+/** Fetch a single guild member's Discord role id list (null if not fetchable). */
+async function getMemberRoleIds(
+  guildId: string,
+  discordUserId: string
+): Promise<string[] | null> {
+  const member: { roles?: string[] } | null = await discordBotFetch(
+    `/guilds/${guildId}/members/${discordUserId}`
+  );
+  return member?.roles ?? null;
+}
+
+/** Find a role id by exact name, falling back to a case/space-insensitive match. */
+async function findEntryRoleId(guildId: string, roleName: string): Promise<string | null> {
+  const roles: { id: string; name: string }[] | null = await discordBotFetch(
+    `/guilds/${guildId}/roles`
+  );
+  if (!roles) return null;
+  const exact = roles.find((r) => r.name === roleName);
+  if (exact) return exact.id;
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+  const wanted = norm(roleName);
+  return roles.find((r) => norm(r.name) === wanted)?.id ?? null;
+}
+
+/** Which entry-channel roles the member currently holds (by spec). */
+export async function getMemberEntryRoles(discordUserId: string): Promise<
+  { name: string; key: EntryRoleKey }[]
+> {
+  const guildId = resolveGuildId();
+  if (!guildId || !discordUserId) return [];
+  const roleIds = await getMemberRoleIds(guildId, discordUserId);
+  if (!roleIds) return [];
+  const roles: { id: string; name: string }[] | null = await discordBotFetch(
+    `/guilds/${guildId}/roles`
+  );
+  const nameById = new Map((roles ?? []).map((r) => [r.id, r.name]));
+  const names = new Set(roleIds.map((id) => nameById.get(id)).filter(Boolean));
+  return DISCORD_ENTRY_ROLES.filter((spec) => names.has(spec.name)).map((spec) => ({
+    name: spec.name,
+    key: spec.key,
+  }));
+}
+
+/**
+ * Toggle an entry-channel role for the member.
+ * Removing is always allowed; adding respects DISCORD_MAX_ENTRY_ROLES.
+ */
+export async function toggleEntryRole(
+  discordUserId: string,
+  roleSpec: (typeof DISCORD_ENTRY_ROLES)[number]
+): Promise<{ ok: boolean; added: boolean; reason?: "max" | "notfound" | "notmember" }> {
+  const guildId = resolveGuildId();
+  if (!guildId || !discordUserId) return { ok: false, added: false, reason: "notmember" };
+
+  const roleIds = await getMemberRoleIds(guildId, discordUserId);
+  if (!roleIds) return { ok: false, added: false, reason: "notmember" };
+
+  const roleId = await findEntryRoleId(guildId, roleSpec.name);
+  if (!roleId) return { ok: false, added: false, reason: "notfound" };
+
+  if (roleIds.includes(roleId)) {
+    const removed = await discordBotFetch(
+      `/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+      { method: "DELETE" }
+    );
+    return removed !== null
+      ? { ok: true, added: false }
+      : { ok: false, added: false };
+  }
+
+  const currentlyHeld = await getMemberEntryRoles(discordUserId);
+  if (currentlyHeld.length >= DISCORD_MAX_ENTRY_ROLES) {
+    return { ok: false, added: false, reason: "max" };
+  }
+
+  const granted = await discordBotFetch(
+    `/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+    { method: "PUT" }
+  );
+  return granted !== null
+    ? { ok: true, added: true }
+    : { ok: false, added: false };
+}
+
+const entryPickerEmbed = () => ({
+  title: "🚪 Pick your channels",
+  description: `Welcome, Explorer! Choose the channels you want to unlock. You can hold up to **${DISCORD_MAX_ENTRY_ROLES}** roles — click a button again to remove it.\n\n${DISCORD_ENTRY_ROLES.map(
+    (r) => `${r.emoji} **${r.name}** — ${r.description}`
+  ).join("\n")}`,
+  color: 0x00d9ff,
+  footer: { text: DISCORD_ENTRY_PICKER_FOOTER },
+});
+
+const entryPickerComponents = () => [
+  {
+    type: 1,
+    components: DISCORD_ENTRY_ROLES.map((r) => ({
+      type: 2,
+      style: 2,
+      label: r.buttonLabel,
+      custom_id: r.customId,
+      emoji: { name: r.emoji },
+    })),
+  },
+];
+
+/** Post the entry channel-picker message into the guild (skips if already posted recently). */
+export async function postEntryPickerMessage(): Promise<{
+  ok: boolean;
+  channelId?: string;
+  alreadyPosted?: boolean;
+  messageUrl?: string;
+  error?: string;
+}> {
+  const guildId = resolveGuildId();
+  if (!guildId) return { ok: false, error: "DISCORD_GUILD_ID missing" };
+
+  const channelsRes = await discordBotFetchDetailed<{
+    id: string;
+    name: string;
+    type: number;
+  }[]>(`/guilds/${guildId}/channels`);
+  if (!channelsRes.ok) {
+    return { ok: false, error: `Failed to load channels (${channelsRes.status})` };
+  }
+
+  const pickerTarget =
+    (DISCORD_ENTRY_PICKER_CHANNEL
+      ? channelsRes.data.find(
+          (c) =>
+            c.type === 0 &&
+            (c.id === DISCORD_ENTRY_PICKER_CHANNEL ||
+              c.name === DISCORD_ENTRY_PICKER_CHANNEL)
+        )
+      : undefined) ||
+    channelsRes.data.find((c) => c.name === "welcome-briefing" && c.type === 0) ||
+    channelsRes.data.find((c) => c.type === 0);
+  if (!pickerTarget) {
+    return { ok: false, error: "No text channel found to post the picker." };
+  }
+
+  const recentRes = await discordBotFetchDetailed<
+    { embeds?: { footer?: { text?: string } }[] }[]
+  >(`/channels/${pickerTarget.id}/messages?limit=10`);
+  if (recentRes.ok) {
+    const existing = recentRes.data.find(
+      (m) => m.embeds?.[0]?.footer?.text === DISCORD_ENTRY_PICKER_FOOTER
+    );
+    if (existing) {
+      return {
+        ok: true,
+        channelId: pickerTarget.id,
+        alreadyPosted: true,
+        messageUrl: `https://discord.com/channels/${guildId}/${pickerTarget.id}/#`,
+      };
+    }
+  }
+
+  const post = await discordBotFetchDetailed<{ id: string }>(
+    `/channels/${pickerTarget.id}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({ embeds: [entryPickerEmbed()], components: entryPickerComponents() }),
+    }
+  );
+  if (!post.ok) {
+    return { ok: false, error: `Failed to post picker (${post.status})` };
+  }
+  return {
+    ok: true,
+    channelId: pickerTarget.id,
+    messageUrl: `https://discord.com/channels/${guildId}/${pickerTarget.id}/${post.data.id}`,
+  };
+}
+
+async function createBotDMChannel(discordUserId: string): Promise<string | null> {
+  const res = await discordBotFetch<{ id: string }>("/users/@me/channels", {
+    method: "POST",
+    body: JSON.stringify({ recipient_id: discordUserId }),
+  });
+  return res?.id ?? null;
+}
+
+/** DM the entry picker to a member (buttons work in DMs too). */
+async function sendEntryPickerDM(discordUserId: string): Promise<boolean> {
+  const channelId = await createBotDMChannel(discordUserId);
+  if (!channelId) return false;
+  const res = await discordBotFetch(`/channels/${channelId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      embeds: [entryPickerEmbed()],
+      components: entryPickerComponents(),
+    }),
+  });
+  return !!res;
+}
+
+/**
+ * DM the entry picker to guild members who don't have it yet (once per member).
+ * Called by the Cloudflare Cron Trigger every minute. Uses KV to dedupe.
+ */
+export async function syncEntryPickerDMs(): Promise<{
+  checked: number;
+  messaged: number;
+  errors: number;
+}> {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  const guildId = resolveGuildId();
+  if (!token || !guildId) return { checked: 0, messaged: 0, errors: 0 };
+
+  const members = await discordBotFetch<{ user: { id: string }; roles: string[] }[]>(
+    `/guilds/${guildId}/members?limit=1000`
+  );
+  if (!members) return { checked: 0, messaged: 0, errors: 0 };
+
+  const sentRaw = await getKV(DISCORD_KV_ENTRY_DM_SENT);
+  const sent = new Set<string>(Array.isArray(sentRaw) ? sentRaw : []);
+  const roles = await discordBotFetch<{ id: string; name: string }[]>(
+    `/guilds/${guildId}/roles`
+  );
+  const nameById = new Map((roles ?? []).map((r) => [r.id, r.name]));
+  const entryRoleNames = new Set(DISCORD_ENTRY_ROLES.map((r) => r.name));
+
+  let checked = 0;
+  let messaged = 0;
+  let errors = 0;
+
+  for (const member of members) {
+    if (messaged >= DISCORD_ENTRY_DM_MAX_PER_RUN) break;
+    const userId = member.user?.id;
+    if (!userId || sent.has(userId)) continue;
+    sent.add(userId);
+    checked++;
+
+    const alreadyHasEntryRole = (member.roles ?? []).some((id) => {
+      const name = nameById.get(id);
+      return !!name && entryRoleNames.has(name);
+    });
+    if (alreadyHasEntryRole) continue;
+
+    const ok = await sendEntryPickerDM(userId);
+    if (ok) messaged++;
+    else errors++;
+  }
+
+  await setKV(DISCORD_KV_ENTRY_DM_SENT, Array.from(sent).slice(-2000));
+  return { checked, messaged, errors };
 }
 
 /**
