@@ -240,7 +240,6 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
                     </div>
                   )}
                   <span className="text-[8px] font-black text-white truncate w-full text-center uppercase">{accepted.applicantName || accepted.raiderName}</span>
-                  <span className="text-[#00ffff] font-bold text-[7px]">LVL {(accepted.level || accepted.applicantLevel || "60")}</span>
                 </>
               )}
             </>

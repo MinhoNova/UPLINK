@@ -50,6 +50,9 @@ export function sanitizeAionClass(c: unknown): string {
 export const AION2_LEVEL_MAX = 9999;
 export const AION2_CPAP_MAX = 100000;
 
+/** Boosting offers on UPLINK require the applying character to be at least this level. */
+export const BOOST_MIN_LEVEL = 45;
+
 export function sanitizeAionLevel(raw: unknown): number {
   const n = parseInt(String(raw ?? ""), 10);
   if (Number.isNaN(n)) return 1;

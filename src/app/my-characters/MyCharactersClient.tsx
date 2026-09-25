@@ -171,6 +171,11 @@ export default function MyCharactersClient() {
               <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300">{t("mychars_linked") || "Character linked"}</p>
             </div>
           )}
+          {linkResult && Number(linkResult.level) < 45 && (
+            <div className="mt-2 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/[0.06] p-3">
+              <span className="text-[9px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"} — Level {linkResult.level}</span>
+            </div>
+          )}
         </div>
 
         {/* List */}
@@ -218,6 +223,9 @@ export default function MyCharactersClient() {
                       <span className="text-violet-300">{Number(c.itemLevel) || "—"}</span> ILVL
                       {Number(c.cpAp) ? <span className="text-amber-300">{c.cpAp}</span> : null}
                     </span>
+                    {Number(c.level) < 45 && (
+                      <span className="inline-flex w-fit rounded border border-red-500/40 bg-red-500/10 px-1.5 py-px text-[7px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"}</span>
+                    )}
                     <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                       {href && (
                         <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all">

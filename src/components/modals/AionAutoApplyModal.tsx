@@ -124,6 +124,7 @@ export default function AionAutoApplyModal({
   };
 
   const pickChar = (c: any) => {
+    if (Number(c.level) < 45) { setError("Boosting offers require Level 45+ — your character is under Level 45"); return; }
     setSelCharId(String(c.id));
     setCharDropOpen(false);
     set({ ...charPatch(c), enabled: true });
@@ -177,6 +178,7 @@ export default function AionAutoApplyModal({
             onClick={() => {
               if (!meId) { setError("Sign in to use auto-apply"); return; }
               if (!selectedChar) { setError("Link a character first — add one in My Characters"); return; }
+              if (Number(selectedChar.level) < 45) { setError("Boosting offers require Level 45+ — your character is under Level 45"); return; }
               set({ enabled: !cfg.enabled });
             }}
             disabled={saving}
@@ -236,8 +238,9 @@ export default function AionAutoApplyModal({
             </button>
           </div>
         ) : (
-          <div className="mt-2 relative">
-            <button
+          <>
+            <div className="mt-2 relative">
+              <button
               type="button"
               onClick={() => setCharDropOpen((v) => !v)}
               className="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 text-left transition-all hover:border-emerald-500/50 flex items-center gap-3"
@@ -255,10 +258,6 @@ export default function AionAutoApplyModal({
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0 text-center">
-                <div>
-                  <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Lv</p>
-                  <p className="text-sm font-black text-white tabular-nums">{selectedChar?.level ?? "—"}</p>
-                </div>
                 <div>
                   <p className="text-[7px] font-black uppercase tracking-widest text-violet-400">Item Lv</p>
                   <p className="text-sm font-black text-violet-300 tabular-nums">{Number(selectedChar?.itemLevel) > 0 ? Number(selectedChar.itemLevel).toLocaleString() : "—"}</p>
@@ -296,7 +295,13 @@ export default function AionAutoApplyModal({
                 })}
               </div>
             )}
-          </div>
+            </div>
+            {Number(selectedChar?.level) < 45 && (
+              <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
+                <p className="text-[8px] font-black uppercase tracking-widest text-red-400">Boosting offers require Level 45+ — your character is under Level 45</p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Auto-applies as — values always come from the linked character */}

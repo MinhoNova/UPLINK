@@ -40,6 +40,13 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
     };
   }
 
+  if (Number(char.level ?? char.applicantLevel ?? 0) < 45) {
+    return {
+      ok: false as const,
+      error: `Boosting offers require Level 45+ — your character is Level ${char.level || char.applicantLevel || "?"}.`,
+    };
+  }
+
   const limitCheck = await checkAndRecordOfferAction(uid, user);
   if (!limitCheck.ok) {
     return { ok: false as const, error: limitCheck.error };

@@ -307,6 +307,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     if (!meId || !l || applyingId) return;
     if (!applyChar) { setApplyError(t("apply_noCharacter")); return; }
     if (!applyAionClass) { setApplyError(t("err_pickClass")); return; }
+    if (Number(applyChar.level ?? 0) < 45) { setApplyError(t("apply_levelRequired") || "Boosting offers require Level 45+"); return; }
     setApplyingId(String(l.id)); setApplyError("");
     const charId = reapplyCharId;
     const gid = applyGameCharId(applyChar);
@@ -696,11 +697,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       })}
                     </div>
                   )}
-                  <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-                    <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-center">
-                      <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Lv</p>
-                      <p className="text-sm font-black text-white tabular-nums">{applyChar.level}</p>
-                    </div>
+                  <div className="mt-2.5 grid grid-cols-2 gap-1.5">
                     <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2 py-1.5 text-center">
                       <p className="text-[7px] font-black uppercase tracking-widest text-violet-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />Item Lv</p>
                       <p className="text-sm font-black text-violet-300 tabular-nums">{Number(applyChar.itemLevel) > 0 ? Number(applyChar.itemLevel).toLocaleString() : "—"}</p>
@@ -710,6 +707,11 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       <p className="text-sm font-black text-amber-300 tabular-nums">{Number(applyChar.cpAp || applyChar.combatPower) > 0 ? Number(applyChar.cpAp || applyChar.combatPower).toLocaleString() : "—"}</p>
                     </div>
                   </div>
+                  {Number(applyChar.level) < 45 && (
+                    <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
+                      <p className="text-[8px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"}</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-4 rounded-2xl border border-orange-500/25 bg-orange-500/[0.06] p-4 text-center">

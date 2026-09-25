@@ -12,6 +12,7 @@ import {
   sanitizeAionLevel,
   sanitizeAionCpAp,
   aionClassRole,
+  BOOST_MIN_LEVEL,
 } from "@/lib/aionClassMeta";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
@@ -66,6 +67,14 @@ export async function POST(req: Request) {
       };
     })(),
   };
+
+  const applicantLevel = Number(nextApplicant.level ?? 0);
+  if (applicantLevel < BOOST_MIN_LEVEL) {
+    return NextResponse.json(
+      { error: `Boosting offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${applicantLevel}.` },
+      { status: 400 }
+    );
+  }
 
   let abortReason: string | null = null;
   const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
