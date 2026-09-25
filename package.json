@@ -33,6 +33,7 @@
     "discord:professionalize": "node scripts/professionalize-discord-roles.cjs",
     "discord:community": "node scripts/professional-community.cjs",
     "discord:media": "node scripts/set-guild-media.cjs",
+    "discord:grantrole": "node scripts/discord-grant-entry-role.cjs",
     "og:generate": "node scripts/generate-og.cjs",
     "prebuild": "node scripts/generate-og.cjs"
   },
