@@ -10,7 +10,7 @@ import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversati
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
 import { resolveProfileImage, resolveProfileDisplayName, profileImgClass } from "@/lib/profileImage";
 
-function MemberRow({ user, onClick, friendsLabel }: { user: any; onClick: () => void; friendsLabel?: boolean }) {
+function MemberRow({ user, onClick, friendsLabel, online = true }: { user: any; onClick: () => void; friendsLabel?: boolean; online?: boolean }) {
   return (
     <div
       role="button"
@@ -20,8 +20,8 @@ function MemberRow({ user, onClick, friendsLabel }: { user: any; onClick: () => 
       className="w-full py-2 px-3 rounded-2xl hover:bg-white/[0.05] border border-transparent hover:border-white/5 transition-all flex items-center gap-3 group relative cursor-pointer"
     >
       <div className="relative shrink-0">
-        <img src={resolveProfileImage(user)} className={profileImgClass(resolveProfileImage(user), "w-9 h-9 rounded-full border border-white/10")} alt="" />
-        <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-[#0c0c18] shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+        <img src={resolveProfileImage(user)} className={`${profileImgClass(resolveProfileImage(user), "w-9 h-9 rounded-full border border-white/10")} ${online ? "" : "opacity-50 saturate-50"}`} alt="" />
+        <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-[#0c0c18] ${online ? "bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.8)]" : "bg-zinc-500"}`} />
       </div>
       <div className="text-left flex-1 min-w-0 flex items-center gap-2">
         <div className="flex-1 min-w-0">
@@ -476,6 +476,23 @@ export default function DirectCommsPanel() {
     return onlineUsers.filter((u: any) => ids.has(String(u.id)));
   }, [onlineUsers, friends, currentUserId]);
 
+  const offlineFriendUsers = useMemo(() => {
+    const ids = getAcceptedFriendIds(currentUserId, friends);
+    return [...registeredUsers]
+      .filter(
+        (u: any) =>
+          u.username &&
+          u.username !== currentHandle &&
+          u.online !== true &&
+          ids.has(String(u.id)) &&
+          !isUserBlocked(String(u.id))
+      )
+      .sort((a: any, b: any) =>
+        String(a.displayName || a.name || a.username).localeCompare(String(b.displayName || b.name || b.username))
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registeredUsers, friends, currentUserId, currentHandle]);
+
   const dmFriendUsers = useMemo(
     () =>
       buildDmContactList({
@@ -633,9 +650,10 @@ export default function DirectCommsPanel() {
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); openPlayerProfile(user.id); }}
-                            className="w-11 h-11 rounded-2xl overflow-hidden bg-black border border-white/10 shrink-0 shadow-inner hover:border-[#00ffff]/40 hover:shadow-[0_0_12px_rgba(0,255,255,0.15)] transition-all flex items-center justify-center"
+                            className="relative w-11 h-11 rounded-2xl overflow-hidden bg-black border border-white/10 shrink-0 shadow-inner hover:border-[#00ffff]/40 hover:shadow-[0_0_12px_rgba(0,255,255,0.15)] transition-all flex items-center justify-center"
                           >
                             <img src={resolveProfileImage(user)} className={profileImgClass(resolveProfileImage(user), "w-full h-full")} alt="" />
+                            <span className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0c0c18] ${user.online === true ? "bg-green-400" : "bg-zinc-500"}`} />
                           </button>
                           <div className="text-left flex-1 min-w-0 flex items-center gap-2">
                             <div className="flex-1 min-w-0">
@@ -724,6 +742,16 @@ export default function DirectCommsPanel() {
                     <div className="space-y-1">
                       {onlineFriendIds.map((user: any) => (
                         <MemberRow key={String(user.id)} user={user} friendsLabel onClick={() => { setSelectedUser(user); setTab("dm"); }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {offlineFriendUsers.length > 0 && (
+                  <div>
+                    <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1.5 px-1">Friends Offline</p>
+                    <div className="space-y-1">
+                      {offlineFriendUsers.map((user: any) => (
+                        <MemberRow key={String(user.id)} user={user} friendsLabel online={false} onClick={() => { setSelectedUser(user); setTab("dm"); }} />
                       ))}
                     </div>
                   </div>
