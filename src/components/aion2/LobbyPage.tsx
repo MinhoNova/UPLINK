@@ -19,6 +19,7 @@ import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
+import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
@@ -657,7 +658,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                     onClick={() => setApplyCharOpen((v) => !v)}
                     className="w-full flex items-center gap-3 text-left"
                   >
-                    {applyChar.portraitUrl ? (<img src={String(applyChar.portraitUrl)} alt="" className="h-14 w-14 rounded-lg border border-white/10 bg-black object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : (<div className="h-14 w-14 rounded-lg border border-white/10 bg-black flex items-center justify-center"><Swords className="w-5 h-5 text-cyan-400/60" /></div>)}
+                    <CharacterPortraitBadge src={applyChar.portraitUrl} aionClass={applyChar.aionClass || applyChar.gameClassLabel || applyChar.siteClass || "dps"} fallback={applyChar.name || ""} size="lg" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-black text-emerald-200">{applyChar.name || "Character"}</p>
                       <p className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-300">{applyChar.aionClass || applyChar.gameClassLabel || "Unknown class"}</p>
@@ -686,7 +687,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                             onClick={() => pickApplyChar(c)}
                             className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"}`}
                           >
-                            {c.portraitUrl ? (<img src={String(c.portraitUrl)} alt="" className="h-10 w-10 rounded-lg border border-white/10 bg-black object-cover shrink-0" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />) : (<div className="h-10 w-10 rounded-lg border border-white/10 bg-black flex items-center justify-center shrink-0"><Swords className="w-4 h-4 text-cyan-400/60" /></div>)}
+                            <CharacterPortraitBadge src={c.portraitUrl} aionClass={c.aionClass || c.gameClassLabel || "dps"} fallback={c.name || ""} size="sm" />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-xs font-black">{c.name}</span>
                               <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
