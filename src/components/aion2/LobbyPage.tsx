@@ -536,7 +536,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           {classSlots.map((s, i) => (
                             <div key={i} className="relative">
                               <img src={classThumbUrl(s.cls)} alt={s.cls} width={64} height={64} className={`w-16 h-16 object-contain drop-shadow-[0_4px_16px_rgba(34,211,238,0.6)] transition-all duration-300 ${s.filled ? 'opacity-25 grayscale brightness-[0.45] saturate-0' : 'brightness-100 saturate-100'}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                              {s.filled && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500/80 border-2 border-[#070b1a] shadow-[0_0_8px_rgba(239,68,68,0.7)]" />}
                             </div>
                           ))}
                         </div>
