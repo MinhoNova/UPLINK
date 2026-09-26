@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
-import { useSideRailOpen } from "@/hooks/useSideRailOpen";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import { resolveHeroBg, heroBgStyle, type HeroBgKey } from "@/lib/heroBg";
@@ -55,7 +54,6 @@ function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
 
 export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string }) {
   const { t } = useI18n();
-  const { open: sideRailOpen } = useSideRailOpen();
   const { data: session } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("All");
@@ -466,7 +464,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
       <div className="h-8" />
 
       {/* Main */}
-      <main className={`max-w-[1600px] mx-auto px-6 pb-32 relative z-20 transition-[padding] duration-200 ${sideRailOpen ? "lg:pl-[212px]" : "lg:pl-6"}`}>
+      <main className="max-w-[1600px] mx-auto px-6 pb-32 relative z-20">
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-8">
           <section className="min-w-0">
             {/* Filters */}
