@@ -12,9 +12,6 @@ export default function SideRail() {
   const pathname = usePathname();
   const { open, toggleRail } = useSideRailOpen();
 
-  const railBtn =
-    "h-11 w-11 sm:h-12 sm:w-12 rounded-2xl border border-white/10 bg-[#080810]/85 backdrop-blur-xl flex items-center justify-center transition-all hover:scale-110 shadow-[0_0_18px_rgba(0,0,0,0.35)]";
-
   const railLabelBtn =
     "h-10 inline-flex items-center gap-2 rounded-xl border px-4 font-black uppercase text-[10px] tracking-widest transition-all";
 
@@ -49,21 +46,22 @@ export default function SideRail() {
               type="button"
               title={t("sr_chat") || "Global Chat"}
               onClick={() => window.dispatchEvent(new CustomEvent("toggle-global-chat"))}
-              className={`${railBtn} text-[#00ffff] border-[#00ffff]/25 hover:bg-[#00ffff]/10 hover:shadow-[0_0_20px_rgba(0,255,255,0.25)]`}
+              className={`${railLabelBtn} border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] hover:bg-[#00ffff] hover:text-black hover:border-[#00ffff]`}
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4 shrink-0" />
+              {t("sr_chat") || "Global Chat"}
             </button>
 
             <button
               type="button"
-              title={t("sr_online") || "Online"}
+              title={t("sr_onlineNow") || "Online Now"}
               onClick={() => window.dispatchEvent(new CustomEvent("open-online"))}
-              className={`${railBtn} relative text-green-400 border-green-500/25 hover:bg-green-500/10 hover:shadow-[0_0_20px_rgba(34,197,94,0.25)]`}
+              className={`${railLabelBtn} gap-1.5 border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-black hover:border-green-500`}
             >
-              <Radio className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 border-2 border-[#050814]">
+              <Radio className="w-4 h-4 shrink-0" />
+              {t("sr_onlineNow") || "Online Now"}
+              <span className="relative ml-0.5 w-2 h-2 rounded-full bg-green-400">
                 <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-60" />
-                <span className="absolute inset-0 rounded-full bg-green-400" />
               </span>
             </button>
 
@@ -95,9 +93,10 @@ export default function SideRail() {
               type="button"
               title={t("sr_assistant") || "Assistant"}
               onClick={() => window.dispatchEvent(new CustomEvent("toggle-assistant"))}
-              className={`${railBtn} ${pathname === "/assistant" ? "bg-violet-500/20 border-violet-500/50 text-violet-300" : "text-violet-400 border-violet-500/25 hover:bg-violet-500/10 hover:shadow-[0_0_20px_rgba(167,139,250,0.25)]"}`}
+              className={`${railLabelBtn} gap-1.5 ${pathname === "/assistant" ? "bg-violet-500/20 text-violet-300 border-violet-500/50" : "border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500 hover:text-white hover:border-violet-500"}`}
             >
-              <Bot className="w-5 h-5" />
+              <Bot className="w-4 h-4 shrink-0" />
+              {t("sr_assistant") || "Assistant"}
             </button>
           </motion.div>
         )}
