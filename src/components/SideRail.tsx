@@ -13,7 +13,7 @@ export default function SideRail() {
   const { open, toggleRail } = useSideRailOpen();
 
   const railLabelBtn =
-    "h-10 inline-flex items-center gap-2 rounded-xl border px-4 font-black uppercase text-[10px] tracking-widest transition-all";
+    "h-10 w-[168px] inline-flex items-center gap-2 rounded-xl border px-3.5 font-black uppercase text-[10px] tracking-widest transition-all";
 
   return (
     <div className="fixed left-3 sm:left-5 top-1/2 z-[70] -translate-y-1/2">
@@ -60,7 +60,7 @@ export default function SideRail() {
             >
               <Radio className="w-4 h-4 shrink-0" />
               {t("sr_onlineNow") || "Online Now"}
-              <span className="relative ml-0.5 w-2 h-2 rounded-full bg-green-400">
+              <span className="relative ml-auto w-2 h-2 rounded-full bg-green-400">
                 <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-60" />
               </span>
             </button>
