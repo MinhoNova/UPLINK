@@ -31,25 +31,13 @@ function ephemeral(content: string) {
 
 export async function POST(req: Request) {
   const publicKey = process.env.DISCORD_PUBLIC_KEY;
-  const signature = req.headers.get("X-Signature-Ed25519") || "";
-  const timestamp = req.headers.get("X-Signature-Timestamp") || "";
-  const body = await req.text();
-
-  console.error(
-    `[interact] hit url=${req.url} sig=${signature ? "yes" : "no"} ts=${timestamp ? "yes" : "no"} bodyHead=${body?.slice(0, 80)}`
-  );
-
-  try {
-    const { getKV, setKV } = await import("@/lib/db");
-    const prev = (await getKV("debug_interact_clock")) || 0;
-    await setKV("debug_interact_clock", Number(prev) + 1);
-  } catch (e) {
-    console.error("[interact][clock] failed:", e && (e as Error).message);
-  }
-
   if (!publicKey) {
     return new Response("DISCORD_PUBLIC_KEY not configured", { status: 503 });
   }
+
+  const signature = req.headers.get("X-Signature-Ed25519") || "";
+  const timestamp = req.headers.get("X-Signature-Timestamp") || "";
+  const body = await req.text();
 
   if (!verifyKey(body, signature, timestamp, publicKey)) {
     return new Response("Invalid signature", { status: 401 });
