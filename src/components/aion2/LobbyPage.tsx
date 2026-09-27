@@ -447,9 +447,9 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const offerBgStyle = offerBannerBgStyle(OFFER_BANNER_BG_DEFAULT);
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-clip relative">
-      {/* Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 relative">
+      {/* Background — pulled back over the reserved rail gutter so it stays full-bleed */}
+      <div className="absolute inset-0 z-0 pointer-events-none -ml-[var(--rail-gutter)]">
         {heroBg === "scenic" ? (<><div className="absolute inset-0 bg-contain bg-top bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')`, WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)", maskImage: "linear-gradient(to bottom, black 0%, black 46%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.18) 76%, transparent 90%)" }} /><div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" /></>) : (<div className="absolute inset-0" style={heroBgStyle(heroBg)} />)}
         <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-[#050814]/35 to-[#050814]/95" />
         <div className="absolute inset-x-0 top-0 h-[230vh] bg-[linear-gradient(to_bottom,transparent_0%,rgba(5,8,20,0.3)_70vh,rgba(5,8,20,0.75)_120vh,rgba(5,8,20,0.97)_175vh,#050814_215vh)]" />

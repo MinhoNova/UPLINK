@@ -167,8 +167,8 @@ export default function CharacterPage() {
   const equippedSkills = d ? d.skills.filter((s) => s.equipped) : [];
 
   return (
-    <main className="min-h-screen bg-[#050814] text-slate-200 font-sans overflow-x-clip relative">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.08),transparent_55%)]" />
+    <main className="min-h-screen bg-[#050814] text-slate-200 font-sans relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.08),transparent_55%)] -ml-[var(--rail-gutter)]" />
 
       <div className="relative max-w-5xl mx-auto px-6 pt-28 sm:pt-32 pb-10">
         <a href="/" className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-cyan-300">

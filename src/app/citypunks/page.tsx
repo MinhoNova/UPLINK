@@ -17,7 +17,7 @@ export default function CitypunksWireframe() {
     <div className="min-h-screen bg-[#050505] text-gray-100 font-sans selection:bg-[#00ffff] selection:text-black">
       
       {/* 1. HERO SECTION */}
-      <section className="relative w-full h-screen flex flex-col justify-end overflow-hidden border-b border-gray-800">
+      <section className="relative w-full h-screen flex flex-col justify-end overflow-hidden border-b border-gray-800 -ml-[var(--rail-gutter)]">
         
         {/* Placeholder for Large Video */}
         <div className="absolute inset-0 z-0 bg-gray-900/50 flex items-center justify-center">
@@ -99,7 +99,7 @@ export default function CitypunksWireframe() {
 
 
       {/* 3. NEWS SECTION */}
-      <section className="py-24 px-8 md:px-16 bg-[#0a0a0a] border-y border-gray-800">
+      <section className="py-24 px-8 md:px-16 bg-[#0a0a0a] border-y border-gray-800 -ml-[var(--rail-gutter)]">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-end mb-12">
             <h2 className="text-3xl font-black uppercase tracking-widest">Transmission Log</h2>
@@ -155,7 +155,7 @@ export default function CitypunksWireframe() {
 
 
       {/* 4. BIG CTA SECTION */}
-      <section className="relative py-32 px-8 flex flex-col items-center justify-center text-center overflow-hidden">
+      <section className="relative py-32 px-8 flex flex-col items-center justify-center text-center overflow-hidden -ml-[var(--rail-gutter)]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,0,127,0.15)_0%,#050505_70%)]" />
         
         <div className="relative z-10 max-w-3xl">

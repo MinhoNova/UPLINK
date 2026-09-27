@@ -579,10 +579,10 @@ roles: requiredClasses.length > 0
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
+    <div className="relative min-h-screen bg-[#050814] text-white selection:bg-cyan-400 selection:text-black font-sans">
 
       {/* ── SCENIC BACKGROUND — mirrors the lobby from the very top of the page ── */}
-      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
+      <div className="absolute inset-0 z-0 pointer-events-none -ml-[var(--rail-gutter)]" aria-hidden>
         <div
           className="absolute inset-0 bg-contain bg-top bg-no-repeat"
           style={{

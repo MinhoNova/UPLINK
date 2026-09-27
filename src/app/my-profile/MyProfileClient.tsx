@@ -461,9 +461,9 @@ export default function MyProfileClient() {
   const rank = myRanks.overall;
 
   return (
-    <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-clip">
+    <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30">
       {/* Scenic artwork + dot-net — same composition as the lobby home && Offer Forge */}
-      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
+      <div className="absolute inset-0 z-0 pointer-events-none -ml-[var(--rail-gutter)]" aria-hidden>
         <div className="absolute inset-0 bg-cover bg-center sm:bg-contain sm:bg-top sm:bg-no-repeat" style={{ backgroundImage: `url('/AION2.png')` }} />
         <div className="absolute inset-0 bg-[#050814]/40 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/12 via-transparent to-[#050814]/35" />

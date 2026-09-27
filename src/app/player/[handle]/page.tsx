@@ -90,8 +90,8 @@ export default async function PlayerPage({
   const ratingCount = reviews.length;
 
   return (
-    <main className="min-h-screen bg-[#050814] text-slate-200 font-sans overflow-x-clip relative">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.08),transparent_55%)]" />
+    <main className="min-h-screen bg-[#050814] text-slate-200 font-sans relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.08),transparent_55%)] -ml-[var(--rail-gutter)]" />
 
       {/* Header */}
       <div className="relative max-w-4xl mx-auto px-6 py-10">
