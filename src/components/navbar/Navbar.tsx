@@ -12,6 +12,7 @@ import { resolveProfileImage, resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { computeDmUnreadCounts, totalDmUnreadCount } from "@/lib/dmHelpers";
+import { refFor } from "@/lib/playerIdentity";
 import { useI18n, LANGS, setLanguage } from "@/i18n/i18n";
 import { useFlag, setFlag } from "@/lib/siteFlags";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
@@ -139,15 +140,21 @@ export default function Navbar() {
           setNotifications(mine);
         }
 
-        if (data.directMessages && currentHandle) {
+        if (data.directMessages && currentUserId) {
           const directMessages = data.directMessages || [];
           const readMessages = data.readMessages || {};
+          // The server echoes the account's canonical handle with the payload.
+          const myHandle = String(data?.me?.username || currentHandle);
           let muted: string[] = [];
           try {
-            muted = JSON.parse(localStorage.getItem(`muted_users_${currentHandle}`) || "[]");
+            muted = JSON.parse(localStorage.getItem(`muted_users_${currentUserId}`) || "[]");
           } catch { /* ignore */ }
 
-          const counts = computeDmUnreadCounts(directMessages, readMessages, currentHandle);
+          const counts = computeDmUnreadCounts(
+            directMessages,
+            readMessages,
+            refFor(currentUserId, myHandle)
+          );
           setDmUnreadCount(totalDmUnreadCount(counts, { muted }));
         } else {
           setDmUnreadCount(0);

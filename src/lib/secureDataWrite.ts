@@ -1,4 +1,5 @@
 import { isSecretClubTier } from "@/lib/userProfile";
+import { findDuplicateUsernames, normRef, type PlayerRecord } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, hasIndependentSquadMember } from "@/lib/lobbyLifecycle";
 import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
@@ -44,6 +45,8 @@ export function sanitizeBannedIdRecords(input: unknown[]): BanIdRecord[] {
 const PROTECTED_SELF_FIELDS = [
   "id",
   "username",
+  "previousUsernames",
+  "usernameConflict",
   "subscription",
   "welcomeFreeClaimed",
   "welcomePlansSeen",
@@ -254,6 +257,14 @@ export function validateRegisteredUsers(
   isAdmin: boolean
 ): ValidateResult {
   if (!Array.isArray(incoming)) return { ok: false, error: "Invalid registeredUsers" };
+
+  // Two accounts may never share a Discord handle — that ambiguity is exactly
+  // what makes a rename look like a brand new player.
+  const duplicate = findDuplicateUsernames(incoming as PlayerRecord[]);
+  if (duplicate.length) {
+    return { ok: false, error: `Username already in use: ${duplicate[0].username}` };
+  }
+
   if (isAdmin) return { ok: true, value: incoming };
 
   const existingById = new Map(existing.map((u: any) => [String(u.id), u]));
@@ -440,21 +451,31 @@ export function validateNotifications(
 
   const existingById = new Map((existing as any[]).map((n) => [n.id, n]));
 
+  // Party membership, checked per side: the stable id when the row has one,
+  // the handle otherwise. A row written before a rename still names an older
+  // handle, so a handle-only test would lock its owner out of it.
+  const sideIsMine = (id: unknown, rowHandle: unknown): boolean => {
+    const rowId = String(id ?? "");
+    if (rowId) return rowId === String(userId);
+    return normRef(rowHandle) === normRef(handle);
+  };
+  const isParty = (n: any): boolean =>
+    sideIsMine(n?.toUserId, n?.toUser) || sideIsMine(n?.fromUserId, n?.fromHandle);
+
   for (const n of incoming as any[]) {
     const ex = existingById.get(n.id);
     if (!ex) {
-      if (n.fromHandle !== handle) return { ok: false, error: "Cannot create notifications for other users" };
+      if (!isParty(n)) return { ok: false, error: "Cannot create notifications for other users" };
       continue;
     }
-    if (JSON.stringify(n) !== JSON.stringify(ex) && n.fromHandle !== handle && n.toUser !== handle) {
+    if (JSON.stringify(n) !== JSON.stringify(ex) && !isParty(n)) {
       return { ok: false, error: "Cannot modify notifications you are not part of" };
     }
   }
 
   for (const [id, ex] of existingById) {
     if (!(incoming as any[]).some((n) => n.id === id)) {
-      const n = ex as any;
-      if (n.fromHandle !== handle && n.toUser !== handle) {
+      if (!isParty(ex)) {
         return { ok: false, error: "Cannot delete notifications you are not part of" };
       }
     }

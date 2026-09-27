@@ -1096,7 +1096,8 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                             setBannedUsers(updatedBanned);
                                                             saveGlobalData({ bannedUsers: updatedBanned });
                                                          }
-                                                         const newNotifications = [...notifications, { id: Date.now(), toUser: ownerHandle, message: "Your offer was reported as a scam. Your account is suspended pending review.", type: "system_alert" }];
+                                                          const ownerId = String(reportScamTarget.ownerId || "");
+                                                          const newNotifications = [...notifications, { id: Date.now(), toUser: ownerHandle, toUserId: ownerId || undefined, message: "Your offer was reported as a scam. Your account is suspended pending review.", type: "system_alert" }];
                                                          setNotifications(newNotifications);
                                                          saveGlobalData({ notifications: newNotifications });
                                                          addToast("Report submitted. Owner suspended.", "success");

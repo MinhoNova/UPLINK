@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getKVPairs, getKV, setKV, initTables } from '@/lib/db';
+import { getKVPairs, setKV, initTables } from '@/lib/db';
 import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
-import { isAdminUser, stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
+import { stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
 import { filterDataForUser } from '@/lib/dataAccess';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
@@ -13,7 +13,6 @@ import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards } from '@/lib/rankAwards';
 import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
-import { DEFAULT_PROFILE_BANNER } from '@/lib/profileImage';
 import { getPublicDataCached, setPublicDataCached, FULL_DATA_CACHE_KEY } from '@/lib/cloudflareBindings';
 
 /* Cache disabled — was causing stale data to be served to users */
@@ -58,8 +57,26 @@ export async function GET(req: Request) {
     const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
     if (ipBlock) return ipBlock;
 
-    if (await isUserBanned(auth.user.username, auth.user.id)) {
-      const info = await getBanInfo(auth.user.username, auth.user.id);
+    // Keep the site account glued to the Discord account. Runs before the read
+    // so a missing account row (first login whose callback write failed) is
+    // already here in the snapshot we scope and return.
+    //
+    // Id-only on purpose: this route runs on a poll and the session cookie can
+    // be a login behind, so its `username` must never overwrite the handle
+    // stored on the account row.
+    let myHandle = auth.user.username;
+    try {
+      const { repairIdentity } = await import("@/lib/identitySync");
+      const identity = await repairIdentity(auth.user.id);
+      if (identity.me?.username) myHandle = String(identity.me.username);
+    } catch (error) {
+      console.error("[data] identity repair failed:", error);
+    }
+
+    // Ban checks run after the repair so a ban recorded under an older Discord
+    // handle still matches.
+    if (await isUserBanned(myHandle, auth.user.id)) {
+      const info = await getBanInfo(myHandle, auth.user.id);
       return bannedResponse(info?.reason);
     }
 
@@ -106,34 +123,10 @@ export async function GET(req: Request) {
       }
     }
 
-    const scoped = filterDataForUser(data, auth.user.id, auth.user.username);
-    // Server-side fallback: if the user logged in but the JWT callback's
-    // auto-registration silently failed (D1 unavailable at callback time),
-    // register them here so they appear in the admin dashboard.
-    if (scoped.registeredUsers && Array.isArray(scoped.registeredUsers)) {
-      const existing = scoped.registeredUsers.find((u: any) => String(u.id) === String(auth.user.id));
-      if (!existing) {
-        const siteDefaultBanner = ((await getKV("siteDefaultBanner")) as string) || DEFAULT_PROFILE_BANNER;
-        const freshUser = {
-          id: auth.user.id,
-          username: auth.user.username,
-          name: auth.user.name ?? null,
-          avatar: (auth.user as any).image ?? null,
-          banner: siteDefaultBanner,
-          lastSeenAt: Date.now(),
-          lastKnownIp: null,
-          stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },
-          subscription: { tier: "free" },
-        };
-        scoped.registeredUsers.push(freshUser);
-        // Persist back to KV so future requests see them.
-        const allUsers = (data.registeredUsers as any[]) || [];
-        if (!allUsers.some((u: any) => String(u.id) === String(auth.user.id))) {
-          allUsers.push(freshUser);
-          setKV("registeredUsers", allUsers).catch(() => {});
-        }
-      }
-    }
+    const scoped = filterDataForUser(data, auth.user.id, myHandle);
+    // The client addresses itself by the canonical handle, not the one baked
+    // into the session cookie at sign-in.
+    scoped.me = { id: auth.user.id, username: myHandle };
     scoped.marketPrices = getMarketAverageByService(data.marketHistory);
     const body = JSON.stringify(scoped);
     touchUserLastIp(auth.user.id, getClientIp(req)).catch(() => {});

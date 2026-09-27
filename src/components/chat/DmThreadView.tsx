@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageSquare, Pencil, Trash2, ImagePlus, X, Smile, Check, CheckCheck } from "lucide-react";
-import { DM_REACTION_EMOJIS, getDmMsgKey, isMessageReceipted, type DmMessage } from "@/lib/dmHelpers";
+import { DM_REACTION_EMOJIS, getDmMsgKey, isFromUser, isToUser, isMessageReceipted, type DmMessage } from "@/lib/dmHelpers";
+import { refMatches, refFor } from "@/lib/playerIdentity";
 
 type Props = {
+  peerId: string;
   peerUsername: string;
+  currentUserId: string;
   currentHandle: string;
   messages: DmMessage[];
   chatError: string | null;
@@ -19,7 +22,9 @@ type Props = {
 };
 
 export default function DmThreadView({
+  peerId,
   peerUsername,
+  currentUserId,
   currentHandle,
   messages,
   chatError,
@@ -42,11 +47,15 @@ export default function DmThreadView({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const threadMessages = messages.filter(
-    (m) =>
-      (m.from === currentHandle && m.to === peerUsername) ||
-      (m.to === currentHandle && m.from === peerUsername)
-  );
+  const me = refFor(currentUserId, currentHandle);
+  const peer = refFor(peerId || peerUsername, peerUsername);
+  const threadMessages = messages.filter((m) => {
+    const mine = isFromUser(m, me);
+    // Keep both directions: anything I sent, or anything sent to me.
+    if (!mine && !isToUser(m, me)) return false;
+    const peerSide = mine ? m.toId || m.to : m.fromId || m.from;
+    return refMatches(peer, peerSide);
+  });
 
   const scrollToBottom = () => {
     const el = scrollRef.current;
@@ -58,7 +67,7 @@ export default function DmThreadView({
 
   useEffect(() => {
     scrollToBottom();
-  }, [threadMessages.length, peerUsername]);
+  }, [threadMessages.length, peerId, peerUsername]);
 
   useEffect(() => {
     setEditingMsgKey(null);
@@ -67,7 +76,7 @@ export default function DmThreadView({
     setReactionPickerKey(null);
     setImagePreview(null);
     setImageFile(null);
-  }, [peerUsername]);
+  }, [peerId, peerUsername]);
 
   const uploadChatImage = async (file: File): Promise<string | null> => {
     const fd = new FormData();
@@ -140,7 +149,7 @@ export default function DmThreadView({
       >
         {threadMessages.map((msg, i) => {
           const msgKey = getDmMsgKey(msg);
-          const isMine = msg.from === currentHandle;
+          const isMine = isFromUser(msg, me);
           const isEditing = editingMsgKey === msgKey;
           const isConfirmingDelete = deleteConfirmKey === msgKey;
           const reactions = msg.reactions || {};
@@ -195,15 +204,16 @@ export default function DmThreadView({
 
               {!isEditing && Object.keys(reactions).length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1 max-w-[88%]">
-                  {Object.entries(reactions).map(([handle, emoji]) => (
+                  {Object.entries(reactions).map(([reactorId, emoji]) => (
                     <button
-                      key={handle}
+                      key={reactorId}
                       type="button"
                       onClick={() => void onReact(msg, emoji)}
                       className={`text-[11px] px-1.5 py-0.5 rounded-full border transition ${
-                        handle === currentHandle ? "bg-[#00ffff]/15 border-[#00ffff]/30" : "bg-white/5 border-white/10 hover:bg-white/10"
+                        reactorId === currentUserId || reactorId === currentHandle
+                          ? "bg-[#00ffff]/15 border-[#00ffff]/30"
+                          : "bg-white/5 border-white/10 hover:bg-white/10"
                       }`}
-                      title={handle}
                     >
                       {emoji}
                     </button>

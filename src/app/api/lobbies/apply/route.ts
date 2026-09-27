@@ -3,7 +3,7 @@ import { requireSession } from "@/lib/authz";
 import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { withdrawApplicantFromOfferFamily, acceptApplicantAcrossLobbies } from "@/lib/lobbyLifecycle";
-import { resolveNotificationRecipient } from "@/lib/userProfile";
+import { resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { checkAndRecordOfferAction, getOfferDailyUsage } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { getClientIp } from "@/lib/requestIp";
@@ -158,6 +158,7 @@ export async function POST(req: Request) {
         const entry = {
           id: notifId,
           toUser: resolveNotificationRecipient(nextApplicant, registeredUsers),
+          toUserId: resolveNotificationRecipientId(nextApplicant, registeredUsers),
           fromUser: String(ownerUser?.displayName || ownerUser?.name || updatedLobby?.ownerDiscordName || "Commander"),
           fromHandle: String(ownerUser?.username || ""),
           fromAvatar: String(ownerUser?.image || ownerUser?.avatar || ""),
@@ -181,6 +182,7 @@ export async function POST(req: Request) {
         const entry = {
           id: Date.now(),
           toUser: ownerHandle,
+          toUserId: ownerId,
           fromUser: String(meUser?.displayName || meUser?.name || nextApplicant.applicantName || "Operative"),
           fromHandle: String(meUser?.username || ""),
           fromAvatar: String(meUser?.image || meUser?.avatar || ""),

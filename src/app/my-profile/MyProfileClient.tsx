@@ -35,6 +35,7 @@ import {
   extractGifPosterBlob,
 } from "@/lib/clientImagePoster";
 import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
+import { notificationMatchesUser } from "@/lib/userProfile";
 
 const TEAM_MAX = 4;
 const TEAM_MAX_MEMBERS = 3;
@@ -83,6 +84,10 @@ export default function MyProfileClient() {
     () => users.find((u: any) => String(u.id) === myId) || null,
     [users, myId]
   );
+  // Canonical handle for this account row, so invites addressed to a past
+  // Discord username still resolve after a rename.
+  const myHandle = String(me?.username || (session?.user as any)?.username || "");
+  const registeredUsers = users;
 
   const [avatarInput, setAvatarInput] = useState<string>("");
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -387,11 +392,9 @@ export default function MyProfileClient() {
   const incomingInvites = useMemo(
     () =>
       notifications.filter(
-        (n: any) =>
-          String(n?.type) === "team_invite" &&
-          String(n?.toUser || "").toLowerCase() === String(me?.username || "").toLowerCase()
+        (n: any) => String(n?.type) === "team_invite" && notificationMatchesUser(n, myId, myHandle, registeredUsers)
       ),
-    [notifications, me?.username]
+    [notifications, myId, myHandle, registeredUsers]
   );
 
   const respondToInvite = async (notif: any, action: "accept" | "decline") => {

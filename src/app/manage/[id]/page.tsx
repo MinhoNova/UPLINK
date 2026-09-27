@@ -21,7 +21,7 @@ import HoverStarRating from "@/components/HoverStarRating";
 import PaymentModal from "@/components/modals/PaymentModal";
 import ManageModal from "@/components/modals/ManageModal";
 import { acceptedExcludingMember, appendOfferFamilyMessage, cancelLobbyInvite, canOwnerCancelLobby, confirmApplicantJoin, getOfferFamilyMessages, getViewableOfferThreads, inviteApplicantToLobby, isEmbeddedFootArchive, isVoiceLobbyOpen, memberIdentityKey, mergeLobbiesFromServer, repairLobbyRoles, resolveOpenMissionThreadTarget, splitLobbyAfterMemberExit, userCanAccessVoice, userCanViewOfferThread, userIsActiveInOtherDungeonOffer, withdrawUserFromAllLobbies } from "@/lib/lobbyLifecycle";
-import { effectiveAvatarEffect, effectiveProfileGif, mergeRegisteredUsersFromServer, resolveNotificationRecipient } from "@/lib/userProfile";
+import { effectiveAvatarEffect, effectiveProfileGif, mergeRegisteredUsersFromServer, resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
@@ -581,6 +581,9 @@ export default function ManagePage() {
       const newNotif = {
         id: notifId,
         toUser: resolveNotificationRecipient(applicant, registeredUsers),
+        toUserId:
+          resolveNotificationRecipientId(applicant, registeredUsers) ||
+          String(applicant.applicantId || acceptedApplicant.applicantId || ""),
         fromUser: currentUserDisplay,
         fromHandle: currentUserDiscordHandle,
         fromAvatar: session?.user?.image,

@@ -1,6 +1,14 @@
 import { isAdminUser } from "@/lib/secureDataWrite";
-import { computeDeliveredReceiptsFrom, computeReadReceiptsFrom } from "@/lib/dmHelpers";
+import {
+  computeDeliveredReceiptsFrom,
+  computeReadReceiptsFrom,
+  withDmIdentities,
+  withReceiptIdentities,
+  type ReceiptMap,
+} from "@/lib/dmHelpers";
+import { isFromUser, isToUser } from "@/lib/dmHelpers";
 import { notificationMatchesUser } from "@/lib/userProfile";
+import { refFor } from "@/lib/playerIdentity";
 
 export const ONLINE_WINDOW_MS = 10 * 60_000;
 
@@ -15,9 +23,30 @@ export function filterDataForUser(
   userId: string,
   handle: string
 ): Record<string, unknown> {
-  if (isAdminUser(userId, handle)) return data;
-
+  const me = refFor(userId, handle);
+  const users = (data.registeredUsers as any[]) || [];
   const filtered: Record<string, unknown> = { ...data };
+
+  // DMs and receipts are resolved onto stable ids first, so a Discord rename
+  // never orphans a thread or an unread badge. Done for every viewer.
+  if (data.directMessages !== undefined) {
+    const messages = withDmIdentities(data.directMessages, users);
+    filtered.directMessages = messages.filter((m) => isFromUser(m, me) || isToUser(m, me));
+  }
+
+  if (data.readMessages && typeof data.readMessages === "object") {
+    const receipts = withReceiptIdentities(data.readMessages, users) as ReceiptMap;
+    filtered.readMessages = userId in receipts ? { [userId]: receipts[userId] } : {};
+    filtered.readReceiptsFrom = computeReadReceiptsFrom(receipts, me);
+  }
+
+  if (data.deliveredMessages && typeof data.deliveredMessages === "object") {
+    const receipts = withReceiptIdentities(data.deliveredMessages, users) as ReceiptMap;
+    filtered.deliveredReceiptsFrom = computeDeliveredReceiptsFrom(receipts, me);
+  }
+  delete filtered.deliveredMessages;
+
+  if (isAdminUser(userId, handle)) return filtered;
 
   delete filtered.bannedUsers;
   delete filtered.bannedUserIds;
@@ -30,29 +59,6 @@ export function filterDataForUser(
     );
   }
 
-  if (Array.isArray(filtered.directMessages)) {
-    filtered.directMessages = (filtered.directMessages as { from?: string; to?: string }[]).filter(
-      (m) => m.from === handle || m.to === handle
-    );
-  }
-
-  if (filtered.readMessages && typeof filtered.readMessages === "object") {
-    const all = data.readMessages as Record<string, Record<string, unknown>>;
-    filtered.readMessages = handle in all ? { [handle]: all[handle] } : {};
-    filtered.readReceiptsFrom = computeReadReceiptsFrom(
-      data.readMessages as Record<string, Record<string, (string | number)[]>>,
-      handle
-    );
-  }
-
-  if (data.deliveredMessages && typeof data.deliveredMessages === "object") {
-    filtered.deliveredReceiptsFrom = computeDeliveredReceiptsFrom(
-      data.deliveredMessages as Record<string, Record<string, (string | number)[]>>,
-      handle
-    );
-  }
-  delete filtered.deliveredMessages;
-
   if (Array.isArray(filtered.tickets)) {
     filtered.tickets = (filtered.tickets as { userId?: string }[]).filter(
       (t) => String(t.userId) === String(userId)
@@ -60,7 +66,6 @@ export function filterDataForUser(
   }
 
   if (Array.isArray(filtered.notifications)) {
-    const users = (filtered.registeredUsers as any[]) || (data.registeredUsers as any[]) || [];
     filtered.notifications = (filtered.notifications as any[]).filter((n) =>
       notificationMatchesUser(n, userId, handle, users)
     );

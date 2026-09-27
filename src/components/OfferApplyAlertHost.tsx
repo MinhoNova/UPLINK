@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, X, UserPlus, Loader2, ShieldCheck } from "lucide-react";
 import { resolveProfileImage, profileImgClass, resolveNameColor } from "@/lib/profileImage";
+import { notificationMatchesUser } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 
 interface PendingApply {
@@ -42,6 +43,7 @@ export default function OfferApplyAlertHost() {
   const dataSigRef = useRef("");
 
   const currentHandle = String((session?.user as { username?: string })?.username || "").toLowerCase();
+  const currentUserId = String((session?.user as { id?: string })?.id || "");
 
   const playAlertSound = useCallback(() => {
     try {
@@ -83,7 +85,7 @@ export default function OfferApplyAlertHost() {
       const incoming: PendingApply[] = [];
       for (const n of notifs) {
         if (String(n?.type) !== "lobby_apply") continue;
-        if (String(n?.toUser || "").toLowerCase() !== currentHandle) continue;
+        if (!notificationMatchesUser(n, currentUserId, currentHandle, users)) continue;
         const nid = Number(n?.id);
         if (!nid || seenRef.current[String(nid)]) continue;
         const app = n?.applicantData || {};
@@ -110,7 +112,7 @@ export default function OfferApplyAlertHost() {
         return [...prev, ...incoming.filter((a) => !existing.has(a.notificationId))].slice(0, 5);
       });
     },
-    [status, currentHandle, markSeen]
+    [status, currentHandle, currentUserId, markSeen]
   );
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { acceptApplicantAcrossLobbies } from "@/lib/lobbyLifecycle";
-import { resolveNotificationRecipient } from "@/lib/userProfile";
+import { resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
 
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
       const entry = {
         id: Date.now(),
         toUser: resolveNotificationRecipient(enriched, registeredUsers),
+        toUserId: resolveNotificationRecipientId(enriched, registeredUsers) || targetKey,
         fromUser: String(ownerInfo?.displayName || ownerInfo?.name || target.ownerDiscordName || "Commander"),
         fromHandle: String(ownerInfo?.username || ""),
         fromAvatar: String(ownerInfo?.image || ownerInfo?.avatar || ""),

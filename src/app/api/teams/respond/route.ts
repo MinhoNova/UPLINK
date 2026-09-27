@@ -86,6 +86,7 @@ export async function POST(req: Request) {
     fromHandle: auth.user.username,
     fromUser: responderName,
     toUser: String(owner.username || ""),
+    toUserId: String(ownerId),
     message: `${responderName} ${action === "accept" ? "accepted" : "declined"} your team invite`,
     teamName: String(owner.team?.name || ""),
     createdAt: Date.now(),

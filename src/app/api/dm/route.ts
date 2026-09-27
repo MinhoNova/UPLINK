@@ -8,33 +8,29 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { rejectIfIpBannedUnlessAdmin } from "@/lib/ipBan";
 import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
-import { DM_REACTION_EMOJIS, type DmMessage, recipientBlockedSender } from "@/lib/dmHelpers";
+import {
+  DM_REACTION_EMOJIS,
+  isFromUser,
+  isToUser,
+  recipientBlockedSender,
+  withDmIdentities,
+  withReceiptIdentities,
+  type DmMessage,
+  type ReceiptMap,
+} from "@/lib/dmHelpers";
+import { findUserById, refFor, resolveUserId, usernameOf } from "@/lib/playerIdentity";
 import { sanitizePlainText, sanitizeImageUrl } from "@/lib/sanitizer";
 
 const MAX_TEXT_LENGTH = 2000;
 const MAX_MESSAGES_PER_HOUR = 120;
 
-function getHandle(session: { user?: unknown }) {
-  return (session.user as { username?: string })?.username || "";
-}
-
-function findOwnMessage(messages: DmMessage[], timestamp: number, from: string) {
-  return messages.find((m) => m.timestamp === timestamp && m.from === from);
-}
-
-function findMessageByTimestamp(messages: DmMessage[], timestamp: number, handle: string) {
-  return messages.find(
-    (m) => m.timestamp === timestamp && (m.from === handle || m.to === handle)
-  );
-}
-
 export async function POST(req: Request) {
   const session = await getAppSession(req);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userId = (session.user as { id?: string }).id || "";
-  const currentHandle = getHandle(session);
-  if (!currentHandle) return NextResponse.json({ error: "Invalid session" }, { status: 400 });
+  const userId = String((session.user as { id?: string }).id || "");
+  const currentHandle = String((session.user as { username?: string }).username || "");
+  if (!userId) return NextResponse.json({ error: "Invalid session" }, { status: 400 });
 
   const ipBlock = await rejectIfIpBannedUnlessAdmin(req, userId, currentHandle);
   if (ipBlock) return ipBlock;
@@ -50,26 +46,38 @@ export async function POST(req: Request) {
   const action = body?.action as string;
 
   await initTables();
-  const directMessages: DmMessage[] = (await getKV("directMessages")) || [];
-  const registeredUsers: { username?: string }[] = (await getKV("registeredUsers")) || [];
+  const registeredUsers = ((await getKV("registeredUsers")) as any[]) || [];
+  // The account row is authoritative for the handle; the session cookie can be
+  // a login behind, so every identity comparison below uses the stored handle.
+  const myHandle = usernameOf(findUserById(registeredUsers, userId)) || currentHandle;
+  const me = refFor(userId, myHandle);
+  const directMessages = withDmIdentities(await getKV("directMessages"), registeredUsers);
+
+  /** Recipient: a stable id, or a handle kept for older clients. */
+  const resolveRecipient = (ref: unknown) => {
+    const value = String(ref ?? "").trim();
+    if (!value) return null;
+    const id = resolveUserId(registeredUsers, value);
+    if (!id) return null;
+    return findUserById(registeredUsers, id) || { id, username: value, name: value };
+  };
 
   if (action === "send") {
-    const to = String(body?.to || "").trim();
+    const recipient = resolveRecipient(body?.toId ?? body?.to);
     const rawText = String(body?.text || "").trim();
     const rawImage = body?.image ? String(body.image).trim() : "";
     const text = sanitizePlainText(rawText, MAX_TEXT_LENGTH);
     const image = sanitizeImageUrl(rawImage);
-    if (!to) return NextResponse.json({ error: "Missing recipient" }, { status: 400 });
+    if (!recipient) return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
     if (!text && !image) return NextResponse.json({ error: "Missing message content" }, { status: 400 });
     if (rawText.length > MAX_TEXT_LENGTH) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
-    if (!registeredUsers.some((u) => u.username === to)) {
-      return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+    if (String(recipient.id) === userId) {
+      return NextResponse.json({ error: "You cannot message yourself" }, { status: 400 });
     }
 
-    const users = registeredUsers as { id?: string; username?: string; blocked?: unknown[] }[];
-    if (recipientBlockedSender(users, userId, to)) {
+    if (recipientBlockedSender(registeredUsers, userId, String(recipient.id))) {
       return NextResponse.json({ error: "This player has blocked you." }, { status: 403 });
     }
 
@@ -95,15 +103,17 @@ export async function POST(req: Request) {
 
     const hourAgo = Date.now() - 60 * 60 * 1000;
     const recentCount = directMessages.filter(
-      (m) => m.from === currentHandle && m.timestamp >= hourAgo
+      (m) => isFromUser(m, me) && m.timestamp >= hourAgo
     ).length;
     if (recentCount >= MAX_MESSAGES_PER_HOUR) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
     const message: DmMessage = {
-      from: currentHandle,
-      to,
+      fromId: userId,
+      toId: String(recipient.id),
+      from: myHandle,
+      to: usernameOf(recipient),
       text,
       timestamp: Date.now(),
       ...(image ? { image } : {}),
@@ -122,9 +132,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
 
-    const idx = directMessages.findIndex(
-      (m) => m.timestamp === timestamp && m.from === currentHandle
-    );
+    const idx = directMessages.findIndex((m) => m.timestamp === timestamp && isFromUser(m, me));
     if (idx === -1) return NextResponse.json({ error: "Message not found" }, { status: 404 });
 
     directMessages[idx] = { ...directMessages[idx], text, edited: true };
@@ -136,68 +144,56 @@ export async function POST(req: Request) {
     const timestamp = Number(body?.timestamp);
     if (!timestamp) return NextResponse.json({ error: "Missing timestamp" }, { status: 400 });
 
-    const msg = findOwnMessage(directMessages, timestamp, currentHandle);
+    const msg = directMessages.find((m) => m.timestamp === timestamp && isFromUser(m, me));
     if (!msg) return NextResponse.json({ error: "Message not found" }, { status: 404 });
 
-    const next = directMessages.filter((m) => !(m.timestamp === timestamp && m.from === currentHandle));
+    const next = directMessages.filter((m) => !(m.timestamp === timestamp && isFromUser(m, me)));
     await setKV("directMessages", next);
     await logAudit({
       action: "dm.delete",
-      userId: (session.user as { id?: string }).id || "",
+      userId,
       handle: currentHandle,
       meta: { timestamp },
     });
     return NextResponse.json({ success: true });
   }
 
-  if (action === "markRead") {
-    const fromUsername = String(body?.fromUsername || "").trim();
-    if (!fromUsername) return NextResponse.json({ error: "Missing fromUsername" }, { status: 400 });
+  /** Receipts are keyed by id: `readMessages[readerId][senderId] = [msgIds]`. */
+  const applyReceipts = async (kind: "read" | "delivered") => {
+    const peer = resolveRecipient(body?.fromId ?? body?.fromUsername);
+    if (!peer) return NextResponse.json({ error: "Unknown sender" }, { status: 400 });
+    const peerId = String(peer.id);
 
-    const readMessages: Record<string, Record<string, string[]>> = (await getKV("readMessages")) || {};
-    if (!readMessages[currentHandle]) readMessages[currentHandle] = {};
-
-    const deliveredMessages: Record<string, Record<string, string[]>> =
-      (await getKV("deliveredMessages")) || {};
-    if (!deliveredMessages[currentHandle]) deliveredMessages[currentHandle] = {};
-
-    const incoming = directMessages.filter(
-      (m) => m.from === fromUsername && m.to === currentHandle
-    );
+    const incoming = directMessages.filter((m) => isFromUser(m, refFor(peerId, usernameOf(peer))) && isToUser(m, me));
     const ids = incoming.map((m) => String(m.timestamp));
-    readMessages[currentHandle][fromUsername] = ids;
-    deliveredMessages[currentHandle][fromUsername] = ids;
 
-    await setKV("readMessages", readMessages);
-    await setKV("deliveredMessages", deliveredMessages);
+    const readMessages = withReceiptIdentities(await getKV("readMessages"), registeredUsers);
+    const deliveredMessages = withReceiptIdentities(await getKV("deliveredMessages"), registeredUsers);
+    readMessages[userId] ||= {};
+    deliveredMessages[userId] ||= {};
+
+    if (kind === "read") {
+      readMessages[userId][peerId] = ids;
+      deliveredMessages[userId][peerId] = ids;
+    } else {
+      const existing = new Set((deliveredMessages[userId][peerId] || []).map(String));
+      for (const id of ids) existing.add(id);
+      deliveredMessages[userId][peerId] = [...existing];
+    }
+
+    await setKV("readMessages", readMessages as ReceiptMap);
+    await setKV("deliveredMessages", deliveredMessages as ReceiptMap);
+
     return NextResponse.json({
       success: true,
-      readMessages: { [currentHandle]: readMessages[currentHandle] },
-      deliveredMessages: { [currentHandle]: deliveredMessages[currentHandle] },
+      ...(kind === "read"
+        ? { readMessages: { [userId]: readMessages[userId] }, deliveredMessages: { [userId]: deliveredMessages[userId] } }
+        : { deliveredMessages: { [userId]: deliveredMessages[userId] } }),
     });
-  }
+  };
 
-  if (action === "markDelivered") {
-    const fromUsername = String(body?.fromUsername || "").trim();
-    if (!fromUsername) return NextResponse.json({ error: "Missing fromUsername" }, { status: 400 });
-
-    const deliveredMessages: Record<string, Record<string, string[]>> =
-      (await getKV("deliveredMessages")) || {};
-    if (!deliveredMessages[currentHandle]) deliveredMessages[currentHandle] = {};
-
-    const incoming = directMessages.filter(
-      (m) => m.from === fromUsername && m.to === currentHandle
-    );
-    const existing = new Set(deliveredMessages[currentHandle][fromUsername] || []);
-    for (const m of incoming) existing.add(String(m.timestamp));
-    deliveredMessages[currentHandle][fromUsername] = [...existing];
-
-    await setKV("deliveredMessages", deliveredMessages);
-    return NextResponse.json({
-      success: true,
-      deliveredMessages: { [currentHandle]: deliveredMessages[currentHandle] },
-    });
-  }
+  if (action === "markRead") return applyReceipts("read");
+  if (action === "markDelivered") return applyReceipts("delivered");
 
   if (action === "react") {
     const timestamp = Number(body?.timestamp);
@@ -208,16 +204,16 @@ export async function POST(req: Request) {
     }
 
     const idx = directMessages.findIndex(
-      (m) => m.timestamp === timestamp && (m.from === currentHandle || m.to === currentHandle)
+      (m) => m.timestamp === timestamp && (isFromUser(m, me) || isToUser(m, me))
     );
     if (idx === -1) return NextResponse.json({ error: "Message not found" }, { status: 404 });
 
     const msg = directMessages[idx];
     const reactions = { ...(msg.reactions || {}) };
-    if (reactions[currentHandle] === emoji) {
-      delete reactions[currentHandle];
+    if (reactions[userId] === emoji) {
+      delete reactions[userId];
     } else {
-      reactions[currentHandle] = emoji;
+      reactions[userId] = emoji;
     }
     directMessages[idx] = { ...msg, reactions };
     await setKV("directMessages", directMessages);

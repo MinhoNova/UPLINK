@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         fromHandle: ownerHandle,
         fromUser: String(owner.name || owner.username || "Team Captain"),
         toUser: String(member.username || ""),
+        toUserId: String(memberId),
         ownerId: String(ownerId),
         memberId: String(memberId),
         teamName,

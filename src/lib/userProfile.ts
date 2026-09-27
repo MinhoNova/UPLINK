@@ -67,22 +67,32 @@ export function effectiveProfileGif(user: any): string | null {
   return user?.profileGif || null;
 }
 
-/** Discord handle for lobby invite notifications (must match invitee session username). */
+/** Discord id + handle for lobby invite notifications (ids win, handles are legacy). */
+export function resolveNotificationRecipientId(applicant: any, registeredUsers: any[] = []): string {
+  const uid = String(applicant?.applicantId || applicant?.userId || "");
+  if (uid && registeredUsers.some((u) => String(u?.id) === uid)) return uid;
+  const handle = String(
+    applicant?.applicantDiscordHandle || applicant?.discordName || applicant?.applicantName || applicant?.name || ""
+  ).toLowerCase();
+  const byHandle = registeredUsers.find(
+    (u) =>
+      (u?.username || "").toLowerCase() === handle ||
+      (u?.name || "").toLowerCase() === handle ||
+      (u?.displayName || "").toLowerCase() === handle
+  );
+  return String(byHandle?.id || "");
+}
+
 export function resolveNotificationRecipient(
   applicant: any,
   registeredUsers: any[] = []
 ): string {
-  const uid = String(applicant?.applicantId || applicant?.userId || "");
-  const matched = uid
-    ? registeredUsers.find((u) => String(u.id) === uid)
-    : registeredUsers.find(
-        (u) =>
-          (u.username || "").toLowerCase() ===
-            String(applicant?.applicantDiscordHandle || applicant?.discordName || "").toLowerCase() ||
-          (u.name || "").toLowerCase() === String(applicant?.applicantName || applicant?.name || "").toLowerCase()
-      );
+  const id = resolveNotificationRecipientId(applicant, registeredUsers);
+  if (id) {
+    const matched = registeredUsers.find((u) => String(u?.id) === id);
+    if (matched?.username) return matched.username;
+  }
   return (
-    matched?.username ||
     applicant?.applicantDiscordHandle ||
     applicant?.discordName ||
     applicant?.applicantName ||
@@ -97,6 +107,9 @@ export function notificationMatchesUser(
   handle: string,
   registeredUsers: any[] = []
 ): boolean {
+  const toId = String(notif?.toUserId ?? "").trim();
+  if (toId) return String(toId) === String(userId);
+
   const to = String(notif?.toUser || "").toLowerCase().trim();
   const h = String(handle || "").toLowerCase().trim();
   if (to && h && to === h) return true;
@@ -105,7 +118,7 @@ export function notificationMatchesUser(
   if (!self) return false;
 
   const aliases = new Set(
-    [self.username, self.name, self.discordDisplayName, self.displayName]
+    [self.username, self.name, self.discordDisplayName, self.displayName, ...(Array.isArray(self.previousUsernames) ? self.previousUsernames : [])]
       .filter(Boolean)
       .map((v) => String(v).toLowerCase().trim())
   );

@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { MessageCircle, Users, X, Check, CheckCheck, Search, DoorClosed, UserCheck, VolumeX, UserPlus, Ban, Radio } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DmThreadView from "@/components/chat/DmThreadView";
-import { getDmMsgKey, computeDmUnreadCounts, totalDmUnreadCount, getDmConversationPeernames, isDmMessageRead, buildDmContactList, getAcceptedFriendIds, type DmMessage } from "@/lib/dmHelpers";
+import { getDmMsgKey, computeDmUnreadCounts, isToUser, buildDmContactList, getAcceptedFriendIds, withDmIdentities, type DmMessage } from "@/lib/dmHelpers";
+import { findUserById, refFor, refMatches } from "@/lib/playerIdentity";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
 import { resolveProfileImage, resolveProfileDisplayName, profileImgClass } from "@/lib/profileImage";
 
@@ -54,15 +55,37 @@ export default function DirectCommsPanel() {
   const [chatError, setChatError] = useState<string | null>(null);
   const selectedUserRef = useRef<any>(null);
   const isOpenRef = useRef(false);
+  // Mutes are keyed by stable user id, so they survive a Discord rename.
   const [mutedUsers, setMutedUsers] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
-      const saved = localStorage.getItem(`muted_users_${(session?.user as any)?.username || "default"}`);
+      const key = (session?.user as any)?.id;
+      const saved = localStorage.getItem(`muted_users_${key || "default"}`);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
+
+  // Canonical identity for this browser. The server echoes the handle stored on
+  // the account row, which tracks the Discord id even after a rename — the
+  // session cookie alone can be a login behind.
+  const meRef = refFor(
+    String(data?.me?.id || (session?.user as any)?.id || ""),
+    String(data?.me?.username || (session?.user as any)?.username || "")
+  );
+
+  const currentUserId = meRef.id;
+  const currentHandle = meRef.username;
+  const isAdmin = isPrimaryAdmin(currentUserId, currentHandle);
+  const registeredUsers = useMemo(() => data?.registeredUsers || [], [data]);
+  // Rows written before the identity migration arrive without fromId/toId.
+  const directMessages = useMemo(
+    () => withDmIdentities(data?.directMessages, registeredUsers),
+    [data, registeredUsers]
+  );
+  const readMessages = useMemo(() => data?.readMessages || {}, [data]);
+  const friends = useMemo(() => data?.friends || [], [data]);
 
   useEffect(() => {
     const handler = () => setIsOpen((p) => !p);
@@ -161,42 +184,37 @@ export default function DirectCommsPanel() {
 
   useEffect(() => {
     if (!data) return;
-    const currentHandle = (session?.user as any)?.username || "";
-    const directMessages = data?.directMessages || [];
-    const readMessages = data?.readMessages || {};
-    setUnreadCounts(computeDmUnreadCounts(directMessages, readMessages, currentHandle));
-  }, [data, session]);
+    setUnreadCounts(computeDmUnreadCounts(directMessages, readMessages, meRef));
+  }, [data, session, directMessages, readMessages, meRef]);
 
   // Monitor for new messages and show notifications
   useEffect(() => {
     if (!data) return;
-    const currentUserId = (session?.user as any)?.id || "";
-    const currentHandle = (session?.user as any)?.username || "";
-    const directMessages = data?.directMessages || [];
+    const currentUserId = meRef.id;
     const registeredUsers = data?.registeredUsers || [];
-    
-    const lastMessageKey = `last_msg_shown_${currentHandle}`;
+
+    const lastMessageKey = `last_msg_shown_${currentUserId}`;
     const lastShown = parseInt(localStorage.getItem(lastMessageKey) || "0");
-    
+
     const incomingMessages = directMessages.filter((m: any) => {
       const msgTime = m.timestamp || Date.now();
-      return m.to === currentHandle && msgTime > lastShown;
+      return isToUser(m, meRef) && msgTime > lastShown;
     });
     
     if (incomingMessages.length > 0) {
       const lastMessage = incomingMessages[incomingMessages.length - 1];
+      const senderId = String(lastMessage.fromId || lastMessage.from || "");
       const senderUser =
+        findUserById(registeredUsers, senderId) ||
         registeredUsers.find((u: any) => u.username === lastMessage.from) ||
-        { id: lastMessage.from, username: lastMessage.from, name: lastMessage.from };
+        { id: senderId, username: lastMessage.from, name: lastMessage.from };
 
       const inActiveChat =
-        isOpenRef.current &&
-        selectedUserRef.current?.username === lastMessage.from;
+        isOpenRef.current && String(selectedUserRef.current?.id || "") === senderId;
 
-      if (senderUser && !mutedUsers.includes(senderUser.username) && !inActiveChat) {
-        const readMessages = data?.readMessages || {};
-        const allCounts = computeDmUnreadCounts(directMessages, readMessages, currentHandle);
-        const unreadCount = allCounts[senderUser.username] || 0;
+      if (senderUser && !mutedUsers.includes(senderId) && !inActiveChat) {
+        const allCounts = computeDmUnreadCounts(directMessages, readMessages, meRef);
+        const unreadCount = allCounts[senderId] || 0;
 
         setMessageNotification({
           user: senderUser,
@@ -211,14 +229,8 @@ export default function DirectCommsPanel() {
         localStorage.setItem(lastMessageKey, String(lastMessage.timestamp || Date.now()));
       }
     }
-  }, [data, session, mutedUsers]);
-
-  const currentUserId = (session?.user as any)?.id || "";
-  const currentHandle = (session?.user as any)?.username || "";
-  const isAdmin = isPrimaryAdmin(currentUserId, currentHandle);
-  const registeredUsers = data?.registeredUsers || [];
-  const directMessages = data?.directMessages || [];
-  const friends = data?.friends || [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, session, mutedUsers, directMessages, readMessages, meRef]);
 
   const pendingRequests = friends.filter(
     (f: any) => f.status === "pending" && String(f.target) === String(currentUserId)
@@ -334,16 +346,25 @@ export default function DirectCommsPanel() {
     } catch {}
   };
 
-  const sendMessage = async (to: string, text: string, image?: string) => {
+  const sendMessage = async (toId: string, text: string, image?: string) => {
     const trimmed = text.trim();
     if (!trimmed && !image) return;
     setChatError(null);
     const timestamp = Date.now();
-    const optimistic: DmMessage = { from: currentHandle, to, text: trimmed, timestamp, ...(image ? { image } : {}) };
+    const toHandle = String(findUserById(registeredUsers, toId)?.username || "");
+    const optimistic: DmMessage = {
+      fromId: currentUserId,
+      toId,
+      from: currentHandle,
+      to: toHandle,
+      text: trimmed,
+      timestamp,
+      ...(image ? { image } : {}),
+    };
     const prevMessages = directMessages;
     setData((prev: any) => ({ ...prev, directMessages: [...directMessages, optimistic] }));
     try {
-      const result = await dmRequest({ action: "send", to, text: trimmed, ...(image ? { image } : {}) });
+      const result = await dmRequest({ action: "send", toId, text: trimmed, ...(image ? { image } : {}) });
       if (result.message) {
         setData((prev: any) => ({
           ...prev,
@@ -363,46 +384,50 @@ export default function DirectCommsPanel() {
     }
   };
 
-  const markAsRead = async (fromUsername: string) => {
+  const markAsRead = async (fromId: string) => {
+    if (!fromId) return;
     try {
-      const result = await dmRequest({ action: "markRead", fromUsername });
+      const result = await dmRequest({ action: "markRead", fromId });
       if (result.readMessages || result.deliveredMessages) {
         setData((prev: any) => ({
           ...prev,
-          ...(result.readMessages ? { readMessages: result.readMessages } : {}),
+          readMessages: { ...(prev.readMessages || {}), ...(result.readMessages || {}) },
         }));
       }
       window.dispatchEvent(new CustomEvent("data-refresh"));
     } catch {}
     setUnreadCounts((prev) => {
       const updated = { ...prev };
-      delete updated[fromUsername];
+      delete updated[fromId];
       return updated;
     });
   };
 
-  const markDelivered = async (fromUsername: string) => {
+  const markDelivered = async (fromId: string) => {
+    if (!fromId) return;
     try {
-      await dmRequest({ action: "markDelivered", fromUsername });
+      await dmRequest({ action: "markDelivered", fromId });
       window.dispatchEvent(new CustomEvent("data-refresh"));
     } catch {}
   };
 
   useEffect(() => {
-    if (!isOpen || !currentHandle || !directMessages.length) return;
+    if (!isOpen || !currentUserId || !directMessages.length) return;
     const peers = new Set<string>();
     for (const m of directMessages) {
-      if (m.to === currentHandle && m.from) peers.add(m.from);
+      if (isToUser(m, meRef) && m.from) peers.add(String(m.fromId || m.from));
     }
     for (const peer of peers) {
       void markDelivered(peer);
     }
-  }, [isOpen, directMessages.length, currentHandle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, directMessages.length, currentUserId]);
 
   useEffect(() => {
     if (!selectedUser || !isOpen) return;
-    void markAsRead(selectedUser.username);
-  }, [selectedUser?.username, isOpen, directMessages.length]);
+    void markAsRead(String(selectedUser.id || ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser?.id, isOpen, directMessages.length]);
 
   const getFriendStatus = (userId2: string) => {
     const entry = friends.find((f: any) =>
@@ -463,12 +488,12 @@ export default function DirectCommsPanel() {
   const onlineUsers = useMemo(
     () =>
       [...registeredUsers]
-        .filter((u: any) => u.username && u.username !== currentHandle && u.online === true && !isUserBlocked(String(u.id)))
+        .filter((u: any) => u.username && String(u.id) !== currentUserId && !refMatches(meRef, u.username) && u.online === true && !isUserBlocked(String(u.id)))
         .sort((a: any, b: any) =>
           String(a.displayName || a.name || a.role || a.username).localeCompare(String(b.displayName || b.name || b.role || b.username))
         ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [registeredUsers, currentHandle]
+    [registeredUsers, currentUserId]
   );
 
   const onlineFriendIds = useMemo(() => {
@@ -482,7 +507,8 @@ export default function DirectCommsPanel() {
       .filter(
         (u: any) =>
           u.username &&
-          u.username !== currentHandle &&
+          String(u.id) !== currentUserId &&
+          !refMatches(meRef, u.username) &&
           u.online !== true &&
           ids.has(String(u.id)) &&
           !isUserBlocked(String(u.id))
@@ -491,7 +517,7 @@ export default function DirectCommsPanel() {
         String(a.displayName || a.name || a.username).localeCompare(String(b.displayName || b.name || b.username))
       );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registeredUsers, friends, currentUserId, currentHandle]);
+  }, [registeredUsers, friends, currentUserId]);
 
   const dmFriendUsers = useMemo(
     () =>
@@ -640,7 +666,7 @@ export default function DirectCommsPanel() {
                       )}
                       {dmFriendUsers.map((user: any) => (
                         <div
-                          key={user.username}
+                          key={String(user.id)}
                           role="button"
                           tabIndex={0}
                           onClick={() => { setSelectedUser(user); setMessageNotification(null); }}
@@ -661,18 +687,18 @@ export default function DirectCommsPanel() {
                                 {resolveProfileDisplayName(user)}
                               </p>
                             </div>
-                            {unreadCounts[user.username] > 0 && (
+                            {unreadCounts[String(user.id)] > 0 && (
                               <>
                                 <button
                                   type="button"
                                   title="Mark as read"
-                                  onClick={(e) => { e.stopPropagation(); void markAsRead(user.username); }}
+                                  onClick={(e) => { e.stopPropagation(); void markAsRead(String(user.id)); }}
                                   className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-400 hover:bg-green-500/20 hover:text-green-300 transition-all shrink-0"
                                 >
                                   <CheckCheck className="w-3.5 h-3.5" />
                                 </button>
                                 <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0 shadow-[0_0_8px_rgba(255,0,0,0.5)]">
-                                  {unreadCounts[user.username]}
+                                  {unreadCounts[String(user.id)]}
                                 </span>
                               </>
                             )}
@@ -710,13 +736,15 @@ export default function DirectCommsPanel() {
                       </button>
                     </div>
                     <DmThreadView
+                      peerId={String(selectedUser.id || '')}
                       peerUsername={selectedUser.username}
+                      currentUserId={currentUserId}
                       currentHandle={currentHandle}
                       messages={directMessages}
                       chatError={chatError}
-                      readReceiptsFromPeer={data?.readReceiptsFrom?.[selectedUser.username] || []}
-                      deliveredReceiptsFromPeer={data?.deliveredReceiptsFrom?.[selectedUser.username] || []}
-                      onSend={(text, image) => sendMessage(selectedUser.username, text, image)}
+                      readReceiptsFromPeer={data?.readReceiptsFrom?.[String(selectedUser.id)] || []}
+                      deliveredReceiptsFromPeer={data?.deliveredReceiptsFrom?.[String(selectedUser.id)] || []}
+                      onSend={(text, image) => sendMessage(String(selectedUser.id), text, image)}
                       onEdit={handleSaveEdit}
                       onDelete={handleDeleteMsg}
                       onReact={handleReact}
@@ -831,11 +859,11 @@ export default function DirectCommsPanel() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {mutedUsers.map((username: string) => {
-                      const mutedUser = registeredUsers.find((u: any) => u.username === username);
+                    {mutedUsers.map((mutedId: string) => {
+                      const mutedUser = findUserById(registeredUsers, mutedId);
                       if (!mutedUser) return null;
                       return (
-                        <div key={username} className="group relative bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 hover:border-yellow-500/30 rounded-2xl p-3 transition-all duration-300">
+                        <div key={mutedId} className="group relative bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 hover:border-yellow-500/30 rounded-2xl p-3 transition-all duration-300">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full overflow-hidden bg-black border border-white/10 shrink-0 flex items-center justify-center">
                               <img src={resolveProfileImage(mutedUser)} className={profileImgClass(resolveProfileImage(mutedUser), "w-full h-full")} alt="" />
@@ -846,9 +874,9 @@ export default function DirectCommsPanel() {
                             </div>
                             <button
                               onClick={() => {
-                                const newMutedList = mutedUsers.filter((u: string) => u !== username);
+                                const newMutedList = mutedUsers.filter((u: string) => u !== mutedId);
                                 setMutedUsers(newMutedList);
-                                localStorage.setItem(`muted_users_${currentHandle}`, JSON.stringify(newMutedList));
+                                localStorage.setItem(`muted_users_${currentUserId}`, JSON.stringify(newMutedList));
                               }}
                               className="px-3 py-2 bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/40 text-green-400 rounded-xl hover:bg-green-500 hover:text-black transition-all text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-[0_0_12px_rgba(34,197,94,0.15)]"
                             >
@@ -882,7 +910,7 @@ export default function DirectCommsPanel() {
               <div
                 onClick={() => {
                   setSelectedUser(messageNotification.user);
-                  markAsRead(messageNotification.user?.username);
+                  markAsRead(String(messageNotification.user?.id || ""));
                   setIsOpen(true);
                   setTab("dm");
                   setMessageNotification(null);
@@ -910,9 +938,10 @@ export default function DirectCommsPanel() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const newMutedList = [...mutedUsers, messageNotification.user?.username];
+                        const mutedId = String(messageNotification.user?.id || "");
+                        const newMutedList = [...new Set([...mutedUsers, mutedId])].filter(Boolean);
                         setMutedUsers(newMutedList);
-                        localStorage.setItem(`muted_users_${currentHandle}`, JSON.stringify(newMutedList));
+                        localStorage.setItem(`muted_users_${currentUserId}`, JSON.stringify(newMutedList));
                         setMessageNotification(null);
                       }}
                       title="Mute this user"

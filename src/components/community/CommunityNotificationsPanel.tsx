@@ -10,7 +10,9 @@ import PostActivityFeed, { usePostActivity } from "@/components/community/PostAc
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import DmThreadView from "@/components/chat/DmThreadView";
-import { getDmMsgKey, computeDmUnreadCounts, buildDmContactList, getAcceptedFriendIds, type DmMessage } from "@/lib/dmHelpers";
+import { getDmMsgKey, computeDmUnreadCounts, buildDmContactList, getAcceptedFriendIds, isToUser, withDmIdentities, type DmMessage } from "@/lib/dmHelpers";
+import { findUserById, refFor } from "@/lib/playerIdentity";
+import { notificationMatchesUser } from "@/lib/userProfile";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
 
 type Tab = "chat" | "alerts" | "requests";
@@ -26,8 +28,14 @@ export default function CommunityNotificationsPanel() {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [chatError, setChatError] = useState<string | null>(null);
 
-  const currentUserId = (session?.user as { id?: string })?.id || "";
-  const currentHandle = (session?.user as { username?: string })?.username || "";
+  // Canonical identity from the server: the handle stored on the account row,
+  // which follows the Discord id across renames.
+  const meRef = refFor(
+    String(data?.me?.id || (session?.user as { id?: string })?.id || ""),
+    String(data?.me?.username || (session?.user as { username?: string })?.username || "")
+  );
+  const currentUserId = meRef.id;
+  const currentHandle = meRef.username;
   const isAdmin = isPrimaryAdmin(currentUserId, currentHandle);
   const { unreadCount, markSeen } = usePostActivity(currentUserId);
 
@@ -81,7 +89,7 @@ export default function CommunityNotificationsPanel() {
 
   const friends = data?.friends || [];
   const registeredUsers = data?.registeredUsers || [];
-  const directMessages = data?.directMessages || [];
+  const directMessages = withDmIdentities(data?.directMessages, registeredUsers);
   const readMessages = data?.readMessages || {};
 
   const friendIdSet = useMemo(
@@ -99,10 +107,11 @@ export default function CommunityNotificationsPanel() {
       (data?.notifications || []).filter(
         (n: any) =>
           String(n?.type) === "team_invite" &&
-          String(n?.toUser || "").toLowerCase() === String(currentHandle || "").toLowerCase() &&
-          String(n?.fromHandle || "").toLowerCase() !== String(currentHandle || "").toLowerCase()
+          notificationMatchesUser(n, currentUserId, currentHandle, registeredUsers) &&
+          String(n?.fromHandle || "").toLowerCase() !== String(currentHandle || "").toLowerCase() &&
+          String(n?.ownerId || "") !== currentUserId
       ),
-    [data?.notifications, currentHandle]
+    [data?.notifications, currentUserId, currentHandle, registeredUsers]
   );
 
   const respondTeamInvite = async (n: any, action: "accept" | "decline") => {
@@ -122,9 +131,10 @@ export default function CommunityNotificationsPanel() {
   const getMsgKey = getDmMsgKey;
 
   useEffect(() => {
-    if (!data || !currentHandle) return;
-    setUnreadCounts(computeDmUnreadCounts(directMessages, readMessages, currentHandle));
-  }, [data, currentHandle, directMessages, readMessages]);
+    if (!data || !currentUserId) return;
+    setUnreadCounts(computeDmUnreadCounts(directMessages, readMessages, meRef));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, currentUserId, directMessages, readMessages, meRef]);
 
   const chatUserList = useMemo(
     () =>
@@ -157,46 +167,59 @@ export default function CommunityNotificationsPanel() {
     return data;
   };
 
-  const markAsRead = async (fromUsername: string) => {
+  const markAsRead = async (fromId: string) => {
+    if (!fromId) return;
     try {
-      await dmRequest({ action: "markRead", fromUsername });
+      await dmRequest({ action: "markRead", fromId });
       loadData();
       window.dispatchEvent(new CustomEvent("data-refresh"));
     } catch {}
     setUnreadCounts((prev) => {
       const next = { ...prev };
-      delete next[fromUsername];
+      delete next[fromId];
       return next;
     });
   };
 
-  const markDelivered = async (fromUsername: string) => {
+  const markDelivered = async (fromId: string) => {
+    if (!fromId) return;
     try {
-      await dmRequest({ action: "markDelivered", fromUsername });
+      await dmRequest({ action: "markDelivered", fromId });
       loadData();
     } catch {}
   };
 
   useEffect(() => {
-    if (!mobileOpen || !currentHandle || !directMessages.length) return;
+    if (!mobileOpen || !currentUserId || !directMessages.length) return;
+    const peers = new Set<string>();
     for (const m of directMessages) {
-      if (m.to === currentHandle && m.from) void markDelivered(m.from);
+      if (isToUser(m, meRef) && m.from) peers.add(String(m.fromId || m.from));
     }
-  }, [mobileOpen, directMessages.length, currentHandle]);
+    for (const peer of peers) void markDelivered(peer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobileOpen, directMessages.length, currentUserId]);
 
-  const sendMessage = async (to: string, text: string, image?: string) => {
+  const sendMessage = async (toId: string, text: string, image?: string) => {
     const trimmed = text.trim();
     if (!trimmed && !image) return;
     setChatError(null);
     const timestamp = Date.now();
-    const optimistic: DmMessage = { from: currentHandle, to, text: trimmed, timestamp, ...(image ? { image } : {}) };
+    const optimistic: DmMessage = {
+      fromId: currentUserId,
+      toId,
+      from: currentHandle,
+      to: String(findUserById(registeredUsers, toId)?.username || ""),
+      text: trimmed,
+      timestamp,
+      ...(image ? { image } : {}),
+    };
     const prevMessages = data?.directMessages || [];
     setData((prev: any) => ({
       ...prev,
       directMessages: [...(prev?.directMessages || []), optimistic],
     }));
     try {
-      const result = await dmRequest({ action: "send", to, text: trimmed, ...(image ? { image } : {}) });
+      const result = await dmRequest({ action: "send", toId, text: trimmed, ...(image ? { image } : {}) });
       if (result.message) {
         setData((prev: any) => ({
           ...prev,
@@ -286,8 +309,9 @@ export default function CommunityNotificationsPanel() {
 
   useEffect(() => {
     if (!selectedChatUser) return;
-    void markAsRead(selectedChatUser.username);
-  }, [selectedChatUser?.username, directMessages.length]);
+    void markAsRead(String(selectedChatUser.id || ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChatUser?.id, directMessages.length]);
 
   const totalChatUnread = Object.values(unreadCounts).reduce((s, n) => s + n, 0);
 
@@ -391,14 +415,16 @@ export default function CommunityNotificationsPanel() {
         {tab === "chat" && selectedChatUser && (
           <div className="flex flex-col flex-1 min-h-0 p-4">
             <DmThreadView
+              peerId={String(selectedChatUser.id || '')}
               peerUsername={selectedChatUser.username}
+              currentUserId={currentUserId}
               currentHandle={currentHandle}
               messages={directMessages}
               chatError={chatError}
-              readReceiptsFromPeer={data?.readReceiptsFrom?.[selectedChatUser.username] || []}
-              deliveredReceiptsFromPeer={data?.deliveredReceiptsFrom?.[selectedChatUser.username] || []}
+              readReceiptsFromPeer={data?.readReceiptsFrom?.[String(selectedChatUser.id)] || []}
+              deliveredReceiptsFromPeer={data?.deliveredReceiptsFrom?.[String(selectedChatUser.id)] || []}
               scrollClassName="max-h-[min(520px,calc(100vh-18rem))]"
-              onSend={(text, image) => sendMessage(selectedChatUser.username, text, image)}
+              onSend={(text, image) => sendMessage(String(selectedChatUser.id), text, image)}
               onEdit={handleSaveEdit}
               onDelete={handleDeleteMsg}
               onReact={handleReact}
@@ -454,24 +480,24 @@ export default function CommunityNotificationsPanel() {
                       </button>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="text-sm font-black text-white/90 truncate" style={color ? { ...toNameStyle(color), textShadow: `0 0 10px ${nameGlowColor(color)}55` } : undefined}>{displayName}</p>
-                        {unreadCounts[user.username] > 0 ? (
+                        {unreadCounts[String(user.id)] > 0 ? (
                           <p className="text-[8px] text-[#00ffff] font-bold uppercase tracking-widest">Unread</p>
                         ) : friendIdSet.has(String(user.id)) ? (
                           <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest">Friend</p>
                         ) : null}
                       </div>
-                      {unreadCounts[user.username] > 0 && (
+                      {unreadCounts[String(user.id)] > 0 && (
                         <>
                           <button
                             type="button"
                             title="Mark as read"
-                            onClick={(e) => { e.stopPropagation(); void markAsRead(user.username); }}
+                            onClick={(e) => { e.stopPropagation(); void markAsRead(String(user.id)); }}
                             className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/25 text-green-400 hover:bg-green-500/20 hover:text-green-300 transition-all shrink-0"
                           >
                             <CheckCheck className="w-3.5 h-3.5" />
                           </button>
                           <span className="bg-red-500 text-white text-[7px] font-black rounded-full px-1.5 py-0.5 shrink-0">
-                            {unreadCounts[user.username]}
+                            {unreadCounts[String(user.id)]}
                           </span>
                         </>
                       )}
