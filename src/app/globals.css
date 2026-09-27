@@ -20,6 +20,21 @@
   }
 }
 
+/* Full-bleed page backgrounds.
+   The layout insets page content by --rail-gutter so the SideRail never covers
+   content. An absolutely positioned `inset-0` background resolves against the
+   page root's padding box, so it inherited that inset and got cropped along the
+   left edge (glows and artwork visibly cut off, and percentage-based positions
+   like `circle_at_30%_20%` drifted).
+
+   Pull every page-level background layer back over the gutter. This is scoped
+   to a direct child of the page root so it can never reach modals, dropdowns or
+   card art further down the tree. Pages that already carry the explicit
+   `-ml-[var(--rail-gutter)]` are skipped, so this never double-applies. */
+.rail-shell > * > .absolute.inset-0:not([class*="rail-gutter"]) {
+  margin-left: calc(var(--rail-gutter) * -1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

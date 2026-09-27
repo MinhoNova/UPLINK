@@ -1151,7 +1151,7 @@ const ManageContent = ({
   const effectiveTarget = localTarget || targetLobby;
 
   return (
-    <div className="min-h-screen bg-[#05050a] relative overflow-hidden">
+    <div className="min-h-screen bg-[#05050a] relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(0,255,255,0.06),transparent_60%),radial-gradient(circle_at_80%_80%,rgba(255,0,127,0.06),transparent_60%)]" />
       <ManageModal
         isOpen={true}

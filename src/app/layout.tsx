@@ -168,7 +168,7 @@ export default function RootLayout({
             <GlobalChatWidget />
             <AssistantChatWidget />
             <SideRail />
-            <div className="pl-[var(--rail-gutter)]">{children}</div>
+            <div className="rail-shell pl-[var(--rail-gutter)]">{children}</div>
           </I18nProvider>
         </AuthProvider>
       </body>
