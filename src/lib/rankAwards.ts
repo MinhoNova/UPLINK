@@ -4,6 +4,21 @@ function memberId(m: any): string {
   return String(m?.applicantId || m?.userId || m?.id || "");
 }
 
+/**
+ * Fold the legacy plural spellings onto the singular category.
+ *
+ * Offers have always been written as `dungeon` / `raid`, but older rows carry
+ * `dungeons` / `raids`. Comparing the raw string meant those lobbies silently
+ * skipped `dungeonTotal` and the per-key-level buckets, so their owners were
+ * under-counted. Normalise once here instead of at every comparison site.
+ */
+function lobbyCategory(lobby: any): string {
+  const cat = String(lobby?.category || "").toLowerCase();
+  if (cat === "dungeons") return "dungeon";
+  if (cat === "raids") return "raid";
+  return cat;
+}
+
 export function normalizeStats(stats: any): any {
   return {
     total: 0,
@@ -67,6 +82,7 @@ export function applyRankAwards(
     if (completedNow && !next.rankAwardedBooster) {
       const memberIds = [next.ownerId, ...(next.accepted || []).map(memberId)];
       const kLevel = parseInt(String(next.keyLevel || "").replace("+", "") || "0", 10);
+      const category = lobbyCategory(next);
       for (const mid of memberIds) {
         const u = byId(mid);
         if (!mid || !u) continue;
@@ -77,11 +93,11 @@ export function applyRankAwards(
         else if (kLevel >= 15) s.k15 += 1;
         else if (kLevel >= 10) s.k10 += 1;
         else if (kLevel >= 5) s.k5 += 1;
-        if (next.category === "dungeon") {
+        if (category === "dungeon") {
           s.dungeonTotal += 1;
           const keyLabel = next.keyLevel || (kLevel > 0 ? `+${kLevel}` : "");
           if (keyLabel) s.perKeyLevel[keyLabel] = (s.perKeyLevel[keyLabel] || 0) + 1;
-        } else if (next.category === "leveling") {
+        } else if (category === "leveling") {
           s.levelingTotal += 1;
           const range = next.startLevel && next.endLevel ? `${next.startLevel}-${next.endLevel}` : "";
           if (range) s.perLevelRange[range] = (s.perLevelRange[range] || 0) + 1;

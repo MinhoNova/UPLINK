@@ -1462,7 +1462,14 @@ export function classSlotsFilled(lobby: any): boolean {
 }
 
 /** Public offer feed — open recruiting banners only (full squads move to Ongoing). */
-const PUBLIC_FEED_CATEGORIES = new Set(["dungeon", "dungeons", "raid", "raids", "leveling"]);
+const PUBLIC_FEED_CATEGORIES = new Set([
+  "dungeon",
+  "dungeons",
+  "raid",
+  "raids",
+  "leveling",
+  "professions",
+]);
 
 export function isLobbyListedInPublicFeed(lobby: any): boolean {
   if (!lobby) return false;

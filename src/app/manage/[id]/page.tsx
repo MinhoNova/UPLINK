@@ -685,7 +685,6 @@ export default function ManagePage() {
   };
 
   const confirmLeaveOrKick = async (lobbyId: string, member: any, isKick: boolean, completed: number) => {
-    const updatedUsers = [...registeredUsers];
     const lobby = lobbies.find((l) => l.id === lobbyId);
     if (!lobby) return;
     if (!member && !isKick) {
@@ -693,16 +692,11 @@ export default function ManagePage() {
     }
     if (!member) return;
     const historySnapshot = completed > 0 ? { ...member, applicantId: memberIdentityKey(member), leftAt: Date.now(), runsAtExit: completed, reason: isKick ? "kicked" : "left" } : null;
-    lobby.accepted.forEach((m: any) => {
-      if (memberIdentityKey(m) === memberIdentityKey(member)) {
-        const uIdx = updatedUsers.findIndex((u: any) => u.id === m.applicantId || u.username === m.applicantId);
-        if (uIdx !== -1) {
-          const stats = updatedUsers[uIdx].stats || { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 };
-          stats.total += Number(completed);
-          updatedUsers[uIdx].stats = stats;
-        }
-      }
-    });
+    // Rank counters are server-authoritative: applyRankAwards credits `total`,
+    // `dungeonTotal`, `levelingTotal` and the key/level buckets when the offer
+    // reaches completed+paid. Bumping `total` here as well double-counted every
+    // leave, awarded none of the category buckets, and skipped the award
+    // idempotency flag, so Booster ranks inflated far faster than real runs.
     const actorIdentity = resolveChatIdentity(isKick ? currentUserId : member.applicantId || member.userId, {
       from: isKick ? currentUserDisplay : member.applicantName || member.name || "Operative",
       fromHandle: isKick ? currentUserDiscordHandle : member.applicantDiscordHandle || member.discordName || member.applicantName || member.name,
@@ -724,7 +718,6 @@ export default function ManagePage() {
     const updated = splitResult.lobbies.map(repairLobbyRoles);
     const leaverSelf = memberIdentityKey(member) === String(currentUserId) && !isKick;
     setLobbies(updated);
-    setRegisteredUsers(updatedUsers);
     splitInFlightRef.current = true;
     try {
       const res = await fetch("/api/lobbies/split-exit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId, member, completed: Math.max(0, completed), isKick, leaveMsg, historySnapshot }) });
@@ -740,7 +733,7 @@ export default function ManagePage() {
       splitInFlightRef.current = false;
       window.dispatchEvent(new CustomEvent("data-refresh"));
     }
-    if (memberIdentityKey(member) === String(currentUserId)) saveGlobalData({ registeredUsers: updatedUsers });
+    if (memberIdentityKey(member) === String(currentUserId)) router.refresh();
     setActiveMemberAction(null);
     if (leaverSelf) {
       router.push("/");

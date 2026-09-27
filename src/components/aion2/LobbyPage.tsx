@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
   Trash2, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, BadgeCheck, Star, ExternalLink, IdCard, Clock
+  Bell, BellOff, Palette, BadgeCheck, Star, ExternalLink, IdCard, Clock, Hammer
 } from "lucide-react";
 import SquadReviewModal from "@/components/SquadReviewModal";
 import { useI18n } from "@/i18n/i18n";
@@ -33,6 +33,7 @@ const FILTER_TABS = [
   { label: "DUNGEONS", key: "Dungeons", icon: Shield },
   { label: "RAIDS", key: "Raids", icon: Swords },
   { label: "LEVELING", key: "Leveling", icon: Sparkles },
+  { label: "PROFESSIONS", key: "Professions", icon: Hammer },
 ];
 
 const REGION_TABS = [
@@ -41,7 +42,7 @@ const REGION_TABS = [
   { label: "NA EAST", key: "NA (EAST)", flag: "/flags/us.svg" },
   { label: "NA WEST", key: "NA (WEST)", flag: "/flags/us.svg" },
 ];
-const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling"] as const;
+const OFFER_NOTIFICATION_CATEGORIES = ["dungeon", "raid", "leveling", "professions"] as const;
 type OfferNotificationCategory = (typeof OFFER_NOTIFICATION_CATEGORIES)[number];
 type OfferNotificationSettings = { mutedAll: boolean; mutedCategories: OfferNotificationCategory[] };
 const DEFAULT_OFFER_NOTIFICATION_SETTINGS: OfferNotificationSettings = { mutedAll: false, mutedCategories: [] };
@@ -49,6 +50,7 @@ const DEFAULT_OFFER_NOTIFICATION_SETTINGS: OfferNotificationSettings = { mutedAl
 function normalizeOfferCategory(category: unknown): OfferNotificationCategory {
   const value = String(category || "dungeon").toLowerCase();
   if (value === "raids") return "raid";
+  if (value === "dungeons") return "dungeon";
   return OFFER_NOTIFICATION_CATEGORIES.includes(value as OfferNotificationCategory) ? value as OfferNotificationCategory : "dungeon";
 }
 
@@ -225,7 +227,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     return (lobbies || []).filter((l: any) => String(l.category || "").toLowerCase() !== "pvp" && !isRemovedDungeonOffer(l) && (l.status === "completed" || l.status === "failed")).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
   }, [lobbies, meId]);
 
-  const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"] };
+  const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"], Professions: ["professions"] };
 
   const displayOffers = useMemo(() => {
     const cats = OPEN_TAB_CATEGORIES[activeTab] ?? null;

@@ -109,6 +109,7 @@ const CATEGORY_CHANNELS: Record<string, string[]> = {
    raids: ["⚔️・raid-offers", "raid-offers", "raids"],
    professions: ["🛠️・profession-offers", "profession-offers", "professions"],
 };
+// plural keys for historic consistency; use discordCategoryKey() to normalize
 
 const CATEGORY_EMOJI: Record<string, string> = {
    leveling: "🚀",
@@ -117,14 +118,26 @@ const CATEGORY_EMOJI: Record<string, string> = {
    professions: "🛠️",
 };
 
-function channelPatternsFor(category: string | null | undefined): string[] {
+/**
+ * The channel tables above are keyed on the plural spelling, but offers are
+ * written as the singular `dungeon` / `raid`. Looking the raw value up meant
+ * every new dungeon and raid offer missed its channel and silently fell through
+ * to the catch-all `general`. Fold the singular onto the plural here.
+ */
+function discordCategoryKey(category: string | null | undefined): string {
    const c = String(category || "").toLowerCase();
-   return CATEGORY_CHANNELS[c] || ["🎮・lfg", "lfg", "general"];
+   if (c === "dungeon") return "dungeons";
+   if (c === "raid") return "raids";
+   return c;
+}
+
+function channelPatternsFor(category: string | null | undefined): string[] {
+   return CATEGORY_CHANNELS[discordCategoryKey(category)] || ["🎮・lfg", "lfg", "general"];
 }
 
 export async function sendLobbyEmbed(lobby: any) {
    await ensureGuildCache();
-   const category = String(lobby.category || "").toLowerCase();
+   const category = discordCategoryKey(lobby.category);
    const channelNames = channelPatternsFor(lobby.category);
    const channelId = findChannelId(channelNames);
    if (!channelId) {
@@ -148,7 +161,7 @@ export async function sendLobbyEmbed(lobby: any) {
       title: `${categoryEmoji} ${title}`,
       description:
          "Apply below — the owner reviews applicants on **UPLINK**. UPLINK is a coordination platform; we do not handle payments or loot.",
-      color: CATEGORY_CHANNELS[category] ? (category === "leveling" ? 0x8a2be2 : category === "raids" ? 0xff007f : 0x00b7ff) : 0xff007f,
+      color: CATEGORY_CHANNELS[discordCategoryKey(lobby.category)] ? (category === "leveling" ? 0x8a2be2 : category === "raids" ? 0xff007f : category === "professions" ? 0x22c55e : 0x00b7ff) : 0xff007f,
       fields: [
          { name: "💰 Offer", value: `**${price}K** gold`, inline: true },
          { name: "🎯 Open Roles", value: rolesStr, inline: true },
