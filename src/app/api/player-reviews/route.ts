@@ -96,7 +96,7 @@ export async function POST(req: Request) {
   // and the cooldown has to be judged against the list as it is at write time.
   const outcome = await updateKVAtomic<PlayerReview[]>("playerReviews", (raw) => {
     const reviews = Array.isArray(raw) ? raw : [];
-    const blocked = reviewCooldownError(reviews, userId, targetId, lobbyId);
+    const blocked = reviewCooldownError(reviews, targetId, lobbyId);
     if (blocked) return null;
 
     const existingIdx = reviews.findIndex(
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
 
   if (!outcome.ok) {
     const blocked =
-      reviewCooldownError(await loadReviews(), userId, targetId, lobbyId) ||
+      reviewCooldownError(await loadReviews(), targetId, lobbyId) ||
       "Could not save your review — try again.";
     return NextResponse.json({ error: blocked }, { status: 429 });
   }

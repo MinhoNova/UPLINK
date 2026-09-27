@@ -124,8 +124,12 @@ export function averagePlayerRating(reviews: PlayerReview[]): number {
 }
 
 /**
- * The reviewer's own last review of this player, across every lobby — this is
- * the one the cooldown is measured against.
+ * The most recent review this player has received, from anyone.
+ *
+ * The cooldown is deliberately keyed on the reviewed player and NOT on the
+ * reviewer→target pair. The rule is "one rating per player per 24 hours": the
+ * point is to cap how much rating a player can be handed, so keying it on the
+ * pair would let one person farm self-written praise from unlimited accounts.
  *
  * Entries with no usable timestamp are skipped rather than treated as ancient:
  * a legacy row must not read as "reviewed at the epoch" and lock the player out
@@ -133,15 +137,13 @@ export function averagePlayerRating(reviews: PlayerReview[]): number {
  */
 export function findLatestReviewOf(
   reviews: PlayerReview[] | null | undefined,
-  reviewerId: string,
   targetId: string
 ): PlayerReview | null {
   if (!Array.isArray(reviews) || !reviews.length) return null;
-  const from = String(reviewerId);
   const to = String(targetId);
   let latest: PlayerReview | null = null;
   for (const r of reviews) {
-    if (String(r?.reviewerId) !== from || String(r?.targetId) !== to) continue;
+    if (String(r?.targetId) !== to) continue;
     const at = Number(r?.createdAt);
     if (!Number.isFinite(at) || at <= 0) continue;
     if (!latest || at > Number(latest.createdAt || 0)) latest = r;
@@ -152,17 +154,18 @@ export function findLatestReviewOf(
 /**
  * Why a review cannot be left right now, or `null` when it is allowed.
  *
- * Editing a review you already left for this player is always fine — that is
- * how a typo gets fixed — so only a *new* rating is held back.
+ * Applies to the reviewed player, not the reviewer: while any rating for this
+ * player exists inside the last 24 hours, no new rating is accepted for them.
+ * Re-submitting for the same offer rewrites that review instead of adding one,
+ * so a player correcting their own typo is never locked out.
  */
 export function reviewCooldownError(
   reviews: PlayerReview[] | null | undefined,
-  reviewerId: string,
   targetId: string,
   lobbyId: string,
   now = Date.now()
 ): string | null {
-  const latest = findLatestReviewOf(reviews, reviewerId, targetId);
+  const latest = findLatestReviewOf(reviews, targetId);
   if (!latest) return null;
   // Re-submitting for the same offer rewrites that review instead of adding one.
   if (String(latest.lobbyId) === String(lobbyId)) return null;
@@ -171,5 +174,5 @@ export function reviewCooldownError(
   if (elapsed < 0 || elapsed >= PLAYER_REVIEW_COOLDOWN_MS) return null;
 
   const hoursLeft = Math.ceil((PLAYER_REVIEW_COOLDOWN_MS - elapsed) / (60 * 60_000));
-  return `You already reviewed this player — you can review them again in ${hoursLeft}h.`;
+  return `This player already has a review — they can be reviewed again in ${hoursLeft}h.`;
 }

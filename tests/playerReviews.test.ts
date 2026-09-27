@@ -138,32 +138,52 @@ function review(over: Partial<PlayerReview> = {}): PlayerReview {
 
 describe("review cooldown", () => {
   it("lets a first review through", () => {
-    expect(reviewCooldownError([], A, B, "lobby_1")).toBeNull();
+    expect(reviewCooldownError([], B, "lobby_1")).toBeNull();
   });
 
   it("blocks a second review of the same player in a different lobby", () => {
     const now = 1_000_000 + HOUR;
     const reviews = [review({ lobbyId: "lobby_1", createdAt: 1_000_000 })];
-    const err = reviewCooldownError(reviews, A, B, "lobby_2", now);
+    const err = reviewCooldownError(reviews, B, "lobby_2", now);
     expect(err).toBeTruthy();
     expect(err).toContain("23h");
+  });
+
+  it("blocks a different account from reviewing the same player again", () => {
+    // The anti-spam case: A already reviewed B, so a second account (C) must not
+    // be able to hand B another rating inside the window.
+    const now = 1_000_000 + HOUR;
+    const reviews = [review({ reviewerId: A, targetId: B, lobbyId: "lobby_1", createdAt: 1_000_000 })];
+    expect(reviewCooldownError(reviews, B, "lobby_2", now)).toBeTruthy();
+  });
+
+  it("caps the player at one review per 24h no matter how many reviewers there are", () => {
+    const created = 1_000_000;
+    const reviews = [
+      review({ id: "p1", reviewerId: A, targetId: B, lobbyId: "lobby_1", createdAt: created }),
+      review({ id: "p2", reviewerId: C, targetId: B, lobbyId: "lobby_2", createdAt: created + HOUR }),
+    ];
+    // The newest rating for B came from C, so the window runs from there.
+    const latest = created + HOUR;
+    expect(reviewCooldownError(reviews, B, "lobby_3", latest + HOUR)).toBeTruthy();
+    expect(reviewCooldownError(reviews, B, "lobby_3", latest + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
   });
 
   it("allows it again once 24h have passed", () => {
     const created = 1_000_000;
     const reviews = [review({ lobbyId: "lobby_1", createdAt: created })];
-    expect(reviewCooldownError(reviews, A, B, "lobby_2", created + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
+    expect(reviewCooldownError(reviews, B, "lobby_2", created + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
   });
 
   it("still blocks one minute short of 24h", () => {
     const created = 1_000_000;
     const reviews = [review({ lobbyId: "lobby_1", createdAt: created })];
-    expect(reviewCooldownError(reviews, A, B, "lobby_2", created + PLAYER_REVIEW_COOLDOWN_MS - 60_000)).toBeTruthy();
+    expect(reviewCooldownError(reviews, B, "lobby_2", created + PLAYER_REVIEW_COOLDOWN_MS - 60_000)).toBeTruthy();
   });
 
-  it("does not block editing the review you already left for that lobby", () => {
+  it("does not block editing the review already left for that lobby", () => {
     const reviews = [review({ lobbyId: "lobby_1" })];
-    expect(reviewCooldownError(reviews, A, B, "lobby_1", 1_000_000 + HOUR)).toBeNull();
+    expect(reviewCooldownError(reviews, B, "lobby_1", 1_000_000 + HOUR)).toBeNull();
   });
 
   it("measures the cooldown from the most recent review, not the first", () => {
@@ -172,30 +192,40 @@ describe("review cooldown", () => {
       review({ id: "prv_2", lobbyId: "lobby_2", createdAt: 5_000_000 }),
     ];
     // 5_000_000 is the newest, so the window runs from there.
-    expect(reviewCooldownError(reviews, A, B, "lobby_3", 5_000_000 + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
-    expect(reviewCooldownError(reviews, A, B, "lobby_3", 5_000_000 + HOUR)).toBeTruthy();
+    expect(reviewCooldownError(reviews, B, "lobby_3", 5_000_000 + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
+    expect(reviewCooldownError(reviews, B, "lobby_3", 5_000_000 + HOUR)).toBeTruthy();
   });
 
-  it("keeps the cooldown per pair — other players are unaffected", () => {
-    const reviews = [review({ lobbyId: "lobby_1", createdAt: 1_000_000 })];
-    // A reviewing C, and B reviewing A, both still allowed.
-    expect(reviewCooldownError(reviews, A, C, "lobby_9", 1_000_000 + HOUR)).toBeNull();
-    expect(reviewCooldownError(reviews, B, A, "lobby_9", 1_000_000 + HOUR)).toBeNull();
+  it("leaves other reviewed players unaffected", () => {
+    const reviews = [review({ targetId: B, lobbyId: "lobby_1", createdAt: 1_000_000 })];
+    // Nobody has reviewed A or C yet, so both are free to receive a rating.
+    expect(reviewCooldownError(reviews, A, "lobby_9", 1_000_000 + HOUR)).toBeNull();
+    expect(reviewCooldownError(reviews, C, "lobby_9", 1_000_000 + HOUR)).toBeNull();
   });
 
   it("leaves no cooldown when the stored clock is ahead of ours", () => {
     const reviews = [review({ lobbyId: "lobby_1", createdAt: 9_000_000 })];
-    expect(reviewCooldownError(reviews, A, B, "lobby_2", 1_000_000)).toBeNull();
+    expect(reviewCooldownError(reviews, B, "lobby_2", 1_000_000)).toBeNull();
   });
 
   it("tolerates a missing or malformed review list", () => {
-    expect(reviewCooldownError(null, A, B, "lobby_1")).toBeNull();
-    expect(reviewCooldownError(undefined, A, B, "lobby_1")).toBeNull();
-    expect(findLatestReviewOf([], A, B)).toBeNull();
+    expect(reviewCooldownError(null, B, "lobby_1")).toBeNull();
+    expect(reviewCooldownError(undefined, B, "lobby_1")).toBeNull();
+    expect(findLatestReviewOf([], B)).toBeNull();
   });
 
   it("ignores entries with no timestamp instead of blocking forever", () => {
     const reviews = [review({ lobbyId: "lobby_1", createdAt: undefined as any })];
-    expect(reviewCooldownError(reviews, A, B, "lobby_2", 1_000_000)).toBeNull();
+    expect(reviewCooldownError(reviews, B, "lobby_2", 1_000_000)).toBeNull();
+  });
+
+  it("finds the newest review for a target regardless of who wrote it", () => {
+    const reviews = [
+      review({ id: "p1", reviewerId: A, targetId: B, createdAt: 1_000_000 }),
+      review({ id: "p2", reviewerId: C, targetId: B, createdAt: 7_000_000 }),
+      review({ id: "p3", reviewerId: A, targetId: C, createdAt: 9_000_000 }),
+    ];
+    expect(findLatestReviewOf(reviews, B)?.id).toBe("p2");
+    expect(findLatestReviewOf(reviews, C)?.id).toBe("p3");
   });
 });
