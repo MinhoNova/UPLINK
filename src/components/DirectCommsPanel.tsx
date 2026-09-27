@@ -161,11 +161,20 @@ export default function DirectCommsPanel() {
     const pollInterval = setInterval(() => {
       if (document.visibilityState === "visible") pollData();
     }, 2000);
+    // Presence is a server-side last-seen stamp, so a background tab still has
+    // to report in — otherwise a player signed in on a second account (or a
+    // second tab) reads as offline to the account they are looking at. Browsers
+    // throttle hidden tabs hard, so this sets its own slow cadence instead of
+    // leaning on that.
+    const presenceHeartbeat = setInterval(() => {
+      if (document.visibilityState !== "visible") pollData();
+    }, 45_000);
     const onRefresh = () => pollData();
     window.addEventListener("data-refresh", onRefresh);
     
     return () => {
       clearInterval(pollInterval);
+      clearInterval(presenceHeartbeat);
       window.removeEventListener("data-refresh", onRefresh);
     };
   }, [status]);
