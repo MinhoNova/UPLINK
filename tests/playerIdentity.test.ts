@@ -15,6 +15,7 @@ import {
   withDmIdentities,
   withReceiptIdentities,
   computeDmUnreadCounts,
+  totalDmUnreadCount,
   isFromUser,
   isToUser,
   getDmConversationPeerIds,
@@ -219,6 +220,49 @@ describe("dmHelpers across a Discord rename", () => {
     expect(contacts).toHaveLength(1);
     expect(contacts[0].id).toBe(renamed.id);
     expect(contacts[0].username).toBe("newname");
+  });
+
+  it("re-keys a message the player sent to their own retired handle", () => {
+    // What the leonknox1 -> omarsaleh97 row became once the alias was recorded.
+    const selfDm: DmMessage[] = [
+      { from: "oldname", to: "newname", text: "note to self", timestamp: 7, image: "", reactions: {} },
+    ];
+    const backfilled = withDmIdentities(selfDm, users);
+
+    expect(backfilled[0].fromId).toBe(renamed.id);
+    expect(backfilled[0].toId).toBe(renamed.id);
+    // Nothing is lost, but the thread stops looking like a conversation.
+    expect(backfilled[0].text).toBe("note to self");
+  });
+
+  it("never lists the player as their own conversation peer", () => {
+    const me = refFor(renamed.id, "newname");
+    const selfDm: DmMessage[] = [
+      { from: "oldname", to: "newname", text: "note to self", timestamp: 7, image: "", reactions: {} },
+    ];
+
+    expect([...getDmConversationPeerIds(withDmIdentities(selfDm, users), me)]).toEqual([]);
+  });
+
+  it("still lists real peers alongside a self-directed message", () => {
+    const me = refFor(renamed.id, "newname");
+    const mixed: DmMessage[] = [
+      { from: "oldname", to: "newname", text: "note to self", timestamp: 7, image: "", reactions: {} },
+      ...legacy,
+    ];
+
+    expect([...getDmConversationPeerIds(withDmIdentities(mixed, users), me)]).toEqual([friend.id]);
+  });
+
+  it("does not count a self-directed message as unread", () => {
+    const me = refFor(renamed.id, "newname");
+    const selfDm: DmMessage[] = [
+      { from: "oldname", to: "newname", text: "note to self", timestamp: 7, image: "", reactions: {} },
+    ];
+    const counts = computeDmUnreadCounts(withDmIdentities(selfDm, users), {}, me);
+
+    expect(counts).toEqual({});
+    expect(totalDmUnreadCount(counts)).toBe(0);
   });
 
   it("lets an admin reach a partner who is no longer registered", () => {

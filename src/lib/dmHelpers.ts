@@ -179,13 +179,14 @@ export function totalDmUnreadCount(
 export function getDmConversationPeerIds(directMessages: DmMessage[], me: UserRef): Set<string> {
   const peers = new Set<string>();
   for (const m of directMessages) {
-    if (isFromUser(m, me)) {
-      const peer = dmRecipientRef(m);
-      if (peer.id || peer.username) peers.add(peer.id || peer.username);
-    } else if (isToUser(m, me)) {
-      const peer = dmSenderRef(m);
-      if (peer.id || peer.username) peers.add(peer.id || peer.username);
-    }
+    let peer: UserRef | null = null;
+    if (isFromUser(m, me)) peer = dmRecipientRef(m);
+    else if (isToUser(m, me)) peer = dmSenderRef(m);
+    if (!peer) continue;
+    // A message the player sent themselves — which is what a conversation with
+    // your own pre-rename handle becomes once it is re-keyed — is not a peer.
+    if (refMatches(me, peer.id) || refMatches(me, peer.username)) continue;
+    if (peer.id || peer.username) peers.add(peer.id || peer.username);
   }
   return peers;
 }

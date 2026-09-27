@@ -56,7 +56,7 @@ const MAX_PREVIOUS_USERNAMES = 8;
  * handle-keyed row. Stored once in `identityBackfillVersion` so the repair runs
  * at most once per upgrade rather than on every poll.
  */
-const IDENTITY_VERSION = 2;
+const IDENTITY_VERSION = 3;
 
 type PlayerRow = Record<string, unknown> & { id: string };
 
