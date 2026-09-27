@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Bell, ChevronDown, History, Languages, LifeBuoy, LogOut, MessageCircle, Pause, Play, ScanLine, ShieldAlert, ShieldX, Swords, UserRound, Zap } from "lucide-react";
+import { Bell, ChevronDown, History, Languages, LifeBuoy, LogOut, MessageCircle, Pause, Play, ScanLine, Settings, ShieldAlert, ShieldX, Swords, UserRound, Zap } from "lucide-react";
 import { ProtocolMark } from "@/components/ProtocolMark";
 import ProfileAvatarWithEffect from "@/components/ProfileAvatarWithEffect";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
@@ -351,16 +351,15 @@ export default function Navbar() {
               } else {
                 window.location.href = '/';
               }
-            }} className="h-10 px-4 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5">
-              ⚙️
+            }} className="h-10 w-10 justify-center rounded-xl flex items-center font-black uppercase text-[10px] tracking-widest transition-all bg-white/5 text-gray-400 hover:text-white border border-white/5">
+              <Settings className="w-4 h-4" />
             </motion.button>
             <a
               href="/create-offer"
-              title="Create Offer"
-              className="group relative h-10 inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#00ffff] via-[#7dd3fc] to-[#c4b5fd] px-5 font-black uppercase text-[10px] tracking-[0.18em] text-black shadow-[0_0_18px_rgba(34,211,238,0.35)] transition-all duration-300 hover:scale-[1.04] hover:shadow-[0_0_30px_rgba(34,211,238,0.55)] hover:brightness-105 active:scale-95"
+              title={t('nav_createOffer') || 'Create Offer'}
+              className="h-10 px-4 inline-flex items-center gap-2 rounded-xl border border-[#00ffff]/40 bg-[#00ffff]/10 text-[#00ffff] font-black uppercase text-[10px] tracking-widest transition-all hover:bg-[#00ffff] hover:text-black hover:border-[#00ffff] hover:shadow-[0_0_20px_rgba(0,255,255,0.35)] active:scale-[0.98]"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full transition-transform duration-500 group-hover:translate-x-full" />
-              <Zap className="w-4 h-4 shrink-0 transition-transform group-hover:rotate-12" /> Create Offer
+              <Zap className="w-4 h-4 shrink-0" /> {t('nav_createOffer') || 'Create Offer'}
             </a>
             <div className="relative" ref={langRef}>
               <motion.button title={t('nav_language')} onClick={() => setLangOpen(!langOpen)} className={`h-10 min-w-[64px] justify-center rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all ${langOpen ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 shadow-[0_0_14px_rgba(234,179,8,0.25)] hover:bg-yellow-500/30" : "bg-white/[0.03] text-gray-500 border border-white/10 hover:text-gray-300 hover:border-white/25"}`}>
