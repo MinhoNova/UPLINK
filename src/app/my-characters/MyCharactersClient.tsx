@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, BadgeCheck, ExternalLink, IdCard, Link2, Loader2, RefreshCw, Swords, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import GamePortrait from "@/components/aion2/GamePortrait";
+import PageBackdrop from "@/components/aion2/PageBackdrop";
 import { classThumbUrl } from "@/lib/classThumb";
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 import {
@@ -15,7 +16,7 @@ import {
 } from "@/lib/characterStore";
 import { useI18n } from "@/i18n/i18n";
 
-export default function MyCharactersClient() {
+export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
   const { data: session } = useSession();
   const { t } = useI18n();
   const router = useRouter();
@@ -111,8 +112,9 @@ export default function MyCharactersClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30">
-      <div className="mx-auto max-w-4xl px-4 pt-8 pb-24">
+    <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30">
+      <PageBackdrop heroBg={heroBg} />
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pt-8 pb-24">
         <button
           type="button"
           onClick={() => router.push("/my-profile")}

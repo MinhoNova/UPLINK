@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { getSiteUrl } from "@/lib/siteUrl";
 import { getAppSession } from "@/lib/authEnv";
 import { getUserRole } from "@/lib/roles";
+import { getKV } from "@/lib/db";
+import { resolveHeroBg } from "@/lib/heroBg";
 import AdminDashboard from "./AdminDashboard";
 
 const siteUrl = getSiteUrl();
@@ -20,5 +22,11 @@ export default async function AdminPage() {
   if (!session?.user?.id) redirect("/");
   const role = await getUserRole(session.user.id, session.user.username);
   if (role !== "admin" && role !== "moderator" && role !== "support") redirect("/");
-  return <AdminDashboard role={role} />;
+  let heroBg: string | undefined;
+  try {
+    heroBg = resolveHeroBg(await getKV("heroBg"));
+  } catch {
+    heroBg = "scenic";
+  }
+  return <AdminDashboard role={role} heroBg={heroBg} />;
 }

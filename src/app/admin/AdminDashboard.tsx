@@ -27,6 +27,7 @@ import AdminVisitsPanel from "@/components/admin/AdminVisitsPanel";
 import AdminTicketsPanel from "@/components/admin/AdminTicketsPanel";
 import AdminUserBanPanel from "@/components/admin/AdminUserBanPanel";
 import { RANK_ORDER, RANK_IMAGES, RANK_COLORS } from "@/lib/ranks";
+import PageBackdrop from "@/components/aion2/PageBackdrop";
 
 const TABS = [
   { id: "users", label: "Users", icon: Users },
@@ -41,7 +42,7 @@ const TABS = [
 
 const MODERATOR_TAB_IDS = new Set(["tickets", "moderation"]);
 
-export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "moderator" | "support" | "user" }) {
+export default function AdminDashboard({ role = "admin", heroBg }: { role?: "admin" | "moderator" | "support" | "user"; heroBg?: string }) {
   const [activeTab, setActiveTab] = useState("users");
   const tabs = (role === "admin" ? TABS : TABS.filter((t) => MODERATOR_TAB_IDS.has(t.id)));
   const effectiveTab = tabs.some((t) => t.id === activeTab) ? activeTab : tabs[0]?.id ?? "users";
@@ -108,7 +109,8 @@ export default function AdminDashboard({ role = "admin" }: { role?: "admin" | "m
   const usersWithDrafts = users.filter((u: any) => u.offerDrafts?.length > 0).length;
 
   return (
-    <div className="min-h-screen bg-[#05050a] text-white">
+    <div className="relative min-h-screen bg-[#05050a] text-white">
+      <PageBackdrop heroBg={heroBg} />
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-1/4 w-[500px] h-[500px] bg-violet-500/[0.03] blur-[140px] rounded-full" />
         <div className="absolute bottom-[-10%] right-1/4 w-[500px] h-[500px] bg-[#ff007f]/[0.03] blur-[140px] rounded-full" />
