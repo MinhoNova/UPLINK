@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
-import { reactions } from "@/db/schema";
+import { reactions, posts } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { rateLimitByUser } from "@/lib/rateLimit";
 export async function POST(req: NextRequest) {
@@ -16,6 +16,17 @@ export async function POST(req: NextRequest) {
   if (!postId || !type) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   const userId = (session.user as any).id;
+
+  // Your own post is not your own audience. Keyed on the author's id, so a
+  // second account still reacts to it normally.
+  const post = await db
+    .select({ userId: posts.userId })
+    .from(posts)
+    .where(eq(posts.id, postId))
+    .limit(1);
+  if (post.length > 0 && String(post[0].userId) === String(userId)) {
+    return NextResponse.json({ error: "You cannot react to your own post" }, { status: 400 });
+  }
 
   const existing = await db.select()
     .from(reactions)

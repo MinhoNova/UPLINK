@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
-import { getKV, setKV, initTables } from "@/lib/db";
-import { rateLimitByUser } from "@/lib/rateLimit";
+import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import {
   type PlayerReview,
   sanitizePlayerReviewText,
@@ -11,6 +10,7 @@ import {
   lobbyParticipantName,
   lobbyParticipantImage,
   averagePlayerRating,
+  reviewCooldownError,
 } from "@/lib/playerReviews";
 
 export const dynamic = "force-dynamic";
@@ -46,9 +46,6 @@ export async function POST(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const userId = String((auth.user as { id?: string }).id || "");
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const rl = await rateLimitByUser(userId, "player_review", 25, 86_400_000);
-  if (!rl.ok) return NextResponse.json({ error: "Too many reviews — try again tomorrow" }, { status: 429 });
 
   let body: any;
   try {
@@ -90,31 +87,57 @@ export async function POST(req: Request) {
   const targetName = lobbyParticipantName(lobby, targetId);
   const targetImage = lobbyParticipantImage(lobby, targetId);
 
-  const reviews = await loadReviews();
-  const existingIdx = reviews.findIndex(
-    (r) => String(r.reviewerId) === userId && String(r.targetId) === targetId && String(r.lobbyId) === lobbyId
+  const lobbyTitle = String(
+    lobby?.title || `${lobby?.serviceName || ""}${lobby?.runsCount ? ` ${lobby.runsCount}x` : ""}`.trim() || "Offer"
   );
 
-  const entry: PlayerReview = {
-    id: existingIdx >= 0 ? reviews[existingIdx].id : `prv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    lobbyId,
-    lobbyTitle: String(lobby?.title || `${lobby?.serviceName || ""}${lobby?.runsCount ? ` ${lobby.runsCount}x` : ""}`.trim() || "Offer"),
-    reviewerId: userId,
-    reviewerName: meName,
-    reviewerImage: meImage,
-    targetId,
-    targetName,
-    rating,
-    comment,
-    createdAt: existingIdx >= 0 ? reviews[existingIdx].createdAt : Date.now(),
-  };
+  // The whole read-modify-write happens inside the atomic helper: two players
+  // finishing offers at the same moment must not overwrite each other's review,
+  // and the cooldown has to be judged against the list as it is at write time.
+  const outcome = await updateKVAtomic<PlayerReview[]>("playerReviews", (raw) => {
+    const reviews = Array.isArray(raw) ? raw : [];
+    const blocked = reviewCooldownError(reviews, userId, targetId, lobbyId);
+    if (blocked) return null;
 
-  const next = existingIdx >= 0 ? [...reviews] : reviews;
-  if (existingIdx >= 0) next[existingIdx] = entry;
-  else next.push(entry);
-  await setKV("playerReviews", next);
+    const existingIdx = reviews.findIndex(
+      (r) => String(r.reviewerId) === userId && String(r.targetId) === targetId && String(r.lobbyId) === lobbyId
+    );
 
-  return NextResponse.json({ success: true, review: entry });
+    const entry: PlayerReview = {
+      id: existingIdx >= 0 ? reviews[existingIdx].id : `prv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      lobbyId,
+      lobbyTitle,
+      reviewerId: userId,
+      reviewerName: meName,
+      reviewerImage: meImage,
+      targetId,
+      targetName,
+      rating,
+      comment,
+      createdAt: existingIdx >= 0 ? reviews[existingIdx].createdAt : Date.now(),
+    };
+
+    const next = existingIdx >= 0 ? [...reviews] : [...reviews];
+    if (existingIdx >= 0) next[existingIdx] = entry;
+    else next.push(entry);
+    return next;
+  });
+
+  if (!outcome.ok) {
+    const blocked =
+      reviewCooldownError(await loadReviews(), userId, targetId, lobbyId) ||
+      "Could not save your review — try again.";
+    return NextResponse.json({ error: blocked }, { status: 429 });
+  }
+
+  const saved = outcome.value.find(
+    (r) =>
+      String(r.reviewerId) === userId &&
+      String(r.targetId) === targetId &&
+      String(r.lobbyId) === lobbyId
+  );
+
+  return NextResponse.json({ success: true, review: saved });
 }
 
 export async function DELETE(req: Request) {
@@ -133,10 +156,16 @@ export async function DELETE(req: Request) {
   if (!isAdmin && String(target.reviewerId) !== userId) {
     return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   }
+  const outcome = await updateKVAtomic<PlayerReview[]>("playerReviews", (raw) => {
+    const list = Array.isArray(raw) ? raw : [];
+    // Re-check ownership inside the write so a review deleted and re-added
+    // between the read and here is not removed by a stale decision.
+    const live = list.find((r) => r.id === id);
+    if (!live) return null;
+    if (!isAdmin && String(live.reviewerId) !== userId) return null;
+    return list.filter((r) => r.id !== id);
+  });
+  if (!outcome.ok) return NextResponse.json({ error: "Review not found" }, { status: 404 });
 
-  await setKV(
-    "playerReviews",
-    reviews.filter((r) => r.id !== id)
-  );
   return NextResponse.json({ success: true });
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
-import { getKV, setKV, initTables } from "@/lib/db";
-import { rateLimitByUser } from "@/lib/rateLimit";
+import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { requireSession } from "@/lib/authz";
 import {
   enrichReviewWithProfile,
@@ -42,8 +41,6 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const userId = (session.user as { id?: string }).id || "";
-  const rl = await rateLimitByUser(userId, "site_review", 3, 86_400_000);
-  if (!rl.ok) return NextResponse.json({ error: "You can only submit 3 reviews per day" }, { status: 429 });
 
   const body: any = await req.json();
   const rating = Number(body.rating);
@@ -60,31 +57,37 @@ export async function POST(req: Request) {
   }
 
   await initTables();
-  const reviews: SiteReview[] = (await getKV("siteReviews")) || [];
   const registeredUsers: any[] = (await getKV("registeredUsers")) || [];
   const profile = findUser(registeredUsers, userId);
 
-  const existingIdx = reviews.findIndex((r) => r.userId === userId);
-  const entry: SiteReview = enrichReviewWithProfile(
-    {
-      id: existingIdx >= 0 ? reviews[existingIdx].id : `rev_${Date.now()}`,
-      userId,
-      userName: resolveProfileDisplayName(profile, session.user.name || "Member"),
-      userImage: profile
-        ? resolveProfileImage(profile)
-        : session.user.image || "",
-      rating,
-      text,
-      createdAt: Date.now(),
-    },
-    profile
-  );
+  // One review per person, replaced in place — so there is nothing here to farm,
+  // and the write only has to survive two people submitting at the same moment.
+  const outcome = await updateKVAtomic<SiteReview[]>("siteReviews", (raw) => {
+    const reviews: SiteReview[] = Array.isArray(raw) ? raw : [];
+    const existingIdx = reviews.findIndex((r) => r.userId === userId);
+    const entry: SiteReview = enrichReviewWithProfile(
+      {
+        id: existingIdx >= 0 ? reviews[existingIdx].id : `rev_${Date.now()}`,
+        userId,
+        userName: resolveProfileDisplayName(profile, session.user.name || "Member"),
+        userImage: profile ? resolveProfileImage(profile) : session.user.image || "",
+        rating,
+        text,
+        createdAt: existingIdx >= 0 ? reviews[existingIdx].createdAt : Date.now(),
+      },
+      profile
+    );
 
-  if (existingIdx >= 0) reviews[existingIdx] = entry;
-  else reviews.push(entry);
+    const next = existingIdx >= 0 ? [...reviews] : [...reviews];
+    if (existingIdx >= 0) next[existingIdx] = entry;
+    else next.push(entry);
+    return next;
+  });
 
-  await setKV("siteReviews", reviews);
-  return NextResponse.json({ success: true, review: entry });
+  if (!outcome.ok) return NextResponse.json({ error: "Could not save your review — try again." }, { status: 503 });
+
+  const saved = outcome.value.find((r) => r.userId === userId);
+  return NextResponse.json({ success: true, review: saved });
 }
 
 export async function DELETE(req: Request) {
@@ -103,9 +106,11 @@ export async function DELETE(req: Request) {
   const isAdmin = auth.user.role === "admin";
   if (!isOwner && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  await setKV(
-    "siteReviews",
-    reviews.filter((r) => r.id !== reviewId)
-  );
+  const outcome = await updateKVAtomic<SiteReview[]>("siteReviews", (raw) => {
+    const list: SiteReview[] = Array.isArray(raw) ? raw : [];
+    if (!list.some((r) => r.id === reviewId)) return null;
+    return list.filter((r) => r.id !== reviewId);
+  });
+  if (!outcome.ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

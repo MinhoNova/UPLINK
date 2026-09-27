@@ -8,6 +8,10 @@ import {
   reviewTargetsOf,
   averagePlayerRating,
   PLAYER_REVIEW_MAX,
+  PLAYER_REVIEW_COOLDOWN_MS,
+  findLatestReviewOf,
+  reviewCooldownError,
+  type PlayerReview,
 } from "@/lib/playerReviews";
 
 const lobby = {
@@ -99,11 +103,99 @@ describe("playerReviews helpers", () => {
 
   describe("averagePlayerRating", () => {
     it("averages ratings", () => {
-      expect(averagePlayerRating([
-        { rating: 5 } as any,
-        { rating: 4 } as any,
-      ])).toBe(4.5);
+      expect(
+        averagePlayerRating([
+          { rating: 5 } as any,
+          { rating: 4 } as any,
+        ])
+      ).toBe(4.5);
       expect(averagePlayerRating([])).toBe(0);
     });
+  });
+});
+
+const A = "111111111111111111";
+const B = "222222222222222222";
+const C = "333333333333333333";
+const HOUR = 60 * 60_000;
+
+function review(over: Partial<PlayerReview> = {}): PlayerReview {
+  return {
+    id: "prv_1",
+    lobbyId: "lobby_1",
+    lobbyTitle: "Offer",
+    reviewerId: A,
+    reviewerName: "A",
+    reviewerImage: "",
+    targetId: B,
+    targetName: "B",
+    rating: 5,
+    comment: "",
+    createdAt: 1_000_000,
+    ...over,
+  };
+}
+
+describe("review cooldown", () => {
+  it("lets a first review through", () => {
+    expect(reviewCooldownError([], A, B, "lobby_1")).toBeNull();
+  });
+
+  it("blocks a second review of the same player in a different lobby", () => {
+    const now = 1_000_000 + HOUR;
+    const reviews = [review({ lobbyId: "lobby_1", createdAt: 1_000_000 })];
+    const err = reviewCooldownError(reviews, A, B, "lobby_2", now);
+    expect(err).toBeTruthy();
+    expect(err).toContain("23h");
+  });
+
+  it("allows it again once 24h have passed", () => {
+    const created = 1_000_000;
+    const reviews = [review({ lobbyId: "lobby_1", createdAt: created })];
+    expect(reviewCooldownError(reviews, A, B, "lobby_2", created + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
+  });
+
+  it("still blocks one minute short of 24h", () => {
+    const created = 1_000_000;
+    const reviews = [review({ lobbyId: "lobby_1", createdAt: created })];
+    expect(reviewCooldownError(reviews, A, B, "lobby_2", created + PLAYER_REVIEW_COOLDOWN_MS - 60_000)).toBeTruthy();
+  });
+
+  it("does not block editing the review you already left for that lobby", () => {
+    const reviews = [review({ lobbyId: "lobby_1" })];
+    expect(reviewCooldownError(reviews, A, B, "lobby_1", 1_000_000 + HOUR)).toBeNull();
+  });
+
+  it("measures the cooldown from the most recent review, not the first", () => {
+    const reviews = [
+      review({ lobbyId: "lobby_1", createdAt: 1_000_000 }),
+      review({ id: "prv_2", lobbyId: "lobby_2", createdAt: 5_000_000 }),
+    ];
+    // 5_000_000 is the newest, so the window runs from there.
+    expect(reviewCooldownError(reviews, A, B, "lobby_3", 5_000_000 + PLAYER_REVIEW_COOLDOWN_MS)).toBeNull();
+    expect(reviewCooldownError(reviews, A, B, "lobby_3", 5_000_000 + HOUR)).toBeTruthy();
+  });
+
+  it("keeps the cooldown per pair — other players are unaffected", () => {
+    const reviews = [review({ lobbyId: "lobby_1", createdAt: 1_000_000 })];
+    // A reviewing C, and B reviewing A, both still allowed.
+    expect(reviewCooldownError(reviews, A, C, "lobby_9", 1_000_000 + HOUR)).toBeNull();
+    expect(reviewCooldownError(reviews, B, A, "lobby_9", 1_000_000 + HOUR)).toBeNull();
+  });
+
+  it("leaves no cooldown when the stored clock is ahead of ours", () => {
+    const reviews = [review({ lobbyId: "lobby_1", createdAt: 9_000_000 })];
+    expect(reviewCooldownError(reviews, A, B, "lobby_2", 1_000_000)).toBeNull();
+  });
+
+  it("tolerates a missing or malformed review list", () => {
+    expect(reviewCooldownError(null, A, B, "lobby_1")).toBeNull();
+    expect(reviewCooldownError(undefined, A, B, "lobby_1")).toBeNull();
+    expect(findLatestReviewOf([], A, B)).toBeNull();
+  });
+
+  it("ignores entries with no timestamp instead of blocking forever", () => {
+    const reviews = [review({ lobbyId: "lobby_1", createdAt: undefined as any })];
+    expect(reviewCooldownError(reviews, A, B, "lobby_2", 1_000_000)).toBeNull();
   });
 });

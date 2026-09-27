@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
-import { getKV, setKV, initTables } from "@/lib/db";
+import { getKV, setKV, initTables, updateKVAtomic } from "@/lib/db";
 import { logAudit } from "@/lib/auditLog";
 import { isUserBanned, bannedResponse } from "@/lib/banCheck";
 import { enforceDmAntiSpam } from "@/lib/chatModeration";
@@ -119,7 +119,16 @@ export async function POST(req: Request) {
       ...(image ? { image } : {}),
     };
     directMessages.push(message);
-    await setKV("directMessages", directMessages);
+    // Appended inside the atomic helper: two people sending at the same moment
+    // would otherwise race, and the slower write would drop the other's message.
+    const appended = await updateKVAtomic<DmMessage[]>("directMessages", (raw) => {
+      const current = withDmIdentities(raw, registeredUsers);
+      current.push(message);
+      return current;
+    });
+    if (!appended.ok) {
+      return NextResponse.json({ error: "Could not send — try again." }, { status: 503 });
+    }
     return NextResponse.json({ success: true, message });
   }
 
@@ -132,23 +141,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
 
-    const idx = directMessages.findIndex((m) => m.timestamp === timestamp && isFromUser(m, me));
-    if (idx === -1) return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    const edited = await updateKVAtomic<DmMessage[]>("directMessages", (raw) => {
+      const current = withDmIdentities(raw, registeredUsers);
+      const idx = current.findIndex((m) => m.timestamp === timestamp && isFromUser(m, me));
+      if (idx === -1) return null;
+      current[idx] = { ...current[idx], text, edited: true };
+      return current;
+    });
+    if (!edited.ok) return NextResponse.json({ error: "Message not found" }, { status: 404 });
 
-    directMessages[idx] = { ...directMessages[idx], text, edited: true };
-    await setKV("directMessages", directMessages);
-    return NextResponse.json({ success: true, message: directMessages[idx] });
+    const saved = edited.value.find((m) => m.timestamp === timestamp && isFromUser(m, me));
+    return NextResponse.json({ success: true, message: saved });
   }
 
   if (action === "delete") {
     const timestamp = Number(body?.timestamp);
     if (!timestamp) return NextResponse.json({ error: "Missing timestamp" }, { status: 400 });
 
-    const msg = directMessages.find((m) => m.timestamp === timestamp && isFromUser(m, me));
-    if (!msg) return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    const removed = await updateKVAtomic<DmMessage[]>("directMessages", (raw) => {
+      const current = withDmIdentities(raw, registeredUsers);
+      if (!current.some((m) => m.timestamp === timestamp && isFromUser(m, me))) return null;
+      return current.filter((m) => !(m.timestamp === timestamp && isFromUser(m, me)));
+    });
+    if (!removed.ok) return NextResponse.json({ error: "Message not found" }, { status: 404 });
 
-    const next = directMessages.filter((m) => !(m.timestamp === timestamp && isFromUser(m, me)));
-    await setKV("directMessages", next);
     await logAudit({
       action: "dm.delete",
       userId,
@@ -167,22 +183,29 @@ export async function POST(req: Request) {
     const incoming = directMessages.filter((m) => isFromUser(m, refFor(peerId, usernameOf(peer))) && isToUser(m, me));
     const ids = incoming.map((m) => String(m.timestamp));
 
-    const readMessages = withReceiptIdentities(await getKV("readMessages"), registeredUsers);
-    const deliveredMessages = withReceiptIdentities(await getKV("deliveredMessages"), registeredUsers);
-    readMessages[userId] ||= {};
-    deliveredMessages[userId] ||= {};
+    // Each bucket is written on its own so two players marking receipts at the
+    // same moment cannot roll each other's thread back to an older id list.
+    const write = (key: "readMessages" | "deliveredMessages") =>
+      updateKVAtomic<ReceiptMap>(key, (raw) => {
+        const map = withReceiptIdentities(raw, registeredUsers);
+        map[userId] ||= {};
+        if (kind === "read") {
+          map[userId][peerId] = ids;
+        } else {
+          const existing = new Set((map[userId][peerId] || []).map(String));
+          for (const id of ids) existing.add(id);
+          map[userId][peerId] = [...existing];
+        }
+        return map as ReceiptMap;
+      });
 
-    if (kind === "read") {
-      readMessages[userId][peerId] = ids;
-      deliveredMessages[userId][peerId] = ids;
-    } else {
-      const existing = new Set((deliveredMessages[userId][peerId] || []).map(String));
-      for (const id of ids) existing.add(id);
-      deliveredMessages[userId][peerId] = [...existing];
+    const [readOutcome, deliveredOutcome] = await Promise.all([write("readMessages"), write("deliveredMessages")]);
+    if (!readOutcome.ok || !deliveredOutcome.ok) {
+      return NextResponse.json({ error: "Could not save — try again." }, { status: 503 });
     }
 
-    await setKV("readMessages", readMessages as ReceiptMap);
-    await setKV("deliveredMessages", deliveredMessages as ReceiptMap);
+    const readMessages = readOutcome.value;
+    const deliveredMessages = deliveredOutcome.value;
 
     return NextResponse.json({
       success: true,
@@ -203,21 +226,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid emoji" }, { status: 400 });
     }
 
-    const idx = directMessages.findIndex(
+    const reacted = await updateKVAtomic<DmMessage[]>("directMessages", (raw) => {
+      const current = withDmIdentities(raw, registeredUsers);
+      const idx = current.findIndex(
+        (m) => m.timestamp === timestamp && (isFromUser(m, me) || isToUser(m, me))
+      );
+      if (idx === -1) return null;
+      const reactions = { ...(current[idx].reactions || {}) };
+      if (reactions[userId] === emoji) {
+        delete reactions[userId];
+      } else {
+        reactions[userId] = emoji;
+      }
+      current[idx] = { ...current[idx], reactions };
+      return current;
+    });
+    if (!reacted.ok) return NextResponse.json({ error: "Message not found" }, { status: 404 });
+
+    const savedMsg = reacted.value.find(
       (m) => m.timestamp === timestamp && (isFromUser(m, me) || isToUser(m, me))
     );
-    if (idx === -1) return NextResponse.json({ error: "Message not found" }, { status: 404 });
-
-    const msg = directMessages[idx];
-    const reactions = { ...(msg.reactions || {}) };
-    if (reactions[userId] === emoji) {
-      delete reactions[userId];
-    } else {
-      reactions[userId] = emoji;
-    }
-    directMessages[idx] = { ...msg, reactions };
-    await setKV("directMessages", directMessages);
-    return NextResponse.json({ success: true, message: directMessages[idx] });
+    return NextResponse.json({ success: true, message: savedMsg });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
