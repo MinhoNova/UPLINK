@@ -10,7 +10,7 @@ const OWNER = "711027724663128106";
 const MEMBER = "member-1";
 const STRANGER = "stranger-9";
 
-vi.mock("@/lib/authz", () => ({ requireSession: vi.fn() }));
+vi.mock("@/lib/authz", () => ({ requireSession: vi.fn(), isAdminUser: vi.fn(async () => false) }));
 vi.mock("@/lib/db", () => ({
   initTables: vi.fn(async () => {}),
   getKV: vi.fn(async (key: string) => {
@@ -45,9 +45,10 @@ const USERS = [
   { id: "999-other", username: "someone" },
 ];
 
-async function call(id: string, userId: string) {
-  const { requireSession } = await import("@/lib/authz");
+async function call(id: string, userId: string, admin = false) {
+  const { requireSession, isAdminUser } = await import("@/lib/authz");
   (requireSession as any).mockResolvedValue({ ok: true, user: { id: userId, username: "whoever" } });
+  (isAdminUser as any).mockResolvedValue(admin);
   const { GET } = await import("@/app/api/lobbies/thread/route");
   const res = await GET(new Request(`https://x/api/lobbies/thread?id=${id}`));
   return { status: res.status, body: (await res.json()) as any };
@@ -115,5 +116,18 @@ describe("GET /api/lobbies/thread", () => {
     const { GET } = await import("@/app/api/lobbies/thread/route");
     const res = await GET(new Request("https://x/api/lobbies/thread?id=900"));
     expect(res.status).toBe(401);
+  });
+
+  it("lets a site admin open any thread, even one they do not own", async () => {
+    // The client always allowed admins in, so the server has to agree or the
+    // thread page falls back to /api/data for every moderator.
+    const { status, body } = await call("902", "admin-1", true);
+    expect(status).toBe(200);
+    expect(body.lobbies.map((l: any) => String(l.id))).toContain("902");
+  });
+
+  it("still refuses a non-admin stranger even when the id exists", async () => {
+    const { status } = await call("902", STRANGER, false);
+    expect(status).toBe(403);
   });
 });

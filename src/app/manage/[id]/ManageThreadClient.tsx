@@ -300,7 +300,7 @@ const DiagPanel = ({ diag, lobbyId, currentUserId, handle, isAdmin, canView, tar
   );
 };
 
-export default function ManagePage({ heroBg }: { heroBg?: string }) {
+export default function ManagePage({ heroBg, initialThread }: { heroBg?: string; initialThread?: any }) {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const lobbyId = String(params?.id || "");
@@ -309,8 +309,20 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const { theme, setTheme } = useThemePreference();
   const { data: session, status } = useSession();
 
-  const [lobbies, setLobbies] = useState<any[]>([]);
-  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+  // The page shell already loaded this thread on the server, so seed the state
+  // from it: the thread paints on the first response and the loading screen is
+  // skipped entirely. An anonymous or unprivileged visitor gets no
+  // initialThread, and the client fetch below is the fallback that enforces
+  // access on its own.
+  const seedThread = initialThread || null;
+  const seedLobbies = useMemo(
+    () => (Array.isArray(seedThread?.lobbies) ? seedThread.lobbies.map(repairLobbyRoles) : []),
+    [seedThread]
+  );
+  const seededMe = seedThread?.me?.id ? { id: String(seedThread.me.id), username: seedThread.me.username } : null;
+
+  const [lobbies, setLobbies] = useState<any[]>(seedLobbies);
+  const [registeredUsers, setRegisteredUsers] = useState<any[]>(seedThread?.registeredUsers || []);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [bannedUsers, setBannedUsers] = useState<string[]>([]);
   const [friends, setFriends] = useState<any[]>([]);
@@ -327,6 +339,41 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [ratePickerData, setRatePickerData] = useState<any>(null);
   const [ratingModalData, setRatingModalData] = useState<any>(null);
+
+  /* ----- ESC: close the topmost overlay, otherwise leave the thread ----- */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (
+        deleteConfirmation ||
+        reportScamTarget ||
+        ratePickerData ||
+        ratingModalData ||
+        isPaymentModalOpen
+      ) {
+        e.preventDefault();
+        setDeleteConfirmation(null);
+        setReportScamTarget(null);
+        setRatePickerData(null);
+        setRatingModalData(null);
+        setIsPaymentModalOpen(false);
+        return;
+      }
+      // Never bail out mid-transaction: a split/accept/payment write is in
+      // flight and navigating away would leave the lobby half-saved.
+      if (
+        splitInFlightRef.current ||
+        autoAcceptBusyRef.current ||
+        voiceJoinInFlight.current
+      ) {
+        return;
+      }
+      e.preventDefault();
+      router.push("/");
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
   const [electricColor, setElectricColor] = useState(0);
   const [myEffect] = useState("none");
   const registryRef = useRef<any[]>([]);
@@ -337,13 +384,13 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const splitInFlightRef = useRef(false);
   const autoAcceptBusyRef = useRef(false);
   const hasFetchedRef = useRef(false);
-  const dataLoadedRef = useRef(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const dataLoadedRef = useRef(!!seedThread);
+  const [dataLoaded, setDataLoaded] = useState(!!seedThread);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Authoritative identity, straight from the server. The NextAuth session can
   // arrive late, or carry no `id` at all on a cookie minted before that field
   // existed — and gating the load on it left this page spinning forever.
-  const [serverMe, setServerMe] = useState<{ id?: string; username?: string } | null>(null);
+  const [serverMe, setServerMe] = useState<{ id?: string; username?: string } | null>(seededMe);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [diag, setDiag] = useState<Record<string, unknown> | null>(null);
   const knownLobbyIds = useRef<Set<string>>(new Set());
@@ -439,11 +486,24 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
           setLoadError(String(e?.message || e || "Could not reach the server"));
         });
     };
-    load();
+    // When the page shell already delivered the thread, the first paint is done
+    // and there is nothing to wait for — but still refresh on focus/poll so a
+    // second member joining still shows up, just never behind a loading screen.
+    const alreadySeeded = !!seedThread;
+    if (alreadySeeded) {
+      hasFetchedRef.current = true;
+      knownLobbyIds.current = new Set(
+        seedLobbies
+          .filter((l: any) => String(l.ownerId) !== String(currentUserId))
+          .map((l: any) => String(l.id))
+      );
+    } else {
+      load();
+    }
     // Never leave the user staring at a spinner with no way out.
     const stallGuard = setTimeout(() => {
       if (!dataLoadedRef.current) setLoadError("The server took too long to respond.");
-    }, 25000);
+    }, alreadySeeded ? 60000 : 25000);
     window.addEventListener("focus", load);
     window.addEventListener("data-refresh", load);
     const poll = setInterval(load, 15000);

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { getKV } from "@/lib/db";
+import { headers } from "next/headers";
+import { getKV, initTables } from "@/lib/db";
 import { resolveHeroBg } from "@/lib/heroBg";
+import { requireOptionalSession, isAdminUser } from "@/lib/authz";
+import { loadOfferThread } from "@/lib/offerThread";
 import ManageThreadClient from "./ManageThreadClient";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +17,46 @@ export const metadata: Metadata = {
 /**
  * Server shell for the offer thread.
  *
- * The thread itself is a client component, so it cannot read the site settings
- * directly — but it needs `heroBg` to paint the same backdrop the lobby uses,
- * otherwise the loading and access screens flash the default scenic art on top
- * of whatever background the owner actually chose.
+ * Two jobs, both of which used to happen in the browser:
+ *
+ *  - `heroBg` is a site setting the client component cannot read, so the page
+ *    resolves it here; otherwise the loading and access screens flash the
+ *    default scenic art on top of whatever the owner actually chose.
+ *  - The thread itself is loaded here, through the same `loadOfferThread` the
+ *    API route uses, and handed to the client as initial data. The thread
+ *    therefore paints on the very first response instead of waiting on a
+ *    client fetch, which is what the loading screen used to cover.
+ *
+ * Authorisation is unchanged and still server-side: an anonymous or unprivileged
+ * visitor simply gets no `initialThread`, and the client falls back to the API,
+ * which answers 401/403 on its own. The loading screen was never the security
+ * boundary.
  */
-export default async function ManageThreadPage() {
+export default async function ManageThreadPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   let heroBg: string | undefined;
+  let initialThread: any = null;
   try {
+    await initTables();
     heroBg = resolveHeroBg(await getKV("heroBg"));
   } catch {
     heroBg = "scenic";
   }
-  return <ManageThreadClient heroBg={heroBg} />;
+
+  try {
+    const h = await headers();
+    const auth = await requireOptionalSession(
+      new Request("https://placeholder.local", { headers: h as any })
+    );
+    if (auth.ok) {
+      const admin = await isAdminUser(auth.user.id, auth.user.username);
+      const result = await loadOfferThread(id, auth.user, admin);
+      if (result.ok) initialThread = result.data;
+    }
+  } catch {
+    initialThread = null;
+  }
+
+  return <ManageThreadClient heroBg={heroBg} initialThread={initialThread} />;
 }
