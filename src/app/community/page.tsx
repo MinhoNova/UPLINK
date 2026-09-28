@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { HeroBackground } from "@/components/HeroBackground";
+import PageBackdrop from "@/components/aion2/PageBackdrop";
+import { useHeroBg } from "@/lib/useHeroBg";
 import { useThemePreference as useTheme } from "@/hooks/useThemePreference";
 import {
   MessageSquare, Send, Flag,
@@ -58,6 +60,7 @@ export default function CommunityPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const lightMode = theme === 'light';
+  const heroBg = useHeroBg();
   const [access, setAccess] = useState<boolean | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [content, setContent] = useState("");
@@ -413,17 +416,19 @@ export default function CommunityPage() {
 
   if (status === "loading" || (status === "authenticated" && access === null)) {
     return (
-      <div className="min-h-screen bg-[#06060c] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#00ffff] animate-spin" />
+      <div className="relative min-h-screen bg-[#050814] text-white flex items-center justify-center">
+        <PageBackdrop heroBg={heroBg} />
+        <div className="relative z-10">
+          <Loader2 className="w-8 h-8 text-[#00ffff] animate-spin" />
+        </div>
       </div>
     );
   }
 
   if (access === false) {
     return (
-      <div className="min-h-screen bg-[#06060c] flex items-center justify-center relative">
-        <div className="fixed inset-0 z-0 pointer-events-none"><HeroBackground /></div>
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,255,255,0.08)_0%,_transparent_60%)] pointer-events-none z-[1]" />
+      <div className="relative min-h-screen bg-[#050814] text-white flex items-center justify-center">
+        <PageBackdrop heroBg={heroBg} />
         <div className="relative z-10 bg-white/[0.03] border border-yellow-500/30 rounded-[2rem] p-8 max-w-md text-center backdrop-blur-xl">
           <Swords className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
           <h1 className="text-xl font-black text-yellow-500 mb-2 uppercase tracking-widest">Access Denied</h1>

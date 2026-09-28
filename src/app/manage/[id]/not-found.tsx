@@ -4,7 +4,7 @@ import PageBackdrop from "@/components/aion2/PageBackdrop";
 
 export default function NotFound() {
   return (
-    <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center p-8 text-center overflow-hidden">
+    <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center p-8 text-center">
       <PageBackdrop />
       <div className="relative z-10">
         <ShieldAlert className="w-16 h-16 text-[#ff007f] mx-auto mb-6" />

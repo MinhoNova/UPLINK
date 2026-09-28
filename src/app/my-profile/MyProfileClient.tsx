@@ -439,24 +439,31 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+      <div className="relative min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
+        <PageBackdrop heroBg={heroBg} />
+        <div className="relative z-10">
+          <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+        </div>
       </div>
     );
   }
 
   if (status !== "authenticated" || !myId) {
     return (
-      <div className="min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
-        <p className="text-xs uppercase tracking-widest text-slate-500">Sign in to view your profile</p>
+      <div className="relative min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
+        <PageBackdrop heroBg={heroBg} />
+        <p className="relative z-10 text-xs uppercase tracking-widest text-slate-500">Sign in to view your profile</p>
       </div>
     );
   }
 
   if (!dataLoaded) {
     return (
-      <div className="min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+      <div className="relative min-h-screen bg-[#050814] text-slate-200 flex items-center justify-center">
+        <PageBackdrop heroBg={heroBg} />
+        <div className="relative z-10">
+          <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+        </div>
       </div>
     );
   }

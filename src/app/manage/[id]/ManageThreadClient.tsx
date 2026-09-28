@@ -331,11 +331,21 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
     let cancelled = false;
     const load = () => {
       if (cancelled) return;
-      fetch("/api/data", { credentials: "include" })
-        .then((r) => {
-          if (!r.ok) throw new Error(`Server returned ${r.status}`);
-          return r.json();
-        })
+      // Prefer the dedicated thread endpoint: one small, already-authorised
+      // payload instead of the whole site state. Fall back to /api/data only
+      // if it is unavailable, so an older backend still renders.
+      const threadUrl = lobbyId ? `/api/lobbies/thread?id=${encodeURIComponent(String(lobbyId))}` : null;
+      const attempt = (url: string, isFallback: boolean): Promise<any> =>
+        fetch(url, { credentials: "include" })
+          .then((r) => {
+            if (!r.ok) throw new Error(`Server returned ${r.status}`);
+            return r.json();
+          })
+          .catch((e: any) => {
+            if (isFallback || !threadUrl) throw e;
+            return attempt("/api/data", true);
+          });
+      (threadUrl ? attempt(threadUrl, false) : attempt("/api/data", true))
         .then((d: any) => {
           if (cancelled) return;
           if (!dataLoadedRef.current) {
@@ -387,7 +397,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
       window.removeEventListener("data-refresh", load);
       clearInterval(poll);
     };
-  }, [currentUserId, reloadNonce]);
+  }, [currentUserId, reloadNonce, lobbyId]);
 
   /* ----- TOAST / SOUND / SAVE ----- */
   const addToast = (msg: string, type: "success" | "error" | "info" = "info") => {
@@ -949,7 +959,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   if (!dataLoaded) {
     if (loadError) {
       return (
-        <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
+        <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center">
           <PageBackdrop heroBg={heroBg} />
           <div className="relative z-10 text-center px-6">
             <div className="w-12 h-12 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin mx-auto mb-6" />
@@ -974,7 +984,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
     }
     if (status === "unauthenticated") {
       return (
-        <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
+        <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center">
           <PageBackdrop heroBg={heroBg} />
           <div className="relative z-10 text-center px-6">
             <p className="text-xs font-black tracking-widest text-[#00ffff] uppercase mb-4">
@@ -991,7 +1001,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
       );
     }
     return (
-      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
+      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center">
         <PageBackdrop heroBg={heroBg} />
         <div className="relative z-10 text-center">
           <div className="w-12 h-12 border-2 border-[#00ffff]/40 border-t-[#00ffff] rounded-full animate-spin mx-auto mb-6" />
@@ -1003,7 +1013,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
 
   if (!targetLobby || !canView) {
     return (
-      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
+      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center">
         <PageBackdrop heroBg={heroBg} />
         <div className="relative z-10 text-center">
           <div className="w-12 h-12 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin mx-auto mb-6" />
