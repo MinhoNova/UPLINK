@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, Component } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, CheckCircle2, Bell, Plane } from "lucide-react";
@@ -254,6 +254,52 @@ const InteractivePartyCard = ({ role, accepted, visual, AvatarComponent, hideIde
   );
 };
 
+class ThreadErrorBoundary extends Component<{ children: any }, { err: Error | null }> {
+  state = { err: null as Error | null };
+  static getDerivedStateFromError(err: Error) {
+    return { err };
+  }
+  render() {
+    const { err } = this.state;
+    if (!err) return this.props.children;
+    return (
+      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center p-6">
+        <div className="relative z-10 max-w-2xl w-full text-left">
+          <p className="text-xs font-black tracking-widest text-red-400 uppercase mb-3">
+            Thread crashed while rendering
+          </p>
+          <pre className="text-[11px] leading-relaxed bg-black/70 border border-red-500/30 rounded-xl p-4 text-red-200 whitespace-pre-wrap break-all">
+            {err.message}
+            {"\n\n"}
+            {err.stack}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+}
+
+const DiagPanel = ({ diag, lobbyId, currentUserId, handle, isAdmin, canView, targetLobby, threadPermit }: any) => {
+  const rows: [string, unknown][] = [
+    ["lobbyId (route)", lobbyId],
+    ["currentUserId", currentUserId],
+    ["handle", handle || "(empty)"],
+    ["isAdmin", String(isAdmin)],
+    ["targetLobby found", targetLobby ? String(targetLobby.id) : "NO"],
+    ["canView", String(!!canView)],
+    ["threadPermit", String(threadPermit)],
+    ...Object.entries(diag || {}),
+  ];
+  return (
+    <div className="relative z-10 mt-6 max-w-xl w-full text-left">
+      <p className="text-[10px] uppercase tracking-widest text-yellow-400 mb-2">Diagnostics</p>
+      <pre className="text-[11px] leading-relaxed bg-black/70 border border-yellow-500/30 rounded-xl p-4 text-yellow-200 overflow-x-auto whitespace-pre-wrap break-all">
+        {rows.map(([k, v]) => `${k}: ${String(v)}`).join("\n")}
+      </pre>
+    </div>
+  );
+};
+
 export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -299,6 +345,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   // existed — and gating the load on it left this page spinning forever.
   const [serverMe, setServerMe] = useState<{ id?: string; username?: string } | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
+  const [diag, setDiag] = useState<Record<string, unknown> | null>(null);
   const knownLobbyIds = useRef<Set<string>>(new Set());
 
   const currentUserId = (session?.user as any)?.id || serverMe?.id || "guest";
@@ -331,6 +378,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
     let cancelled = false;
     const load = () => {
       if (cancelled) return;
+      setDiag((prev) => ({ ...(prev || {}), endpoint: threadUrl }));
       // Prefer the dedicated thread endpoint: one small, already-authorised
       // payload instead of the whole site state. Fall back to /api/data only
       // if it is unavailable, so an older backend still renders.
@@ -348,6 +396,15 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
       (threadUrl ? attempt(threadUrl, false) : attempt("/api/data", true))
         .then((d: any) => {
           if (cancelled) return;
+          setDiag((prev) => ({
+            ...(prev || {}),
+            endpoint: threadUrl,
+            endpointOk: true,
+            lobbiesReturned: Array.isArray(d.lobbies) ? d.lobbies.length : "not-an-array",
+            ids: Array.isArray(d.lobbies) ? d.lobbies.map((l: any) => String(l.id)).join(",") : "-",
+            meId: d?.me?.id ?? "(none)",
+            meHandle: d?.me?.username ?? "(none)",
+          }));
           if (!dataLoadedRef.current) {
             dataLoadedRef.current = true;
             setDataLoaded(true);
@@ -955,6 +1012,9 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   if (!lobbyId) return null;
 
   const canView = dataLoaded && targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases) || isAdmin);
+  const threadPermit = targetLobby
+    ? userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases)
+    : null;
 
   if (!dataLoaded) {
     if (loadError) {
@@ -967,6 +1027,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
               Could not load mission
             </p>
             <p className="text-sm text-gray-400 max-w-md mb-6">{loadError}</p>
+            <DiagPanel diag={diag} lobbyId={lobbyId} currentUserId={currentUserId} handle={currentUserDiscordHandle} isAdmin={isAdmin} canView={canView} targetLobby={targetLobby} threadPermit={threadPermit} />
             <button
               onClick={() => {
                 dataLoadedRef.current = false;
@@ -1020,6 +1081,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
           <p className="text-xs font-black tracking-widest text-red-400 uppercase">
             {!targetLobby ? "Mission not found" : "Access Denied"}
           </p>
+          <DiagPanel diag={diag} lobbyId={lobbyId} currentUserId={currentUserId} handle={currentUserDiscordHandle} isAdmin={isAdmin} canView={canView} targetLobby={targetLobby} threadPermit={threadPermit} />
         </div>
       </div>
     );
@@ -1029,6 +1091,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const serverUrl = voiceServerUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || "wss://uplink-sist6urm.livekit.cloud";
 
   return (
+    <ThreadErrorBoundary>
     <>
       <PageContext.Provider value={pageContextValue}>
         {voiceConnected ? (
@@ -1185,6 +1248,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} lobby={targetLobby} onLobbyChange={(l: any) => setLobbies((prev: any[]) => prev.map((x) => (x.id === l.id ? l : x)))} currentUserId={currentUserId} isAdmin={isAdmin}
         onPasteProof={handlePasteProof} onDiscardProof={handleDiscardProof} onConfirmPayout={handleConfirmPayout} />
     </>
+    </ThreadErrorBoundary>
   );
 }
 
