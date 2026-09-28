@@ -497,6 +497,10 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
           .filter((l: any) => String(l.ownerId) !== String(currentUserId))
           .map((l: any) => String(l.id))
       );
+      // The seed arrives without inline base64 media, so pull the full thread
+      // once to fill in chat images and avatars. The thread is already painted,
+      // so this never shows a loading screen.
+      if (seedThread?.mediaOmitted) load();
     } else {
       load();
     }

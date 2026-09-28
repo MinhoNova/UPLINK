@@ -43,16 +43,49 @@ export type OfferThreadPayload = {
   registeredUsers: any[];
   me: { id: string; username: string };
   admin: boolean;
+  mediaOmitted?: boolean;
 };
 
 export type OfferThreadResult =
   | { ok: true; data: OfferThreadPayload }
   | { ok: false; status: number; error: string };
 
+/** True for inline data URLs — pasted chat images and self-hosted avatars. */
+function isInlineData(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("data:");
+}
+
+const MEDIA_FIELDS = ["image", "avatar", "customAvatar", "profileGif", "activeVfx"] as const;
+
+/**
+ * Drop inline base64 media from a payload.
+ *
+ * A busy thread carries pasted chat images as data URLs inside the message
+ * objects. Handing that to a server-rendered page inlines it all into the HTML,
+ * which pushed the worker past its memory/CPU limit (Error 1102). The text is
+ * what the first paint needs, so the seed drops the media and the client
+ * re-fetches the full thread right after mount, with no spinner in between.
+ */
+function stripInlineMedia(lobbies: any[], users: any[]): void {
+  for (const lobby of lobbies) {
+    for (const msg of lobby?.messages || []) {
+      for (const field of MEDIA_FIELDS) {
+        if (isInlineData(msg?.[field])) msg[field] = null;
+      }
+    }
+  }
+  for (const user of users) {
+    for (const field of MEDIA_FIELDS) {
+      if (isInlineData(user?.[field])) user[field] = null;
+    }
+  }
+}
+
 export async function loadOfferThread(
   id: string,
   user: { id: string; username: string },
-  isAdmin: boolean
+  isAdmin: boolean,
+  opts: { omitMedia?: boolean } = {}
 ): Promise<OfferThreadResult> {
   if (!id) return { ok: false, status: 400, error: "Missing lobby id" };
 
@@ -106,6 +139,8 @@ export async function loadOfferThread(
       return out;
     });
 
+  if (opts.omitMedia) stripInlineMedia(family, users);
+
   return {
     ok: true,
     data: {
@@ -114,6 +149,7 @@ export async function loadOfferThread(
       registeredUsers: users,
       me: { id: user.id, username: handle },
       admin: isAdmin,
+      mediaOmitted: !!opts.omitMedia,
     },
   };
 }

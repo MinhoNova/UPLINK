@@ -130,4 +130,46 @@ describe("GET /api/lobbies/thread", () => {
     const { status } = await call("902", STRANGER, false);
     expect(status).toBe(403);
   });
+
+  it("keeps inline base64 media out of a media-free seed", async () => {
+    // A server-rendered thread inlines the payload into the HTML; pasted chat
+    // images ride along as data URLs and pushed the worker past its limits.
+    const { loadOfferThread } = await import("@/lib/offerThread");
+    LOBBIES[0].messages = [
+      { id: 1, text: "hi", image: `data:image/png;base64,${"A".repeat(200000)}` },
+    ];
+    try {
+      const lite = await loadOfferThread(
+        "900",
+        { id: OWNER, username: "whoever" },
+        false,
+        { omitMedia: true }
+      );
+      expect(lite.ok).toBe(true);
+      if (lite.ok) {
+        expect(lite.data.mediaOmitted).toBe(true);
+        expect(lite.data.lobbies[0].messages[0].image).toBeNull();
+        expect(lite.data.lobbies[0].messages[0].text).toBe("hi");
+        expect(JSON.stringify(lite.data).length).toBeLessThan(5000);
+      }
+    } finally {
+      LOBBIES[0].messages = [{ id: 1, text: "hello" }];
+    }
+  });
+
+  it("still returns the full media to an API client that can take it", async () => {
+    const { loadOfferThread } = await import("@/lib/offerThread");
+    const dataUrl = `data:image/png;base64,${"B".repeat(1000)}`;
+    LOBBIES[0].messages = [{ id: 1, text: "pic", image: dataUrl }];
+    try {
+      const full = await loadOfferThread("900", { id: OWNER, username: "whoever" }, false);
+      expect(full.ok).toBe(true);
+      if (full.ok) {
+        expect(full.data.mediaOmitted).toBe(false);
+        expect(full.data.lobbies[0].messages[0].image).toBe(dataUrl);
+      }
+    } finally {
+      LOBBIES[0].messages = [{ id: 1, text: "hello" }];
+    }
+  });
 });

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { getKV, initTables } from "@/lib/db";
+import { getKV } from "@/lib/db";
 import { resolveHeroBg } from "@/lib/heroBg";
 import { requireOptionalSession, isAdminUser } from "@/lib/authz";
 import { loadOfferThread } from "@/lib/offerThread";
@@ -38,7 +38,6 @@ export default async function ManageThreadPage({ params }: { params: Promise<{ i
   let heroBg: string | undefined;
   let initialThread: any = null;
   try {
-    await initTables();
     heroBg = resolveHeroBg(await getKV("heroBg"));
   } catch {
     heroBg = "scenic";
@@ -51,7 +50,10 @@ export default async function ManageThreadPage({ params }: { params: Promise<{ i
     );
     if (auth.ok) {
       const admin = await isAdminUser(auth.user.id, auth.user.username);
-      const result = await loadOfferThread(id, auth.user, admin);
+      // Media-free seed: inlining pasted chat images as base64 blew past the
+      // worker's resource limit. The client re-fetches the full thread right
+      // after mount, so the images still land without a loading screen.
+      const result = await loadOfferThread(id, auth.user, admin, { omitMedia: true });
       if (result.ok) initialThread = result.data;
     }
   } catch {
