@@ -26,6 +26,7 @@ import { effectiveAvatarEffect, effectiveProfileGif, mergeRegisteredUsersFromSer
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
+import { playerAliases } from "@/lib/playerIdentity";
 
 const EFFECTS: Record<string, string> = { none: "", electric_circle: "" };
 const EFFECT_IMG: Record<string, string> = {};
@@ -299,7 +300,16 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
     const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
     return resolveProfileDisplayName(me, session?.user?.name || "Guest");
   }, [registeredUsers, currentUserId, session?.user?.name]);
-  const currentUserDiscordHandle = (session?.user as any)?.username || "";
+  const currentUserDiscordHandle = useMemo(() => {
+    // Never trust the session cookie for identity: it can be a login behind
+    // after a rename. The account row is the canonical handle.
+    const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+    return String(me?.username || (session?.user as any)?.username || "");
+  }, [registeredUsers, currentUserId, (session?.user as any)?.username]);
+  const currentUserAliases = useMemo(() => {
+    const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+    return me ? playerAliases(me) : [];
+  }, [registeredUsers, currentUserId]);
   const isAdmin = currentUserDiscordHandle === "minhonovazen" || currentUserId === "1497295886223544471" || (session?.user as any)?.role === "admin";
   const myVfxBg = useMemo(() => registeredUsers.find((u: any) => u.id === currentUserId)?.activeVfx, [registeredUsers, currentUserId]);
 
@@ -909,7 +919,7 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
 
   if (!lobbyId) return null;
 
-  const canView = dataLoaded && targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle) || isAdmin);
+  const canView = dataLoaded && targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases) || isAdmin);
 
   if (!dataLoaded) {
     return (

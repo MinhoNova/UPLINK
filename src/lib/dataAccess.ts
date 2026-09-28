@@ -8,7 +8,7 @@ import {
 } from "@/lib/dmHelpers";
 import { isFromUser, isToUser } from "@/lib/dmHelpers";
 import { notificationMatchesUser } from "@/lib/userProfile";
-import { refFor } from "@/lib/playerIdentity";
+import { refFor, playerAliases } from "@/lib/playerIdentity";
 import { userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 
 export const ONLINE_WINDOW_MS = 10 * 60_000;
@@ -46,12 +46,13 @@ export function stripLobbyMessages(lobbies: unknown): unknown {
 export function scopeLobbyMessages(
   lobbies: unknown,
   userId: string,
-  handle: string
+  handle: string,
+  aliases?: string[]
 ): unknown {
   if (!Array.isArray(lobbies)) return lobbies;
   return lobbies.map((lobby) => {
     if (!lobby || typeof lobby !== "object") return lobby;
-    if (userCanViewOfferThread(lobby, userId, handle)) return lobby;
+    if (userCanViewOfferThread(lobby, userId, handle, aliases)) return lobby;
     return withoutMessages(lobby as Record<string, unknown>);
   });
 }
@@ -85,9 +86,14 @@ export function filterDataForUser(
   delete filtered.deliveredMessages;
 
   if (Array.isArray(filtered.lobbies)) {
+    // Resolve aliases from the canonical account row, not the session cookie:
+    // `ownerDiscordName` is a snapshot from post time, so a rename must still
+    // recognise the owner of their own thread.
+    const meRow = users.find((u: any) => String(u.id) === String(userId));
+    const aliases = meRow ? playerAliases(meRow as any) : [];
     filtered.lobbies = isAdminUser(userId, handle)
       ? filtered.lobbies
-      : scopeLobbyMessages(filtered.lobbies, userId, handle);
+      : scopeLobbyMessages(filtered.lobbies, userId, handle, aliases);
   }
 
   if (isAdminUser(userId, handle)) return filtered;

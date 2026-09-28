@@ -306,9 +306,9 @@ export function userParticipatedInThread(lobby: any, userId: string): boolean {
 }
 
 /** May open this thread — owner sees full family; players only threads they were on. */
-export function userCanViewOfferThread(lobby: any, userId: string, handle?: string): boolean {
+export function userCanViewOfferThread(lobby: any, userId: string, handle?: string, aliases?: string[]): boolean {
   if (!lobby) return false;
-  if (userIsOfferOwner(lobby, userId, handle)) return true;
+  if (userIsOfferOwner(lobby, userId, handle, aliases)) return true;
   return userParticipatedInThread(lobby, userId);
 }
 
@@ -897,18 +897,22 @@ export function memberMatchesUser(member: any, userId: string): boolean {
   return false;
 }
 
-export function userIsOfferOwner(lobby: any, userId: string, handle?: string): boolean {
+export function userIsOfferOwner(lobby: any, userId: string, handle?: string, aliases?: string[]): boolean {
   if (!lobby || !userId) return false;
   if (String(lobby.ownerId) === String(userId)) return true;
-  if (handle && lobby.ownerDiscordName) {
-    return String(lobby.ownerDiscordName).toLowerCase() === String(handle).toLowerCase();
+  // `ownerDiscordName` is a snapshot taken when the offer was posted, so a
+  // rename must not lock the owner out of their own thread. Accept any alias
+  // the account is known by, not just the current handle.
+  const names = new Set([handle, ...(aliases || [])].filter(Boolean).map((n) => String(n).trim().toLowerCase()));
+  if (names.size && lobby.ownerDiscordName) {
+    if (names.has(String(lobby.ownerDiscordName).trim().toLowerCase())) return true;
   }
   return false;
 }
 
-export function userIsLobbyParticipant(lobby: any, userId: string, handle?: string): boolean {
+export function userIsLobbyParticipant(lobby: any, userId: string, handle?: string, aliases?: string[]): boolean {
   if (!lobby || !userId) return false;
-  if (userIsOfferOwner(lobby, userId, handle)) return true;
+  if (userIsOfferOwner(lobby, userId, handle, aliases)) return true;
   return (lobby.accepted || []).some((a: any) => memberMatchesUser(a, userId));
 }
 

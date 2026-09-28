@@ -48,9 +48,8 @@ export async function GET(req: Request) {
           }
         } catch {}
       }
-      await setPublicDataCached(FULL_DATA_CACHE_KEY, data);
       // Anonymous homepage read: the offer itself is public, its chat is not.
-      // Never let the cached copy keep the message bodies either.
+      // Only the sanitised view is ever written to the shared cache.
       const publicView = { ...data, lobbies: stripLobbyMessages(data.lobbies) };
       await setPublicDataCached(FULL_DATA_CACHE_KEY, publicView);
       return NextResponse.json(publicView, {
