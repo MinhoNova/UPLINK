@@ -11,9 +11,17 @@ import { loadOfferThread } from "@/lib/offerThread";
  */
 export const dynamic = "force-dynamic";
 
+/** A thread body is per-account private: it carries chat and applicant lists. */
+const NO_STORE = {
+  "Cache-Control": "private, no-store, max-age=0",
+  Vary: "Cookie",
+} as const;
+
 export async function GET(req: Request) {
   const auth = await requireSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status, headers: NO_STORE });
+  }
 
   try {
     await initTables();
@@ -23,9 +31,12 @@ export async function GET(req: Request) {
     const admin = await isAdminUser(auth.user.id, auth.user.username);
     const result = await loadOfferThread(id, auth.user, admin);
     if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.status, headers: NO_STORE }
+      );
     }
-    return NextResponse.json(result.data);
+    return NextResponse.json(result.data, { headers: NO_STORE });
   } catch (error) {
     console.error("[thread] failed to read thread:", error);
     return NextResponse.json({ error: "Failed to load mission" }, { status: 500 });

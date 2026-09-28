@@ -134,7 +134,15 @@ export async function GET(req: Request) {
     const body = JSON.stringify(scoped);
     touchUserLastIp(auth.user.id, getClientIp(req)).catch(() => {});
     return new NextResponse(body, {
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // This body is scoped to one account. Without an explicit no-store the
+        // edge stores the first signed-in user's response and hands the same
+        // private data to everyone after them — their threads stop resolving
+        // and admins see another account's view of the site.
+        "Cache-Control": "private, no-store, max-age=0",
+        Vary: "Cookie",
+      },
     });
   } catch (error) {
     console.error("Error reading from D1:", error);

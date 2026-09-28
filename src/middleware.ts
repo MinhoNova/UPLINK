@@ -5,6 +5,16 @@ import { rateLimitByIp } from "@/lib/rateLimitDistributed";
 const UPLOAD_PATHS = ["/api/user/upload", "/api/community/posts"];
 const STRICT_PATHS = ["/api/dm", "/api/friends", "/api/discord/broadcast"];
 
+/** Genuinely public, cacheable assets. Everything else defaults to no-store. */
+const PUBLIC_API_PATHS = [
+  "/api/aion2/portrait",
+  "/api/aion2/servers",
+  "/api/aion2/profile",
+  "/api/user/media",
+  "/api/site/hero-bg",
+  "/api/site/offer-banner-bg",
+];
+
 function getClientIp(req: NextRequest): string {
   const cfIp = req.headers.get("cf-connecting-ip")?.trim();
   if (cfIp) return cfIp;
@@ -24,7 +34,18 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  if (!path.startsWith("/api/")) return NextResponse.next();
+  if (!path.startsWith("/api/")) {
+    // Signed-in pages render account data into the HTML (mission threads carry
+    // chat and applicant lists). force-dynamic alone did not stop the edge from
+    // storing one account's HTML and replaying it to the next one, so mark the
+    // private sections explicitly.
+    const res = NextResponse.next();
+    if (PRIVATE_PAGE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) {
+      res.headers.set("Cache-Control", "private, no-store, max-age=0");
+      res.headers.append("Vary", "Cookie");
+    }
+    return res;
+  }
 
   const ip = getClientIp(req);
   let limit = 150;
@@ -46,9 +67,43 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  // Anything under /api that is not explicitly public is per-user by default.
+  // Most handlers simply forgot the header, and the edge then stored one
+  // account's private response and served it to everybody after them. A route
+  // that really is public declares `Cache-Control: public ...` and is left
+  // alone.
+  const res = NextResponse.next();
+  if (!PUBLIC_API_PATHS.some((p) => path.startsWith(p))) {
+    res.headers.set("Cache-Control", "private, no-store, max-age=0");
+    res.headers.append("Vary", "Cookie");
+  }
+  return res;
 }
 
+/** Account pages that must never be cached by the edge. */
+const PRIVATE_PAGE_PREFIXES = [
+  "/manage",
+  "/admin",
+  "/my-profile",
+  "/my-characters",
+  "/character",
+  "/create-offer",
+  "/settings",
+  "/support",
+  "/reviews",
+];
+
 export const config = {
-  matcher: "/api/:path*",
+  matcher: [
+    "/api/:path*",
+    "/manage/:path*",
+    "/admin/:path*",
+    "/my-profile/:path*",
+    "/my-characters/:path*",
+    "/character/:path*",
+    "/create-offer/:path*",
+    "/settings/:path*",
+    "/support/:path*",
+    "/reviews/:path*",
+  ],
 };
