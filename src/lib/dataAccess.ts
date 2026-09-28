@@ -9,6 +9,7 @@ import {
 import { isFromUser, isToUser } from "@/lib/dmHelpers";
 import { notificationMatchesUser } from "@/lib/userProfile";
 import { refFor } from "@/lib/playerIdentity";
+import { userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 
 export const ONLINE_WINDOW_MS = 10 * 60_000;
 
@@ -17,6 +18,43 @@ export function isUserOnline(user: { lastSeenAt?: number } | null | undefined, n
 }
 
 const OTHER_USER_STRIP = ["blocked", "friendRequests", "email", "lastKnownIp", "lastSeenAt"] as const;
+
+/**
+ * A lobby's chat lives inline on the lobby record and is copied onto every
+ * sibling in the offer family, and pasted images ride along as base64 inside
+ * those message objects. That makes `messages` by far the heaviest part of a
+ * lobby and the only genuinely private part of it: the offer itself is public
+ * by design (that is the public feed), but the conversation between the poster
+ * and the squad is not.
+ *
+ * These helpers keep the payload honest — a count survives so the UI can still
+ * render "12 messages", the bodies never leave the server for someone who is
+ * not on the thread.
+ */
+function withoutMessages(lobby: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(lobby.messages)) return lobby;
+  const { messages, ...rest } = lobby;
+  return { ...rest, messageCount: messages.length };
+}
+
+export function stripLobbyMessages(lobbies: unknown): unknown {
+  if (!Array.isArray(lobbies)) return lobbies;
+  return lobbies.map((l) => (l && typeof l === "object" ? withoutMessages(l as Record<string, unknown>) : l));
+}
+
+/** Keep chat only on the threads this viewer may actually open. */
+export function scopeLobbyMessages(
+  lobbies: unknown,
+  userId: string,
+  handle: string
+): unknown {
+  if (!Array.isArray(lobbies)) return lobbies;
+  return lobbies.map((lobby) => {
+    if (!lobby || typeof lobby !== "object") return lobby;
+    if (userCanViewOfferThread(lobby, userId, handle)) return lobby;
+    return withoutMessages(lobby as Record<string, unknown>);
+  });
+}
 
 export function filterDataForUser(
   data: Record<string, unknown>,
@@ -45,6 +83,12 @@ export function filterDataForUser(
     filtered.deliveredReceiptsFrom = computeDeliveredReceiptsFrom(receipts, me);
   }
   delete filtered.deliveredMessages;
+
+  if (Array.isArray(filtered.lobbies)) {
+    filtered.lobbies = isAdminUser(userId, handle)
+      ? filtered.lobbies
+      : scopeLobbyMessages(filtered.lobbies, userId, handle);
+  }
 
   if (isAdminUser(userId, handle)) return filtered;
 

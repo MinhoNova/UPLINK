@@ -224,17 +224,31 @@ function memberUserId(member: { applicantId?: string; userId?: string; id?: stri
   return String(member.applicantId || member.userId || member.id || "");
 }
 
-function isSelfApplicantOnlyChange(ex: any, lobby: any, userId: string): boolean {
+/**
+ * True when the only thing that moved is the caller's own row in `applicants`
+ * — applying, withdrawing, or editing their own note.
+ *
+ * Everything else has to be byte-identical: the rest of the lobby, and every
+ * other applicant's row. Without this an applicant could rewrite `accepted`,
+ * `status` or `payoutStatus` and walk straight into the squad.
+ */
+function isSelfApplicantScopedChange(ex: any, lobby: any, userId: string): boolean {
   const uid = String(userId);
-  const exHad = (ex.applicants || []).some((a: any) => memberUserId(a) === uid);
-  const nextHas = (lobby.applicants || []).some((a: any) => memberUserId(a) === uid);
-  if (exHad === nextHas) return false;
+  const exApplicants = (ex.applicants || []) as any[];
+  const nextApplicants = (lobby.applicants || []) as any[];
+  const exOwn = exApplicants.find((a) => memberUserId(a) === uid);
+  const nextOwn = nextApplicants.find((a) => memberUserId(a) === uid);
+  if (!exOwn && !nextOwn) return false;
 
   const stripApplicants = (l: any) => {
     const { applicants: _a, ...rest } = l;
     return rest;
   };
-  return JSON.stringify(stripApplicants(ex)) === JSON.stringify(stripApplicants(lobby));
+  if (JSON.stringify(stripApplicants(ex)) !== JSON.stringify(stripApplicants(lobby))) return false;
+
+  // Other applicants' rows must be untouched; only our own may differ.
+  const withoutSelf = (rows: any[]) => rows.filter((a) => memberUserId(a) !== uid);
+  return JSON.stringify(withoutSelf(exApplicants)) === JSON.stringify(withoutSelf(nextApplicants));
 }
 
 function lobbyUserCanModify(
@@ -246,7 +260,9 @@ function lobbyUserCanModify(
   if (String(lobby.ownerId) === String(userId)) return true;
   if ((lobby.accepted || []).some((m) => memberUserId(m) === String(userId))) return true;
   if ((lobby.invited || []).some((m) => memberUserId(m) === String(userId))) return true;
-  if ((lobby.applicants || []).some((a) => memberUserId(a) === String(userId))) return true;
+  // Applicants are deliberately NOT listed here. They are not part of the
+  // mission, so they get no write access to the lobby itself — only the
+  // narrow self-scoped change handled in validateLobbies.
   return false;
 }
 
@@ -339,7 +355,7 @@ export function validateLobbies(
       return { ok: false, error: "Cannot create lobby for another user" };
     }
     if (JSON.stringify(lobby) !== JSON.stringify(ex) && !lobbyUserCanModify(ex, userId, isAdmin)) {
-      if (isSelfApplicantOnlyChange(ex, lobby, userId)) continue;
+      if (isSelfApplicantScopedChange(ex, lobby, userId)) continue;
       return { ok: false, error: "Cannot modify lobby you are not part of" };
     }
     const justPaid =

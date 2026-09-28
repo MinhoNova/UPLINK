@@ -4,7 +4,7 @@ import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
 import { stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
-import { filterDataForUser } from '@/lib/dataAccess';
+import { filterDataForUser, stripLobbyMessages } from '@/lib/dataAccess';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
 import { isUserBanned, bannedResponse, getBanInfo, addUserBan } from '@/lib/banCheck';
@@ -49,7 +49,11 @@ export async function GET(req: Request) {
         } catch {}
       }
       await setPublicDataCached(FULL_DATA_CACHE_KEY, data);
-      return NextResponse.json(data, {
+      // Anonymous homepage read: the offer itself is public, its chat is not.
+      // Never let the cached copy keep the message bodies either.
+      const publicView = { ...data, lobbies: stripLobbyMessages(data.lobbies) };
+      await setPublicDataCached(FULL_DATA_CACHE_KEY, publicView);
+      return NextResponse.json(publicView, {
         headers: { "Cache-Control": "no-store, max-age=0" },
       });
     }

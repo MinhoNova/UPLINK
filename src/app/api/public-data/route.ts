@@ -4,6 +4,7 @@ import {
   setPublicDataCached,
   publicDataCacheKey,
 } from "@/lib/cloudflareBindings";
+import { stripLobbyMessages } from "@/lib/dataAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,11 @@ export async function GET(req: Request) {
       } catch {
         data[row.key] = row.value;
       }
+    }
+    if (data.lobbies !== undefined) {
+      // Open offers are public by design; the thread chat is not. Message
+      // bodies (and any base64 image inside them) never reach a visitor.
+      data.lobbies = stripLobbyMessages(data.lobbies);
     }
     await setPublicDataCached(cacheKey, data);
     return NextResponse.json(data, {
