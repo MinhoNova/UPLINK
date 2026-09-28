@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
+import PageBackdrop from "@/components/aion2/PageBackdrop";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#05050a] flex items-center justify-center p-8 text-center">
-      <div>
+    <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center p-8 text-center overflow-hidden">
+      <PageBackdrop />
+      <div className="relative z-10">
         <ShieldAlert className="w-16 h-16 text-[#ff007f] mx-auto mb-6" />
         <h1 className="text-2xl font-black uppercase tracking-widest text-white mb-3">
           Thread Not Found
