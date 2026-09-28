@@ -7,6 +7,7 @@ import LongPressButton from "@/components/LongPressButton";
 import OfferThreadSelect from "@/components/OfferThreadSelect";
 import EditOfferModal from "@/components/modals/EditOfferModal";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
+import { playerAliases } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import GamePortrait from "@/components/aion2/GamePortrait";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
@@ -145,6 +146,7 @@ const ManageModal = ({
     });
 
   const meUser = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
+  const meAliases = useMemo(() => (meUser ? playerAliases(meUser) : []), [meUser]);
   const currentUserAvatar = resolveProfileImage(meUser || { avatar: session?.user?.image }, session?.user?.name || "U");
   const users = registeredUsers;
   const holdTimerRef = useRef<any>(null);
@@ -156,10 +158,10 @@ const ManageModal = ({
    const totalRuns = Math.max(1, parseInt(targetLobby?.runsCount || "1") || 1);
    const maxExitRuns = Math.max(0, totalRuns - 1);
 
-   const viewableThreads = useMemo(
-      () => (targetLobby ? getViewableOfferThreads(targetLobby, currentUserId, lobbies) : []),
-      [targetLobby, currentUserId, lobbies]
-   );
+    const viewableThreads = useMemo(
+      () => (targetLobby ? getViewableOfferThreads(targetLobby, currentUserId, lobbies, currentUserDiscordHandle, meAliases) : []),
+      [targetLobby, currentUserId, lobbies, currentUserDiscordHandle, meAliases]
+    );
    const isFootArchive = isEmbeddedFootArchive(targetLobby);
    const effectiveStatus = getEffectiveOfferStatus(targetLobby);
    const canSeeApplicants = String(targetLobby?.ownerId) === String(currentUserId) || isAdmin;
@@ -404,12 +406,14 @@ return bgUrl ? (
                                                   <OfferThreadSelect
                                                      threads={viewableThreads}
                                                      value={threadSelectValue}
-                                                     onChange={(nextId) => {
-                                                        const next = lobbies.find((l) => String(l.id) === nextId);
-                                                        if (next && userCanViewOfferThread(next, currentUserId)) {
-                                                           setTargetLobby(next);
-                                                        }
-                                                     }}
+                                                      onChange={(nextId) => {
+                                                         const next = lobbies.find((l) => String(l.id) === nextId);
+                                                         // Admins reach every thread in the family server-side, so
+                                                         // the switcher must not second-guess them here.
+                                                         if (next && (isAdmin || userCanViewOfferThread(next, currentUserId, currentUserDiscordHandle, meAliases))) {
+                                                            setTargetLobby(next);
+                                                         }
+                                                      }}
                                                   />
                                                )}
                                                <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentcolor] animate-pulse ${effectiveStatus === 'completed' ? 'text-green-500 bg-green-500' : effectiveStatus === 'unpaid' ? 'text-yellow-500 bg-yellow-500' : effectiveStatus === 'failed' ? 'text-red-500 bg-red-500' : effectiveStatus === 'in_progress' ? 'text-green-500 bg-green-500' : 'text-[#ff007f] bg-[#ff007f]'}`}></div>

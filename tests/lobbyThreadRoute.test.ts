@@ -172,4 +172,35 @@ describe("GET /api/lobbies/thread", () => {
       LOBBIES[0].messages = [{ id: 1, text: "hello" }];
     }
   });
+
+  it("ships the admin verdict so the client cannot second-guess it", async () => {
+    // The payload has to carry `admin`. The client gate reads it, and without
+    // it the page redacts a thread the server just released — which is the
+    // whole bug this test is here for.
+    const { clientCanViewOfferThread } = await import("@/lib/threadAccess");
+    const { status, body } = await call("902", "admin-1", true);
+    expect(status).toBe(200);
+    expect(body.admin).toBe(true);
+
+    const seed = body.lobbies.find((l: any) => String(l.id) === "902");
+    const clientSaysYes = clientCanViewOfferThread(seed, "admin-1", "admin-1", [], {
+      serverAdmin: body.admin,
+      sessionHandle: "admin-1",
+      sessionRole: "",
+    });
+    expect(clientSaysYes).toBe(true);
+  });
+
+  it("tells the client no for a refused read, so the gate agrees with the 403", async () => {
+    const { clientCanViewOfferThread } = await import("@/lib/threadAccess");
+    const { getKV } = await import("@/lib/db");
+    const { status, body } = await call("902", STRANGER, false);
+    expect(status).toBe(403);
+    expect(body.admin).toBeUndefined();
+    const lobbies = (await (getKV as any)("lobbies")) as any[];
+    const refused = lobbies.find((l: any) => String(l.id) === "902");
+    expect(
+      clientCanViewOfferThread(refused, STRANGER, STRANGER, [], { serverAdmin: false })
+    ).toBe(false);
+  });
 });

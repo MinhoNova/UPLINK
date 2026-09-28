@@ -27,6 +27,8 @@ import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileIma
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
 import { playerAliases } from "@/lib/playerIdentity";
+import { isPrimaryAdmin } from "@/lib/rolesConstants";
+import { clientCanViewOfferThread } from "@/lib/threadAccess";
 
 const EFFECTS: Record<string, string> = { none: "", electric_circle: "" };
 const EFFECT_IMG: Record<string, string> = {};
@@ -391,6 +393,12 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   // arrive late, or carry no `id` at all on a cookie minted before that field
   // existed — and gating the load on it left this page spinning forever.
   const [serverMe, setServerMe] = useState<{ id?: string; username?: string } | null>(seededMe);
+  // The server already decided this when it authorised the thread read, and it
+  // ships the verdict in the payload. Trust it: the client used to re-derive
+  // admin from the session, which knows neither the second admin nor anyone
+  // promoted through `userRoles`, so a legitimately authorised admin was told
+  // "Access Denied" by the page that had just served them the thread.
+  const [serverAdmin, setServerAdmin] = useState<boolean>(!!seedThread?.admin);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [diag, setDiag] = useState<Record<string, unknown> | null>(null);
   const knownLobbyIds = useRef<Set<string>>(new Set());
@@ -413,7 +421,19 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   }, [registeredUsers, currentUserId]);
   // Admin is a session-level flag, not an identity one: it must keep reading the
   // raw session handle, otherwise a renamed admin silently loses the bypass.
-  const isAdmin = sessionHandle === "minhonovazen" || currentUserId === "1497295886223544471" || (session?.user as any)?.role === "admin";
+  // `isPrimaryAdmin` covers every seeded admin id/handle, and `serverAdmin` is
+  // the server's own verdict for anyone promoted through `userRoles`.
+  const isAdmin =
+    serverAdmin ||
+    isPrimaryAdmin(currentUserId, sessionHandle) ||
+    (session?.user as any)?.role === "admin";
+  // Same inputs the gate below uses, in the shape `clientCanViewOfferThread`
+  // takes them, so the tested function is literally the one that decides.
+  const adminProbe = {
+    serverAdmin,
+    sessionHandle,
+    sessionRole: String((session?.user as any)?.role || ""),
+  };
   const myVfxBg = useMemo(() => registeredUsers.find((u: any) => u.id === currentUserId)?.activeVfx, [registeredUsers, currentUserId]);
 
   const targetLobby = useMemo(() => {
@@ -460,6 +480,9 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
           // The server is the authority on who you are — same identity the
           // lobby filter used, so ownership lines up by construction.
           if (d?.me?.id) setServerMe({ id: String(d.me.id), username: d.me.username });
+          // ...and on whether you are an admin. `/api/data` does not answer
+          // with this key, so only adopt it when the server actually sent it.
+          if (typeof d?.admin === "boolean") setServerAdmin(d.admin);
           if (Array.isArray(d.lobbies)) {
             const ready = (d.lobbies || []).map(repairLobbyRoles);
             setLobbies((prev) => mergeLobbiesFromServer(ready, prev.map(repairLobbyRoles), currentUserId, splitInFlightRef.current || autoAcceptBusyRef.current).map(repairLobbyRoles));
@@ -983,8 +1006,10 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   const openMissionThread = (lobbyId: string) => {
     const seed = lobbies.find((x: any) => String(x.id) === String(lobbyId));
     if (!seed) { addToast("Could not load that mission. Try refreshing.", "error"); return; }
-    const l = resolveOpenMissionThreadTarget(seed, currentUserId, lobbies, currentUserDiscordHandle);
-    if (!l || !userCanViewOfferThread(l, currentUserId, currentUserDiscordHandle)) { addToast("You are no longer on this mission.", "error"); return; }
+    const l = clientCanViewOfferThread(seed, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe)
+      ? seed
+      : resolveOpenMissionThreadTarget(seed, currentUserId, lobbies, currentUserDiscordHandle, currentUserAliases);
+    if (!l || !clientCanViewOfferThread(l, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe)) { addToast("You are no longer on this mission.", "error"); return; }
     if (voiceToken) {
       const stored = localStorage.getItem("uplink_voice_lobby");
       if (!stored || String(stored) !== String(l.id)) { setVoiceToken(null); localStorage.removeItem("uplink_voice_lobby"); }
@@ -1075,7 +1100,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
 
   if (!lobbyId) return null;
 
-  const canView = dataLoaded && targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases) || isAdmin);
+  const canView = dataLoaded && targetLobby && clientCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe);
   const threadPermit = targetLobby
     ? userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases)
     : null;

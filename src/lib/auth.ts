@@ -108,6 +108,16 @@ export function getAuthOptions(): NextAuthOptions {
           } catch (error) {
             console.error("[auth] identity sync failed:", error);
           }
+          // Roles are resolved from the account, not from anything the cookie
+          // carries, so a `userRoles` promotion actually reaches the client.
+          // Without this, `session.user.role` was always undefined and every
+          // admin check that leaned on it was a dead clause.
+          try {
+            const { getUserRole } = await import("@/lib/roles");
+            token.role = await getUserRole(String(user.id), String(token.username || user.id));
+          } catch (error) {
+            console.error("[auth] role resolve failed:", error);
+          }
         }
         return token;
       },
@@ -115,6 +125,7 @@ export function getAuthOptions(): NextAuthOptions {
         if (session.user) {
           (session.user as { username?: string }).username = token.username as string;
           (session.user as { id?: string }).id = token.id as string;
+          (session.user as { role?: string }).role = token.role as string;
         }
         return session;
       },

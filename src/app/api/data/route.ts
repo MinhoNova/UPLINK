@@ -130,6 +130,11 @@ export async function GET(req: Request) {
     // The client addresses itself by the canonical handle, not the one baked
     // into the session cookie at sign-in.
     scoped.me = { id: auth.user.id, username: myHandle };
+    // …and it must not have to re-derive its own admin status from the session
+    // cookie, which knows none of the `userRoles` promotions. The mission
+    // thread gates on this key, so a mismatch here shows an authorised admin a
+    // red "Access Denied" on a page the server just served them.
+    scoped.admin = auth.user.role === "admin";
     scoped.marketPrices = getMarketAverageByService(data.marketHistory);
     const body = JSON.stringify(scoped);
     touchUserLastIp(auth.user.id, getClientIp(req)).catch(() => {});

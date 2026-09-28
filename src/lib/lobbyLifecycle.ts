@@ -317,12 +317,13 @@ export function resolveOpenMissionThreadTarget(
   seed: any,
   userId: string,
   allLobbies: any[],
-  handle?: string
+  handle?: string,
+  aliases?: string[]
 ): any | null {
   if (!seed || !userId) return null;
-  if (userCanViewOfferThread(seed, userId, handle)) return seed;
+  if (userCanViewOfferThread(seed, userId, handle, aliases)) return seed;
 
-  const viewable = getViewableOfferThreads(seed, userId, allLobbies);
+  const viewable = getViewableOfferThreads(seed, userId, allLobbies, handle, aliases);
   return (
     viewable.find((t) => t.status === "in_progress") ||
     viewable.find((t) => (t.status || "standby") === "standby") ||
@@ -413,12 +414,18 @@ export function getJoinedOngoingMissions(lobbies: any[], userId: string): any[] 
 }
 
 /** Threads the user may switch to (for Commander select menu). */
-export function getViewableOfferThreads(currentLobby: any, userId: string, allLobbies: any[]): any[] {
+export function getViewableOfferThreads(
+  currentLobby: any,
+  userId: string,
+  allLobbies: any[],
+  handle?: string,
+  aliases?: string[]
+): any[] {
   if (!currentLobby || !userId || !Array.isArray(allLobbies)) return [];
   try {
     const family = getOfferThreadFamily(currentLobby, allLobbies);
     return sortOfferThreadsForDisplay(
-      family.filter((thread) => userCanViewOfferThread(thread, userId))
+      family.filter((thread) => userCanViewOfferThread(thread, userId, handle, aliases))
     );
   } catch {
     return currentLobby ? [currentLobby] : [];

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/authz";
+import { requireSession, isAdminUser } from "@/lib/authz";
 import { getKV, initTables } from "@/lib/db";
 import { userCanViewOfferThread } from "@/lib/lobbyLifecycle";
+import { playerAliases } from "@/lib/playerIdentity";
 
 export async function GET(req: Request) {
   const auth = await requireSession(req);
@@ -9,17 +10,24 @@ export async function GET(req: Request) {
 
   await initTables();
   const lobbies = (await getKV("lobbies")) || [];
+  // `ownerDiscordName` is a snapshot from post time, so a renamed owner has to
+  // be recognised through the account row's aliases — not the session handle.
+  const allUsers = ((await getKV("registeredUsers")) || []) as any[];
+  const meRow = allUsers.find((u: any) => String(u.id) === String(auth.user.id));
+  const handle = String(meRow?.username || auth.user.username || "");
+  const aliases = meRow ? playerAliases(meRow) : [];
+  const isAdmin = await isAdminUser(auth.user.id, auth.user.username);
   const history = lobbies
     .filter((lobby: any) =>
       lobby.status === "completed" &&
       lobby.payoutStatus === "paid" &&
       Boolean(lobby.paymentProof) &&
-      userCanViewOfferThread(lobby, auth.user.id, auth.user.username)
+      (isAdmin || userCanViewOfferThread(lobby, auth.user.id, handle, aliases))
     )
     .sort((a: any, b: any) => Number(b.completedAt || 0) - Number(a.completedAt || 0))
     .slice(0, 100);
   const ownerIds = new Set(history.map((lobby: any) => String(lobby.ownerId)));
-  const users = ((await getKV("registeredUsers")) || [])
+  const users = allUsers
     .filter((user: any) => ownerIds.has(String(user.id)))
     .map((user: any) => ({
       id: user.id,
