@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, CheckCircle2, Bell, Plane } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { LiveKitRoom, RoomAudioRenderer, useTracks, useLocalParticipant } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import "@livekit/components-styles";
@@ -293,9 +293,15 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const hasFetchedRef = useRef(false);
   const dataLoadedRef = useRef(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // Authoritative identity, straight from the server. The NextAuth session can
+  // arrive late, or carry no `id` at all on a cookie minted before that field
+  // existed — and gating the load on it left this page spinning forever.
+  const [serverMe, setServerMe] = useState<{ id?: string; username?: string } | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
   const knownLobbyIds = useRef<Set<string>>(new Set());
 
-  const currentUserId = (session?.user as any)?.id || "guest";
+  const currentUserId = (session?.user as any)?.id || serverMe?.id || "guest";
   const currentUserDisplay = useMemo(() => {
     const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
     return resolveProfileDisplayName(me, session?.user?.name || "Guest");
@@ -322,18 +328,24 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
 
   /* ----- DATA LOADING (mirror old page) ----- */
   useEffect(() => {
-    if (!currentUserId || currentUserId === "guest") return;
     let cancelled = false;
     const load = () => {
       if (cancelled) return;
       fetch("/api/data", { credentials: "include" })
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error(`Server returned ${r.status}`);
+          return r.json();
+        })
         .then((d: any) => {
           if (cancelled) return;
           if (!dataLoadedRef.current) {
             dataLoadedRef.current = true;
             setDataLoaded(true);
           }
+          setLoadError(null);
+          // The server is the authority on who you are — same identity the
+          // lobby filter used, so ownership lines up by construction.
+          if (d?.me?.id) setServerMe({ id: String(d.me.id), username: d.me.username });
           if (Array.isArray(d.lobbies)) {
             const ready = (d.lobbies || []).map(repairLobbyRoles);
             setLobbies((prev) => mergeLobbiesFromServer(ready, prev.map(repairLobbyRoles), currentUserId, splitInFlightRef.current || autoAcceptBusyRef.current).map(repairLobbyRoles));
@@ -353,19 +365,29 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
           if (Array.isArray(d.bannedUsers)) setBannedUsers(d.bannedUsers);
           if (Array.isArray(d.friends)) setFriends(d.friends);
         })
-        .catch(() => {});
+        .catch((e: any) => {
+          // A silent `.catch(() => {})` is what turned every failure into an
+          // eternal spinner. Surface it instead.
+          if (cancelled) return;
+          setLoadError(String(e?.message || e || "Could not reach the server"));
+        });
     };
     load();
+    // Never leave the user staring at a spinner with no way out.
+    const stallGuard = setTimeout(() => {
+      if (!dataLoadedRef.current) setLoadError("The server took too long to respond.");
+    }, 25000);
     window.addEventListener("focus", load);
     window.addEventListener("data-refresh", load);
     const poll = setInterval(load, 15000);
     return () => {
       cancelled = true;
+      clearTimeout(stallGuard);
       window.removeEventListener("focus", load);
       window.removeEventListener("data-refresh", load);
       clearInterval(poll);
     };
-  }, [currentUserId]);
+  }, [currentUserId, reloadNonce]);
 
   /* ----- TOAST / SOUND / SAVE ----- */
   const addToast = (msg: string, type: "success" | "error" | "info" = "info") => {
@@ -925,6 +947,49 @@ export default function ManagePage({ heroBg }: { heroBg?: string }) {
   const canView = dataLoaded && targetLobby && (userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases) || isAdmin);
 
   if (!dataLoaded) {
+    if (loadError) {
+      return (
+        <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
+          <PageBackdrop heroBg={heroBg} />
+          <div className="relative z-10 text-center px-6">
+            <div className="w-12 h-12 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin mx-auto mb-6" />
+            <p className="text-xs font-black tracking-widest text-red-400 uppercase mb-3">
+              Could not load mission
+            </p>
+            <p className="text-sm text-gray-400 max-w-md mb-6">{loadError}</p>
+            <button
+              onClick={() => {
+                dataLoadedRef.current = false;
+                setDataLoaded(false);
+                setLoadError(null);
+                setReloadNonce((n) => n + 1);
+              }}
+              className="px-8 py-3 bg-[#00ffff] text-black font-black uppercase text-xs tracking-widest rounded-xl hover:opacity-90"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (status === "unauthenticated") {
+      return (
+        <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
+          <PageBackdrop heroBg={heroBg} />
+          <div className="relative z-10 text-center px-6">
+            <p className="text-xs font-black tracking-widest text-[#00ffff] uppercase mb-4">
+              Sign in to open this mission
+            </p>
+            <button
+              onClick={() => signIn()}
+              className="px-8 py-3 bg-[#00ffff] text-black font-black uppercase text-xs tracking-widest rounded-xl hover:opacity-90"
+            >
+              Sign in
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center overflow-hidden">
         <PageBackdrop heroBg={heroBg} />
