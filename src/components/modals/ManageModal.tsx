@@ -9,6 +9,7 @@ import EditOfferModal from "@/components/modals/EditOfferModal";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { playerAliases } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { toStorableImageDataUrl } from "@/lib/inlineImage";
 import GamePortrait from "@/components/aion2/GamePortrait";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { getAverageRating } from "@/components/RankBadge";
@@ -734,18 +735,24 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                  value={chatMessage}
                                                  onChange={(e) => setChatMessage(e.target.value)}
                                                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(targetLobby.id)}
-                                                 onPaste={(e) => {
-                                                    const items = e.clipboardData?.items;
-                                                    if (!items) return;
-                                                    for (let i = 0; i < items.length; i++) {
-                                                       if (items[i].type.indexOf("image") !== -1) {
-                                                          const blob = items[i].getAsFile();
-                                                          const reader = new FileReader();
-                                                          reader.onload = (event) => setChatImagePreview(event.target?.result as string);
-                                                          if (blob) reader.readAsDataURL(blob);
-                                                       }
-                                                    }
-                                                 }}
+                                                  onPaste={async (e) => {
+                                                     const items = e.clipboardData?.items;
+                                                     if (!items) return;
+                                                     for (let i = 0; i < items.length; i++) {
+                                                        if (items[i].type.indexOf("image") !== -1) {
+                                                           e.preventDefault();
+                                                           const blob = items[i].getAsFile();
+                                                           // Shrink before it is stored: an inline
+                                                           // base64 image is saved inside the `lobbies`
+                                                           // blob, and an oversized one made every
+                                                           // later read of that blob exceed the
+                                                           // worker's memory limit (Error 1102).
+                                                           const res = await toStorableImageDataUrl(blob as File);
+                                                           if (res.ok) setChatImagePreview(res.dataUrl);
+                                                           else addToast(res.error, "error");
+                                                        }
+                                                     }
+                                                  }}
                                                  placeholder="Transmit signal..."
                                                  className="flex-1 bg-white/5 border-2 border-white/10 rounded-2xl px-5 py-4 text-xs font-bold outline-none focus:border-[#00ffff]/60 transition-all text-white"
                                               />

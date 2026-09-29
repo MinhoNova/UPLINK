@@ -328,6 +328,61 @@ export function validateRegisteredUsers(
   return { ok: true, value: owned };
 }
 
+/**
+ * Inline media lives on the message objects inside the single `lobbies` blob, so
+ * its size is a memory cost paid by every read of that blob. Anything past this
+ * is refused outright — the client is expected to downscale before sending.
+ */
+const MAX_INLINE_MEDIA_CHARS = 400 * 1024;
+
+const LOBBY_MEDIA_FIELDS = ["image", "paymentProof"] as const;
+const MESSAGE_MEDIA_FIELDS = ["image", "avatar", "customAvatar", "profileGif", "activeVfx"] as const;
+
+function isInlineMedia(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("data:") && value.length > MAX_INLINE_MEDIA_CHARS;
+}
+
+/** Drop or replace oversized inline media rather than persisting it. */
+function clampInlineMedia(lobby: any, stored: any): any {
+  let next = lobby;
+
+  const messages = Array.isArray(next.messages) ? next.messages : null;
+  if (messages) {
+    const storedMessages = Array.isArray(stored?.messages) ? stored.messages : [];
+    let changed = false;
+    const clamped = messages.map((m: any, i: number) => {
+      if (!m || typeof m !== "object") return m;
+      let out = m;
+      for (const field of MESSAGE_MEDIA_FIELDS) {
+        if (!isInlineMedia(out[field])) continue;
+        const prior = storedMessages[i]?.[field];
+        if (typeof prior === "string" && !isInlineMedia(prior)) {
+          out = { ...out, [field]: prior };
+        } else {
+          const { [field]: _dropped, ...rest } = out;
+          out = rest;
+        }
+        changed = true;
+      }
+      return out;
+    });
+    if (changed) next = { ...next, messages: clamped };
+  }
+
+  for (const field of LOBBY_MEDIA_FIELDS) {
+    if (!isInlineMedia(next[field])) continue;
+    const prior = stored?.[field];
+    if (typeof prior === "string" && !isInlineMedia(prior)) {
+      next = { ...next, [field]: prior };
+    } else {
+      const { [field]: _dropped, ...rest } = next;
+      next = rest;
+    }
+  }
+
+  return next;
+}
+
 export function validateLobbies(
   existing: unknown[],
   incoming: unknown,
@@ -412,6 +467,14 @@ export function validateLobbies(
     if (ex && JSON.stringify(lobby.detectedRuns || []) !== JSON.stringify(ex.detectedRuns || [])) {
       next = { ...next, detectedRuns: ex.detectedRuns || [] };
     }
+    // Server-side backstop for inline media. Chat images and payment proofs are
+    // stored as data URLs on the message, inside this one blob, and a large
+    // paste made every later read of it exceed the worker's memory limit
+    // (Error 1102). The client downscales on paste; this keeps an old client, or
+    // a hand-rolled request, from writing an unbounded blob. An image that is
+    // still too big after a pass is replaced by the stored one if we have it,
+    // and otherwise dropped rather than persisted.
+    next = clampInlineMedia(next, ex);
     if (Array.isArray(next.applicants) && next.applicants.length) {
       next = {
         ...next,

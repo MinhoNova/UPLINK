@@ -25,6 +25,7 @@ import { acceptedExcludingMember, appendOfferFamilyMessage, cancelLobbyInvite, c
 import { effectiveAvatarEffect, effectiveProfileGif, mergeRegisteredUsersFromServer, resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileImage";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
+import { toStorableImageDataUrl } from "@/lib/inlineImage";
 import { roleIconUrl, classThumbUrl } from "@/lib/classThumb";
 import { playerAliases } from "@/lib/playerIdentity";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
@@ -1103,16 +1104,23 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
     if (!img) return;
     const file = img.getAsFile();
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const updated = { ...targetLobby, paymentProof: reader.result as string, status: "completed", payoutStatus: "paid", completedAt: Date.now() };
-      setLobbies((prev) => prev.map((l) => (l.id === targetLobby.id ? updated : l)));
-      const saved = await saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
-      if (saved) {
-        addToast("Payment proof verified — moved to History.", "success");
-      }
-    };
-    reader.readAsDataURL(file);
+    // Shrink it first: a payment screenshot pasted at full size was stored as a
+    // multi-megabyte data URL inside the `lobbies` blob, and every later read of
+    // that blob had to parse it — which is what tipped the worker over its
+    // memory limit (Error 1102).
+    const res = await toStorableImageDataUrl(file);
+    if (!res.ok) {
+      addToast(res.error, "error");
+      return;
+    }
+    const updated = { ...targetLobby, paymentProof: res.dataUrl, status: "completed", payoutStatus: "paid", completedAt: Date.now() };
+    setLobbies((prev) => prev.map((l) => (l.id === targetLobby.id ? updated : l)));
+    const saved = await saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
+    if (saved) {
+      addToast("Payment proof verified — moved to History.", "success");
+    } else {
+      addToast("Could not save the payment proof.", "error");
+    }
   };
 
   const handleConfirmPayout = () => {
