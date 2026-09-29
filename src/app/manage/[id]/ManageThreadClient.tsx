@@ -363,6 +363,9 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       }
       // Never bail out mid-transaction: a split/accept/payment write is in
       // flight and navigating away would leave the lobby half-saved.
+      // These refs are declared further down, but this is a click handler: it
+      // runs long after the component body has finished evaluating.
+      /* eslint-disable no-use-before-define */
       if (
         splitInFlightRef.current ||
         autoAcceptBusyRef.current ||
@@ -370,6 +373,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       ) {
         return;
       }
+      /* eslint-enable no-use-before-define */
       e.preventDefault();
       router.push("/");
     };
@@ -445,11 +449,17 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
     let cancelled = false;
     const load = () => {
       if (cancelled) return;
-      setDiag((prev) => ({ ...(prev || {}), endpoint: threadUrl }));
       // Prefer the dedicated thread endpoint: one small, already-authorised
       // payload instead of the whole site state. Fall back to /api/data only
       // if it is unavailable, so an older backend still renders.
+      //
+      // Declared before it is read. This line used to sit above the `const`,
+      // so every call threw `ReferenceError: Cannot access 'threadUrl' before
+      // initialization` on its first line — no fetch, no `setDataLoaded`, no
+      // `setLoadError`. The thread page therefore sat on its loading spinner
+      // forever instead of ever reaching the access check.
       const threadUrl = lobbyId ? `/api/lobbies/thread?id=${encodeURIComponent(String(lobbyId))}` : null;
+      setDiag((prev) => ({ ...(prev || {}), endpoint: threadUrl }));
       const attempt = (url: string, isFallback: boolean): Promise<any> =>
         fetch(url, { credentials: "include" })
           .then((r) => {
@@ -491,6 +501,9 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
               const currentIds = new Set<string>(others.map((l: any) => String(l.id)));
               const newIds = Array.from(currentIds).filter((id: string) => !knownLobbyIds.current.has(id));
               knownLobbyIds.current = new Set([...knownLobbyIds.current, ...currentIds]);
+              // `addToast` is declared below this effect, but this is a `.then`
+              // callback — it resolves after the component body has run.
+              // eslint-disable-next-line no-use-before-define
               if (newIds.length) addToast("New offer available!", "info");
             } else if (ready.length) {
               hasFetchedRef.current = true;
@@ -1187,6 +1200,9 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
           <LiveKitRoom audio={voiceConnected} video={false} token={voiceToken ?? undefined} serverUrl={serverUrl} connect={voiceConnected}
             onError={() => { setVoiceToken(null); setVoiceServerUrl(null); localStorage.removeItem("uplink_voice_lobby"); addToast("Voice connection failed. Try again.", "error"); }}
             onDisconnected={() => { setVoiceToken(null); setVoiceServerUrl(null); localStorage.removeItem("uplink_voice_lobby"); }}>
+            {/* Declared at the bottom of this module; JSX only renders after the
+                module has finished evaluating, so this is safe. */}
+            {/* eslint-disable-next-line no-use-before-define */}
             <ManageContent
               dataLoaded={dataLoaded}
               targetLobby={targetLobby}
@@ -1234,6 +1250,8 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
             <RoomAudioRenderer />
           </LiveKitRoom>
         ) : (
+          // Same as above: module-level declaration, evaluated before any render.
+          // eslint-disable-next-line no-use-before-define
           <ManageContent
             dataLoaded={dataLoaded}
             targetLobby={targetLobby}
