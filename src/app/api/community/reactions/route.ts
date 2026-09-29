@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { reactions, posts } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { rateLimitByUser } from "@/lib/rateLimit";
+import { assertPostVisible } from "@/lib/communityPostAccess";
 export async function POST(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);
@@ -18,14 +19,23 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as any).id;
 
   // Your own post is not your own audience. Keyed on the author's id, so a
-  // second account still reacts to it normally.
+  // second account still reacts to it normally. This also resolves the post for
+  // the visibility check below, so it is a 404 when it does not exist.
   const post = await db
     .select({ userId: posts.userId })
     .from(posts)
     .where(eq(posts.id, postId))
     .limit(1);
-  if (post.length > 0 && String(post[0].userId) === String(userId)) {
+  if (post.length === 0) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  if (String(post[0].userId) === String(userId)) {
     return NextResponse.json({ error: "You cannot react to your own post" }, { status: 400 });
+  }
+
+  // A reaction on a friends-only post is only possible for people allowed to
+  // see it in the first place.
+  const verdict = await assertPostVisible(userId, postId);
+  if (!verdict.allowed) {
+    return NextResponse.json({ error: "Post not found" }, { status: verdict.status });
   }
 
   const existing = await db.select()

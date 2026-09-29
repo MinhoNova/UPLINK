@@ -9,6 +9,7 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { sanitizePlainText } from "@/lib/sanitizer";
 import { resolvePublicAuthorFields } from "@/lib/profileImage";
 import { ADMIN_IDS } from "@/lib/roles";
+import { assertPostVisible } from "@/lib/communityPostAccess";
 export async function GET(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);
@@ -17,6 +18,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const postId = searchParams.get("postId");
   if (!postId) return NextResponse.json({ error: "Missing postId" }, { status: 400 });
+
+  // Comments inherit the post's visibility, so a friends-only post's thread is
+  // not readable just because the caller knows its id.
+  const verdict = await assertPostVisible((session.user as any).id, postId);
+  if (!verdict.allowed) {
+    return NextResponse.json({ error: "Post not found" }, { status: verdict.status });
+  }
 
   const rows = await db.select()
     .from(comments)
@@ -54,6 +62,13 @@ export async function POST(req: NextRequest) {
 
   const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
   if (post.length === 0) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+
+  // Exists is not the same as visible: a friends-only post must not accept a
+  // comment from someone the author has not friended.
+  const verdict = await assertPostVisible((session.user as any).id, postId);
+  if (!verdict.allowed) {
+    return NextResponse.json({ error: "Post not found" }, { status: verdict.status });
+  }
 
   await initTables();
   const registeredUsers = ((await getKVCached("registeredUsers")) || []) as any[];

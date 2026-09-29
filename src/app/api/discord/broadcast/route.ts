@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendLobbyEmbed } from "@/lib/discord";
 import { requireSession } from "@/lib/authz";
+import { getKVCached } from "@/lib/kvCache";
 
 export async function POST(req: NextRequest) {
    const auth = await requireSession(req);
@@ -18,11 +19,19 @@ export async function POST(req: NextRequest) {
          return NextResponse.json({ ok: false, reason: "Invalid lobby data" }, { status: 400 });
       }
 
-      if (String(lobby.ownerId) !== String(auth.user.id)) {
+      // Ownership has to come from the stored offer. The body's `ownerId` is
+      // caller-controlled, so trusting it let any signed-in user push an
+      // arbitrary "owned" embed into the announcement channel.
+      const stored = ((await getKVCached("lobbies").catch(() => null)) || []) as any[];
+      const real = stored.find((l) => String(l?.id) === String(lobby.id));
+      if (!real) {
+         return NextResponse.json({ error: "Offer not found" }, { status: 404 });
+      }
+      if (String(real.ownerId) !== String(auth.user.id)) {
          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
-      await sendLobbyEmbed(lobby);
+      await sendLobbyEmbed(real);
       return NextResponse.json({ ok: true });
    } catch (err) {
       console.error("discord broadcast error:", err);

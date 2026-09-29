@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/authEnv";
+import { isAdminUser } from "@/lib/secureDataWrite";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  // This used to be open: anyone could read the D1 row count, the registered
+  // user count, the lobby count, and their own id/username echoed back. Useful
+  // while bringing the Worker up, not something to publish in production.
+  const session = await getAppSession(req).catch(() => null);
+  const uid = (session?.user as { id?: string } | undefined)?.id || "";
+  const handle = (session?.user as { username?: string } | undefined)?.username || "";
+  if (!uid || !isAdminUser(uid, handle)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const result: Record<string, any> = {
     ok: true,
     time: new Date().toISOString(),

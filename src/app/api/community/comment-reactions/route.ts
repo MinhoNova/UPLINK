@@ -3,6 +3,8 @@ import { getAppSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { commentReactions } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { visibleCommentIds } from "@/lib/communityPostAccess";
+
 export async function GET(req: NextRequest) {
   const db = await getDb();
   const session = await getAppSession(req);
@@ -15,9 +17,15 @@ export async function GET(req: NextRequest) {
   const ids = commentIds.split(",").map(Number).filter((n) => !isNaN(n));
   if (ids.length === 0) return NextResponse.json([]);
 
+  // Drop reactions that hang off a post the caller may not see, so the counts
+  // on a friends-only post's comments are not readable by post-id guessing.
+  const { allowed } = await visibleCommentIds(String((session.user as any).id), ids);
+  const visibleIds = ids.filter((n) => allowed.has(n));
+  if (visibleIds.length === 0) return NextResponse.json({});
+
   const all = await db.select()
     .from(commentReactions)
-    .where(inArray(commentReactions.commentId, ids));
+    .where(inArray(commentReactions.commentId, visibleIds));
 
   const map: Record<number, { type: string; count: number; userReacted: boolean }[]> = {};
   for (const r of all as any[]) {
@@ -43,6 +51,14 @@ export async function POST(req: NextRequest) {
   if (!commentId || !type) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   const userId = (session.user as any).id;
+
+  // The comment has to exist and its post has to be visible. Previously the id
+  // was never resolved, so reactions could be read and toggled on comments of
+  // posts that are hidden from the caller.
+  const { allowed } = await visibleCommentIds(String(userId), [commentId]);
+  if (!allowed.has(Number(commentId))) {
+    return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+  }
 
   const existing = await db.select()
     .from(commentReactions)

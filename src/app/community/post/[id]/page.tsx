@@ -4,11 +4,36 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
+import { getAppSession } from "@/lib/authEnv";
+import { getKV } from "@/lib/db";
+import { canViewPost } from "@/lib/postVisibility";
+
+/**
+ * A post is not public just because it has a URL. `visibility` can be `friends`
+ * or `friends_of_friends`, so the page has to resolve the viewer the same way
+ * the feed does — otherwise walking `/community/post/<id>` with no cookies
+ * reads posts the feed deliberately hides. Author's own post is always visible.
+ */
+async function loadVisiblePost(id: string) {
+  const db = await getDb();
+  const post = await db
+    .select()
+    .from(posts)
+    .where(eq(posts.id, Number(id)))
+    .limit(1)
+    .then((r) => r[0]);
+  if (!post) return null;
+
+  const session = await getAppSession().catch(() => null);
+  const viewerId = (session?.user as { id?: string } | undefined)?.id || "";
+  const friends = ((await getKV("friends").catch(() => null)) || []) as any[];
+  if (!canViewPost(viewerId, post as any, friends)) return null;
+  return post;
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const db = await getDb();
-  const post = await db.select().from(posts).where(eq(posts.id, Number(id))).limit(1).then((r) => r[0]);
+  const post = await loadVisiblePost(id);
   if (!post) return { title: "Post not found" };
 
   const title = (post as any).title || post.content.slice(0, 60);
@@ -18,6 +43,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${title} — Aion 2 LFG Community`,
     description: `${title} ${tagStr} ${post.content.slice(0, 120)}`.trim(),
+    // A restricted post must stay out of search results and link previews.
+    robots: (post as any).visibility && (post as any).visibility !== "public"
+      ? { index: false, follow: false }
+      : undefined,
     openGraph: {
       title: `${title} — Aion 2 LFG`,
       description: post.content.slice(0, 200),
@@ -29,8 +58,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = await getDb();
-  const post = await db.select().from(posts).where(eq(posts.id, Number(id))).limit(1).then((r) => r[0]);
+  const post = await loadVisiblePost(id);
   if (!post) notFound();
 
   const tags = JSON.parse(post.tags || "[]") as string[];
