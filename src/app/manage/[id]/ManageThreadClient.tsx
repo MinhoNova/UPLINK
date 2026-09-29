@@ -897,8 +897,16 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       if (synced) updatedLobby = synced;
     }
     setLobbies(updated);
-    saveGlobalData({ lobbies: updated });
-    addToast("Operation parameters updated.", "success");
+    // Only claim success if the write actually landed. This used to toast
+    // "Operation parameters updated." unconditionally, so a rejected save —
+    // the server answering 403 — looked identical to a working one, and the
+    // change silently vanished on the next refresh. An owner pressing "Start
+    // Mission" had no way to tell the two apart.
+    const saved = await saveGlobalData({ lobbies: updated });
+    addToast(
+      saved ? "Operation parameters updated." : "Could not save. Your change was not stored.",
+      saved ? "success" : "error"
+    );
   };
 
   /* ----- KICK / LEAVE ----- */

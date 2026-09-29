@@ -338,16 +338,25 @@ export function validateLobbies(
   if (isAdmin) return { ok: true, value: incoming };
 
   const existingById = new Map((existing as any[]).map((l) => [String(l.id), l]));
+  // Own lobbies the caller deliberately dropped, and so really did delete.
+  const deletedOwn = new Set<string>();
 
   for (const [id, ex] of existingById) {
-    if (!(incoming as any[]).some((l) => String(l.id) === id)) {
-      if (String((ex as any).ownerId) !== String(userId)) {
-        return { ok: false, error: "Cannot delete lobby you do not own" };
-      }
+    if ((incoming as any[]).some((l) => String(l.id) === id)) continue;
+    if (String((ex as any).ownerId) === String(userId)) {
+      // Their own, and it is gone from the payload: a real delete.
       if (!canOwnerCancelLobby(ex)) {
         return { ok: false, error: "Cannot delete lobby with active squad or mission progress" };
       }
+      deletedOwn.add(id);
+      continue;
     }
+    // A lobby the caller does NOT own and left out was never in their payload.
+    // The thread page reads one offer's family, not the whole site, so a save
+    // from there legitimately omits every other player's offers. Treating that
+    // as a delete rejected the write with "Cannot delete lobby you do not
+    // own", which is why "Start Mission" silently did nothing: the status
+    // change was never stored. These are carried over untouched below.
   }
 
   for (const lobby of incoming as any[]) {
@@ -414,6 +423,15 @@ export function validateLobbies(
     }
     return next;
   });
+
+  // Carry over the lobbies the caller never had in their payload. Without this
+  // the value written back to the store is whatever subset the client held, so
+  // every offer outside the caller's view would be wiped by any save they made.
+  const keptIds = new Set(sanitized.map((l: any) => String(l.id)));
+  for (const [id, ex] of existingById) {
+    if (keptIds.has(id) || deletedOwn.has(id)) continue;
+    sanitized.push(ex);
+  }
 
   return { ok: true, value: sanitized };
 }
