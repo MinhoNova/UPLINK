@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { publicDataView, PUBLIC_DATA_KEYS } from "@/lib/publicDataView";
+import {
+  publicDataView,
+  restrictToPublicKeys,
+  isPublicDataKey,
+  sanitizePublicUsers,
+  PUBLIC_DATA_KEYS,
+} from "@/lib/publicDataView";
 
 const fullStore = {
   lobbies: [
@@ -14,8 +20,18 @@ const fullStore = {
     },
   ],
   registeredUsers: [
-    { id: "u1", name: "Owner", email: "owner@example.com", lastKnownIp: "1.2.3.4", lastSeenAt: 123, blocked: ["u9"] },
-    { id: "u2", name: "Other", friendRequests: ["u1"], subscription: { tier: "gold", secret: "x" } },
+    {
+      id: "u1",
+      name: "Owner",
+      email: "owner@example.com",
+      lastKnownIp: "1.2.3.4",
+      lastSeenAt: 123,
+      blocked: ["u9"],
+      battleTag: "Owner#1234",
+      previousUsernames: ["oldname"],
+      offerDrafts: [{ title: "secret draft" }],
+    },
+    { id: "u2", name: "Other", friendRequests: ["u1"], hiddenIdentity: true, subscription: { tier: "gold", secret: "x" } },
   ],
   characters: [{ id: "c1", userId: "u1", name: "Alt" }],
   goldOffers: [{ id: "g1", amount: 100 }],
@@ -33,6 +49,21 @@ const fullStore = {
   deliveredMessages: { u1: ["dm1"] },
 };
 
+const PRIVATE_KEYS = [
+  "directMessages",
+  "tickets",
+  "auditLogs",
+  "userRoles",
+  "notifications",
+  "applications",
+  "bannedUsers",
+  "bannedUserIds",
+  "bannedIps",
+  "friends",
+  "readMessages",
+  "deliveredMessages",
+];
+
 describe("publicDataView", () => {
   it("returns exactly the allowlisted keys and nothing else", () => {
     const out = publicDataView(fullStore);
@@ -41,22 +72,7 @@ describe("publicDataView", () => {
 
   it("never leaks DMs, tickets, audit logs, roles, bans or friend data", () => {
     const out = publicDataView(fullStore) as Record<string, unknown>;
-    for (const secret of [
-      "directMessages",
-      "tickets",
-      "auditLogs",
-      "userRoles",
-      "notifications",
-      "applications",
-      "bannedUsers",
-      "bannedUserIds",
-      "bannedIps",
-      "friends",
-      "readMessages",
-      "deliveredMessages",
-    ]) {
-      expect(out[secret]).toBeUndefined();
-    }
+    for (const secret of PRIVATE_KEYS) expect(out[secret]).toBeUndefined();
   });
 
   it("strips lobby chat bodies but keeps a message count", () => {
@@ -68,18 +84,61 @@ describe("publicDataView", () => {
   it("strips per-player identifiers from the public roster", () => {
     const out = publicDataView(fullStore) as any;
     const owner = out.registeredUsers.find((u: any) => u.id === "u1");
-    expect(owner.email).toBeUndefined();
-    expect(owner.lastKnownIp).toBeUndefined();
-    expect(owner.lastSeenAt).toBeUndefined();
-    expect(owner.blocked).toBeUndefined();
+    for (const field of [
+      "email",
+      "lastKnownIp",
+      "lastSeenAt",
+      "blocked",
+      "battleTag",
+      "previousUsernames",
+      "offerDrafts",
+    ]) {
+      expect(owner[field]).toBeUndefined();
+    }
     const other = out.registeredUsers.find((u: any) => u.id === "u2");
     expect(other.friendRequests).toBeUndefined();
+    expect(other.hiddenIdentity).toBeUndefined();
     expect(other.subscription).toEqual({ tier: "gold" });
+  });
+
+  it("keeps the display fields the public feed renders", () => {
+    const out = publicDataView(fullStore) as any;
+    const owner = out.registeredUsers.find((u: any) => u.id === "u1");
+    expect(owner.id).toBe("u1");
+    expect(owner.name).toBe("Owner");
   });
 
   it("drops allowlisted keys that are absent instead of inventing them", () => {
     const out = publicDataView({ lobbies: [] }) as Record<string, unknown>;
     expect(out.lobbies).toEqual([]);
     expect("registeredUsers" in out).toBe(false);
+  });
+});
+
+describe("restrictToPublicKeys", () => {
+  it("rejects the `?keys=directMessages` bypass entirely", () => {
+    expect(restrictToPublicKeys(["directMessages"])).toEqual([]);
+  });
+
+  it("keeps public keys and drops private ones from a mixed request", () => {
+    expect(restrictToPublicKeys(["lobbies", "auditLogs", "characters"])).toEqual(["lobbies", "characters"]);
+  });
+
+  it("trims whitespace and collapses duplicates", () => {
+    expect(restrictToPublicKeys([" lobbies ", "lobbies", "goldOffers"])).toEqual(["lobbies", "goldOffers"]);
+  });
+
+  it("cannot be used to reach the admin role map or ban lists", () => {
+    for (const key of ["userRoles", "bannedUsers", "bannedIps", "tickets"]) {
+      expect(isPublicDataKey(key)).toBe(false);
+      expect(restrictToPublicKeys([key])).toEqual([]);
+    }
+  });
+});
+
+describe("sanitizePublicUsers", () => {
+  it("leaves non-array input untouched", () => {
+    expect(sanitizePublicUsers(undefined)).toBeUndefined();
+    expect(sanitizePublicUsers("nope")).toBe("nope");
   });
 });

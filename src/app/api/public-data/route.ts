@@ -4,25 +4,51 @@ import {
   setPublicDataCached,
   publicDataCacheKey,
 } from "@/lib/cloudflareBindings";
-import { stripLobbyMessages } from "@/lib/dataAccess";
+import {
+  publicDataView,
+  restrictToPublicKeys,
+  isPublicDataKey,
+} from "@/lib/publicDataView";
 
 export const dynamic = "force-dynamic";
+
+/** Sentinel for "the caller asked for keys, and none of them were public". */
+const NO_PUBLIC_KEYS = "__none__";
+
+/**
+ * A cached entry is only reusable if every key in it is still allowlisted.
+ * Without this check a stale entry written before the allowlist tightened
+ * would keep being served straight from the cache.
+ */
+function isCacheEntryUsable(cached: Record<string, unknown> | null): cached is Record<string, unknown> {
+  if (!cached || typeof cached !== "object") return false;
+  return Object.keys(cached).every((key) => isPublicDataKey(key));
+}
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const keysParam = url.searchParams.get("keys");
-    const HOMEPAGE_KEYS = new Set([
-      "lobbies", "goldOffers", "notifications", "registeredUsers",
-      "characters", "applications", "bannedUsers", "bannedUserIds",
-    ]);
-    const cacheKey = publicDataCacheKey(keysParam);
+    // `?keys=` narrows the response, it must never widen it. Anything outside
+    // the allowlist is dropped, so `?keys=directMessages` resolves to nothing
+    // instead of handing the visitor the private store.
+    const explicit = keysParam !== null;
+    const wanted = explicit ? restrictToPublicKeys(keysParam!.split(",")) : [];
+    // `explicit && wanted.length === 0` must not collide with the homepage
+    // cache key, or an over-broad request would overwrite it with an empty body.
+    const cacheKey = publicDataCacheKey(
+      explicit ? (wanted.length > 0 ? wanted.join(",") : NO_PUBLIC_KEYS) : null
+    );
 
     const cached = await getPublicDataCached(cacheKey);
-    if (cached) {
+    if (isCacheEntryUsable(cached)) {
       return NextResponse.json(cached, {
         headers: { "Cache-Control": "no-store, max-age=0" },
       });
+    }
+
+    if (explicit && wanted.length === 0) {
+      return NextResponse.json({}, { headers: { "Cache-Control": "no-store, max-age=0" } });
     }
 
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
@@ -38,10 +64,9 @@ export async function GET(req: Request) {
     const { results } = await d1.prepare("SELECT key, value FROM kv_store").all<{ key: string; value: string }>();
     const data: Record<string, unknown> = {};
     for (const row of results ?? []) {
-      if (keysParam) {
-        const wanted = keysParam.split(",").filter(Boolean);
+      if (wanted.length > 0) {
         if (!wanted.includes(row.key)) continue;
-      } else if (!HOMEPAGE_KEYS.has(row.key)) {
+      } else if (!isPublicDataKey(row.key)) {
         continue;
       }
       try {
@@ -50,13 +75,11 @@ export async function GET(req: Request) {
         data[row.key] = row.value;
       }
     }
-    if (data.lobbies !== undefined) {
-      // Open offers are public by design; the thread chat is not. Message
-      // bodies (and any base64 image inside them) never reach a visitor.
-      data.lobbies = stripLobbyMessages(data.lobbies);
-    }
-    await setPublicDataCached(cacheKey, data);
-    return NextResponse.json(data, {
+    // One gate for both public reads: allowlisted keys, chat bodies removed,
+    // per-player identifiers removed from the roster.
+    const view = publicDataView(data);
+    await setPublicDataCached(cacheKey, view);
+    return NextResponse.json(view, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });
   } catch (e) {
