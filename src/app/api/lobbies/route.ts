@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { initTables, updateKVAtomic } from "@/lib/db";
+import { validateLobbies } from "@/lib/secureDataWrite";
+import { addUserBan } from "@/lib/banCheck";
+import { logAudit } from "@/lib/auditLog";
 
 export async function PATCH(req: Request) {
   const auth = await requireSession(req);
@@ -57,6 +60,12 @@ export async function PUT(req: Request) {
   // reconcile the incoming snapshot against the current store atomically:
   //   - keep any lobby the client did NOT send (concurrent additions)
   //   - upsert the lobbies the client DID send
+  await initTables();
+  const isAdmin = auth.user.role === "admin";
+  const uid = String(auth.user.id);
+
+  let abortReason: string | null = null;
+  let fraudAttempt: { userId: string; lobbyId: string } | null = null;
   const res = await updateKVAtomic<any[]>("lobbies", (current) => {
     const storeLobbies = Array.isArray(current) ? current : [];
     const mergedById = new Map<string, any>();
@@ -66,11 +75,39 @@ export async function PUT(req: Request) {
     for (const l of body.lobbies) {
       if (l && l.id != null) mergedById.set(String(l.id), l);
     }
-    return [...mergedById.values()];
+    // A signed-in user must not be able to rewrite a lobby they are not part
+    // of — the merge above takes the client's copy of any id it names. Run the
+    // same validator `POST /api/data` uses, so owner/participant scope, the
+    // applicant self-scope and the payment-fraud guard all still apply.
+    const check = validateLobbies(storeLobbies, [...mergedById.values()], uid, isAdmin);
+    if (!check.ok) {
+      abortReason = check.error;
+      if (check.fraudAttempt) fraudAttempt = check.fraudAttempt;
+      return undefined;
+    }
+    return check.value as any[];
   });
 
+  const fraud = fraudAttempt as { userId: string; lobbyId: string } | null;
+  if (fraud) {
+    await addUserBan({
+      id: auth.user.id,
+      handle: auth.user.username,
+      reason: "payment_fraud: attempted to mark a mission paid without another confirmed player",
+    }).catch(() => {});
+    await logAudit({
+      action: "system.paymentFraud",
+      userId: auth.user.id,
+      handle: auth.user.username,
+      meta: { lobbyId: fraud.lobbyId, reason: "permanent ban" },
+    }).catch(() => {});
+  }
+
   if (!res.ok) {
-    return NextResponse.json({ error: "Could not save lobbies — please retry" }, { status: 409 });
+    return NextResponse.json(
+      { error: abortReason || "Could not save lobbies — please retry", ...(fraud ? { suspended: true } : {}) },
+      { status: fraud || abortReason ? 403 : 409 }
+    );
   }
 
   return NextResponse.json({ success: true });
