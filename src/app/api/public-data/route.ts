@@ -67,11 +67,14 @@ export async function GET(req: Request) {
     // every cache miss for every anonymous visitor — just to keep 4 of them.
     // The store is ~234 keys and hundreds of KB, so that read alone was enough
     // to push the worker into Error 1102 under normal homepage traffic.
+    // Placeholders and bindings must come from the same list, or D1 rejects
+    // the statement with "wrong number of parameter bindings".
+    const selectKeys = wanted.length > 0 ? wanted : [...PUBLIC_DATA_KEYS];
     const { results } = await d1
       .prepare(
-        `SELECT key, value FROM kv_store WHERE key IN (${wanted.map(() => "?").join(",")})`
+        `SELECT key, value FROM kv_store WHERE key IN (${selectKeys.map(() => "?").join(",")})`
       )
-      .bind(...(wanted.length > 0 ? wanted : [...PUBLIC_DATA_KEYS]))
+      .bind(...selectKeys)
       .all<{ key: string; value: string }>();
     const data: Record<string, unknown> = {};
     for (const row of results ?? []) {
