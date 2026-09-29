@@ -298,21 +298,17 @@ export function validateRegisteredUsers(
   });
   const incomingById = new Map(sanitized.map((u: any) => [String(u.id), u]));
 
-  const stripStats = (u: any) => {
-    if (!u || typeof u !== "object") return u;
-    const { stats: _stats, ...rest } = u;
-    return rest;
-  };
-
   for (const user of sanitized) {
     const ex = existingById.get(String(user.id));
     if (!ex) {
       if (String(user.id) !== String(userId)) return { ok: false, error: "Cannot register other users" };
       continue;
     }
-    if (String(user.id) !== String(userId) && JSON.stringify(stripStats(user)) !== JSON.stringify(stripStats(ex))) {
-      return { ok: false, error: "Cannot modify other users" };
-    }
+    // Another account's row is not the caller's to change, and a difference in
+    // it is not a reason to fail their save. The client keeps a snapshot of the
+    // roster, so the moment anybody else edited their profile the stored row
+    // stopped matching and every profile save came back "Cannot modify other
+    // users". Their copy is dropped below and the stored row is kept.
   }
 
   for (const [id] of existingById) {
@@ -321,7 +317,15 @@ export function validateRegisteredUsers(
     }
   }
 
-  return { ok: true, value: sanitized };
+  // Only the caller's own row may change; everyone else's is written back
+  // exactly as stored, which is what actually enforces the ownership rule.
+  const owned = (sanitized as any[]).map((u) => {
+    const ex = existingById.get(String(u.id));
+    if (ex && String(u.id) !== String(userId)) return ex;
+    return u;
+  });
+
+  return { ok: true, value: owned };
 }
 
 export function validateLobbies(
