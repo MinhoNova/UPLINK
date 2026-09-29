@@ -135,16 +135,23 @@ describe("lobby chat visibility", () => {
     expect(out[0].messages).toHaveLength(1);
   });
 
-  it("hides messages from a stranger and from a mere applicant", () => {
+  it("hides messages from a stranger, but serves them to an applicant", () => {
     const lobbies = [
       { ...baseLobby(), messages: [{ id: 1, text: "hi" }] },
       { ...withApplicant(), id: "lobby-2", messages: [{ id: 2, text: "hi" }] },
     ];
     const out = scopeLobbyMessages(lobbies, OUTSIDER, "stranger") as any[];
     expect(out[0].messages).toBeUndefined();
+    // The applicant is on this thread now, so it is their thread to read.
     const out2 = scopeLobbyMessages(lobbies, APPLICANT, "applicant") as any[];
-    expect(out2[1].messages).toBeUndefined();
-    expect(out2[1].messageCount).toBe(1);
+    expect(out2[1].messages).toHaveLength(1);
+  });
+
+  it("hides messages from an unrelated player on every offer", () => {
+    const lobbies = [{ ...baseLobby(), applicants: [{ applicantId: APPLICANT }], messages: [{ id: 1, text: "hi" }] }];
+    const out = scopeLobbyMessages(lobbies, OUTSIDER, "stranger") as any[];
+    expect(out[0].messages).toBeUndefined();
+    expect(out[0].messageCount).toBe(1);
   });
 
   it("keeps the owner in after a Discord rename via previousUsernames", () => {

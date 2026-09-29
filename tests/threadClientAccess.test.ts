@@ -143,9 +143,9 @@ describe("client thread gate — owners and squad members", () => {
     expect(clientCanViewOfferThread(thread, MEMBER, "member", [], { serverAdmin: false })).toBe(true);
   });
 
-  it("keeps a bare applicant out", () => {
+  it("lets a bare applicant in", () => {
     const thread = lobby({ applicants: [{ applicantId: STRANGER }] });
-    expect(clientCanViewOfferThread(thread, STRANGER, STRANGER, [], { serverAdmin: false })).toBe(false);
+    expect(clientCanViewOfferThread(thread, STRANGER, STRANGER, [], { serverAdmin: false })).toBe(true);
   });
 
   it("keeps a renamed owner in through their account-row aliases", () => {

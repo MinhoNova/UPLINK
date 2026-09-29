@@ -407,7 +407,12 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   const [diag, setDiag] = useState<Record<string, unknown> | null>(null);
   const knownLobbyIds = useRef<Set<string>>(new Set());
 
-  const currentUserId = (session?.user as any)?.id || serverMe?.id || "guest";
+  // Identity for the access gate. The server's own answer comes first: it is the
+  // id it authorised the thread against, whereas the NextAuth session can arrive
+  // late, carry no `id`, or hold a cookie minted before that field existed. A
+  // wrong or empty id here made the page say "Access Denied" about a thread the
+  // server had just released.
+  const currentUserId = serverMe?.id || (session?.user as any)?.id || "guest";
   const currentUserDisplay = useMemo(() => {
     const me = registeredUsers.find((u: any) => String(u.id) === String(currentUserId));
     return resolveProfileDisplayName(me, session?.user?.name || "Guest");
@@ -1152,7 +1157,21 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
 
   if (!lobbyId) return null;
 
-  const canView = dataLoaded && targetLobby && clientCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe);
+  // The server already decided this when it released the thread, and it ships
+  // that verdict. Re-deriving it in the browser is what produced the worst
+  // failure mode in this page: the API answered 200 with the thread in hand and
+  // the UI still rendered "Access Denied", because the client-side identity was
+  // momentarily empty. `serverGranted` is true only when the server actually put
+  // this lobby in the payload it authorised, so it cannot be used to get in — the
+  // API route independently answers 403 for anyone it did not authorise. The
+  // local gate is kept for the window before any payload exists.
+  const serverGranted = !!seedThread?.lobbies?.some(
+    (l: any) => String(l?.id) === String(lobbyId) || String(l?.id)?.endsWith(`-${lobbyId}`)
+  );
+  const canView =
+    dataLoaded &&
+    targetLobby &&
+    (serverGranted || clientCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe));
   const threadPermit = targetLobby
     ? userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases)
     : null;

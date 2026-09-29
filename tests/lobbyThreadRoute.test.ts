@@ -78,11 +78,11 @@ describe("GET /api/lobbies/thread", () => {
     expect(status).toBe(403);
   });
 
-  it("refuses an applicant who never played the mission", async () => {
+  it("serves an applicant, because the offer is the thread they applied to", async () => {
     LOBBIES[0].applicants = [{ applicantId: STRANGER }];
     try {
       const { status } = await call("900", STRANGER);
-      expect(status).toBe(403);
+      expect(status).toBe(200);
     } finally {
       LOBBIES[0].applicants = [];
     }

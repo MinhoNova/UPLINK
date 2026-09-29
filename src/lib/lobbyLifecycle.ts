@@ -298,6 +298,10 @@ export function userParticipatedInThread(lobby: any, userId: string): boolean {
   const uid = String(userId);
   if (!lobby || !uid || uid === "guest") return false;
   if ((lobby.accepted || []).some((a: any) => memberMatchesUser(a, uid))) return true;
+  // Someone who has applied to the offer may open its thread. Without this they
+  // were told "Access Denied" on the very offer they applied to, because being
+  // an applicant is not the same as being in `accepted` or in `history`.
+  if ((lobby.applicants || []).some((a: any) => memberMatchesUser(a, uid))) return true;
   return (lobby.history || []).some(
     (h: any) =>
       memberMatchesUser(h, uid) &&
@@ -305,7 +309,13 @@ export function userParticipatedInThread(lobby: any, userId: string): boolean {
   );
 }
 
-/** May open this thread — owner sees full family; players only threads they were on. */
+/**
+ * May open this thread.
+ *
+ * The offer owner, anyone who applied to the offer, and anyone who was on it.
+ * The server is the real boundary — this is the shared rule behind both
+ * `loadOfferThread` and the client gate, so the two cannot disagree.
+ */
 export function userCanViewOfferThread(lobby: any, userId: string, handle?: string, aliases?: string[]): boolean {
   if (!lobby) return false;
   if (userIsOfferOwner(lobby, userId, handle, aliases)) return true;
