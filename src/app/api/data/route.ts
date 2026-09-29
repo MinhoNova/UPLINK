@@ -4,7 +4,8 @@ import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
 import { stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
-import { filterDataForUser, stripLobbyMessages } from '@/lib/dataAccess';
+import { filterDataForUser } from '@/lib/dataAccess';
+import { publicDataView } from '@/lib/publicDataView';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
 import { isUserBanned, bannedResponse, getBanInfo, addUserBan } from '@/lib/banCheck';
@@ -49,8 +50,9 @@ export async function GET(req: Request) {
         } catch {}
       }
       // Anonymous homepage read: the offer itself is public, its chat is not.
-      // Only the sanitised view is ever written to the shared cache.
-      const publicView = { ...data, lobbies: stripLobbyMessages(data.lobbies) };
+      // Allowlisted keys only — `kv_store` also holds directMessages, tickets,
+      // auditLogs and user roles, none of which may reach a visitor.
+      const publicView = publicDataView(data);
       await setPublicDataCached(FULL_DATA_CACHE_KEY, publicView);
       return NextResponse.json(publicView, {
         headers: { "Cache-Control": "no-store, max-age=0" },

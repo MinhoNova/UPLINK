@@ -15,3 +15,9 @@ npm run thumbs:regen
 ```
 
 All class/role thumbnails are served without `loading="lazy"` or `decoding="async"` where possible — add these when creating new `<img>` tags pointing to `/classes-thumb/*.webp`.
+
+## Ship every change
+
+Any change made to this repo must be committed and pushed to `main` — pushing triggers the deploy. Do not leave verified work uncommitted. Only skip the push if the change is clearly experimental/unverified, or the user says otherwise.
+
+Before pushing, run `npx tsc --noEmit`, `npx vitest run` and `npm run build`.
