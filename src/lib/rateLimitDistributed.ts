@@ -2,6 +2,52 @@ import type { D1Database } from "@cloudflare/workers-types";
 
 type Bucket = { count: number; windowStart: number };
 
+/**
+ * Drop buckets whose window has closed, plus a little slack.
+ *
+ * The store is a single `kv_store` row that every `/api` request reads, mutates
+ * and writes back through the middleware, so its size is paid on every call. It
+ * was never pruned: the key is `ip:<ip>:<path>`, so each new path and each new
+ * address added an entry that stayed forever. It had grown past 200KB of
+ * expired counters, and parsing plus rewriting that on each request is what the
+ * worker was spending its time and memory on.
+ */
+const STALE_GRACE_MS = 5 * 60_000;
+
+function pruneExpiredBuckets(
+  store: Record<string, Bucket>,
+  now: number,
+  maxWindowMs: number
+): Record<string, Bucket> {
+  const cutoff = now - maxWindowMs - STALE_GRACE_MS;
+  let changed = false;
+  const kept: Record<string, Bucket> = {};
+  for (const [key, bucket] of Object.entries(store)) {
+    if (!bucket || typeof bucket.windowStart !== "number" || bucket.windowStart < cutoff) {
+      changed = true;
+      continue;
+    }
+    kept[key] = bucket;
+  }
+  return changed ? kept : store;
+}
+
+/**
+ * Hard ceiling on how many buckets are kept, so a burst of new paths or
+ * addresses cannot build a large blob again before the windows expire.
+ */
+const MAX_BUCKETS = 5000;
+
+function capBuckets(store: Record<string, Bucket>, now: number): Record<string, Bucket> {
+  const keys = Object.keys(store);
+  if (keys.length <= MAX_BUCKETS) return store;
+  // Newest windows first; the oldest are the least likely to still be limiting.
+  keys.sort((a, b) => (store[b]?.windowStart ?? 0) - (store[a]?.windowStart ?? 0));
+  const kept: Record<string, Bucket> = {};
+  for (const key of keys.slice(0, MAX_BUCKETS)) kept[key] = store[key];
+  return kept;
+}
+
 export type RateLimitResult = { ok: true } | { ok: false; retryAfterMs: number };
 
 const memoryBuckets = new Map<string, Bucket>();
@@ -64,21 +110,26 @@ async function checkKvBucket(key: string, limit: number, windowMs: number): Prom
 
   const store = await readRateLimitStore(d1);
   const now = Date.now();
-  const bucket = store[key];
+  // Prune first, on the read we are already paying for. This is what stops the
+  // blob growing without bound.
+  const pruned = capBuckets(pruneExpiredBuckets(store, now, windowMs), now);
+  const bucket = pruned[key];
 
   if (!bucket || now - bucket.windowStart >= windowMs) {
-    store[key] = { count: 1, windowStart: now };
-    await writeRateLimitStore(d1, store);
+    pruned[key] = { count: 1, windowStart: now };
+    await writeRateLimitStore(d1, pruned);
     return { ok: true };
   }
 
   if (bucket.count >= limit) {
+    // Persist the pruning even on the denied path, so a flood cannot keep the
+    // dead entries alive.
+    if (pruned !== store) await writeRateLimitStore(d1, pruned);
     return { ok: false, retryAfterMs: windowMs - (now - bucket.windowStart) };
   }
 
   bucket.count += 1;
-  store[key] = bucket;
-  await writeRateLimitStore(d1, store);
+  await writeRateLimitStore(d1, pruned);
   return { ok: true };
 }
 

@@ -7,20 +7,47 @@ export type { RateLimitResult };
 
 type Bucket = { count: number; windowStart: number };
 
+/**
+ * Drop buckets whose window has closed.
+ *
+ * This store lives in the same `rateLimits` row as the IP buckets and is read
+ * and rewritten on every limited call, so expired counters left behind made every
+ * later call parse more data for no reason.
+ */
+const STALE_GRACE_MS = 5 * 60_000;
+
+function pruneExpiredBuckets(
+  store: Record<string, Bucket>,
+  now: number,
+  maxWindowMs: number
+): Record<string, Bucket> {
+  const cutoff = now - maxWindowMs - STALE_GRACE_MS;
+  let changed = false;
+  const kept: Record<string, Bucket> = {};
+  for (const [key, bucket] of Object.entries(store)) {
+    if (!bucket || typeof bucket.windowStart !== "number" || bucket.windowStart < cutoff) {
+      changed = true;
+      continue;
+    }
+    kept[key] = bucket;
+  }
+  return changed ? kept : store;
+}
+
 async function checkKvBucket(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   await initTables();
 
   const res = await updateKVAtomic<Record<string, Bucket>>(
     "rateLimits",
     (store) => {
-      const cur = store ?? {};
       const now = Date.now();
-      const bucket = cur[key];
+      const current = pruneExpiredBuckets(store ?? {}, now, windowMs);
+      const bucket = current[key];
       if (!bucket || now - bucket.windowStart >= windowMs) {
-        return { ...cur, [key]: { count: 1, windowStart: now } };
+        return { ...current, [key]: { count: 1, windowStart: now } };
       }
       if (bucket.count >= limit) return undefined; // abort: limited
-      return { ...cur, [key]: { count: bucket.count + 1, windowStart: bucket.windowStart } };
+      return { ...current, [key]: { count: bucket.count + 1, windowStart: bucket.windowStart } };
     },
     { maxAttempts: 3 }
   );
