@@ -60,5 +60,12 @@ export default async function ManageThreadPage({ params }: { params: Promise<{ i
     initialThread = null;
   }
 
-  return <ManageThreadClient heroBg={heroBg} initialThread={initialThread} />;
+  // Keyed on the thread id. Moving between two threads is a client-side
+  // navigation, and Next.js reuses the component instance when only the dynamic
+  // param changes — so every `useState` above this line kept the *previous*
+  // thread's identity, admin verdict, loaded flag and lobby list. The second
+  // thread therefore rendered off state seeded for the first, and the page sat on
+  // its loading screen until a full refresh threw the stale state away. A remount
+  // per id is the only thing that makes each thread start clean.
+  return <ManageThreadClient key={id} heroBg={heroBg} initialThread={initialThread} />;
 }

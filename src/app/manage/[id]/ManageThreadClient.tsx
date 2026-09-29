@@ -1234,14 +1234,41 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
 
   if (!targetLobby || !canView) {
     return (
-      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center">
+      <div className="relative min-h-screen bg-[#05050a] flex items-center justify-center p-6">
         <PageBackdrop heroBg={heroBg} />
-        <div className="relative z-10 text-center">
-          <div className="w-12 h-12 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin mx-auto mb-6" />
-          <p className="text-xs font-black tracking-widest text-red-400 uppercase">
-            {!targetLobby ? "Mission not found" : "Access Denied"}
-          </p>
+        <div className="relative z-10 text-center max-w-md">
+          {loadError ? (
+            <p className="text-sm text-red-400 max-w-md mb-6">{loadError}</p>
+          ) : (
+            <p className="text-xs font-black tracking-widest text-red-400 uppercase">
+              {!targetLobby ? "Mission not found" : "Access Denied"}
+            </p>
+          )}
           <DiagPanel diag={diag} lobbyId={lobbyId} currentUserId={currentUserId} handle={currentUserDiscordHandle} isAdmin={isAdmin} canView={canView} targetLobby={targetLobby} threadPermit={threadPermit} />
+          {/* This screen used to offer no way out at all: the close button lives
+              inside ManageModal, which is not rendered here, so the page was a
+              dead end that looked frozen and had to be escaped by reloading. */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+            <button
+              onClick={() => router.push("/")}
+              className="px-8 py-3 bg-white text-black font-black uppercase text-xs tracking-widest rounded-xl hover:bg-[#00ffff] active:scale-95 transition-all"
+            >
+              Return to Uplink
+            </button>
+            {!dataLoaded && (
+              <button
+                onClick={() => {
+                  dataLoadedRef.current = false;
+                  setDataLoaded(false);
+                  setLoadError(null);
+                  setReloadNonce((n) => n + 1);
+                }}
+                className="px-8 py-3 bg-white/5 text-gray-300 font-black uppercase text-xs tracking-widest rounded-xl border border-white/10 hover:bg-white/10 hover:text-white active:scale-95 transition-all"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
