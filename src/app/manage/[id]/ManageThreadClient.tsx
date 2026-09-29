@@ -447,8 +447,25 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   /* ----- DATA LOADING (mirror old page) ----- */
   useEffect(() => {
     let cancelled = false;
+    // Two guards, both there for the same reason: this loader used to be dead
+    // code. It threw on its first line, so the page issued no requests at all
+    // and the worker never saw this traffic. Fixing the throw turned the poll,
+    // the focus handler and the `data-refresh` handler back on — and
+    // `data-refresh` is dispatched on apply, accept, invite, delete, DM and
+    // notifications, from many components. A single offer acceptance could fan
+    // out one identical thread fetch per open thread page, and nothing stopped
+    // a slow request from overlapping the next 15s tick and stacking on top.
+    // That is how a working site starts returning 1102.
+    let inFlight = false;
+    let queued = false;
+
     const load = () => {
       if (cancelled) return;
+      // One request at a time. A call that arrives mid-flight is not dropped —
+      // it is remembered and replayed once the current one settles, so no
+      // update is lost while a burst is collapsed into a single fetch.
+      if (inFlight) { queued = true; return; }
+      inFlight = true;
       // Prefer the dedicated thread endpoint: one small, already-authorised
       // payload instead of the whole site state. Fall back to /api/data only
       // if it is unavailable, so an older backend still renders.
@@ -520,7 +537,20 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
           // eternal spinner. Surface it instead.
           if (cancelled) return;
           setLoadError(String(e?.message || e || "Could not reach the server"));
+        })
+        .finally(() => {
+          inFlight = false;
+          if (queued && !cancelled) { queued = false; load(); }
         });
+    };
+
+    // Event-driven reloads arrive in bursts — one accept dispatches several
+    // `data-refresh` events. Coalesce a burst into a single trailing request
+    // instead of firing one per event.
+    let burst: ReturnType<typeof setTimeout> | null = null;
+    const loadSoon = () => {
+      if (burst) return;
+      burst = setTimeout(() => { burst = null; load(); }, 1500);
     };
     // When the page shell already delivered the thread, the first paint is done
     // and there is nothing to wait for — but still refresh on focus/poll so a
@@ -544,14 +574,23 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
     const stallGuard = setTimeout(() => {
       if (!dataLoadedRef.current) setLoadError("The server took too long to respond.");
     }, alreadySeeded ? 60000 : 25000);
-    window.addEventListener("focus", load);
-    window.addEventListener("data-refresh", load);
-    const poll = setInterval(load, 15000);
+    window.addEventListener("focus", loadSoon);
+    window.addEventListener("data-refresh", loadSoon);
+    // A background tab polling an offer chat is pure waste: the user cannot see
+    // it, and every tick is a multi-query worker request. Pause it there and
+    // catch up when the tab is looked at again.
+    const onVisibility = () => { if (document.visibilityState === "visible") loadSoon(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    const poll = setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30000);
     return () => {
       cancelled = true;
       clearTimeout(stallGuard);
-      window.removeEventListener("focus", load);
-      window.removeEventListener("data-refresh", load);
+      if (burst) clearTimeout(burst);
+      window.removeEventListener("focus", loadSoon);
+      window.removeEventListener("data-refresh", loadSoon);
+      document.removeEventListener("visibilitychange", onVisibility);
       clearInterval(poll);
     };
   }, [currentUserId, reloadNonce, lobbyId]);

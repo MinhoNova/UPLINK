@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireSession, isAdminUser } from "@/lib/authz";
+import { requireSession } from "@/lib/authz";
 import { initTables } from "@/lib/db";
 import { loadOfferThread } from "@/lib/offerThread";
 
@@ -28,7 +28,10 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id") || "";
 
-    const admin = await isAdminUser(auth.user.id, auth.user.username);
+    // `requireSession` already resolved this account's role from the same
+    // `userRoles` key. Asking again meant a second D1 read and a second parse
+    // of the same blob on every poll, for a value we were already holding.
+    const admin = auth.user.role === "admin";
     const result = await loadOfferThread(id, auth.user, admin);
     if (!result.ok) {
       return NextResponse.json(

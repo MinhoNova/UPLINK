@@ -10,8 +10,7 @@ const OWNER = "711027724663128106";
 const MEMBER = "member-1";
 const STRANGER = "stranger-9";
 
-vi.mock("@/lib/authz", () => ({ requireSession: vi.fn(), isAdminUser: vi.fn(async () => false) }));
-vi.mock("@/lib/db", () => ({
+vi.mock("@/lib/authz", () => ({ requireSession: vi.fn(), isAdminUser: vi.fn(async () => false) }));vi.mock("@/lib/db", () => ({
   initTables: vi.fn(async () => {}),
   getKV: vi.fn(async (key: string) => {
     if (key === "lobbies") return LOBBIES;
@@ -46,9 +45,15 @@ const USERS = [
 ];
 
 async function call(id: string, userId: string, admin = false) {
-  const { requireSession, isAdminUser } = await import("@/lib/authz");
-  (requireSession as any).mockResolvedValue({ ok: true, user: { id: userId, username: "whoever" } });
-  (isAdminUser as any).mockResolvedValue(admin);
+  const { requireSession } = await import("@/lib/authz");
+  // `requireSession` resolves the role itself and the route reads it off the
+  // session, so the mock has to carry it. It used to mock a second
+  // `isAdminUser` call instead, which meant the route was free to re-read
+  // `userRoles` from D1 on every poll for a value it already had.
+  (requireSession as any).mockResolvedValue({
+    ok: true,
+    user: { id: userId, username: "whoever", role: admin ? "admin" : "user" },
+  });
   const { GET } = await import("@/app/api/lobbies/thread/route");
   const res = await GET(new Request(`https://x/api/lobbies/thread?id=${id}`));
   return { status: res.status, body: (await res.json()) as any };
