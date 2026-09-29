@@ -43,6 +43,11 @@ describe("validateCharacters", () => {
       { id: "game:XYZ0001", userId: "me", name: "Kara" },
     ];
     const result = validateCharacters(existing, incoming, "me", false);
-    expect(result.ok).toBe(false);
+    // The claim is dropped rather than rejected: the stored copy, still owned
+    // by the other account, is what gets written. Rejecting it instead would
+    // have failed this same save for anyone merely holding the character in
+    // their payload, which is how linking a game character stopped working.
+    const written = (result as any).value.find((c: any) => c.id === "game:XYZ0001");
+    expect(written.userId).toBe("other-user");
   });
 });

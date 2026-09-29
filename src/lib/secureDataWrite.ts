@@ -434,9 +434,12 @@ export function validateCharacters(
     const id = String(ch.id || "");
     if (!id) continue;
     if (isGameCharId(id) && String(ch.userId) !== String(userId)) {
-      const ex = existingById.get(id);
-      if (ex) return { ok: false, error: "This in-game character is already linked to another account" };
-      return { ok: false, error: "Cannot add characters for other users" };
+      // Only an attempt to *add* a `game:` character on someone else's behalf is
+      // a forgery. One that is already in the store is just the roster being
+      // echoed back, and rejecting it blocked every save — see below.
+      if (!existingById.has(id)) {
+        return { ok: false, error: "Cannot add characters for other users" };
+      }
     }
   }
 
@@ -459,12 +462,14 @@ export function validateCharacters(
       if (String(ch.userId) !== String(userId)) return { ok: false, error: "Cannot add characters for other users" };
       continue;
     }
-    if (JSON.stringify(ch) !== JSON.stringify(ex) && String((ex as any).userId) !== String(userId)) {
-      if (isGameCharId(String(ch.id))) {
-        return { ok: false, error: "This in-game character is already linked to another account" };
-      }
-      return { ok: false, error: "Cannot modify other users' characters" };
-    }
+    // A character owned by somebody else is not an error — it is simply not the
+    // caller's to change. Rejecting here made it impossible for anyone to link
+    // a game character at all: `saveVerifiedCharacterEntry` POSTs the whole
+    // public roster back, so one `game:` character belonging to another account
+    // failed every save with "This in-game character is already linked to
+    // another account". The caller's copy is dropped below and the stored one
+    // is kept, which is also what stops a claim from succeeding.
+    if (String(ex.userId) === String(userId)) continue;
   }
 
   for (const [id, ex] of existingById) {
@@ -473,7 +478,16 @@ export function validateCharacters(
     }
   }
 
-  return { ok: true, value: incoming };
+  // Anyone else's character is written back untouched. Keeping the stored copy
+  // is what actually enforces ownership — a forged or edited copy of a foreign
+  // character is discarded rather than rejected, so it can never land.
+  const sanitized = (incoming as any[]).map((ch) => {
+    const ex = existingById.get(String(ch.id));
+    if (ex && String((ex as any).userId) !== String(userId)) return ex;
+    return ch;
+  });
+
+  return { ok: true, value: sanitized };
 }
 
 export function validateNotifications(
