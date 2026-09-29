@@ -8,6 +8,7 @@ import {
   publicDataView,
   restrictToPublicKeys,
   isPublicDataKey,
+  PUBLIC_DATA_KEYS,
 } from "@/lib/publicDataView";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,17 @@ export async function GET(req: Request) {
     const d1 = env.DB;
     if (!d1) return NextResponse.json({ error: "D1 not available" }, { status: 500 });
 
-    const { results } = await d1.prepare("SELECT key, value FROM kv_store").all<{ key: string; value: string }>();
+    // Only pull the rows we are allowed to publish. This used to be
+    // `SELECT key, value FROM kv_store` — the entire store, every row, on
+    // every cache miss for every anonymous visitor — just to keep 4 of them.
+    // The store is ~234 keys and hundreds of KB, so that read alone was enough
+    // to push the worker into Error 1102 under normal homepage traffic.
+    const { results } = await d1
+      .prepare(
+        `SELECT key, value FROM kv_store WHERE key IN (${wanted.map(() => "?").join(",")})`
+      )
+      .bind(...(wanted.length > 0 ? wanted : [...PUBLIC_DATA_KEYS]))
+      .all<{ key: string; value: string }>();
     const data: Record<string, unknown> = {};
     for (const row of results ?? []) {
       if (wanted.length > 0) {

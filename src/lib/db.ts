@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { ensureD1Schema, getD1, KV_SCHEMA_SQL } from "@/lib/d1";
 import { invalidatePublicDataCache } from "@/lib/cloudflareBindings";
+import { invalidateThreadBlobCache } from "@/lib/threadBlobCache";
 
 const DB_DIR = path.join(process.cwd(), "src", "data");
 const DB_PATH = path.join(DB_DIR, "uplink.db");
@@ -105,6 +106,7 @@ export async function setKV(key: string, value: any) {
       .bind(key, serialized)
       .run();
     if (PUBLIC_DATA_KEYS.has(key)) await invalidatePublicDataCache();
+    if (key === "lobbies" || key === "registeredUsers") invalidateThreadBlobCache(key);
     return;
   }
 
@@ -127,6 +129,10 @@ export async function deleteKV(key: string) {
 }
 
 async function invalidatePublicIfNeeded(key: string) {
+  // The offer thread reads these two blobs through a short per-isolate cache
+  // (see `@/lib/threadBlobCache`). Drop it on every write so the person who
+  // just edited an offer always reads their own change straight back.
+  if (key === "lobbies" || key === "registeredUsers") invalidateThreadBlobCache(key);
   if (PUBLIC_DATA_KEYS.has(key)) await invalidatePublicDataCache();
 }
 

@@ -1,10 +1,27 @@
 import { getKV } from "@/lib/db";
+import { getThreadBlob, setThreadBlob } from "@/lib/threadBlobCache";
 import {
   getOfferThreadFamily,
   userCanViewOfferThread,
   getThreadRootId,
 } from "@/lib/lobbyLifecycle";
 import { playerAliases } from "@/lib/playerIdentity";
+
+/** `registeredUsers` drives display names, so it can be cached a touch longer. */
+const BLOB_TTL_MS: Record<string, number> = { lobbies: 3000, registeredUsers: 8000 };
+
+/**
+ * Read one of the two hot blobs, collapsing concurrent thread opens into a
+ * single D1 read per isolate per window. Writes invalidate the cache, so the
+ * only staleness possible is a few seconds for *other* viewers.
+ */
+async function readBlob(key: "lobbies" | "registeredUsers"): Promise<any | null> {
+  const hit = getThreadBlob(key, BLOB_TTL_MS[key]);
+  if (hit) return hit.value;
+  const value = await getKV(key);
+  setThreadBlob(key, value, BLOB_TTL_MS[key]);
+  return value;
+}
 
 /**
  * Load one offer thread and nothing else.
@@ -89,7 +106,10 @@ export async function loadOfferThread(
 ): Promise<OfferThreadResult> {
   if (!id) return { ok: false, status: 400, error: "Missing lobby id" };
 
-  const lobbies = ((await getKV("lobbies")) || []) as any[];
+  // Both of these are whole-store blobs. Reading them per request is what made
+  // a few thread opens in a row expensive enough to hit Error 1102, so they go
+  // through a short per-isolate cache that `db.ts` drops on every write.
+  const lobbies = ((await readBlob("lobbies")) || []) as any[];
   const seed =
     lobbies.find((l) => String(l.id) === String(id)) ||
     lobbies.find((l) => String(l.id)?.endsWith(`-${id}`));
@@ -97,7 +117,7 @@ export async function loadOfferThread(
 
   // Resolve aliases off the canonical account row so a Discord rename cannot
   // lock the owner out of their own thread.
-  const allUsers = ((await getKV("registeredUsers")) || []) as any[];
+  const allUsers = ((await readBlob("registeredUsers")) || []) as any[];
   const meRow = allUsers.find((u) => String(u.id) === String(user.id));
   const handle = String(meRow?.username || user.username || "");
   const aliases = meRow ? playerAliases(meRow) : [];

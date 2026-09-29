@@ -15,11 +15,16 @@ export async function GET(request: Request) {
   if (!rl.ok) return rateLimitResponse(rl);
 
   // Throttle-bypass stays admin-only: a forced re-check is a debugging action.
+  // Resolving the session costs an env sync plus a cookie parse, so it only
+  // happens when someone actually asked to force.
   const forceRequested = new URL(request.url).searchParams.get("force") === "1";
-  const session = await getAppSession(request).catch(() => null);
-  const uid = (session?.user as { id?: string } | undefined)?.id || "";
-  const handle = (session?.user as { username?: string } | undefined)?.username || "";
-  const force = forceRequested && Boolean(uid) && isAdminUser(uid, handle);
+  let force = false;
+  if (forceRequested) {
+    const session = await getAppSession(request).catch(() => null);
+    const uid = (session?.user as { id?: string } | undefined)?.id || "";
+    const handle = (session?.user as { username?: string } | undefined)?.username || "";
+    force = Boolean(uid) && isAdminUser(uid, handle);
+  }
 
   try {
     const status = await runAuthHealthCheck({ force });
