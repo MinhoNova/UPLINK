@@ -76,8 +76,10 @@ export function sanitizeHexColor(value: unknown): string | undefined {
   return s;
 }
 
-export function isAdminUser(userId: string, handle: string) {
-  return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
+export function isAdminUser(userId: string, _handle: string) {
+  // ID only — the handle is renameable, so matching on it let an outsider
+  // become admin by renaming their account. See `isLegacyAdmin` in `roles.ts`.
+  return ADMIN_IDS.includes(String(userId));
 }
 
 /** Strip fields users must not change via bulk /api/data writes. */

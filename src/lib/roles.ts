@@ -11,8 +11,12 @@ export const ADMIN_HANDLES = [LEGACY_ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
 
 export type UserRole = "admin" | "moderator" | "support" | "user";
 
-export function isLegacyAdmin(userId: string, handle: string): boolean {
-  return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
+export function isLegacyAdmin(userId: string, _handle: string): boolean {
+  // ID only, on purpose. The handle is a Discord username that the account
+  // owner can rename at any time, so matching on it let anyone who renamed
+  // themselves to `omarsaleh97` pass every requireAdmin check. The Discord
+  // snowflake in ADMIN_IDS is immutable and already covers both admins.
+  return ADMIN_IDS.includes(String(userId));
 }
 
 export async function ensureRolesSeeded(): Promise<Record<string, UserRole>> {

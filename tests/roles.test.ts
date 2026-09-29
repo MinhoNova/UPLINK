@@ -32,9 +32,15 @@ describe("roles", () => {
   });
 
   describe("isLegacyAdmin", () => {
-    it("recognizes the legacy admin user id and handle", () => {
+    it("recognizes the legacy admin user id", () => {
       expect(isLegacyAdmin(LEGACY_ADMIN_ID, "anything")).toBe(true);
-      expect(isLegacyAdmin("someone", LEGACY_ADMIN_HANDLE)).toBe(true);
+    });
+
+    it("does not grant admin to a stranger wearing the admin handle", () => {
+      // The handle is a renameable Discord username. Matching on it let anyone
+      // who renamed their account to the admin's handle pass every
+      // requireAdmin check, so it is no longer part of the decision.
+      expect(isLegacyAdmin("someone", LEGACY_ADMIN_HANDLE)).toBe(false);
     });
 
     it("recognizes the second admin id", () => {

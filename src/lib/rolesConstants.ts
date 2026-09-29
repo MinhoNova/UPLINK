@@ -9,6 +9,15 @@ export const ADMIN_HANDLES = [LEGACY_ADMIN_HANDLE, OMARSALEH_ADMIN_HANDLE];
 
 export type UserRole = "admin" | "moderator" | "support" | "user";
 
+/**
+ * Client-side UI gating only — it decides which admin affordances to render,
+ * never whether an action is allowed. Every privileged action is re-checked
+ * server-side by `isLegacyAdmin` in `roles.ts`, which matches the Discord id
+ * only. The handle match is kept here purely so the real admin does not stare
+ * at a stale "Access Denied" panel when their site handle has drifted from
+ * their Discord username; granting them nothing extra, since the server
+ * rejects the underlying calls either way.
+ */
 export function isPrimaryAdmin(userId: string, handle: string): boolean {
   return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
 }
