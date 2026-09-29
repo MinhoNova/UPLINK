@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getD1 } from "@/lib/d1";
 import { requireAdmin } from "@/lib/authz";
+import { invalidateThreadBlobCache } from "@/lib/threadBlobCache";
 import fs from "fs";
 import path from "path";
 
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
           .prepare("INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
           .bind(key, JSON.stringify(value))
           .run();
+        // This bypasses db.ts, so drop the thread blob cache ourselves —
+        // otherwise an open thread keeps serving the pre-seed version.
+        if (key === "lobbies" || key === "registeredUsers") invalidateThreadBlobCache(key);
         count++;
       } catch (e) {
         console.error("seed error:", key, e);

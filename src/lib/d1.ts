@@ -1,6 +1,7 @@
 import type { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import fs from "fs";
 import path from "path";
+import { invalidateThreadBlobCache } from "@/lib/threadBlobCache";
 
 export const KV_SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS kv_store (
   key TEXT PRIMARY KEY,
@@ -108,6 +109,9 @@ async function seedD1KvIfEmpty(d1: D1Database) {
   }
   if (batch.length > 0) {
     await d1.batch(batch);
+    // Cold start just filled the store; any thread blob cached earlier in this
+    // isolate is now stale, so drop it.
+    invalidateThreadBlobCache();
     console.log("D1 kv_store seeded from db.json");
   }
 }
