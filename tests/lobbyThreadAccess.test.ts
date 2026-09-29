@@ -45,7 +45,11 @@ describe("validateLobbies — applicant write scope", () => {
     expect(res.ok).toBe(true);
   });
 
-  it("blocks an applicant from adding themselves to accepted", () => {
+  // A change the applicant has no right to make is not an error — the incoming
+  // copy of that lobby is dropped and the stored one is written back. The
+  // security property is therefore "the change is not reflected", which these
+  // assert against the returned value rather than against `ok`.
+  it("an applicant cannot add themselves to accepted", () => {
     const incoming = [
       {
         ...withApplicant(),
@@ -54,22 +58,22 @@ describe("validateLobbies — applicant write scope", () => {
       },
     ];
     const res = validateLobbies([withApplicant()], incoming, APPLICANT, false);
-    expect(res.ok).toBe(false);
+    expect((res as any).value[0].accepted).toEqual([]);
   });
 
-  it("blocks an applicant from changing status", () => {
+  it("an applicant cannot change status", () => {
     const incoming = [{ ...withApplicant(), status: "completed" }];
     const res = validateLobbies([withApplicant()], incoming, APPLICANT, false);
-    expect(res.ok).toBe(false);
+    expect((res as any).value[0].status).toBe("open");
   });
 
-  it("blocks an applicant from changing the price", () => {
+  it("an applicant cannot change the price", () => {
     const incoming = [{ ...withApplicant(), pricePerRun: 1 }];
     const res = validateLobbies([withApplicant()], incoming, APPLICANT, false);
-    expect(res.ok).toBe(false);
+    expect((res as any).value[0].pricePerRun).toBe(100);
   });
 
-  it("blocks an applicant from touching another applicant's row", () => {
+  it("an applicant cannot touch another applicant's row", () => {
     const other = { applicantId: "other-2", applicantNote: "theirs" };
     const ex = { ...withApplicant(), applicants: [...withApplicant().applicants, other] };
     const incoming = {
@@ -77,21 +81,23 @@ describe("validateLobbies — applicant write scope", () => {
       applicants: [...ex.applicants, { ...other, applicantNote: "rewritten" }],
     };
     const res = validateLobbies([ex], [incoming], APPLICANT, false);
-    expect(res.ok).toBe(false);
+    const stored = (res as any).value[0].applicants.find((a: any) => a.applicantId === "other-2");
+    expect(stored.applicantNote).toBe("theirs");
   });
 
-  it("blocks an applicant from deleting another applicant", () => {
+  it("an applicant cannot delete another applicant", () => {
     const other = { applicantId: "other-2", applicantNote: "theirs" };
     const ex = { ...withApplicant(), applicants: [...withApplicant().applicants, other] };
     const incoming = { ...ex, applicants: [ex.applicants[0]] };
     const res = validateLobbies([ex], [incoming], APPLICANT, false);
-    expect(res.ok).toBe(false);
+    expect((res as any).value[0].applicants).toHaveLength(2);
   });
 
   it("still lets the owner do anything", () => {
     const incoming = [{ ...withApplicant(), status: "completed", pricePerRun: 5 }];
     const res = validateLobbies([withApplicant()], incoming, OWNER, false);
     expect(res.ok).toBe(true);
+    expect((res as any).value[0].pricePerRun).toBe(5);
   });
 
   it("still lets an accepted member do anything", () => {
@@ -99,12 +105,13 @@ describe("validateLobbies — applicant write scope", () => {
     const incoming = [{ ...ex, status: "completed" }];
     const res = validateLobbies([ex], incoming, MEMBER, false);
     expect(res.ok).toBe(true);
+    expect((res as any).value[0].status).toBe("completed");
   });
 
-  it("blocks a total stranger", () => {
+  it("a total stranger cannot change the price", () => {
     const incoming = [{ ...withApplicant(), pricePerRun: 1 }];
     const res = validateLobbies([withApplicant()], incoming, OUTSIDER, false);
-    expect(res.ok).toBe(false);
+    expect((res as any).value[0].pricePerRun).toBe(100);
   });
 });
 

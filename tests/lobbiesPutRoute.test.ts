@@ -50,6 +50,16 @@ async function put(asUser: string, lobbies: any[], role = "user") {
   return { status: res.status, body: (await res.json()) as any };
 }
 
+/**
+ * What the atomic mutator would have written. The mock does not mutate the
+ * fixture, so the security assertions below inspect this.
+ */
+async function writtenLobbies(): Promise<any[]> {
+  const outcome = await atomicMock.mock.results.at(-1)!.value;
+  expect(outcome.ok).toBe(true);
+  return outcome.value;
+}
+
 beforeEach(() => {
   atomicMock.mockClear();
 });
@@ -63,30 +73,33 @@ describe("PUT /api/lobbies", () => {
     expect(res.status).toBe(401);
   });
 
-  it("blocks a stranger overwriting a lobby they do not own", async () => {
-    const { status, body } = await put(STRANGER, [
+  // A lobby the caller does not own is no longer an error — their copy of it is
+  // dropped and the stored version is kept. That is stricter than rejecting the
+  // request, since a foreign offer now cannot be altered at all, and it stops a
+  // bystander's offer from blocking the caller's own save.
+  it("keeps a stranger's lobby byte-identical when they try to overwrite it", async () => {
+    await put(STRANGER, [
       { id: "900", ownerId: STRANGER, status: "completed", payoutStatus: "paid", accepted: [], applicants: [] },
     ]);
-    expect(status).toBe(403);
-    expect(body.error).toMatch(/not part of/);
+    expect((await writtenLobbies()).find((l) => l.id === "900")).toEqual(LOBBIES[0]);
   });
 
-  it("blocks taking ownership of another user's lobby", async () => {
-    const { status } = await put(STRANGER, [
+  it("does not let a stranger take ownership of another user's lobby", async () => {
+    await put(STRANGER, [
       { id: "900", ownerId: STRANGER, status: "standby", accepted: [], applicants: [] },
     ]);
-    expect(status).toBe(403);
+    expect((await writtenLobbies()).find((l) => l.id === "900")?.ownerId).toBe(OWNER);
   });
 
-  it("blocks forging the chat of a lobby the caller is not in", async () => {
-    const { status } = await put(STRANGER, [
+  it("does not let a stranger forge the chat of a lobby they are not in", async () => {
+    await put(STRANGER, [
       { id: "900", ownerId: OWNER, status: "standby", messages: [{ id: 9, text: "forged" }] },
     ]);
-    expect(status).toBe(403);
+    expect((await writtenLobbies()).find((l) => l.id === "900")?.messages).toEqual([{ id: 1, text: "mine" }]);
   });
 
-  it("blocks self-accepting into a lobby to unlock payment", async () => {
-    const { status } = await put(STRANGER, [
+  it("does not let a stranger self-accept into a lobby to unlock payment", async () => {
+    await put(STRANGER, [
       {
         id: "900",
         ownerId: OWNER,
@@ -96,7 +109,10 @@ describe("PUT /api/lobbies", () => {
         applicants: [],
       },
     ]);
-    expect(status).toBe(403);
+    const nine = (await writtenLobbies()).find((l) => l.id === "900");
+    expect(nine.status).toBe("standby");
+    expect(nine.payoutStatus).toBeUndefined();
+    expect(nine.accepted).toEqual([]);
   });
 
   it("still lets the owner edit their own lobby", async () => {

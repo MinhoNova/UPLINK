@@ -356,26 +356,45 @@ export function validateLobbies(
       }
       return { ok: false, error: "Cannot create lobby for another user" };
     }
-    if (JSON.stringify(lobby) !== JSON.stringify(ex) && !lobbyUserCanModify(ex, userId, isAdmin)) {
-      if (isSelfApplicantScopedChange(ex, lobby, userId)) continue;
-      return { ok: false, error: "Cannot modify lobby you are not part of" };
+    // A lobby the caller may not touch is NOT an error — their copy of it is
+    // simply dropped below and the stored version is kept. Rejecting here used
+    // to fail the entire save, and since the client PUTs the whole array it
+    // holds, every other player's offer sat in the payload: any difference
+    // (the client reads a copy without private fields such as `messages`) made
+    // the whole request fail with "Cannot modify lobby you are not part of", so
+    // a player could not add an offer of their own at all.
+    //
+    // Keeping the stored copy is stricter than the check it replaces, not
+    // looser: even a byte-identical forgery of a foreign offer is now ignored.
+    if (JSON.stringify(lobby) === JSON.stringify(ex)) continue;
+    if (lobbyUserCanModify(ex, userId, isAdmin)) {
+      const justPaid =
+        ex &&
+        !(ex.status === "completed" && ex.payoutStatus === "paid") &&
+        lobby.status === "completed" &&
+        lobby.payoutStatus === "paid";
+      if (justPaid && !hasIndependentSquadMember(lobby)) {
+        return {
+          ok: false,
+          error: "Payment rejected: requires another confirmed player. Account suspended for payment fraud attempt.",
+          fraudAttempt: { userId, lobbyId: String(lobby.id) },
+        };
+      }
+      continue;
     }
-    const justPaid =
-      ex &&
-      !(ex.status === "completed" && ex.payoutStatus === "paid") &&
-      lobby.status === "completed" &&
-      lobby.payoutStatus === "paid";
-    if (justPaid && !hasIndependentSquadMember(lobby)) {
-      return {
-        ok: false,
-        error: "Payment rejected: requires another confirmed player. Account suspended for payment fraud attempt.",
-        fraudAttempt: { userId, lobbyId: String(lobby.id) },
-      };
-    }
+    // An applicant withdrawing their own application is the one narrow change
+    // they are allowed; anything else they send about a foreign offer is
+    // discarded.
+    if (isSelfApplicantScopedChange(ex, lobby, userId)) continue;
   }
 
   const sanitized = (incoming as any[]).map((lobby) => {
     const ex = existingById.get(String(lobby.id));
+    // Not ours to write: keep what the store already holds, drop the caller's
+    // copy entirely. See the note in the loop above.
+    if (ex && !lobbyUserCanModify(ex, userId, isAdmin) && !isSelfApplicantScopedChange(ex, lobby, userId)) {
+      return ex;
+    }
     let next = lobby;
     if (ex && JSON.stringify(lobby.detectedRuns || []) !== JSON.stringify(ex.detectedRuns || [])) {
       next = { ...next, detectedRuns: ex.detectedRuns || [] };
