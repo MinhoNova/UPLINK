@@ -361,7 +361,12 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       }
       /* eslint-enable no-use-before-define */
       e.preventDefault();
-      router.push("/");
+      // Full document load, not a soft router transition. The soft transition
+      // from this page was the one that stalled for good: the thread kept
+      // showing a frozen loading screen and the only escape was the browser
+      // back button. A hard navigation is what the working path (refresh)
+      // does, so Escape now takes exactly that path.
+      window.location.href = "/";
     };
     // Capture phase: fire before any bubble-phase handler on the page can
     // swallow or preventDefault the key, so Escape always escapes.
@@ -919,7 +924,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       const member = lobby.accepted?.find((a: any) => memberIdentityKey(a) === String(currentUserId));
       if (member) {
         handleCancelMember(member);
-        router.push("/");
+        window.location.href = "/";
         addToast("You left the group.", "info");
         return;
       }
@@ -976,10 +981,12 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       splitInFlightRef.current = false;
       window.dispatchEvent(new CustomEvent("data-refresh"));
     }
-    if (memberIdentityKey(member) === String(currentUserId)) router.refresh();
     setActiveMemberAction(null);
     if (leaverSelf) {
-      router.push("/");
+      // Hard navigation: the leaver is leaving the page anyway, and the split
+      // response above already carried the authoritative lobbies — a soft
+      // transition or a `router.refresh()` here only risked another stall.
+      window.location.href = "/";
     } else {
       const focusId = splitResult.childLobby?.id || splitResult.focusLobbyId;
       const focus = updated.find((l: any) => String(l.id) === String(focusId));
@@ -1000,7 +1007,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
     }
     saveGlobalData({ lobbies: updated, notifications: updatedNotifs });
     addToast("Offer cancelled.", "info");
-    router.push("/");
+    window.location.href = "/";
   };
 
   /* ----- VOICE ----- */
@@ -1067,7 +1074,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       const stored = localStorage.getItem("uplink_voice_lobby");
       if (!stored || String(stored) !== String(l.id)) { setVoiceToken(null); localStorage.removeItem("uplink_voice_lobby"); }
     }
-    router.push(`/manage/${l.id}`);
+    window.location.href = `/manage/${l.id}`;
   };
 
   /* ----- PROFILE PREVIEW ----- */
@@ -1263,7 +1270,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
               dead end that looked frozen and had to be escaped by reloading. */}
           <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
             <button
-              onClick={() => router.push("/")}
+              onClick={() => { window.location.href = "/"; }}
               className="px-8 py-3 bg-white text-black font-black uppercase text-xs tracking-widest rounded-xl hover:bg-[#00ffff] active:scale-95 transition-all"
             >
               Return to Uplink
@@ -1305,7 +1312,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
               dataLoaded={dataLoaded}
               targetLobby={targetLobby}
               heroBg={heroBg}
-              onClose={() => router.push("/")}
+              onClose={() => { window.location.href = "/"; }}
               lobbies={lobbies}
               setLobbies={setLobbies}
               activeMemberAction={activeMemberAction}
@@ -1354,7 +1361,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
             dataLoaded={dataLoaded}
             targetLobby={targetLobby}
             heroBg={heroBg}
-            onClose={() => router.push("/")}
+            onClose={() => { window.location.href = "/"; }}
             lobbies={lobbies}
             setLobbies={setLobbies}
             activeMemberAction={activeMemberAction}
