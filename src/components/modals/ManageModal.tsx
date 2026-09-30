@@ -195,6 +195,11 @@ const ManageModal = ({
     );
    const isFootArchive = isEmbeddedFootArchive(targetLobby);
    const effectiveStatus = getEffectiveOfferStatus(targetLobby);
+   // A settled payout is a receipt, not a pending action. The payment-proof
+   // entry point keyed off the offer's state alone, so a `completed` offer kept
+   // offering to be paid again long after the money moved. Nothing is left to
+   // attach or confirm once the payout is `paid`, so the entry point goes.
+   const payoutSettled = targetLobby?.payoutStatus === 'paid';
    // A finished offer still needs its roster correctable — a scammer sitting on
    // the offer, or a member who was never really on it, has to be removable, and
    // an owner left alone on the offer is the normal state of an old one. The
@@ -514,7 +519,7 @@ return bgUrl ? (
                                       ) : null}
                                               {(currentUserId === targetLobby.ownerId || isAdmin) && (
                                                <>
-                                                  {(isFootArchive || effectiveStatus === 'unpaid' || effectiveStatus === 'completed' || effectiveStatus === 'payment_pending') && (
+                                                  {!payoutSettled && (isFootArchive || effectiveStatus === 'unpaid' || effectiveStatus === 'completed' || effectiveStatus === 'payment_pending') && (
                                                     <motion.button onClick={() => setIsPaymentModalOpen(true)} className="h-11 px-5 bg-[#ffd700]/10 border border-[#ffd700]/40 text-[#ffd700] rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:bg-[#ffd700] hover:text-black transition-all">
                                                        <CircleDollarSign className="w-4 h-4" /> PAYMENT PROOF
                                                     </motion.button>

@@ -1084,11 +1084,19 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   }, []);
 
   /* ----- PAYMENT ----- */
-  const handleDiscardProof = () => {
+  const handleDiscardProof = async () => {
     if (!targetLobby) return;
-    const updated = { ...targetLobby, status: "in_progress", paymentProof: null };
+    // Dropping the proof must not reopen a finished offer. The old code wrote
+    // `status: "in_progress"` unconditionally, so DISCARD on an `unpaid` or foot
+    // archive turned a settled-for-nothing mission back into a live one — the
+    // exact reopening the finished-offer rules exist to prevent. Keep the
+    // offer's own state and only take the proof away.
+    const finishedStatus = ["unpaid", "completed", "payment_pending"].includes(String(targetLobby.status))
+      ? String(targetLobby.status === "payment_pending" ? "unpaid" : targetLobby.status)
+      : "in_progress";
+    const updated = { ...targetLobby, status: finishedStatus, paymentProof: null };
     setLobbies((prev) => prev.map((l) => (l.id === targetLobby.id ? updated : l)));
-    saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
+    await saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
     addToast("Proof discarded.", "info");
   };
 
@@ -1107,11 +1115,16 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       addToast(res.error, "error");
       return;
     }
-    const updated = { ...targetLobby, paymentProof: res.dataUrl, status: "completed", payoutStatus: "paid", completedAt: Date.now() };
+    // Attaching a proof is not settling it. This used to mark the offer
+    // completed+paid on the very first paste, which made the CONFIRM PAYOUT
+    // step in the modal a no-op on an already-settled offer and left the
+    // payment-proof entry point sitting in the action row with nothing left to
+    // do. The proof lands here, and the payout is confirmed on purpose.
+    const updated = { ...targetLobby, paymentProof: res.dataUrl };
     setLobbies((prev) => prev.map((l) => (l.id === targetLobby.id ? updated : l)));
     const saved = await saveGlobalData({ lobbies: lobbies.map((l) => (l.id === targetLobby.id ? updated : l)) });
     if (saved) {
-      addToast("Payment proof verified — moved to History.", "success");
+      addToast("Proof attached — confirm the payout to settle it.", "success");
     } else {
       addToast("Could not save the payment proof.", "error");
     }
