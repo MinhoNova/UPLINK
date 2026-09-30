@@ -376,6 +376,12 @@ const ManageModal = ({
                 <AnimatePresence>
                   {isOpen && targetLobby && (
                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
+                         {/* EXIT — pinned to the corner of the modal so it never
+                             wraps out of view or gets buried under the action row,
+                             on any screen size. Same target as the ESC key: leave. */}
+                         <button type="button" onClick={() => onClose()} title="Exit to homepage" aria-label="Exit to homepage" className="absolute top-5 right-5 z-[130] h-12 w-12 flex items-center justify-center rounded-2xl bg-red-500/15 border-2 border-red-500/50 hover:bg-red-500 text-red-400 hover:text-white transition-all shadow-[0_0_20px_rgba(255,0,0,0.35)]">
+                            <X className="w-6 h-6" />
+                         </button>
                          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-[98vw] h-[96vh] bg-[#05050a] border-2 border-[#ff007f]/40 rounded-[3.5rem] p-1 shadow-[0_0_100px_rgba(255,0,127,0.15)] relative overflow-hidden flex flex-col">
 
                              {/* KICK/LEAVE OVERLAY - inside thread, covers content */}
@@ -615,8 +621,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                    <Star className="w-4 h-4" /> RATE SQUAD
                                                 </motion.button>
                                              )}
-                                    <motion.button onClick={() => onClose()} title="Exit to homepage" className="h-11 w-11 flex items-center justify-center bg-red-500/15 hover:bg-red-500 border border-red-500/40 hover:border-red-400 rounded-xl transition-all text-red-400 hover:text-white shrink-0 shadow-[0_0_15px_rgba(255,0,0,0.25)]"><X className="w-5 h-5 text-red-400 hover:text-white" /></motion.button>
-                                 </div>
+                                  </div>
                                 </div>
                               </div>
 

@@ -363,8 +363,10 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       e.preventDefault();
       router.push("/");
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    // Capture phase: fire before any bubble-phase handler on the page can
+    // swallow or preventDefault the key, so Escape always escapes.
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
   });
   const [electricColor, setElectricColor] = useState(0);
   const [myEffect] = useState("none");
@@ -1169,13 +1171,23 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   const serverGranted = !!seedThread?.lobbies?.some(
     (l: any) => String(l?.id) === String(lobbyId) || String(l?.id)?.endsWith(`-${lobbyId}`)
   );
-  const canView =
-    dataLoaded &&
-    targetLobby &&
-    (serverGranted || clientCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe));
   const threadPermit = targetLobby
     ? userCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases)
     : null;
+  const canView =
+    dataLoaded &&
+    targetLobby &&
+    // The owner, every admin (server verdict, seeded id/handle or session
+    // role), and anyone the server rule admits (owner/alias, accepted member,
+    // applicant, or merited history) can always enter once the thread is in
+    // hand. `serverGranted` covers the pre-payload window. Anything the server
+    // released is already individually authorised by the API route, so these
+    // branches can never widen access — they only prevent the client from
+    // denying someone the server already let in.
+    (serverGranted ||
+      isAdmin ||
+      threadPermit ||
+      clientCanViewOfferThread(targetLobby, currentUserId, currentUserDiscordHandle, currentUserAliases, adminProbe));
 
   if (!dataLoaded) {
     if (loadError) {
