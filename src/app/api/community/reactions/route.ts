@@ -15,6 +15,10 @@ export async function POST(req: NextRequest) {
 
   const { postId, type }: any = await req.json();
   if (!postId || !type) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  // Bounded here so the stored value cannot be an arbitrary string.
+  if (typeof type !== "string" || type.length > 16 || !/^[a-z0-9_-]+$/i.test(type)) {
+    return NextResponse.json({ error: "Invalid reaction" }, { status: 400 });
+  }
 
   const userId = (session.user as any).id;
 

@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { commentReactions } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { visibleCommentIds } from "@/lib/communityPostAccess";
+import { rateLimitByUser } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
   const db = await getDb();
@@ -43,12 +44,25 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const db = await getDb();
   const { session, error, status } = await getActiveSession(req);
   if (!session) return NextResponse.json({ error }, { status });
 
+  // Every other community write has a per-user cap; this one had none, so an
+  // account could toggle reactions as fast as it could send requests and grow
+  // the commentReactions table without limit.
+  const rl = await rateLimitByUser((session.user as any).id, "comment_reactions", 60, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Slow down a little." }, { status: 429 });
+  }
+
+  const db = await getDb();
   const { commentId, type }: any = await req.json();
   if (!commentId || !type) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  // The reaction kind is a stored string and was written with no length or
+  // charset bound, so the cap has to happen here rather than at render time.
+  if (typeof type !== "string" || type.length > 16 || !/^[a-z0-9_-]+$/i.test(type)) {
+    return NextResponse.json({ error: "Invalid reaction" }, { status: 400 });
+  }
 
   const userId = (session.user as any).id;
 

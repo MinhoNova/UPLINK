@@ -6,6 +6,7 @@ import { getImageMetadata, normalizeLobbyVfx } from "@/lib/imageProcess";
 import { readUserMediaFile, storeUserMediaFile } from "@/lib/userMediaStorage";
 import { isAnimatedImageUrl } from "@/lib/profileImage";
 import { fetchExternalImageBuffer } from "@/lib/fetchExternalImage";
+import { rateLimitByUser } from "@/lib/rateLimit";
 import type { VfxEntry } from "@/lib/vfxAssets";
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
   const { session, error, status } = await getActiveSession(req);
   if (!session) return NextResponse.json({ error }, { status });
 
+  // An upload is durable storage, and the URL branch makes this endpoint fetch
+  // a remote address the caller chose. Both are worth spending a budget on.
+  const rl = await rateLimitByUser(String((session.user as { id?: string }).id || ""), "lobby_vfx", 10, 60_000);
+  if (!rl.ok) return NextResponse.json({ error: "Slow down — too many uploads." }, { status: 429 });
+
   const userId = (session.user as { id?: string }).id || "";
 
   await initTables();
@@ -45,10 +51,21 @@ export async function POST(req: Request) {
   let clientPoster: Buffer | null = null;
 
   if (contentType.includes("multipart/form-data")) {
+    // Read the body only after refusing an oversized one. The size check below
+    // this ran on a buffer that `formData()` had already materialised, so the
+    // "8MB max" only applied after the upload was already in memory.
+    const declaredBytes = Number(req.headers.get("content-length") || "0");
+    if (declaredBytes > MAX_BYTES * 2) {
+      return NextResponse.json({ error: "File too large" }, { status: 413 });
+    }
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const posterFile = formData.get("poster") as File | null;
     if (!file?.size) return NextResponse.json({ error: "No file" }, { status: 400 });
+    if (file.size > MAX_BYTES) return NextResponse.json({ error: "File too large" }, { status: 413 });
+    if (posterFile?.size && posterFile.size > 1024 * 1024) {
+      return NextResponse.json({ error: "Poster too large" }, { status: 413 });
+    }
     imageBuffer = Buffer.from(await file.arrayBuffer());
     isGif = file.type.includes("gif") || file.name.toLowerCase().endsWith(".gif");
     if (posterFile?.size) {

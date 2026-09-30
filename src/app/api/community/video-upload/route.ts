@@ -45,6 +45,18 @@ export async function POST(req: NextRequest) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
+  // Reject on the declared length BEFORE reading the body. `req.formData()`
+  // buffers the entire upload into worker memory, so the size check that came
+  // after it only ran once the file was already resident — an authenticated
+  // account could post a body of any size and drive the worker into the
+  // out-of-memory crash (Error 1102) that has taken this site down before.
+  // The declared length is a claim, so it is used to refuse early; the exact
+  // per-file check below still runs on the real file.
+  const declared = Number(req.headers.get("content-length") || "0");
+  if (declared > MAX_VIDEO_BYTES + 1024 * 1024) {
+    return NextResponse.json({ error: "Video too large (max 15MB)" }, { status: 413 });
+  }
+
   const formData = await req.formData();
   const file = formData.get("video") as File | null;
   if (!file || !file.size) return NextResponse.json({ error: "No video file" }, { status: 400 });

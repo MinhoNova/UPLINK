@@ -72,7 +72,18 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Traffic counters are the admin panel's numbers, not a public statistic, and
+  // this read used to answer anyone who asked. `POST` stays open on purpose —
+  // that is how a page view gets counted — but the read-out is admin-only.
+  const auth = await getAppSession(req);
+  if (!auth) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if ((auth.user as any)?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const dayKey = todayKey();
     const uvKey = uniqueKey();

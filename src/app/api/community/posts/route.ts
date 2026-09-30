@@ -115,6 +115,17 @@ export async function POST(req: NextRequest) {
   const rl = await rateLimitByUser(String((session.user as any).id), "community_post_create", 3, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down — too many posts." }, { status: 429 });
 
+  // Refuse on the declared length before the body is read. Both branches below
+  // buffer the whole request — `formData()` for the multipart upload, `json()`
+  // for the rest — so every size check that came after this point was a check
+  // that only ran once the payload was already resident in worker memory. The
+  // per-file check further down is still the authoritative one; this only stops
+  // an oversized body from being read at all.
+  const declaredBytes = Number(req.headers.get("content-length") || "0");
+  if (declaredBytes > MAX_UPLOAD_BYTES + 64 * 1024) {
+    return NextResponse.json({ error: "Post too large (max 8MB)" }, { status: 413 });
+  }
+
   const contentType = req.headers.get("content-type") || "";
   let content: string, tagsRaw: string, imageUrl: string | null, visibilityRaw: string;
   let file: File | null = null;
