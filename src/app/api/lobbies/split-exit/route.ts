@@ -8,6 +8,15 @@ import {
   splitLobbyAfterMemberExit,
 } from "@/lib/lobbyLifecycle";
 
+/** An offer past its mission: kicking there may correct the roster, never re-open it. */
+const FINISHED_OFFER_STATUSES = new Set([
+  "completed",
+  "unpaid",
+  "payment_pending",
+  "cancelled",
+  "failed",
+]);
+
 export async function POST(req: Request) {
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -49,6 +58,19 @@ export async function POST(req: Request) {
     }
     if (isKick && !isAdmin && !isOwner) {
       abortReason = "Not allowed";
+      return undefined;
+    }
+    // Removing a member from an offer that is already finished is a roster
+    // correction, and stays one: it must carry zero completed runs. A member
+    // exit with runs attached splits the offer and republishes whatever is left
+    // as a brand new active offer — on a completed (already paid) offer that
+    // turns one finished payout into an endless chain of fresh ones, and on an
+    // unpaid one it is a way to dodge paying for runs already played. Both are
+    // the reason kicks used to be hidden here entirely; the roster edit they
+    // also blocked is legitimate, so the block moved to the part that is not.
+    const finished = FINISHED_OFFER_STATUSES.has(String((lobby as any).status || "standby"));
+    if (finished && completed > 0) {
+      abortReason = "This offer is already finished — members can only be removed from its roster, with no runs attributed.";
       return undefined;
     }
     const splitResult = splitLobbyAfterMemberExit(

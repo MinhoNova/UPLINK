@@ -195,6 +195,15 @@ const ManageModal = ({
     );
    const isFootArchive = isEmbeddedFootArchive(targetLobby);
    const effectiveStatus = getEffectiveOfferStatus(targetLobby);
+   // A finished offer still needs its roster correctable — a scammer sitting on
+   // the offer, or a member who was never really on it, has to be removable, and
+   // an owner left alone on the offer is the normal state of an old one. The
+   // block on kicking here was never about the roster: with completed runs
+   // attached, a member exit splits the offer and republishes the remainder as
+   // a new active offer, which is how a finished (already paid) offer could be
+   // milked for more runs and more rank. So a finished offer allows the
+   // removal, pinned to zero runs — a roster correction, never a reopening.
+   const isFinishedOffer = ["unpaid", "completed", "cancelled", "payment_pending", "failed"].includes(effectiveStatus);
    const canSeeApplicants = String(targetLobby?.ownerId) === String(currentUserId) || isAdmin;
    const canEditOffer = !isFootArchive && !["unpaid", "completed", "cancelled", "payment_pending", "failed"].includes(effectiveStatus) && (!targetLobby?.status || targetLobby.status === "standby" || targetLobby.status === "in_progress");
 
@@ -387,8 +396,8 @@ const ManageModal = ({
                              {/* KICK/LEAVE OVERLAY - inside thread, covers content */}
                              {activeMemberAction && (
                                  <div className="absolute z-[100] mt-2 bg-[#05050a] border border-[#ff007f]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-40">
-                                     <span className="text-[8px] font-black text-gray-500 uppercase px-2">Completed Runs</span>
-                                     {Array.from({ length: maxExitRuns + 1 }, (_, i) => i).map(num => (
+                                      <span className="text-[8px] font-black text-gray-500 uppercase px-2">{isFinishedOffer ? "Remove from roster" : "Completed Runs"}</span>
+                                      {(isFinishedOffer ? [0] : Array.from({ length: maxExitRuns + 1 }, (_, i) => i)).map(num => (
                                          <button 
                                              key={num} 
                                              onClick={() => {
@@ -696,7 +705,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                    <motion.button onClick={() => { const cmd = `/inv ${occupant.name}-${occupant.realm?.replace(/\s+/g, '')}`; navigator.clipboard.writeText(cmd); addToast(`Copied: ${cmd}`, "success"); }} className="w-full py-2 bg-white/5 border border-[#00ffff]/30 rounded-lg text-[9px] text-[#00ffff] font-black uppercase tracking-widest hover:bg-[#00ffff] hover:text-black transition-all flex items-center justify-center gap-1.5"> Copy /inv</motion.button>
                                                               </>
                                                            )}
-                                                                {!isPendingInvite && !occupant.leftAt && !occupant.runsAtExit && !isFootArchive && targetLobby.status !== 'unpaid' && targetLobby.status !== 'completed' && targetLobby.status !== 'cancelled' && targetLobby.status !== 'payment_pending' && (currentUserId === targetLobby.ownerId || isAdmin) && (
+                                                                {!isPendingInvite && !occupant.leftAt && !occupant.runsAtExit && !isFootArchive && (currentUserId === targetLobby.ownerId || isAdmin) && (
                                                                       <motion.button onClick={() => setActiveMemberAction({ lobbyId: targetLobby.id, member: occupant, isKick: true })} className="w-full py-2 bg-red-500/20 text-red-500 rounded-lg font-black uppercase text-[9px] tracking-widest border border-red-500/30 hover:bg-red-500 hover:text-white transition-all">KICK</motion.button>
                                                                 )}
                                                         </div>
