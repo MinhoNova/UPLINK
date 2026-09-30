@@ -139,6 +139,36 @@ const ManageModal = ({
     isAdmin,
   } = usePage();
 
+  const [scamReason, setScamReason] = useState("");
+
+  const submitScamReport = async (lobby: any, reason: string) => {
+    if (!lobby || !reason.trim()) {
+      addToast("Please describe what happened before submitting.", "error");
+      return;
+    }
+    try {
+      const res = await fetch("/api/lobbies/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lobbyId: String(lobby.id),
+          reason: reason.trim(),
+          details: "",
+        }),
+      });
+      const data: any = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setReportScamTarget(null);
+        setScamReason("");
+        addToast("Report filed. Our team will review it shortly.", "success");
+      } else {
+        addToast(data?.error || "Could not file the report — please try again.", "error");
+      }
+    } catch {
+      addToast("Could not file the report — please try again.", "error");
+    }
+  };
+
   const sortApplicants = (apps: any[]) =>
     [...apps].sort((a, b) => {
       const aClub = getUserTier(a.applicantId || a.userId) === "secret_club" ? 0 : 1;
@@ -1074,10 +1104,19 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                              <ShieldAlert className="w-8 h-8 text-red-500" />
                                           </div>
                                           <h3 className="text-xl font-black text-white mb-2 uppercase tracking-wider">CONFIRM SCAM REPORT</h3>
-                                          <p className="text-red-500 text-[10px] font-black uppercase tracking-widest mb-2">WARNING: SUSPENSION PROTOCOL</p>
-                                          <p className="text-gray-200 text-[11px] font-black uppercase tracking-tight leading-relaxed mb-6">
-                                             Reporting this offer will <span className="text-white underline decoration-red-500 decoration-2">immediately suspend</span> both the poster's account and your account pending a manual review by support.
+                                          <p className="text-red-500 text-[10px] font-black uppercase tracking-widest mb-2">REPORTED TO MODERATION</p>
+                                          <p className="text-gray-200 text-[11px] font-black uppercase tracking-tight leading-relaxed mb-4">
+                                             This report goes straight to our moderation team. We review the thread and take action if the owner scammed you. Do not file false reports.
                                           </p>
+
+                                          <textarea
+                                             value={scamReason}
+                                             onChange={(e) => setScamReason(e.target.value)}
+                                             placeholder="What happened? (e.g. took payment and never delivered the run)"
+                                             maxLength={500}
+                                             rows={3}
+                                             className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-red-400/40 resize-none mb-4 placeholder:text-gray-600"
+                                          />
                                           
                                           <div
                                              onMouseDown={() => {
@@ -1092,29 +1131,7 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                    if (pct >= 100) {
                                                       clearInterval(holdTimerRef.current);
                                                       holdTimerRef.current = null;
-                                                      const ownerHandle = reportScamTarget.ownerHandle || reportScamTarget.ownerDiscordName;
-                                                      const isAdminOwner = ownerHandle === "minhonovazen" || String(reportScamTarget.ownerId) === "1497295886223544471";
-                                                      if (isAdminOwner) {
-                                                         if (currentUserDiscordHandle) {
-                                                            const updatedBanned = [...bannedUsers, currentUserDiscordHandle];
-                                                            setBannedUsers(updatedBanned);
-                                                            saveGlobalData({ bannedUsers: updatedBanned });
-                                                         }
-                                                         addToast("Report submitted. Reporter suspended.", "success");
-                                                      } else {
-                                                         if (ownerHandle && ownerHandle !== currentUserDiscordHandle) {
-                                                            const updatedBanned = [...bannedUsers, ownerHandle];
-                                                            setBannedUsers(updatedBanned);
-                                                            saveGlobalData({ bannedUsers: updatedBanned });
-                                                         }
-                                                          const ownerId = String(reportScamTarget.ownerId || "");
-                                                          const newNotifications = [...notifications, { id: Date.now(), toUser: ownerHandle, toUserId: ownerId || undefined, message: "Your offer was reported as a scam. Your account is suspended pending review.", type: "system_alert" }];
-                                                         setNotifications(newNotifications);
-                                                         saveGlobalData({ notifications: newNotifications });
-                                                         addToast("Report submitted. Owner suspended.", "success");
-                                                      }
-                                                      setReportScamTarget(null);
-                                                      setHoldProgress(0);
+                                                      submitScamReport(reportScamTarget, scamReason);
                                                    }
                                                 }, 30);
                                              }}
@@ -1128,7 +1145,9 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                              }}
                                              className={`relative w-full py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all cursor-pointer overflow-hidden select-none border ${holdProgress > 0 ? 'bg-black text-white border-red-500' : 'bg-red-600/10 text-red-500 hover:bg-red-600/20 hover:text-white border-red-500/30'}`}
                                              style={{
-                                                transform: holdProgress > 0 ? `translate(${(Math.random() - 0.5) * (holdProgress / 15)}px, ${(Math.random() - 0.5) * (holdProgress / 15)}px)` : 'none'
+                                                transform: holdProgress > 0 ? `translate(${(Math.random() - 0.5) * (holdProgress / 15)}px, ${(Math.random() - 0.5) * (holdProgress / 15)}px)` : 'none',
+                                                pointerEvents: !scamReason.trim() ? 'none' : undefined,
+                                                opacity: !scamReason.trim() ? 0.4 : undefined,
                                              }}
                                           >
                                              {/* The Filling Progress Bar - FORCE VISIBLE */}

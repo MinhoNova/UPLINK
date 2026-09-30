@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Flag, Loader2, Trash2, X } from "lucide-react";
+import { Flag, Loader2, ShieldAlert, Trash2, X } from "lucide-react";
 
 type ReportRow = {
   id: number;
@@ -15,17 +15,41 @@ type ReportRow = {
   reporterName: string;
 };
 
+type LobbyReportRow = {
+  id: string;
+  lobbyId: string;
+  reporterId: string;
+  reporterName: string;
+  reason: string;
+  details?: string;
+  createdAt: number;
+  lobbyTitle: string;
+  lobbyCategory: string;
+  ownerId: string | null;
+  ownerName: string;
+};
+
 export default function AdminModerationPanel() {
   const [reports, setReports] = useState<ReportRow[]>([]);
+  const [lobbyReports, setLobbyReports] = useState<LobbyReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyLobbyId, setBusyLobbyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch("/api/admin/moderation/reports")
-      .then((r) => r.json())
-      .then((d: any) => setReports(d.reports || []))
-      .catch(() => setReports([]))
+    Promise.all([
+      fetch("/api/admin/moderation/reports").then((r) => r.json()),
+      fetch("/api/admin/moderation/lobby-reports").then((r) => r.json()),
+    ])
+      .then(([a, b]: [any, any]) => {
+        setReports(a.reports || []);
+        setLobbyReports(b.reports || []);
+      })
+      .catch(() => {
+        setReports([]);
+        setLobbyReports([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -61,6 +85,20 @@ export default function AdminModerationPanel() {
       if (res.ok) setReports((prev) => prev.filter((r) => r.id !== reportId));
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const dismissLobbyReport = async (reportId: string) => {
+    setBusyLobbyId(reportId);
+    try {
+      const res = await fetch("/api/admin/moderation/lobby-reports", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId }),
+      });
+      if (res.ok) setLobbyReports((prev) => prev.filter((r) => r.id !== reportId));
+    } finally {
+      setBusyLobbyId(null);
     }
   };
 
@@ -125,6 +163,72 @@ export default function AdminModerationPanel() {
           ))}
         </div>
       )}
+
+      <div className="mt-12 pt-8 border-t border-white/10">
+        <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 flex items-center gap-4">
+          <ShieldAlert className="text-red-500 w-9 h-9" /> Offer Scam Reports
+        </h3>
+        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-6">
+          Scam reports filed from inside a thread — review the thread, then ban the owner or dismiss
+        </p>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
+          </div>
+        ) : lobbyReports.length === 0 ? (
+          <p className="text-gray-600 text-sm italic p-8 bg-black/20 rounded-2xl border border-dashed border-white/5 text-center">
+            No scam reports.
+          </p>
+        ) : (
+          <div className="grid gap-4">
+            {lobbyReports.map((r) => (
+              <div
+                key={r.id}
+                className="p-6 bg-black/40 rounded-2xl border border-red-500/25 hover:border-red-500/50 transition-all"
+              >
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1">
+                      Reported by {r.reporterName}
+                    </p>
+                    <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-2">
+                      Offer owner: {r.ownerName} · {new Date(r.createdAt).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-red-400/90 font-bold mb-1">
+                      {r.lobbyTitle} <span className="text-gray-500 normal-case">({r.lobbyCategory})</span>
+                    </p>
+                    <p className="text-xs text-gray-300 mb-2">Reason: {r.reason}</p>
+                    {r.details && (
+                      <p className="text-sm text-gray-300 bg-white/[0.03] rounded-xl p-4 border border-white/5 line-clamp-4">
+                        {r.details}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={`/manage/${r.lobbyId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                  >
+                    Open Thread
+                  </a>
+                  <button
+                    type="button"
+                    disabled={busyLobbyId === r.id}
+                    onClick={() => dismissLobbyReport(r.id)}
+                    className="px-4 py-2 bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {busyLobbyId === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />} Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
