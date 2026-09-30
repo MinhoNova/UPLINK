@@ -464,6 +464,23 @@ export function validateLobbies(
           fraudAttempt: { userId, lobbyId: String(lobby.id) },
         };
       }
+      // An offer may not be started while the owner is the only member. The
+      // squad roster is the point of these missions: starting alone papered a
+      // solo "run" as a real one, minted rank out of nothing, and when the
+      // server closed the hole on read the started status silently reverted on
+      // the next refresh. Reject the transition outright instead. A mission that
+      // is ALREADY in_progress with a missionStartTime (a partner left mid-run)
+      // is untouched — only the start itself needs a squad.
+      const justStarted =
+        !(ex.status === "in_progress" && ex.missionStartTime) &&
+        (lobby.status === "in_progress" || !!lobby.missionStartTime) &&
+        !isAdmin;
+      if (justStarted && !hasIndependentSquadMember(lobby)) {
+        return {
+          ok: false,
+          error: "Cannot start a mission without another member in the squad.",
+        };
+      }
       continue;
     }
     // An applicant withdrawing their own application is the one narrow change

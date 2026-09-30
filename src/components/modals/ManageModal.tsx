@@ -13,7 +13,7 @@ import { toStorableImageDataUrl } from "@/lib/inlineImage";
 import GamePortrait from "@/components/aion2/GamePortrait";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { getAverageRating } from "@/components/RankBadge";
-import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
+import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, hasIndependentSquadMember, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 
 function applicantProfileHref(a: any): string {
   if (!a?.gameCharacterId || !a?.serverId) return "";
@@ -469,16 +469,20 @@ return bgUrl ? (
                                                  </motion.button>
                                              )}
 
-                                             {(!targetLobby.status || targetLobby.status === 'standby') && !targetLobby.missionStartTime && !squadRolesFilled(targetLobby.roles) && (
-                                                <motion.button onClick={() => {
+{(!targetLobby.status || targetLobby.status === 'standby') && !targetLobby.missionStartTime && !squadRolesFilled(targetLobby.roles) && (
+                                                <motion.button disabled={!hasIndependentSquadMember(targetLobby)} onClick={() => {
+                                                   if (!hasIndependentSquadMember(targetLobby)) {
+                                                      addToast("You need another member in the squad to start the mission.", "error");
+                                                      return;
+                                                   }
                                                    const upd = manualStartMission(targetLobby);
                                                    setTargetLobby(upd);
                                                    handleUpdateLobby(upd);
                                                    addToast(squadRolesFilled(targetLobby.roles) ? "Mission started!" : "Mission started with a partial squad.", "success");
-                                                }} className="h-11 px-5 bg-green-500/15 text-green-400 border border-green-500/40 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_25px_rgba(34,197,94,0.18)] flex items-center gap-2 hover:bg-green-500 hover:text-black active:scale-95 transition-all">
+                                                }} className={`h-11 px-5 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_25px_rgba(34,197,94,0.18)] flex items-center gap-2 transition-all active:scale-95 ${hasIndependentSquadMember(targetLobby) ? 'bg-green-500/15 text-green-400 border border-green-500/40 hover:bg-green-500 hover:text-black' : 'bg-white/[0.03] text-gray-600 border border-white/50 cursor-not-allowed opacity-60'}`}>
                                                    <Zap className="w-4 h-4" /> START {!squadRolesFilled(targetLobby.roles) ? "· PARTIAL SQUAD" : ""}
                                                 </motion.button>
-                                             )}
+                                              )}
 
                                              {canOwnerCancelLobby(targetLobby) && (
                                                 <motion.button onClick={() => {
@@ -611,7 +615,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                    <Star className="w-4 h-4" /> RATE SQUAD
                                                 </motion.button>
                                              )}
-                                    <motion.button onClick={() => onClose()} className="h-11 w-11 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl transition-all text-gray-500 hover:text-white shrink-0"><X className="w-5 h-5" /></motion.button>
+                                    <motion.button onClick={() => onClose()} title="Exit to homepage" className="h-11 w-11 flex items-center justify-center bg-red-500/15 hover:bg-red-500 border border-red-500/40 hover:border-red-400 rounded-xl transition-all text-red-400 hover:text-white shrink-0 shadow-[0_0_15px_rgba(255,0,0,0.25)]"><X className="w-5 h-5 text-red-400 hover:text-white" /></motion.button>
                                  </div>
                                 </div>
                               </div>

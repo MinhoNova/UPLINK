@@ -34,6 +34,14 @@ const mine = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+// A squad that really has a second member on it: accepted keeps the
+// applicantId the apply route stamped from the member's own session.
+const withMate = (over: Record<string, unknown> = {}) =>
+  mine({
+    accepted: [{ applicantId: "1472005392849703025", status: "confirmed" }],
+    ...over,
+  });
+
 const theirs = (over: Record<string, unknown> = {}) => ({
   id: "1790139313194",
   ownerId: STRANGER,
@@ -48,8 +56,8 @@ const theirs = (over: Record<string, unknown> = {}) => ({
 
 describe("owner actions on the thread page", () => {
   it("saves a Start Mission transition on the owner's own lobby", () => {
-    const stored = [mine()];
-    const incoming = [mine({ status: "in_progress" })];
+    const stored = [withMate()];
+    const incoming = [withMate({ status: "in_progress" })];
     const res = validateLobbies(stored, incoming, OWNER, false);
     expect(res.ok).toBe(true);
     expect((ok(res))[0].status).toBe("in_progress");
@@ -57,8 +65,8 @@ describe("owner actions on the thread page", () => {
 
   it("saves the transition while a foreign offer sits in the same payload", () => {
     // The client holds both lobbies and PUTs the array whole.
-    const stored = [mine(), theirs()];
-    const incoming = [mine({ status: "in_progress" }), theirs()];
+    const stored = [withMate(), theirs()];
+    const incoming = [withMate({ status: "in_progress" }), theirs()];
     const res = validateLobbies(stored, incoming, OWNER, false);
     expect(res.ok).toBe(true);
   });
@@ -66,8 +74,8 @@ describe("owner actions on the thread page", () => {
   it("saves the transition when the client's copy of a foreign offer has extra fields", () => {
     // The thread endpoint returns a scoped copy, so a field the owner cannot
     // see (or a field the browser added) makes the two differ byte for byte.
-    const stored = [mine(), theirs()];
-    const incoming = [mine({ status: "in_progress" }), theirs({ clientOnlyField: true, status: "standby" })];
+    const stored = [withMate(), theirs()];
+    const incoming = [withMate({ status: "in_progress" }), theirs({ clientOnlyField: true, status: "standby" })];
     const res = validateLobbies(stored, incoming, OWNER, false);
     expect(res.ok).toBe(true);
     // ...and the stored copy is what survives.
@@ -79,17 +87,45 @@ describe("owner actions on the thread page", () => {
   it("saves the transition when the foreign offer is missing messages the owner read", () => {
     // `messages` is stripped for non-members, so the owner's client copy has an
     // empty array where the store has the real chat.
-    const stored = [mine(), theirs({ messages: [{ id: 1, text: "secret" }] })];
-    const incoming = [mine({ status: "in_progress" }), theirs({ messages: [] })];
+    const stored = [withMate(), theirs({ messages: [{ id: 1, text: "secret" }] })];
+    const incoming = [withMate({ status: "in_progress" }), theirs({ messages: [] })];
     const res = validateLobbies(stored, incoming, OWNER, false);
     expect(res.ok).toBe(true);
     const kept = (ok(res)).find((l) => l.id === "1790139313194");
     expect(kept.messages).toHaveLength(1);
   });
 
-  it("still applies the owner's own edit rather than the stored copy", () => {
+  it("refuses to start the mission with an empty squad", () => {
     const stored = [mine()];
-    const incoming = [mine({ status: "in_progress", serviceName: "updated name" })];
+    const incoming = [mine({ status: "in_progress" })];
+    const res = validateLobbies(stored, incoming, OWNER, false);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toMatch(/without another member/);
+  });
+
+  it("refuses to start while the only member is still a pending invite", () => {
+    const stored = [mine()];
+    const incoming = [mine({
+      status: "in_progress",
+      accepted: [{ applicantId: "1472005392849703025", status: "invited", invitedAt: 1 }],
+    })];
+    const res = validateLobbies(stored, incoming, OWNER, false);
+    expect(res.ok).toBe(false);
+  });
+
+  it("refuses to start while the only members are unaccepted applicants", () => {
+    const stored = [mine()];
+    const incoming = [mine({
+      status: "in_progress",
+      applicants: [{ applicantId: "1472005392849703025" }],
+    })];
+    const res = validateLobbies(stored, incoming, OWNER, false);
+    expect(res.ok).toBe(false);
+  });
+
+  it("still applies the owner's own edit rather than the stored copy", () => {
+    const stored = [withMate()];
+    const incoming = [withMate({ status: "in_progress", serviceName: "updated name" })];
     const res = validateLobbies(stored, incoming, OWNER, false);
     const saved = (ok(res))[0];
     expect(saved.status).toBe("in_progress");
@@ -133,15 +169,15 @@ describe("saving from the thread page, which only holds one offer's family", () 
   ];
 
   it("accepts a partial array that omits offers the caller does not own", () => {
-    const stored = [mine(), ...otherOffers];
-    const res = validateLobbies(stored, [mine({ status: "in_progress" })], OWNER, false);
+    const stored = [withMate(), ...otherOffers];
+    const res = validateLobbies(stored, [withMate({ status: "in_progress" })], OWNER, false);
     expect(res.ok).toBe(true);
     expect((ok(res))[0].status).toBe("in_progress");
   });
 
   it("does not delete the omitted offers", () => {
-    const stored = [mine(), ...otherOffers];
-    const res = validateLobbies(stored, [mine({ status: "in_progress" })], OWNER, false);
+    const stored = [withMate(), ...otherOffers];
+    const res = validateLobbies(stored, [withMate({ status: "in_progress" })], OWNER, false);
     expect(res.ok).toBe(true);
     // The returned array is what gets written, so it must still carry them.
     const ids = (ok(res)).map((l) => String(l.id)).sort();

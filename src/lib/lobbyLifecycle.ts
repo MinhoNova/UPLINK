@@ -1277,7 +1277,11 @@ export function repairLobbyRoles(lobby: any): any {
   const isFull = squadRolesFilled(roles);
   let status = lobby.status || "standby";
   let missionStartTime = lobby.missionStartTime;
-  if (!isFull && status === "in_progress") {
+  if (!isFull && status === "in_progress" && !hasIndependentSquadMember(lobby)) {
+    // A start without a real squad never happened server-side either (the save
+    // gate rejects it); normalizing it here used to be the *only* guard, which
+    // made a legitimately started mission with one member flip back to standby
+    // the moment the page reloaded. Only reset when no real member exists.
     status = "standby";
     missionStartTime = undefined;
   }

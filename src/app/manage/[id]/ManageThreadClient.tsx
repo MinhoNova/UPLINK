@@ -343,25 +343,10 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
   const [ratePickerData, setRatePickerData] = useState<any>(null);
   const [ratingModalData, setRatingModalData] = useState<any>(null);
 
-  /* ----- ESC: close the topmost overlay, otherwise leave the thread ----- */
+  /* ----- ESC: leave the thread to the homepage ----- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented) return;
-      if (
-        deleteConfirmation ||
-        reportScamTarget ||
-        ratePickerData ||
-        ratingModalData ||
-        isPaymentModalOpen
-      ) {
-        e.preventDefault();
-        setDeleteConfirmation(null);
-        setReportScamTarget(null);
-        setRatePickerData(null);
-        setRatingModalData(null);
-        setIsPaymentModalOpen(false);
-        return;
-      }
       // Never bail out mid-transaction: a split/accept/payment write is in
       // flight and navigating away would leave the lobby half-saved.
       // These refs are declared further down, but this is a click handler: it

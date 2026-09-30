@@ -66,8 +66,15 @@ describe("inline media in the lobbies blob", () => {
   });
 
   it("leaves the rest of the save alone", () => {
-    const res = validateLobbies([lobby()], [lobby({ status: "in_progress", messages: [{ id: 1, image: bigDataUrl(3000) }] })], OWNER, false);
+    const res = validateLobbies(
+      [lobby({ accepted: [{ applicantId: "1472005392849703025", status: "confirmed" }] })],
+      [lobby({ status: "in_progress", accepted: [{ applicantId: "1472005392849703025", status: "confirmed" }], messages: [{ id: 1, image: bigDataUrl(3000) }] })],
+      OWNER,
+      false
+    );
     const saved = ok(res)[0];
+    // A real accepted member makes the start legal, so the oversized image is
+    // still dropped while the status survives.
     expect(saved.status).toBe("in_progress");
   });
 
