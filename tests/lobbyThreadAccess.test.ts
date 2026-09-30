@@ -100,12 +100,81 @@ describe("validateLobbies — applicant write scope", () => {
     expect((res as any).value[0].pricePerRun).toBe(5);
   });
 
-  it("still lets an accepted member do anything", () => {
+  it("stops an accepted member moving the offer's lifecycle", () => {
+    // A squad member used to hold the same authority as the owner over the
+    // whole lobby. Completing an offer is the owner's decision — it is what
+    // mints rank and settles payment — so a member's copy of `status` is
+    // discarded and the stored value kept.
     const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }] };
     const incoming = [{ ...ex, status: "completed" }];
     const res = validateLobbies([ex], incoming, MEMBER, false);
     expect(res.ok).toBe(true);
-    expect((res as any).value[0].status).toBe("completed");
+    expect((res as any).value[0].status).toBe("open");
+  });
+
+  it("stops a member rewriting the payment state or the owner", () => {
+    const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }] };
+    const incoming = [
+      { ...ex, payoutStatus: "paid", ownerId: OUTSIDER, paymentProof: { dataUrl: "x" } },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    const stored = (res as any).value[0];
+    expect(stored.payoutStatus).toBe("unpaid");
+    expect(stored.ownerId).toBe(ex.ownerId);
+    expect(stored.paymentProof).toBeUndefined();
+  });
+
+  it("lets a member post, vote, and remove themselves", () => {
+    const ex = {
+      ...baseLobby(),
+      accepted: [{ applicantId: MEMBER }, { applicantId: OUTSIDER }],
+      messages: [],
+    };
+    const incoming = [
+      {
+        ...ex,
+        messages: [{ id: "m1", userId: MEMBER, text: "on my way" }],
+        votes: [{ userId: MEMBER, value: true }],
+        accepted: [{ applicantId: MEMBER }], // left; OUTSIDER untouched
+      },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    const stored = (res as any).value[0];
+    expect(stored.messages).toHaveLength(1);
+    expect(stored.votes).toHaveLength(1);
+    expect(stored.accepted.map((m: any) => m.applicantId)).toEqual([MEMBER]);
+  });
+
+  it("stops a member adding a made-up member to the squad", () => {
+    const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }] };
+    const incoming = [
+      { ...ex, accepted: [{ applicantId: MEMBER }, { applicantId: "alt-1" }] },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    expect((res as any).value[0].accepted.map((m: any) => m.applicantId)).toEqual([MEMBER]);
+  });
+
+  it("stops even the owner reassigning the offer or resetting a rank marker", () => {
+    const ex = { ...baseLobby(), rankAwardedBooster: true };
+    const incoming = [{ ...ex, ownerId: OUTSIDER, rankAwardedBooster: false }];
+    const res = validateLobbies([ex], incoming, OWNER, false);
+    expect(res.ok).toBe(true);
+    const stored = (res as any).value[0];
+    expect(stored.ownerId).toBe(OWNER);
+    expect(stored.rankAwardedBooster).toBe(true);
+  });
+
+  it("still lets the owner run their own offer", () => {
+    const ex = { ...baseLobby() };
+    const res = validateLobbies([ex], [{ ...ex, status: "in_progress", missionStartTime: 1 }], "owner-1", false);
+    // Starting still needs a squad member, so this is refused on that ground —
+    // which is the point: the owner is checked on the mission rules, not on
+    // being able to write whatever they like.
+    expect(res.ok).toBe(false);
+    expect((res as any).error).toMatch(/without another member/i);
   });
 
   it("a total stranger cannot change the price", () => {

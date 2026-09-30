@@ -252,6 +252,74 @@ function memberUserId(member: { applicantId?: string; userId?: string; id?: stri
 }
 
 /**
+ * Fields only the server (or an admin) may set. A non-admin caller — including
+ * the offer's own owner, and including any accepted member — cannot write these
+ * through a normal save. They are clamped back to the stored value rather than
+ * the whole save being rejected, so a client that still sends them (or a
+ * hand-rolled request that does) simply has the forgery discarded.
+ */
+const SERVER_OWNED_LOBBY_FIELDS = [
+  "id",
+  "ownerId",
+  "rankAwardedPoster",
+  "rankAwardedBooster",
+  "createdAt",
+] as const;
+
+/** Identity of a member entry, stable across a rename. */
+function memberKey(member: any): string {
+  return String(member?.applicantId || member?.userId || member?.id || "");
+}
+
+/**
+ * Clamp the fields a non-admin writer is not allowed to change.
+ *
+ * A member of the squad was previously handed the same authority as the owner
+ * over the whole lobby — status, payout state, the owner id, the payment proof,
+ * the whole roster. That let any accepted player rewrite an offer they were on
+ * (and, with a roster they supplied themselves, mint rank). Only the owner may
+ * move the offer through its lifecycle; a member may still post messages, cast
+ * their own completion vote, and remove themselves.
+ */
+function clampMemberWrite(ex: any, lobby: any, userId: string): any {
+  const uid = String(userId);
+  let next = { ...lobby };
+
+  // Everything not on this short list is frozen to the stored value for a
+  // member: status, payoutStatus, paymentProof, ownerId, roster, content…
+  // `accepted` is listed because the block below owns that field specifically —
+  // a member may remove themselves, and nothing else about it moves.
+  const MEMBER_WRITABLE = new Set(["messages", "votes", "footLedger", "accepted"]);
+  for (const key of Object.keys(next)) {
+    if (MEMBER_WRITABLE.has(key)) continue;
+    if (JSON.stringify(next[key]) === JSON.stringify(ex[key])) continue;
+    next[key] = ex[key];
+  }
+  // …and the same list protects the member from the server-owned fields too, in
+  // case one of them is ever added to MEMBER_WRITABLE.
+  for (const f of SERVER_OWNED_LOBBY_FIELDS) {
+    if (f in ex && JSON.stringify((next as any)[f]) !== JSON.stringify((ex as any)[f])) {
+      (next as any)[f] = (ex as any)[f];
+    }
+  }
+  // A member may withdraw themselves from the squad, and may not touch anyone
+  // else's row or add anyone.
+  if (Array.isArray(ex.accepted)) {
+    const exAccepted = ex.accepted as any[];
+    const nextAccepted = Array.isArray(next.accepted) ? (next.accepted as any[]) : exAccepted;
+    const filtered = nextAccepted.filter((m) => {
+      const k = memberKey(m);
+      const stored = exAccepted.find((s) => memberKey(s) === k);
+      if (k === uid) return true; // may leave
+      if (!stored) return false; // may not add
+      return JSON.stringify(m) === JSON.stringify(stored); // may not edit others
+    });
+    next = { ...next, accepted: filtered };
+  }
+  return next;
+}
+
+/**
  * True when the only thing that moved is the caller's own row in `applicants`
  * — applying, withdrawing, or editing their own note.
  *
@@ -520,6 +588,21 @@ export function validateLobbies(
       return ex;
     }
     let next = lobby;
+    // Server-owned identity fields and rank markers are never the client's to
+    // set, whoever is writing — the rank markers in particular decide whether a
+    // payout mints rank, and the payout state is what the payment flow reads.
+    if (ex) {
+      for (const f of SERVER_OWNED_LOBBY_FIELDS) {
+        if (f in (ex as any) && JSON.stringify((next as any)[f]) !== JSON.stringify((ex as any)[f])) {
+          (next as any)[f] = (ex as any)[f];
+        }
+      }
+    }
+    // A member of the squad is not the owner: freeze every lifecycle field.
+    const isOwner = ex && String((ex as any).ownerId) === String(userId);
+    if (ex && !isOwner && !isAdmin) {
+      next = clampMemberWrite(ex, next, userId);
+    }
     if (ex && JSON.stringify(lobby.detectedRuns || []) !== JSON.stringify(ex.detectedRuns || [])) {
       next = { ...next, detectedRuns: ex.detectedRuns || [] };
     }
