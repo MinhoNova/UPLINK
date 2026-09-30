@@ -18,7 +18,7 @@ import { resolveHeroBg, type HeroBgKey } from "@/lib/heroBg";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
-import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer } from "@/lib/lobbyLifecycle";
+import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
@@ -225,8 +225,22 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
 
   const historyOffers = useMemo(() => {
     if (!meId) return [];
-    return (lobbies || []).filter((l: any) => String(l.category || "").toLowerCase() !== "pvp" && !isRemovedDungeonOffer(l) && (l.status === "completed" || l.status === "failed")).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
-  }, [lobbies, meId]);
+    // This list used to be every finished offer on the site, so signing in showed
+    // each player the other players' completed missions: title, owner, price per
+    // run and whether the money was paid. A finished offer is a payment record
+    // between the poster and the squad that played it, which is why `/api/history`
+    // already scoped it to the offer's own participants. The lobby list now uses
+    // that same rule, otherwise the homepage was publishing everyone's history to
+    // anyone who registered — and the card's click-through was always going to be
+    // refused by the server anyway.
+    return (lobbies || []).filter((l: any) => {
+      if (String(l.category || "").toLowerCase() === "pvp") return false;
+      if (isRemovedDungeonOffer(l)) return false;
+      if (l.status !== "completed" && l.status !== "failed") return false;
+      if (isAdmin) return true;
+      return userCanViewOfferThread(l, meId);
+    }).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
+  }, [lobbies, meId, isAdmin]);
 
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"], Professions: ["professions"] };
 

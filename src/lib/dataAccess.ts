@@ -57,6 +57,34 @@ export function scopeLobbyMessages(
   });
 }
 
+/**
+ * Same scoping rule, applied to the offer's own bookkeeping.
+ *
+ * A payment proof is a picture of someone's money movement: full name, account
+ * or e-wallet number, transaction id. Every signed-in account used to receive
+ * the proof of every offer on the site inside the `lobbies` blob, so any player
+ * could read any other player's payment details straight out of a response they
+ * were already entitled to fetch. It belongs to the offer's own participants —
+ * the same set that may open the thread — and to admins.
+ */
+const OFFER_PRIVATE_FIELDS = ["paymentProof"] as const;
+
+export function scopeOfferPrivateFields(
+  lobbies: unknown,
+  userId: string,
+  handle: string,
+  aliases?: string[]
+): unknown {
+  if (!Array.isArray(lobbies)) return lobbies;
+  return lobbies.map((lobby) => {
+    if (!lobby || typeof lobby !== "object") return lobby;
+    if (userCanViewOfferThread(lobby, userId, handle, aliases)) return lobby;
+    const safe: Record<string, unknown> = { ...(lobby as Record<string, unknown>) };
+    for (const field of OFFER_PRIVATE_FIELDS) delete safe[field];
+    return safe;
+  });
+}
+
 export function filterDataForUser(
   data: Record<string, unknown>,
   userId: string,
@@ -93,7 +121,12 @@ export function filterDataForUser(
     const aliases = meRow ? playerAliases(meRow as any) : [];
     filtered.lobbies = isAdminUser(userId, handle)
       ? filtered.lobbies
-      : scopeLobbyMessages(filtered.lobbies, userId, handle, aliases);
+      : scopeOfferPrivateFields(
+          scopeLobbyMessages(filtered.lobbies, userId, handle, aliases),
+          userId,
+          handle,
+          aliases
+        );
   }
 
   if (isAdminUser(userId, handle)) return filtered;

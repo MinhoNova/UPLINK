@@ -86,6 +86,51 @@ describe("production lobby access", () => {
     expect(scoped.lobbies[0].messages).toBeUndefined();
   });
 
+  it("keeps a payment proof out of another player's read of the offer", () => {
+    // The proof is a screenshot of the owner's money movement. Every signed-in
+    // account used to receive it inside the `lobbies` blob, so any player could
+    // read any other player's payment details out of a response they were
+    // already allowed to fetch.
+    const withProof = {
+      ...PROD_LOBBY,
+      status: "completed",
+      payoutStatus: "paid",
+      paymentProof: "data:image/png;base64,SU1BQ0hBTlA=",
+    };
+    const strangersRead = filterDataForUser(
+      { lobbies: [withProof], registeredUsers: [{ id: "someone-else", username: "stranger" }] },
+      "someone-else",
+      "stranger"
+    ) as any;
+    expect(strangersRead.lobbies[0].paymentProof).toBeUndefined();
+    // The offer stays visible — it is the public feed — it is the receipt that
+    // does not travel.
+    expect(strangersRead.lobbies[0].id).toBe(PROD_LOBBY.id);
+
+    const ownersRead = filterDataForUser(
+      { lobbies: [withProof], registeredUsers: [{ id: PROD_OWNER_ID, username: "omarsaleh97" }] },
+      PROD_OWNER_ID,
+      "omarsaleh97"
+    ) as any;
+    expect(ownersRead.lobbies[0].paymentProof).toBe(withProof.paymentProof);
+  });
+
+  it("keeps a squad member's access to the proof on their own offer", () => {
+    const withProof = {
+      ...PROD_LOBBY,
+      status: "completed",
+      payoutStatus: "paid",
+      paymentProof: "data:image/png;base64,SU1BQ0hBTlA=",
+      accepted: [{ applicantId: "squad-1", status: "confirmed" }],
+    };
+    const membersRead = filterDataForUser(
+      { lobbies: [withProof], registeredUsers: [{ id: "squad-1", username: "squadmate" }] },
+      "squad-1",
+      "squadmate"
+    ) as any;
+    expect(membersRead.lobbies[0].paymentProof).toBe(withProof.paymentProof);
+  });
+
   it("keeps the admin bypass independent of the canonical handle", () => {
     // Regression guard: the session handle and the account-row handle are two
     // different things. A site admin whose account row is named differently

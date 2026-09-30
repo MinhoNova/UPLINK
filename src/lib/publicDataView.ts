@@ -1,5 +1,3 @@
-import { stripLobbyMessages } from "@/lib/dataAccess";
-
 /**
  * The keys an anonymous visitor may read.
  *
@@ -77,15 +75,54 @@ export function sanitizePublicUsers(value: unknown): unknown {
 }
 
 /**
- * Build an anonymous payload: allowlisted keys only, chat bodies removed, and
- * per-player identifiers removed from the roster.
+ * Per-offer fields that must never ride along in a public payload.
+ *
+ * `paymentProof` is a base64 screenshot of someone's payment — it can carry a
+ * full name, a bank/e-wallet account and a transaction id. `/api/public-data`
+ * answers with no session at all, so a proof left on the lobby row was
+ * downloadable by anyone who asked for `lobbies`, which is a financial-data
+ * leak and not a cosmetic one. `votes` and `history` are the same class of
+ * bookkeeping: who was on the mission, and who was removed from it.
+ *
+ * They are read back per-viewer from the authenticated `/api/data` and the
+ * `/api/history` route, which scope to the threads that viewer may open.
+ */
+const PRIVATE_OFFER_FIELDS = [
+  "paymentProof",
+  "votes",
+  "history",
+  "dmThread",
+  "modThread",
+] as const;
+
+/** Strip the fields a non-participant has no business reading. */
+export function publicOfferRow(lobby: Record<string, unknown>): Record<string, unknown> {
+  const safe: Record<string, unknown> = { ...lobby };
+  for (const field of PRIVATE_OFFER_FIELDS) delete safe[field];
+  if (Array.isArray(lobby.messages)) {
+    safe.messageCount = lobby.messages.length;
+  }
+  delete safe.messages;
+  return safe;
+}
+
+/** Sanitise a roster of offers the caller has already decided to publish. */
+export function stripPublicOfferFields(lobbies: unknown): unknown {
+  if (!Array.isArray(lobbies)) return lobbies;
+  return lobbies.map((l) => (l && typeof l === "object" ? publicOfferRow(l as Record<string, unknown>) : l));
+}
+
+/**
+ * Build an anonymous payload: allowlisted keys only, chat bodies removed, the
+ * per-offer financial/bookkeeping fields removed, and per-player identifiers
+ * removed from the roster.
  */
 export function publicDataView(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const key of PUBLIC_DATA_KEYS) {
     const value = data[key];
     if (value === undefined) continue;
-    if (key === "lobbies") out[key] = stripLobbyMessages(value);
+    if (key === "lobbies") out[key] = stripPublicOfferFields(value);
     else if (key === "registeredUsers") out[key] = sanitizePublicUsers(value);
     else out[key] = value;
   }

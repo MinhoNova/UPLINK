@@ -13,6 +13,13 @@ const fullStore = {
       id: "l1",
       ownerId: "u1",
       status: "standby",
+      // A payment screenshot is a picture of someone's money movement: full
+      // name, account number, transaction id. The anonymous public read must
+      // never carry it.
+      paymentProof: "data:image/png;base64,SU1BQ0hBTlA=",
+      votes: [{ userId: "u2" }],
+      history: [{ applicantId: "u2", runsAtExit: 2, reason: "left" }],
+      dmThread: [{ id: "d1", body: "arrange the cash outside the site" }],
       messages: [
         { id: "m1", body: "private plan", images: ["data:image/png;base64,AAAA"] },
         { id: "m2", body: "another" },
@@ -79,6 +86,18 @@ describe("publicDataView", () => {
     const out = publicDataView(fullStore) as any;
     expect(out.lobbies[0].messages).toBeUndefined();
     expect(out.lobbies[0].messageCount).toBe(2);
+  });
+
+  it("never publishes a payment proof, votes, the foot ledger or DM threads", () => {
+    const out = publicDataView(fullStore) as any;
+    // This read answers with no session at all. A proof left in the payload was
+    // a financial-data leak: anyone could ask for `lobbies` and download it.
+    for (const field of ["paymentProof", "votes", "history", "dmThread", "modThread"]) {
+      expect(out.lobbies[0][field]).toBeUndefined();
+    }
+    // The offer itself is public by design, so it has to survive the strip.
+    expect(out.lobbies[0].id).toBe("l1");
+    expect(out.lobbies[0].ownerId).toBe("u1");
   });
 
   it("strips per-player identifiers from the public roster", () => {
