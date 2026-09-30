@@ -45,7 +45,21 @@ export async function POST(req: Request) {
   const timestamp = req.headers.get("X-Signature-Timestamp") || "";
   const body = await req.text();
 
-  if (!verifyKey(body, signature, timestamp, publicKey)) {
+  // `verifyKey` is async — it returns a Promise, and a Promise is always
+  // truthy. Testing it without awaiting meant the check was
+  // `!truthyPromise` === false, i.e. it never failed and the endpoint was open
+  // to anyone on the internet. That is how a forged interaction could grant
+  // real Discord roles, accept invites on another user's behalf, and write
+  // into the offers blob with no signature at all. Await it, and fail closed
+  // if verification itself errors.
+  let signatureOk = false;
+  try {
+    signatureOk = await verifyKey(body, signature, timestamp, publicKey);
+  } catch (e) {
+    console.error("verifyKey threw:", e);
+    signatureOk = false;
+  }
+  if (!signatureOk) {
     return new Response("Invalid signature", { status: 401 });
   }
 

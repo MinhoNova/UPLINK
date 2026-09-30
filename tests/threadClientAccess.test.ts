@@ -89,15 +89,29 @@ describe("client thread gate — every seeded admin, not just the first", () => 
     ).toBe(true);
   });
 
-  it("recognises the second admin by handle", () => {
+  it("recognises the second admin by their Discord id", () => {
     const thread = lobby({ id: "902", ownerId: "someone-else" });
     expect(
-      clientCanViewOfferThread(thread, "unmapped-id", OMARSALEH_ADMIN_HANDLE, [], {
+      clientCanViewOfferThread(thread, OMARSALEH_ADMIN_ID, "renamed-away", [], {
+        serverAdmin: false,
+        sessionHandle: "renamed-away",
+        sessionRole: "",
+      })
+    ).toBe(true);
+  });
+
+  it("does not grant the admin bypass to someone who merely owns the handle", () => {
+    // The old gate fell back to matching the session handle, so any account
+    // could rename itself to the site owner's username and inherit their
+    // access. A username is not an identity; only the Discord id is.
+    const thread = lobby({ id: "902", ownerId: "someone-else" });
+    expect(
+      clientCanViewOfferThread(thread, "attacker-id", OMARSALEH_ADMIN_HANDLE, [], {
         serverAdmin: false,
         sessionHandle: OMARSALEH_ADMIN_HANDLE,
         sessionRole: "",
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("still recognises the original admin", () => {
@@ -130,6 +144,9 @@ describe("client thread gate — every seeded admin, not just the first", () => 
       expect(isPrimaryAdmin(id, handle)).toBe(true);
     }
     expect(isPrimaryAdmin("someone", "someone")).toBe(false);
+    // The handle alone is never enough, whoever is holding it.
+    expect(isPrimaryAdmin("someone", OMARSALEH_ADMIN_HANDLE)).toBe(false);
+    expect(isPrimaryAdmin("someone", "minhonovazen")).toBe(false);
   });
 });
 

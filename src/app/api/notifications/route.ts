@@ -25,6 +25,17 @@ export async function PUT(req: Request) {
   if (!Array.isArray(body?.notifications)) {
     return NextResponse.json({ error: "Invalid notifications" }, { status: 400 });
   }
+  // The whole list is rewritten on every change, so one request carrying an
+  // enormous array is one enormous blob in D1. Bound it at the edge.
+  if (body.notifications.length > 500) {
+    return NextResponse.json({ error: "Too many notifications" }, { status: 400 });
+  }
+  const oversized = body.notifications.find(
+    (n: any) => n && typeof n === "object" && JSON.stringify(n).length > 2000
+  );
+  if (oversized) {
+    return NextResponse.json({ error: "Notification too large" }, { status: 400 });
+  }
 
   await initTables();
   const existing = await getKVPairs();

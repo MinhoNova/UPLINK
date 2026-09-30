@@ -660,7 +660,12 @@ export function validateNotifications(
       if (!isParty(n)) return { ok: false, error: "Cannot create notifications for other users" };
       continue;
     }
-    if (JSON.stringify(n) !== JSON.stringify(ex) && !isParty(n)) {
+    // The party test has to be run against the STORED row, not against the row
+    // the caller just sent. Testing the incoming copy meant an attacker could
+    // stamp their own id onto `toUserId` on someone else's notification, make
+    // the forged copy "theirs", and rewrite or re-address any notification in
+    // the store — including the text and the target.
+    if (JSON.stringify(n) !== JSON.stringify(ex) && !isParty(ex)) {
       return { ok: false, error: "Cannot modify notifications you are not part of" };
     }
   }

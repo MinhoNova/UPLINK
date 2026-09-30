@@ -22,6 +22,13 @@ async function loadReviews(): Promise<PlayerReview[]> {
 }
 
 export async function GET(req: Request) {
+  // Reviews name their author and their subject and carry free text. They used
+  // to be readable with no session at all, by anyone who knew a Discord id —
+  // and ids are public, in the profiles and in the public roster. Reading what
+  // people say about each other is not part of the public feed.
+  const auth = await requireSession(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const { searchParams } = new URL(req.url);
   const targetId = searchParams.get("targetId");
   const lobbyId = searchParams.get("lobbyId");

@@ -11,13 +11,17 @@ export type UserRole = "admin" | "moderator" | "support" | "user";
 
 /**
  * Client-side UI gating only — it decides which admin affordances to render,
- * never whether an action is allowed. Every privileged action is re-checked
- * server-side by `isLegacyAdmin` in `roles.ts`, which matches the Discord id
- * only. The handle match is kept here purely so the real admin does not stare
- * at a stale "Access Denied" panel when their site handle has drifted from
- * their Discord username; granting them nothing extra, since the server
- * rejects the underlying calls either way.
+ * never whether an action is allowed.
+ *
+ * The handle is deliberately NOT part of this decision. A Discord username is
+ * renameable by the account holder, so a handle match is an impersonation
+ * button: signing up as `omarsaleh97` used to make the client render the
+ * admin UI, and the general chat's edit/delete override (`chat/general`) called
+ * exactly this function server-side — so any account could rename itself and
+ * edit or delete anybody's messages, and be seen as the site owner doing it.
+ * The server-side authority is `isAdminUser` in `roles.ts`, which matches the
+ * Discord id only.
  */
-export function isPrimaryAdmin(userId: string, handle: string): boolean {
-  return ADMIN_IDS.includes(String(userId)) || ADMIN_HANDLES.includes(handle);
+export function isPrimaryAdmin(userId: string, _handle?: string): boolean {
+  return ADMIN_IDS.includes(String(userId));
 }

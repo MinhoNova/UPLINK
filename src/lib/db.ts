@@ -39,7 +39,45 @@ function seedSqliteIfEmpty(database: SqliteDatabase) {
   }
 }
 
+async function isCloudflareRuntime(): Promise<boolean> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    try {
+      getCloudflareContext();
+      return true;
+    } catch {
+      await getCloudflareContext({ async: true });
+      return true;
+    }
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Refuse to touch a local database file when we are running on Workers.
+ *
+ * The SQLite path below is a development convenience: `better-sqlite3` opens a
+ * real file under `process.cwd()`. On Workers that is a throwaway, read-only
+ * virtual filesystem, so a write that landed there would be accepted by the
+ * request handler, reported to the player as "saved", and gone with the next
+ * isolate — the exact silent data loss this guards against. A Cloudflare
+ * account that lapses takes D1 with it, and the site must say "the database is
+ * unavailable" instead of quietly writing to a file nobody will ever read.
+ *
+ * Failing loud costs an error page. Failing quiet costs every write made during
+ * the outage.
+ */
+async function assertLocalFallbackAllowed() {
+  if (await isCloudflareRuntime()) {
+    throw new Error(
+      "D1 database binding (DB) is unavailable on Cloudflare — refusing to fall back to a local SQLite file."
+    );
+  }
+}
+
 async function getSqliteDb(): Promise<SqliteDatabase> {
+  await assertLocalFallbackAllowed();
   if (!db) {
     const Database = (await import("better-sqlite3")).default;
     if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
