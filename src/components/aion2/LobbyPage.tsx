@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   Shield, Sparkles, Swords, Users, Search,
-  Trash2, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban, History as HistoryIcon,
-  Bell, BellOff, Palette, BadgeCheck, Star, ExternalLink, IdCard, Clock, Hammer
+  Trash2, Layers, X, UserPlus, UserCheck, UserMinus, MessageCircle, Ban,
+  Bell, BellOff, Palette, BadgeCheck, ExternalLink, IdCard, Clock, Hammer
 } from "lucide-react";
-import SquadReviewModal from "@/components/SquadReviewModal";
+
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
@@ -18,7 +18,7 @@ import { resolveHeroBg, type HeroBgKey } from "@/lib/heroBg";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
-import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer, userCanViewOfferThread } from "@/lib/lobbyLifecycle";
+import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
@@ -91,7 +91,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const autoAttemptedRef = useRef<Set<string>>(new Set());
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
   const [hoverCard, setHoverCard] = useState<{ userId: string; rect: { top: number; left: number; bottom: number } | null; owner: any; pic: string | null } | null>(null);
-  const [reviewOffer, setReviewOffer] = useState<any>(null);
   const hoverHideTimer = useRef<number | null>(null);
   const scheduleHide = () => { if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current); hoverHideTimer.current = window.setTimeout(() => { setHoveredUserId(null); setHoverCard(null); }, 250); };
   const cancelHide = () => { if (hoverHideTimer.current) window.clearTimeout(hoverHideTimer.current); hoverHideTimer.current = null; };
@@ -223,24 +222,13 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     );
   };
 
-  const historyOffers = useMemo(() => {
-    if (!meId) return [];
-    // This list used to be every finished offer on the site, so signing in showed
-    // each player the other players' completed missions: title, owner, price per
-    // run and whether the money was paid. A finished offer is a payment record
-    // between the poster and the squad that played it, which is why `/api/history`
-    // already scoped it to the offer's own participants. The lobby list now uses
-    // that same rule, otherwise the homepage was publishing everyone's history to
-    // anyone who registered — and the card's click-through was always going to be
-    // refused by the server anyway.
-    return (lobbies || []).filter((l: any) => {
-      if (String(l.category || "").toLowerCase() === "pvp") return false;
-      if (isRemovedDungeonOffer(l)) return false;
-      if (l.status !== "completed" && l.status !== "failed") return false;
-      if (isAdmin) return true;
-      return userCanViewOfferThread(l, meId);
-    }).sort((a: any, b: any) => (Number(b.completedAt) || Number(b.id) || 0) - (Number(a.completedAt) || Number(a.id) || 0)).slice(0, 20);
-  }, [lobbies, meId, isAdmin]);
+  // Completed & failed offers have no place in the lobby. The public feed only
+  // ever lists `standby` offers, and this list used to append every finished
+  // offer in the game to the bottom of the page — the poster's name, the price
+  // and whether the money was paid, for every signed-in player, with a Review
+  // button to rate a stranger's job. A finished run is a record between the
+  // poster and the squad that played it; it lives on /history, which scopes it
+  // to the offer's own participants.
 
   const OPEN_TAB_CATEGORIES: Record<string, string[] | null> = { All: null, Dungeons: ["dungeon", "dungeons"], Raids: ["raid", "raids"], Leveling: ["leveling"], Professions: ["professions"] };
 
@@ -608,47 +596,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
               )}
             </div>
           </aside>
-
-          {/* History (completed & paid threads) */}
-          {historyOffers.length > 0 && (
-            <div className="w-full">
-              <div className="tn-light relative w-full rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-emerald-500/20 p-5 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all">
-                <div className="flex items-center gap-3 pb-4 mb-5 border-b border-emerald-900/30">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10"><HistoryIcon className="w-4 h-4 text-emerald-300" /></span>
-                  <h3 className="text-xs font-black tracking-[0.2em] uppercase text-emerald-100">{t("history_header")}</h3>
-                  <span className="ml-auto text-[8px] font-black tracking-widest text-slate-500 uppercase">{historyOffers.length} {t("history_completed")}</span>
-                </div>
-                <div className="space-y-3">
-                  {historyOffers.map((h) => {
-                    const owner = lobbyOwner(h);
-                    const pic = ownerPic(h) || null;
-                    const totalRuns = h.selectedDungeons ? (Object.values(h.selectedDungeons) as number[]).reduce((a: number, b: number) => a + b, 0) : h.runsCount || 1;
-                    return (
-                      <motion.div key={String(h.id)} whileHover={{ x: 5 }} onClick={() => { window.location.href = `/manage/${String(h.id)}`; }} className="tn-light relative w-full rounded-2xl border border-emerald-500/20 overflow-hidden flex items-center gap-3 px-4 py-3 cursor-pointer group hover:border-emerald-400/40 hover:shadow-[0_0_24px_rgba(16,185,129,0.12)] transition-all">
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/50">
-                          {pic ? (<img src={pic} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />) : (<span className="flex h-full w-full items-center justify-center text-[10px] font-black text-emerald-300/60 uppercase">{String(ownerName(h) || "?").slice(0, 1)}</span>)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-black uppercase tracking-wide text-white">{h.title || `${totalRuns}× ${t("history_runFallback")}`}</p>
-                          <p className="truncate text-[9px] font-bold uppercase tracking-widest text-gray-500">{ownerName(h)}{h.serverRegion ? ` · ${String(h.serverRegion).toUpperCase()}` : ""}</p>
-                        </div>
-                        <div className="shrink-0 flex flex-col items-end gap-1">
-                          {Number(h.pricePerRun) > 0 && (<span className="text-[10px] font-black text-amber-300">{Number(h.pricePerRun).toFixed(2)}M{t("history_slashRun")}</span>)}
-                          <span className={`text-[8px] font-black uppercase tracking-widest ${h.status === "failed" ? "text-red-400" : h.payoutStatus === "paid" ? "text-emerald-400" : "text-amber-400"}`}>{h.status === "failed" ? t("history_failed") || "Failed" : h.payoutStatus === "paid" ? t("history_paid") : t("history_unpaid") || "Unpaid"}</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setReviewOffer(h); }}
-                            className="inline-flex items-center gap-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-yellow-300 hover:bg-yellow-500/20 transition-all"
-                          >
-                            <Star className="w-3 h-3" /> {t("history_review") || "Review"}
-                          </button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </main>
 
@@ -882,8 +829,6 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
           </div>
         );
       })()}
-
-      {reviewOffer && (<SquadReviewModal lobby={reviewOffer} meId={meId} registeredUsers={registeredUsers} onClose={() => setReviewOffer(null)} />)}
 
       <AionAutoApplyModal
         registeredUsers={registeredUsers}
