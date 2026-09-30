@@ -6,7 +6,8 @@ import {
   repairLobbyRoles,
 } from "@/lib/lobbyLifecycle";
 import { notificationMatchesUser } from "@/lib/userProfile";
-import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
+import { checkAndRecordOfferApply } from "@/lib/offerDailyLimit";
+import { isUserBanned } from "@/lib/banCheck";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
   return String(member.applicantId || member.userId || member.id || "");
@@ -28,6 +29,12 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
     return { ok: false as const, error: "Link your account on UPLINK first (Sign in with Discord on the site)." };
   }
 
+  // The web apply route runs this inside `requireSession`. Discord's button
+  // bypassed it, so a suspended account could still apply from a stale embed.
+  if (await isUserBanned(user.username, user.id)) {
+    return { ok: false as const, error: "Your account is suspended. Contact support if this is a mistake." };
+  }
+
   const uid = String(discordUserId);
   const char =
     characters.find((c) => String(c.userId) === uid) ||
@@ -47,7 +54,7 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
     };
   }
 
-  const limitCheck = await checkAndRecordOfferAction(uid, user);
+  const limitCheck = await checkAndRecordOfferApply(uid, false);
   if (!limitCheck.ok) {
     return { ok: false as const, error: limitCheck.error };
   }

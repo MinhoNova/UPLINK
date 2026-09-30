@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const OWNER = "owner-1";
 const STRANGER = "stranger-9";
 
-const { LOBBIES, atomicMock } = vi.hoisted(() => {
+const { LOBBIES, atomicMock, getKVMock } = vi.hoisted(() => {
   const lobbies = [
     { id: "900", ownerId: "owner-1", status: "standby", accepted: [], applicants: [], messages: [{ id: 1, text: "mine" }] },
     { id: "902", ownerId: "stranger-9", status: "standby", accepted: [], applicants: [], messages: [{ id: 2, text: "theirs" }] },
@@ -22,16 +22,27 @@ const { LOBBIES, atomicMock } = vi.hoisted(() => {
     if (next === undefined) return { ok: false };
     return { ok: true, value: next };
   });
-  return { LOBBIES: lobbies, atomicMock: mock };
+  const getKV = vi.fn(async (_key: string) => null as any);
+  return { LOBBIES: lobbies, atomicMock: mock, getKVMock: getKV };
 });
 
 vi.mock("@/lib/authz", () => ({ requireSession: vi.fn() }));
 vi.mock("@/lib/db", () => ({
   initTables: vi.fn(async () => {}),
+  getKV: (key: string) => getKVMock(key),
   updateKVAtomic: (key: string, mutator: (c: any[] | null) => any) => atomicMock(key, mutator),
 }));
 vi.mock("@/lib/banCheck", () => ({ addUserBan: vi.fn(async () => {}) }));
 vi.mock("@/lib/auditLog", () => ({ logAudit: vi.fn(async () => {}) }));
+// The posting gate and the anti-spam quota are covered by their own tests; stub
+// them here so this file stays focused on the merge/ownership guarantees.
+vi.mock("@/lib/posterApproval", () => ({
+  getPosterStanding: vi.fn(async () => ({ allowed: true, reason: "approved" })),
+}));
+vi.mock("@/lib/offerDailyLimit", () => ({
+  checkAndRecordOfferCreate: vi.fn(async () => ({ ok: true })),
+  offerCreateLimitError: () => "limit",
+}));
 
 async function put(asUser: string, lobbies: any[], role = "user") {
   const { requireSession } = await import("@/lib/authz");

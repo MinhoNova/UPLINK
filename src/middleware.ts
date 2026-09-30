@@ -5,6 +5,18 @@ import { rateLimitByIp } from "@/lib/rateLimitDistributed";
 const UPLOAD_PATHS = ["/api/user/upload", "/api/community/posts"];
 const STRICT_PATHS = ["/api/dm", "/api/friends", "/api/discord/broadcast"];
 
+/**
+ * Endpoints that authenticate themselves cryptographically, where an IP bucket
+ * is either meaningless or actively harmful.
+ *
+ * Discord interactions arrive from Discord's own shared edge IPs, not from the
+ * player who clicked the button, so every guild interaction in the world landed
+ * in one 150/min bucket. That both let one abuser lock out everyone and 429'd
+ * legitimate button presses. The Ed25519 signature check inside the handler is
+ * the real gate: a request without a valid signature never reaches any logic.
+ */
+const SELF_AUTHENTICATED_PATHS = ["/api/discord/interactions"];
+
 /** Genuinely public, cacheable assets. Everything else defaults to no-store. */
 const PUBLIC_API_PATHS = [
   "/api/aion2/portrait",
@@ -44,6 +56,13 @@ export async function middleware(req: NextRequest) {
       res.headers.set("Cache-Control", "private, no-store, max-age=0");
       res.headers.append("Vary", "Cookie");
     }
+    return res;
+  }
+
+  if (SELF_AUTHENTICATED_PATHS.some((p) => path.startsWith(p))) {
+    const res = NextResponse.next();
+    res.headers.set("Cache-Control", "private, no-store, max-age=0");
+    res.headers.append("Vary", "Cookie");
     return res;
   }
 

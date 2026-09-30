@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const ipBlock = await rejectIfIpBanned(request);
   if (ipBlock) return ipBlock;
 
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(request);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -30,7 +30,7 @@ export async function DELETE(request: Request) {
   const ipBlock = await rejectIfIpBanned(request);
   if (ipBlock) return ipBlock;
 
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(request);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }

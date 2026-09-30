@@ -3,15 +3,15 @@ import { requireAdmin } from "@/lib/authz";
 import { ensureRolesSeeded, setUserRole, type UserRole } from "@/lib/roles";
 import { logAudit } from "@/lib/auditLog";
 
-export async function GET() {
-  const auth = await requireAdmin();
+export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const roles = await ensureRolesSeeded();
   return NextResponse.json({ roles });
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await req.json();

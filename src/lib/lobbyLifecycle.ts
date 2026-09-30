@@ -886,15 +886,32 @@ export function memberIdentityKey(member: any): string {
 }
 
 /** True when the lobby has at least one confirmed player other than the offer owner.
- *  Archived foot ledgers (member left / kicked after runs) count the member in history too,
- *  so legitimately earned payments are never blocked by the anti-solo-fake-order gate. */
+ *
+ *  Membership in `accepted` is NOT evidence of anything on its own: the owner
+ *  controls that array outright (`lobbyUserCanModify` returns true for them), so
+ *  the old check let an owner paste any Discord id and then mark the lobby
+ *  paid+completed, which paid out rank to the owner and to an innocent bystander
+ *  who never applied. The member must therefore also appear in `applicants`,
+ *  which is the one array the applicant writes from their *own* session and the
+ *  owner cannot forge for someone else.
+ *
+ *  Archived foot ledgers (member left / kicked after runs) count the member in
+ *  history too, so legitimately earned payments are never blocked by the gate. */
 export function hasIndependentSquadMember(lobby: any): boolean {
   if (!lobby) return false;
   const ownerId = String(lobby.ownerId || "");
+
+  const appliedIds = new Set(
+    (lobby.applicants || [])
+      .map((a: any) => memberIdentityKey(a))
+      .filter((id: string) => !!id)
+  );
+
   const independent = (m: any) => {
     const mid = memberIdentityKey(m);
     if (!mid || mid === ownerId) return false;
     if (m.status === "invited") return false;
+    if (!appliedIds.has(mid)) return false;
     return true;
   };
   if ((lobby.accepted || []).some((m: any) => independent(m))) return true;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { comments, posts } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
@@ -12,8 +12,8 @@ import { ADMIN_IDS } from "@/lib/roles";
 import { assertPostVisible } from "@/lib/communityPostAccess";
 export async function GET(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const { searchParams } = new URL(req.url);
   const postId = searchParams.get("postId");
@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const rl = await rateLimitByUser(String((session.user as any).id), "community_comment", 10, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down — too many comments." }, { status: 429 });
@@ -93,8 +93,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const { commentId }: any = await req.json();
   if (!commentId) return NextResponse.json({ error: "Missing commentId" }, { status: 400 });

@@ -12,6 +12,7 @@ import {
   getMemberEntryRoles,
   toggleEntryRole,
 } from "@/lib/discordGuild";
+import { syncAuthEnvFromCloudflare } from "@/lib/authEnv";
 
 const SITE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
@@ -30,6 +31,11 @@ function ephemeral(content: string) {
 }
 
 export async function POST(req: Request) {
+  // Secrets live as Worker bindings, not in process.env, so pull them across
+  // before reading DISCORD_PUBLIC_KEY. Skipping this made the endpoint 503 on
+  // every Discord button press in production.
+  await syncAuthEnvFromCloudflare();
+
   const publicKey = process.env.DISCORD_PUBLIC_KEY;
   if (!publicKey) {
     return new Response("DISCORD_PUBLIC_KEY not configured", { status: 503 });

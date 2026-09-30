@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { isAionClass, sanitizeAionCpAp, sanitizeAionLevel } from "@/lib/aionClassMeta";
 
@@ -30,8 +30,8 @@ function sanitizeAutoApply(raw: any): AionAutoApply {
 }
 
 export async function POST(req: Request) {
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
   const userId = String((session.user as { id?: string }).id || "");
 
   let body: any;
@@ -70,8 +70,8 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
   const userId = String((session.user as { id?: string }).id || "");
 
   await initTables();

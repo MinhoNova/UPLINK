@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
-import { initTables, updateKVAtomic } from "@/lib/db";
+import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { validateLobbies } from "@/lib/secureDataWrite";
 import { addUserBan } from "@/lib/banCheck";
 import { logAudit } from "@/lib/auditLog";
+import { checkAndRecordOfferCreate, offerCreateLimitError } from "@/lib/offerDailyLimit";
+import { getPosterStanding } from "@/lib/posterApproval";
 
 export async function PATCH(req: Request) {
   const auth = await requireSession(req);
@@ -63,6 +65,37 @@ export async function PUT(req: Request) {
   await initTables();
   const isAdmin = auth.user.role === "admin";
   const uid = String(auth.user.id);
+
+  // Count the offers this write is introducing before touching the store, so the
+  // posting gate and the anti-spam quota are charged for real creations and not
+  // for the client re-sending a snapshot it already saw.
+  const currentLobbies: any[] = (await getKV("lobbies")) || [];
+  const currentIds = new Set(currentLobbies.map((l: any) => String(l?.id)));
+  const creations = (body.lobbies as any[]).filter(
+    (l) => l && l.id != null && !currentIds.has(String(l.id)) && String(l.ownerId) === uid
+  );
+
+  if (creations.length > 0) {
+    const registeredUsers: any[] = (await getKV("registeredUsers")) || [];
+    const me = registeredUsers.find((u) => String(u.id) === uid);
+    const standing = await getPosterStanding(
+      me,
+      auth.user.role,
+      currentLobbies.filter((l: any) => String(l?.ownerId) === uid).length
+    );
+    if (!standing.allowed) {
+      return NextResponse.json(
+        { error: "Posting is by approval only.", needsApproval: true, standing: standing.reason },
+        { status: 403 }
+      );
+    }
+    for (let i = 0; i < creations.length; i++) {
+      const check = await checkAndRecordOfferCreate(uid, isAdmin);
+      if (!check.ok) {
+        return NextResponse.json({ error: offerCreateLimitError() }, { status: 429 });
+      }
+    }
+  }
 
   let abortReason: string | null = null;
   let fraudAttempt: { userId: string; lobbyId: string } | null = null;

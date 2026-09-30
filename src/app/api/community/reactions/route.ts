@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { reactions, posts } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -7,8 +7,8 @@ import { rateLimitByUser } from "@/lib/rateLimit";
 import { assertPostVisible } from "@/lib/communityPostAccess";
 export async function POST(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const rl = await rateLimitByUser(String((session.user as any).id), "community_react", 30, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down." }, { status: 429 });

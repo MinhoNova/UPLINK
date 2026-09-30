@@ -4,7 +4,7 @@ import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { withdrawApplicantFromOfferFamily, acceptApplicantAcrossLobbies } from "@/lib/lobbyLifecycle";
 import { resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
-import { checkAndRecordOfferAction, getOfferDailyUsage } from "@/lib/offerDailyLimit";
+import { checkAndRecordOfferApply, getOfferApplyUsage } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { getClientIp } from "@/lib/requestIp";
 import {
@@ -40,10 +40,14 @@ export async function POST(req: Request) {
 
   const registeredUsers: any[] = (await getKV("registeredUsers")) || [];
   const user = registeredUsers.find((u) => String(u.id) === uid);
-  const usage = await getOfferDailyUsage(uid);
-  if (!usage.exempt && usage.remaining <= 0) {
-    return NextResponse.json({ error: "Daily limit reached" }, { status: 429 });
+
+  // Charge the apply quota BEFORE the write. Recording it afterwards only
+  // counted attempts — it never blocked the application, so the cap was a no-op.
+  const limitCheck = await checkAndRecordOfferApply(uid, auth.user.role === "admin");
+  if (!limitCheck.ok) {
+    return NextResponse.json({ error: limitCheck.error }, { status: 429 });
   }
+  const usage = await getOfferApplyUsage(uid);
 
   const nextApplicant = {
     ...applicant,
@@ -126,11 +130,6 @@ export async function POST(req: Request) {
   if (!res.ok) {
     const status = abortReason === "Lobby not found" ? 404 : 409;
     return NextResponse.json({ error: abortReason || "Could not apply — try again." }, { status });
-  }
-
-  const limitCheck = await checkAndRecordOfferAction(uid, user || auth.user);
-  if (!limitCheck.ok) {
-    return NextResponse.json({ error: limitCheck.error }, { status: 429 });
   }
 
   touchUserLastIp(uid, getClientIp(req)).catch(() => {});

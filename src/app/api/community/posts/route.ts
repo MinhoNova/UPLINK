@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { posts, reactions, reports } from "@/db/schema";
 import { eq, and, inArray, gte } from "drizzle-orm";
@@ -36,8 +36,8 @@ async function saveCommunityImage(userId: string, buffer: Buffer, preferGif: boo
 
 export async function GET(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const { searchParams } = new URL(req.url);
   const tag = searchParams.get("tag");
@@ -109,8 +109,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const rl = await rateLimitByUser(String((session.user as any).id), "community_post_create", 3, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Slow down — too many posts." }, { status: 429 });
@@ -191,12 +191,37 @@ export async function POST(req: NextRequest) {
     try {
       const resp = await fetch(safeImageUrl, {
         headers: { "User-Agent": "UPLINK/1.0" },
+        redirect: "follow",
       });
       if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
-      const buffer = Buffer.from(await resp.arrayBuffer());
+
+      // Check the declared length first, then stream with a running cap. The
+      // old code called arrayBuffer() and only then compared byteLength, so a
+      // URL pointing at a multi-hundred-MB body was fully buffered into Worker
+      // memory before being rejected — the Error 1102 failure mode. Reading the
+      // body incrementally means an oversized or lying server costs us at most
+      // MAX_UPLOAD_BYTES.
       const remoteType = resp.headers.get("content-type") || "";
       if (!remoteType.startsWith("image/")) throw new Error("URL is not an image");
-      if (buffer.byteLength > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
+      const declared = Number(resp.headers.get("content-length") || "0");
+      if (declared > MAX_UPLOAD_BYTES) throw new Error("Remote file too large");
+
+      const reader = resp.body?.getReader();
+      if (!reader) throw new Error("No response body");
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!value) continue;
+        total += value.byteLength;
+        if (total > MAX_UPLOAD_BYTES) {
+          await reader.cancel().catch(() => {});
+          throw new Error("Remote file too large");
+        }
+        chunks.push(value);
+      }
+      const buffer = Buffer.concat(chunks, total);
       imagePath = await saveCommunityImage(currentUserId, buffer, /\.gif(?:$|\?)/i.test(safeImageUrl));
     } catch (e) {
       console.error("Failed to download image from URL:", e);
@@ -233,8 +258,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const { postId } = (await req.json() as any);
   if (!postId) return NextResponse.json({ error: "Missing postId" }, { status: 400 });

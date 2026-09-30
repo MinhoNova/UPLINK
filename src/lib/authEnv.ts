@@ -7,6 +7,18 @@ const AUTH_ENV_KEYS = [
   "NEXTAUTH_URL",
   "AUTH_TRUST_HOST",
   "DISCORD_BOT_TOKEN",
+  // The interaction endpoint verifies Ed25519 signatures against this. It is a
+  // Worker *secret*, so it never reaches process.env unless it is listed here
+  // and synced — without it every button in Discord 503s in production while
+  // working fine locally off .env.local.
+  "DISCORD_PUBLIC_KEY",
+  "DISCORD_ENTRY_PICKER_CHANNEL_ID",
+  "BATTLENET_CLIENT_ID",
+  "BATTLENET_CLIENT_SECRET",
+  "CRON_SECRET",
+  "LIVEKIT_API_KEY",
+  "LIVEKIT_API_SECRET",
+  "ASSISTANT_MODEL",
 ] as const;
 
 export type AppSession = {
@@ -109,6 +121,42 @@ export async function getAppSession(req?: Request): Promise<AppSession | null> {
     },
     expires: token.exp ? new Date(Number(token.exp) * 1000).toISOString() : undefined,
   };
+}
+
+/**
+ * Session + ban check in one call, for handlers that used to read
+ * `getAppSession` directly.
+ *
+ * `getAppSession` alone only proves the cookie is valid. A suspended account
+ * could therefore keep posting, commenting, reacting, reporting and uploading
+ * as long as its JWT had not expired, because those handlers never consulted
+ * the ban list — the web apply route did, and Discord's button did not. Use
+ * this (or `requireSession` from `@/lib/authz`) on anything that mutates.
+ */
+export async function getActiveSession(
+  req?: Request
+): Promise<
+  | { session: AppSession; error?: undefined; status?: undefined }
+  | { session: null; error: string; status: number; suspended?: boolean }
+> {
+  const session = await getAppSession(req);
+  if (!session?.user) return { session: null, error: "Unauthorized", status: 401 };
+
+  const id = String(session.user.id || "");
+  const username = String(session.user.username || "");
+  if (!id || !username) return { session: null, error: "Invalid session", status: 400 };
+
+  const { isUserBanned } = await import("@/lib/banCheck");
+  if (await isUserBanned(username, id)) {
+    return {
+      session: null,
+      status: 403,
+      suspended: true,
+      error: "Your account is suspended. Contact support if you believe this is a mistake.",
+    };
+  }
+
+  return { session };
 }
 
 /** @deprecated Use getAppSession — kept for next-auth adapter compatibility. */

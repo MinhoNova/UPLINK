@@ -4,7 +4,7 @@ import { getKV, initTables } from "@/lib/db";
 import { getSubscriptionDaysLeft } from "@/lib/userProfile";
 
 export async function GET(req: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { searchParams } = new URL(req.url);

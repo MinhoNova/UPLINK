@@ -1,8 +1,10 @@
+import { getKV } from "@/lib/db";
+import { getPosterStanding } from "@/lib/posterApproval";
 import { isSecretClubTier } from "@/lib/userProfile";
 import { findDuplicateUsernames, normRef, type PlayerRecord } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, hasIndependentSquadMember } from "@/lib/lobbyLifecycle";
-import { checkAndRecordOfferAction } from "@/lib/offerDailyLimit";
+import { checkAndRecordOfferApply, checkAndRecordOfferCreate } from "@/lib/offerDailyLimit";
 
 export const ADMIN_ID = "1497295886223544471";
 export const ADMIN_HANDLE = "minhonovazen";
@@ -42,7 +44,7 @@ export function sanitizeBannedIdRecords(input: unknown[]): BanIdRecord[] {
   return out;
 }
 
-const PROTECTED_SELF_FIELDS = [
+export const PROTECTED_SELF_FIELDS = [
   "id",
   "username",
   "previousUsernames",
@@ -54,6 +56,15 @@ const PROTECTED_SELF_FIELDS = [
   "lastSeenAt",
   "stats",
   "rankOverride",
+  // Authorisation is resolved from the `userRoles` KV map keyed on the Discord
+  // id, so these two never grant anything — they are blocked so no client can
+  // render a self-granted admin badge or become the reason a future code path
+  // starts trusting the profile row.
+  "role",
+  "isAdmin",
+  // Set only by an admin decision in posterApproval.ts. Controls whether this
+  // account may publish offers.
+  "posterApprovedAt",
 ] as const;
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 const SELF_IMAGE_URL_FIELDS = ["customAvatar", "profileGif", "profileGifThumb", "banner"] as const;
@@ -86,7 +97,12 @@ export function isAdminUser(userId: string, _handle: string) {
 function sanitizeSelfUserRecord(existing: Record<string, unknown>, incoming: Record<string, unknown>) {
   const merged = { ...incoming };
   for (const field of PROTECTED_SELF_FIELDS) {
-    if (existing[field] !== undefined) merged[field] = existing[field];
+    // Unconditional, deliberately. The previous `if (existing[field] !== undefined)`
+    // guard meant a field absent from a legacy row was skipped entirely, leaving
+    // it self-writable — that is how a fresh account could hand itself a rank.
+    // Assigning even when undefined makes the key disappear from the stored JSON
+    // instead, so a field the server has never set can never be set by the client.
+    merged[field] = existing[field];
   }
   if ("team" in incoming) {
     merged.team = sanitizeTeam(incoming.team, String(existing.id ?? ""));
@@ -692,18 +708,30 @@ async function enforceOfferDailyLimitsOnLobbyWrites(
   existing: any[],
   incoming: any[],
   userId: string,
-  registeredUsers: any[],
   isAdmin: boolean
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (isAdmin) return { ok: true };
-  const user = registeredUsers.find((u) => String(u.id) === String(userId));
   const existingById = new Map(existing.map((l) => [String(l.id), l]));
   const uid = String(userId);
+
+  const creations = incoming.filter((l) => !existingById.has(String(l.id)) && String(l.ownerId) === uid);
+
+  // The posting gate has to be enforced here too, not only in PUT /api/lobbies.
+  // This is the bulk-write path, so without it an unapproved account simply
+  // posts through /api/data and the approval gate is decoration.
+  if (creations.length > 0) {
+    const registeredUsers: any[] = (await getKV("registeredUsers")) as any[];
+    const me = (registeredUsers || []).find((u) => String(u.id) === uid);
+    const standing = await getPosterStanding(me, undefined, existing.filter((l) => String(l?.ownerId) === uid).length);
+    if (!standing.allowed) {
+      return { ok: false, error: "Posting is by approval only." };
+    }
+  }
 
   for (const lobby of incoming) {
     const ex = existingById.get(String(lobby.id));
     if (!ex && String(lobby.ownerId) === uid) {
-      const check = await checkAndRecordOfferAction(uid, user);
+      const check = await checkAndRecordOfferCreate(uid, false);
       if (!check.ok) return check;
       continue;
     }
@@ -711,7 +739,7 @@ async function enforceOfferDailyLimitsOnLobbyWrites(
     const exHad = (ex.applicants || []).some((a: any) => memberUserId(a) === uid);
     const nextHas = (lobby.applicants || []).some((a: any) => memberUserId(a) === uid);
     if (!exHad && nextHas) {
-      const check = await checkAndRecordOfferAction(uid, user);
+      const check = await checkAndRecordOfferApply(uid, false);
       if (!check.ok) return check;
     }
   }
@@ -751,7 +779,6 @@ export async function validateDataWrites(
           (existing.lobbies as any[]) || [],
           result.value as any[],
           userId,
-          (existing.registeredUsers as any[]) || [],
           isAdmin
         );
         if (!limitCheck.ok) return limitCheck;

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { grantDiscordGuildRole } from "@/lib/discordGuild";
 
 /** Grants the verified role if the signed-in user is already in the UPLINK Discord server. */
 export async function POST(req: Request) {
-  const session = await getAppSession(req);
-  if (!session?.user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) {
+    return NextResponse.json({ ok: false, error }, { status });
   }
 
   const userId = (session.user as { id?: string }).id;

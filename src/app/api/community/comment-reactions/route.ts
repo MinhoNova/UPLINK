@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { getDb } from "@/db";
 import { commentReactions } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
@@ -7,8 +7,8 @@ import { visibleCommentIds } from "@/lib/communityPostAccess";
 
 export async function GET(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const { searchParams } = new URL(req.url);
   const commentIds = searchParams.get("commentIds");
@@ -44,8 +44,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const db = await getDb();
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const { commentId, type }: any = await req.json();
   if (!commentId || !type) return NextResponse.json({ error: "Missing fields" }, { status: 400 });

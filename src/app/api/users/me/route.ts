@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
-import { validateRegisteredUsers, isAdminUser } from "@/lib/secureDataWrite";
+import { validateRegisteredUsers, isAdminUser, PROTECTED_SELF_FIELDS } from "@/lib/secureDataWrite";
 import { getBanInfo } from "@/lib/banCheck";
-
-const PROTECTED_SELF_FIELDS = ["id", "username", "subscription"] as const;
 
 export async function GET(req: Request) {
   const auth = await requireSession(req);
@@ -49,8 +47,10 @@ export async function PATCH(req: Request) {
 
   const existing = registeredUsers[idx];
   const merged = { ...existing, ...incoming };
+  // Unconditional restore, same reason as secureDataWrite: a conditional guard
+  // leaves any field the server has never set writable by the client.
   for (const field of PROTECTED_SELF_FIELDS) {
-    if (existing[field] !== undefined) merged[field] = existing[field];
+    merged[field] = existing[field];
   }
   for (const field of ["profileGif", "profileGifThumb", "customAvatar", "banner", "nameColor"] as const) {
     if (field in incoming && (incoming[field] === null || incoming[field] === "")) {

@@ -85,6 +85,10 @@ async function newPlayerRow(identity: DiscordIdentity): Promise<PlayerRow> {
     lastKnownIp: null,
     stats: { total: 0, k5: 0, k10: 0, k15: 0, k20: 0 },
     subscription: { tier: "free" },
+    // Null = not yet approved to publish offers. Initialized here so the
+    // protected-field restore in secureDataWrite always has a value to restore;
+    // a field that starts undefined is self-writable.
+    posterApprovedAt: null,
   };
 }
 

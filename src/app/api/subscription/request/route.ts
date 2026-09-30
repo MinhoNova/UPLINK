@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAppSession } from "@/lib/authEnv";
+import { getActiveSession } from "@/lib/authEnv";
 import { getKV, setKV, initTables } from "@/lib/db";
 import { TICKET_TTL_MS } from "@/lib/tickets";
 import {
@@ -10,8 +10,8 @@ import {
 } from "@/lib/subscriptionPlans";
 
 export async function POST(req: Request) {
-  const session = await getAppSession(req);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error, status } = await getActiveSession(req);
+  if (!session) return NextResponse.json({ error }, { status });
 
   const userId = (session.user as { id?: string }).id || "";
   const body: any = await req.json();

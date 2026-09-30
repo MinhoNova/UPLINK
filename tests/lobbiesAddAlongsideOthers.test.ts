@@ -21,7 +21,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const ME = "1472005392849703025";
 const OTHER = "711027724663128106";
 
-const { LOBBIES, atomicMock } = vi.hoisted(() => {
+const { LOBBIES, atomicMock, getKVMock } = vi.hoisted(() => {
   const lobbies = [
     // Someone else's live offer, carrying private chat the caller never sees.
     { id: "1790139137329", ownerId: "711027724663128106", status: "standby", accepted: [], applicants: [], messages: [{ id: 1, text: "private" }] },
@@ -33,16 +33,27 @@ const { LOBBIES, atomicMock } = vi.hoisted(() => {
     lobbies.push(...next);
     return { ok: true, value: next };
   });
-  return { LOBBIES: lobbies, atomicMock: mock };
+  const getKV = vi.fn(async (_key: string) => null as any);
+  return { LOBBIES: lobbies, atomicMock: mock, getKVMock: getKV };
 });
 
 vi.mock("@/lib/authz", () => ({ requireSession: vi.fn() }));
 vi.mock("@/lib/db", () => ({
   initTables: vi.fn(async () => {}),
+  getKV: (key: string) => getKVMock(key),
   updateKVAtomic: (key: string, mutator: (c: any[] | null) => any) => atomicMock(key, mutator),
 }));
 vi.mock("@/lib/banCheck", () => ({ addUserBan: vi.fn(async () => {}) }));
 vi.mock("@/lib/auditLog", () => ({ logAudit: vi.fn(async () => {}) }));
+// Covered by tests/posterApproval.test.ts; stubbed so this file stays focused on
+// the merge behaviour it was written to protect.
+vi.mock("@/lib/posterApproval", () => ({
+  getPosterStanding: vi.fn(async () => ({ allowed: true, reason: "approved" })),
+}));
+vi.mock("@/lib/offerDailyLimit", () => ({
+  checkAndRecordOfferCreate: vi.fn(async () => ({ ok: true })),
+  offerCreateLimitError: () => "limit",
+}));
 
 async function put(asUser: string, lobbies: any[], role = "user") {
   const { requireSession } = await import("@/lib/authz");

@@ -38,6 +38,10 @@
   "triggers": {
     "crons": ["* * * * *"]
   },
+  // The workers.dev subdomain served a second, unmonitored copy of the whole
+  // app (including every /api route) alongside aion2lfg.com. Nothing can be
+  // locked down at the origin once it is public, so it is turned off.
+  "workers_dev": false,
   "vars": {
     "AUTH_TRUST_HOST": "true",
     "AUTH_DEBUG": "false",

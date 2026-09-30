@@ -4,7 +4,7 @@ import { getKV, setKV, initTables } from "@/lib/db";
 import { extendSecretClubSubscription, getSubscriptionDaysLeft } from "@/lib/userProfile";
 
 export async function POST(req: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body: any = await req.json();

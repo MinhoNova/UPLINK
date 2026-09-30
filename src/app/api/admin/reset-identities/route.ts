@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
 import { getKV, setKV, initTables } from "@/lib/db";
 
-export async function POST() {
-  const auth = await requireAdmin();
+export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   await initTables();

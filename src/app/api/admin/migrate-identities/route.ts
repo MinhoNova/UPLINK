@@ -17,8 +17,8 @@ import { findDuplicateUsernames } from "@/lib/playerIdentity";
  * POST only, deliberately: it mutates production data, so it must not be
  * reachable from a link prefetch.
  */
-export async function POST() {
-  const auth = await requireAdmin();
+export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   await initTables();

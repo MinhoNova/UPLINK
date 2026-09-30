@@ -5,7 +5,7 @@ import { posts, reactions, reports, comments, commentReactions } from "@/db/sche
 import { eq, inArray } from "drizzle-orm";
 export async function DELETE(req: Request) {
   const db = await getDb();
-  const auth = await requireModerator();
+  const auth = await requireModerator(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { postId } = (await req.json()) as { postId?: number };

@@ -18,22 +18,61 @@ export type SessionResult =
   | { ok: true; user: SessionUser }
   | { ok: false; status: number; error: string; suspended?: boolean; user?: SessionUser };
 
-/** Block browser requests from other origins to prevent CSRF. Non-browser/unknown origins pass. */
+/** Hosts we accept as first-party. Derived from config so a tunnel/dev host can't widen it. */
+function trustedHosts(): Set<string> {
+  const hosts = new Set<string>();
+  for (const raw of [process.env.NEXTAUTH_URL, process.env.NEXT_PUBLIC_SITE_URL]) {
+    if (!raw) continue;
+    try {
+      hosts.add(new URL(raw).host.toLowerCase());
+    } catch {
+      /* ignore malformed config */
+    }
+  }
+  return hosts;
+}
+
+/** Strip a leading "www." so apex and www are treated as the same site. */
+function normalizeHost(host: string): string {
+  return host.trim().toLowerCase().replace(/^www\./, "");
+}
+
+/**
+ * Block cross-site browser requests (CSRF). Non-browser callers send no Origin
+ * and no Sec-Fetch-Site, and are allowed through — cookie SameSite is their only
+ * cross-site control, and a forged Origin header is not something a browser can
+ * omit, which is exactly the case this must reject.
+ */
 function sameOrigin(req?: Request): boolean {
   if (!req) return true;
-  const origin = req.headers.get("origin");
-  if (!origin) return true;
-  try {
-    const originHost = new URL(origin).host;
-    const host = req.headers.get("host");
-    if (host && originHost === host) return true;
-    // Allow custom domain (e.g. aion2lfg.com) when host is the Workers domain
-    const siteUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL;
-    if (siteUrl && originHost === new URL(siteUrl).host) return true;
-    return true; // Trust host on Workers (CSRF handled by NextAuth)
-  } catch {
-    return true;
+
+  // A browser always sends Sec-Fetch-Site on cross-site requests. If it says
+  // cross-site or same-site-but-different-origin, reject before looking at Origin.
+  const fetchSite = (req.headers.get("sec-fetch-site") || "").toLowerCase();
+  if (fetchSite === "cross-site") return false;
+  if (fetchSite === "same-site" || fetchSite === "none") {
+    // "none" means a direct navigation/address-bar hit, which is not an XHR;
+    // "same-site" is a different subdomain, so it still needs the Origin check below.
+    if (fetchSite === "none") return true;
   }
+
+  const origin = req.headers.get("origin");
+  // No Origin: not a browser cross-origin request (native app, curl, server-to-server).
+  if (!origin) return true;
+
+  let originHost: string;
+  try {
+    originHost = new URL(origin).host;
+  } catch {
+    // An Origin we cannot parse is never a legitimate same-site value.
+    return false;
+  }
+
+  const requestHost = req.headers.get("host") || "";
+  if (requestHost && normalizeHost(requestHost) === normalizeHost(originHost)) return true;
+  if (trustedHosts().has(normalizeHost(originHost))) return true;
+
+  return false;
 }
 
 async function authorize(req?: Request): Promise<SessionResult> {

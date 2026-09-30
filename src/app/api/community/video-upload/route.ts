@@ -1,11 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
+import { checkUploadQuota, incrementUploadQuota } from "@/lib/imageSecurity";
 
 const MAX_VIDEO_BYTES = 15 * 1024 * 1024;
 
+/** Container signatures we accept, mapped to the extension we store under. */
+const VIDEO_SIGNATURES: { ext: string; mime: string; test: (b: Buffer) => boolean }[] = [
+  // WebM first: Matroska and WebM share the EBML magic, so distinguish on the
+  // DocType string that follows. WebM plays in every browser; MKV mostly does not.
+  {
+    ext: "webm",
+    mime: "video/webm",
+    test: (b) =>
+      b.length > 8 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3 &&
+      b.subarray(0, 64).toString("latin1").includes("webm"),
+  },
+  {
+    ext: "mkv",
+    mime: "video/x-matroska",
+    test: (b) => b.length > 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3,
+  },
+  // ISO base media file format (mp4, mov, m4v): bytes 4..8 are "ftyp".
+  {
+    ext: "mp4",
+    mime: "video/mp4",
+    test: (b) => b.length > 12 && b.subarray(4, 8).toString("latin1") === "ftyp",
+  },
+];
+
+function sniffVideo(buffer: Buffer) {
+  for (const sig of VIDEO_SIGNATURES) {
+    try {
+      if (sig.test(buffer)) return sig;
+    } catch {
+      /* try the next signature */
+    }
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
-  const auth = await requireSession();
+  // Pass `req`: without it the cross-origin check is skipped entirely.
+  const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const formData = await req.formData();
@@ -14,9 +51,24 @@ export async function POST(req: NextRequest) {
 
   if (file.size > MAX_VIDEO_BYTES) return NextResponse.json({ error: "Video too large (max 15MB)" }, { status: 413 });
 
-  const ext = file.name.match(/\.(\w+)$/)?.[1]?.toLowerCase() || "mp4";
+  const uid = String((auth.user as any).id);
+  const quota = await checkUploadQuota(uid);
+  if (!quota.ok) return NextResponse.json({ error: quota.error }, { status: 429 });
+
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const url = await storeCommunityMediaFile((auth.user as any).id, buffer, ext, file.type || "video/mp4");
+  // Identify by content, not by the filename extension or the client-supplied
+  // Content-Type. Both are attacker-controlled, and the stored blob is served
+  // back under the MIME type we choose here.
+  const sig = sniffVideo(buffer);
+  if (!sig) {
+    return NextResponse.json(
+      { error: "Unsupported video format. Upload an MP4 or WebM file." },
+      { status: 415 }
+    );
+  }
+
+  await incrementUploadQuota(uid);
+  const url = await storeCommunityMediaFile(uid, buffer, sig.ext, sig.mime);
   return NextResponse.json({ url });
 }
