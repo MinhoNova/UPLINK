@@ -42,16 +42,33 @@ export interface RankAwardOutcome {
 }
 
 /**
- * Compare previous vs. incoming lobbies and credit rank counters server-side:
- * - a lobby that transitioned to completed+paid bumps each member's run stats (+1) once;
- * - a brand-new lobby owned by the caller bumps their poster postCount (+1).
- * Marking lobbies with `rankAwarded` keeps it idempotent across repeated writes.
+ * Server-side ledger of every lobby that has already been counted.
+ *
+ * The marker used to live on the lobby itself (`rankAwardedBooster`), which is
+ * a field the caller's browser supplies. That made the award replayable without
+ * any tooling: set `rankAwardedBooster` back to false, flip the offer to
+ * completed+paid, get the counters back, repeat. Twenty offers became unlimited
+ * rank, and the `accepted` roster that decides who gets credited is a field the
+ * same request supplies — so the credited member list was chosen by the caller
+ * too.
+ *
+ * The ledger is keyed in server storage the client never writes, so a lobby can
+ * be counted exactly once for the lifetime of the site. `rankAwardedBooster` is
+ * still set, purely as a readable marker in the saved row.
  */
+export const RANK_AWARD_LEDGER_KEY = "rankAwardedLobbyIds";
+
+export function awardedLobbyIds(ledger: any): Set<string> {
+  const raw = Array.isArray(ledger) ? ledger : [];
+  return new Set(raw.map((v: any) => String(v)).filter(Boolean));
+}
+
 export function applyRankAwards(
   existingLobbies: any[],
   incomingLobbies: any[],
   existingUsers: any[],
-  userId: string
+  userId: string,
+  alreadyAwarded: Set<string> = new Set()
 ): RankAwardOutcome {
   const lobbies = incomingLobbies.map((l: any) => ({ ...l }));
   const users = existingUsers.map((u: any) => ({ ...u }));
@@ -63,8 +80,11 @@ export function applyRankAwards(
   for (const next of lobbies) {
     const prev = existingLobbies.find((l: any) => String(l.id) === String(next.id));
     const isNew = !prev;
+    const lobbyKey = String(next?.id ?? "");
+    const countedBefore = lobbyKey ? alreadyAwarded.has(lobbyKey) : false;
     const completedNow =
       !isNew &&
+      !countedBefore &&
       !(prev.status === "completed" && prev.payoutStatus === "paid") &&
       next.payoutStatus === "paid" &&
       (next.status === "completed");
@@ -79,7 +99,7 @@ export function applyRankAwards(
       }
     }
 
-    if (completedNow && !next.rankAwardedBooster) {
+    if (completedNow) {
       const memberIds = [next.ownerId, ...(next.accepted || []).map(memberId)];
       const kLevel = parseInt(String(next.keyLevel || "").replace("+", "") || "0", 10);
       const category = lobbyCategory(next);

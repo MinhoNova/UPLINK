@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getKVPairs, setKV, initTables } from '@/lib/db';
+import { getKVPairs, setKV, getKV, initTables } from '@/lib/db';
 import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
@@ -13,7 +13,7 @@ import { recordPaymentFraudAttempt } from '@/lib/paymentFraud';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
-import { applyRankAwards } from '@/lib/rankAwards';
+import { applyRankAwards, awardedLobbyIds, RANK_AWARD_LEDGER_KEY } from '@/lib/rankAwards';
 import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
 import { getPublicDataCached, setPublicDataCached, FULL_DATA_CACHE_KEY } from '@/lib/cloudflareBindings';
 
@@ -215,30 +215,43 @@ export async function POST(req: Request) {
     let sanitized = validation.sanitized;
 
     if (Array.isArray(sanitized.lobbies) && Array.isArray(existing.registeredUsers)) {
+      // The award ledger is server storage. Reading it here is what makes an
+      // award un-replayable: the `rankAwardedBooster` field on the lobby is
+      // caller-supplied and can be cleared at will, but the lobby's id in this
+      // list cannot be touched from a request.
+      const ledger = awardedLobbyIds(await getKV(RANK_AWARD_LEDGER_KEY));
       const outcome = applyRankAwards(
         (existing.lobbies as any[]) || [],
         sanitized.lobbies as any[],
         existing.registeredUsers as any[],
-        auth.user.id
+        auth.user.id,
+        ledger
       );
       if (outcome.awarded.boosterRuns > 0 || outcome.awarded.posterPosts > 0) {
-        if (Array.isArray(sanitized.registeredUsers)) {
-          const awardedMap = new Map(outcome.users.map((u: any) => [String(u.id), u]));
-          (sanitized.registeredUsers as any[]).forEach((clientUser: any, idx: number) => {
-            const awarded = awardedMap.get(String(clientUser.id));
-            if (awarded) {
-              (sanitized.registeredUsers as any[])[idx] = {
-                ...awarded,
-                ...clientUser,
-                stats: awarded.stats,
-              };
-            }
-          });
-        } else {
-          sanitized = { ...sanitized, registeredUsers: outcome.users };
+        // Any lobby that paid out in this write joins the ledger, whatever the
+        // request claimed its marker was.
+        for (const l of outcome.lobbies as any[]) {
+          if (l?.id != null && l?.rankAwardedBooster) ledger.add(String(l.id));
         }
-        sanitized = { ...sanitized, lobbies: outcome.lobbies };
+        await setKV(RANK_AWARD_LEDGER_KEY, Array.from(ledger));
       }
+
+      if (Array.isArray(sanitized.registeredUsers)) {
+        const awardedMap = new Map(outcome.users.map((u: any) => [String(u.id), u]));
+        (sanitized.registeredUsers as any[]).forEach((clientUser: any, idx: number) => {
+          const awarded = awardedMap.get(String(clientUser.id));
+          if (awarded) {
+            (sanitized.registeredUsers as any[])[idx] = {
+              ...awarded,
+              ...clientUser,
+              stats: awarded.stats,
+            };
+          }
+        });
+      } else {
+        sanitized = { ...sanitized, registeredUsers: outcome.users };
+      }
+      sanitized = { ...sanitized, lobbies: outcome.lobbies };
     }
 
     if (Array.isArray(sanitized.lobbies) && Array.isArray(existing.lobbies)) {
