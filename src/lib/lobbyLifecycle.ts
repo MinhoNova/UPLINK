@@ -901,23 +901,35 @@ export function hasIndependentSquadMember(lobby: any): boolean {
   if (!lobby) return false;
   const ownerId = String(lobby.ownerId || "");
 
-  const appliedIds = new Set(
+  const pendingIds = new Set(
     (lobby.applicants || [])
       .map((a: any) => memberIdentityKey(a))
       .filter((id: string) => !!id)
   );
 
-  const independent = (m: any) => {
+  const onRosterThroughRealPath = (m: any): boolean => {
     const mid = memberIdentityKey(m);
     if (!mid || mid === ownerId) return false;
-    if (m.status === "invited") return false;
-    if (!appliedIds.has(mid)) return false;
-    return true;
+    if (m.status === "invited" || m.inviteExpiresAt) return false;
+    // A genuine squad member reaches `accepted` through the apply or invite
+    // paths, both of which stamp `applicantId` on the member and then REMOVE
+    // them from `applicants` (see acceptApplicantIntoLobby / confirmApplicantJoin).
+    // Asking whether they are still in `applicants` therefore rejects every
+    // real, already-accepted party. Their retained `applicantId` — filled from
+    // the applicant's own session server-side — is the evidence that remains.
+    if (pendingIds.has(mid)) return true;
+    if (m.applicantId) return true;
+    if (m.invitedAt) return true;
+    return false;
   };
-  if ((lobby.accepted || []).some((m: any) => independent(m))) return true;
-  return (lobby.history || []).some(
-    (h: any) => Number(h.runsAtExit) > 0 && independent(h)
-  );
+
+  if ((lobby.accepted || []).some((m: any) => onRosterThroughRealPath(m))) return true;
+  return (lobby.history || []).some((h: any) => {
+    if (Number(h.runsAtExit) <= 0) return false;
+    const mid = memberIdentityKey(h);
+    if (!mid || mid === ownerId) return false;
+    return !(h.status === "invited");
+  });
 }
 
 /** Match squad member to session user id (handles legacy id / userId / applicantId fields). */
