@@ -3,7 +3,16 @@ import { getPosterStanding } from "@/lib/posterApproval";
 import { isSecretClubTier } from "@/lib/userProfile";
 import { findDuplicateUsernames, normRef, type PlayerRecord } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
-import { canOwnerCancelLobby, hasIndependentSquadMember } from "@/lib/lobbyLifecycle";
+import { canOwnerCancelLobby, hasIndependentSquadMember, hasRealMissionEvidence } from "@/lib/lobbyLifecycle";
+
+/** Offer states past their mission: settling or clearing them is never a start. */
+const FINISHED_OFFER_STATUSES = new Set([
+  "completed",
+  "unpaid",
+  "payment_pending",
+  "cancelled",
+  "failed",
+]);
 import { checkAndRecordOfferApply, checkAndRecordOfferCreate } from "@/lib/offerDailyLimit";
 
 export const ADMIN_ID = "1497295886223544471";
@@ -457,10 +466,16 @@ export function validateLobbies(
         !(ex.status === "completed" && ex.payoutStatus === "paid") &&
         lobby.status === "completed" &&
         lobby.payoutStatus === "paid";
-      if (justPaid && !hasIndependentSquadMember(lobby)) {
+      // A solo payout is refused: it is the one write that mints rank for a run
+      // nobody else was in. The offer's own records count as proof that a squad
+      // really played, because the roster empties out the moment the last member
+      // leaves — an `unpaid` offer with nobody on it is the normal shape of a
+      // finished mission, not a fraud signal, and it is the owner of that
+      // mission who is stuck unable to settle it.
+      if (justPaid && !hasIndependentSquadMember(lobby) && !hasRealMissionEvidence(lobby)) {
         return {
           ok: false,
-          error: "Payment rejected: requires another confirmed player. Account suspended for payment fraud attempt.",
+          error: "Payment rejected: this offer has no record of another player. If the mission did run, ask an admin to check the audit log.",
           fraudAttempt: { userId, lobbyId: String(lobby.id) },
         };
       }
@@ -468,11 +483,19 @@ export function validateLobbies(
       // squad roster is the point of these missions: starting alone papered a
       // solo "run" as a real one, minted rank out of nothing, and when the
       // server closed the hole on read the started status silently reverted on
-      // the next refresh. Reject the transition outright instead. A mission that
-      // is ALREADY in_progress with a missionStartTime (a partner left mid-run)
-      // is untouched — only the start itself needs a squad.
+      // the next refresh. Reject the transition outright instead.
+      //
+      // Only a move INTO a live mission is a start. A finished offer keeps the
+      // records of the mission it ran — its start time, its completion votes —
+      // and settling that offer is not a new start; treating the carried-over
+      // `missionStartTime` as one refused the payout of a mission that plainly
+      // happened, and told its owner they had tried to start one alone. Same
+      // for an offer already stored with a start time: that start was vetted
+      // when it happened.
       const justStarted =
-        !(ex.status === "in_progress" && ex.missionStartTime) &&
+        !FINISHED_OFFER_STATUSES.has(String(lobby.status || "standby")) &&
+        !(ex?.status === "in_progress" && ex?.missionStartTime) &&
+        !ex?.missionStartTime &&
         (lobby.status === "in_progress" || !!lobby.missionStartTime) &&
         !isAdmin;
       if (justStarted && !hasIndependentSquadMember(lobby)) {

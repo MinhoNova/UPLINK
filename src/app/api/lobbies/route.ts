@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { getKV, initTables, updateKVAtomic } from "@/lib/db";
 import { validateLobbies } from "@/lib/secureDataWrite";
-import { addUserBan } from "@/lib/banCheck";
-import { logAudit } from "@/lib/auditLog";
+import { recordPaymentFraudAttempt } from "@/lib/paymentFraud";
 import { checkAndRecordOfferCreate, offerCreateLimitError } from "@/lib/offerDailyLimit";
 import { getPosterStanding } from "@/lib/posterApproval";
 
@@ -123,17 +122,25 @@ export async function PUT(req: Request) {
 
   const fraud = fraudAttempt as { userId: string; lobbyId: string } | null;
   if (fraud) {
-    await addUserBan({
-      id: auth.user.id,
-      handle: auth.user.username,
-      reason: "payment_fraud: attempted to mark a mission paid without another confirmed player",
-    }).catch(() => {});
-    await logAudit({
-      action: "system.paymentFraud",
-      userId: auth.user.id,
-      handle: auth.user.username,
-      meta: { lobbyId: fraud.lobbyId, reason: "permanent ban" },
-    }).catch(() => {});
+    // The write is refused either way; what changes is the account. One attempt
+    // is a warning, a pattern is a suspension, and every attempt is audited.
+    const attempt = await recordPaymentFraudAttempt(
+      { id: auth.user.id, username: auth.user.username },
+      fraud.lobbyId
+    ).catch(() => null);
+    return NextResponse.json(
+      {
+        error:
+          (attempt?.banned
+            ? "Payment rejected and this account is now suspended. Contact support if you believe this is a mistake."
+            : attempt
+              ? `${abortReason} (attempt ${attempt.strikes} of ${attempt.limit} — an account suspended after ${attempt.limit})`
+              : abortReason) || "Payment rejected.",
+        suspended: !!attempt?.banned,
+        attempt: attempt?.strikes ?? null,
+      },
+      { status: 403 }
+    );
   }
 
   if (!res.ok) {

@@ -78,4 +78,77 @@ describe("completing a paid offer does not bounce to standby", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toMatch(/Payment rejected/);
   });
+
+  it("does not claim a suspension on the refusal — the route decides that", async () => {
+    getKVMock.mockResolvedValue([]);
+    const prev = { ...state, lobbies: [lobbyRow()] };
+    const done = [
+      lobbyRow({
+        status: "completed",
+        payoutStatus: "paid",
+        accepted: [{ id: "stranger-id", status: "confirmed" }],
+      }),
+    ];
+    const res = await validateDataWrites({ lobbies: done }, prev, OWNER, "x");
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      // A single refused write used to read as "account suspended", which is a
+      // claim the validator cannot make: strikes and the suspension are the
+      // route's business, and this error must not pre-announce them.
+      expect(res.error).not.toMatch(/suspend/i);
+      expect(res.fraudAttempt).toEqual({ userId: OWNER, lobbyId: "lobby-1" });
+    }
+  });
+});
+
+/**
+ * A finished offer with an empty roster is the normal shape of a mission whose
+ * last member left — the roster empties the moment they do. Refusing those
+ * payouts locked the owner of a genuinely played mission out of settling it, so
+ * the mission's own records count as the proof.
+ */
+describe("paying an offer whose squad has since left", () => {
+  const payEvidence = (evidence: Record<string, unknown>) => {
+    getKVMock.mockResolvedValue([]);
+    const prev = { ...state, lobbies: [lobbyRow({ status: "unpaid" })] };
+    const done = [
+      lobbyRow({
+        status: "completed",
+        payoutStatus: "paid",
+        accepted: [],
+        ...evidence,
+      }),
+    ];
+    return validateDataWrites({ lobbies: done }, prev, OWNER, "x");
+  };
+
+  it("accepts a foot ledger: members who left after playing runs", async () => {
+    const res = await payEvidence({
+      history: [{ applicantId: "player-9", runsAtExit: 2, reason: "left" }],
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  it("accepts a mission that was started and voted complete", async () => {
+    const res = await payEvidence({
+      missionStartTime: 1700000000000,
+      votes: [{ userId: "player-9" }],
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  it("accepts tracked runs on the offer", async () => {
+    const res = await payEvidence({ detectedRuns: [{ at: 1 }] });
+    expect(res.ok).toBe(true);
+  });
+
+  it("still rejects a solo offer with nothing but an empty roster", async () => {
+    const res = await payEvidence({});
+    expect(res.ok).toBe(false);
+  });
+
+  it("does not count a history entry that never played a run", async () => {
+    const res = await payEvidence({ history: [{ applicantId: "player-9", runsAtExit: 0, reason: "left" }] });
+    expect(res.ok).toBe(false);
+  });
 });

@@ -73,6 +73,23 @@ export async function POST(req: Request) {
       abortReason = "This offer is already finished — members can only be removed from its roster, with no runs attributed.";
       return undefined;
     }
+    // The member must be on the roster this offer actually has. Without this the
+    // owner could name anyone in the world as a "member", write them into the
+    // foot ledger with however many runs they liked, and that ledger is
+    // evidence a mission really ran — which the payment gate reads, and which
+    // also grants the named person access to the thread afterwards.
+    const roster: any[] = Array.isArray((lobby as any).accepted) ? (lobby as any).accepted : [];
+    const onRoster = roster.some(
+      (a: any) => memberIdentityKey(a) === memberIdentityKey(member)
+    );
+    if (!onRoster) {
+      abortReason = "That player is not on this offer's squad.";
+      return undefined;
+    }
+    if (String((lobby as any).ownerId) === memberIdentityKey(member)) {
+      abortReason = "The offer owner cannot be removed from their own offer.";
+      return undefined;
+    }
     const splitResult = splitLobbyAfterMemberExit(
       cur,
       String(lobbyId),

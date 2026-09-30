@@ -885,6 +885,26 @@ export function memberIdentityKey(member: any): string {
   return String(member?.applicantId ?? member?.userId ?? member?.id ?? "");
 }
 
+/** True when the offer itself carries a record of a real, played group mission.
+ *
+ *  The roster is not the only evidence a mission happened, and treating it as
+ *  the only one locked owners out of paying a mission that genuinely ran: when
+ *  the last member leaves an `unpaid` offer, the foot ledger in `history` and
+ *  the mission records (start time, completion votes, tracked runs) are exactly
+ *  what remains, and a solo-looking offer here is the normal shape of a
+ *  finished one — not evidence of fraud. All of these are written through the
+ *  validated write path, and a start in particular can only be stored with a
+ *  real member on the roster (see the justStarted gate in `secureDataWrite`). */
+export function hasRealMissionEvidence(lobby: any): boolean {
+  if (!lobby) return false;
+  if (lobby.missionStartTime) return true;
+  if ((lobby.votes || []).length > 0) return true;
+  if ((lobby.detectedRuns || []).length > 0) return true;
+  if ((lobby.completedRuns || []).length > 0) return true;
+  if (Number(lobby.completedRunsCount) > 0) return true;
+  return (lobby.history || []).some((h: any) => Number(h.runsAtExit) > 0);
+}
+
 /** True when the lobby has at least one confirmed player other than the offer owner.
  *
  *  Membership in `accepted` is NOT evidence of anything on its own: the owner

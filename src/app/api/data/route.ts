@@ -8,7 +8,8 @@ import { filterDataForUser } from '@/lib/dataAccess';
 import { publicDataView } from '@/lib/publicDataView';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
-import { isUserBanned, bannedResponse, getBanInfo, addUserBan } from '@/lib/banCheck';
+import { isUserBanned, bannedResponse, getBanInfo } from '@/lib/banCheck';
+import { recordPaymentFraudAttempt } from '@/lib/paymentFraud';
 import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
@@ -189,19 +190,22 @@ export async function POST(req: Request) {
     const validation = await validateDataWrites(newData, existing, auth.user.id, auth.user.username);
     if (!validation.ok) {
       if (validation.fraudAttempt) {
-        await addUserBan({
-          id: auth.user.id,
-          handle: auth.user.username,
-          reason: "payment_fraud: attempted to mark a mission paid without another confirmed player",
-        }).catch(() => {});
-        await logAudit({
-          action: "system.paymentFraud",
-          userId: auth.user.id,
-          handle: auth.user.username,
-          meta: { lobbyId: validation.fraudAttempt.lobbyId, reason: "permanent ban" },
-        }).catch(() => {});
+        // Refused write: warn first, suspend on a pattern, audit every attempt.
+        const attempt = await recordPaymentFraudAttempt(
+          { id: auth.user.id, username: auth.user.username },
+          validation.fraudAttempt.lobbyId
+        ).catch(() => null);
         return NextResponse.json(
-          { error: validation.error, suspended: true },
+          {
+            error:
+              (attempt?.banned
+                ? "Payment rejected and this account is now suspended. Contact support if you believe this is a mistake."
+                : attempt
+                  ? `${validation.error} (attempt ${attempt.strikes} of ${attempt.limit} — an account suspended after ${attempt.limit})`
+                  : validation.error) || "Payment rejected.",
+            suspended: !!attempt?.banned,
+            attempt: attempt?.strikes ?? null,
+          },
           { status: 403 }
         );
       }
