@@ -252,11 +252,11 @@ function memberUserId(member: { applicantId?: string; userId?: string; id?: stri
 }
 
 /**
- * Fields only the server (or an admin) may set. A non-admin caller — including
- * the offer's own owner, and including any accepted member — cannot write these
- * through a normal save. They are clamped back to the stored value rather than
- * the whole save being rejected, so a client that still sends them (or a
- * hand-rolled request that does) simply has the forgery discarded.
+ * Fields only the server (or an admin) may set, whoever is writing — the
+ * offer's identity and the markers that decide whether a payout mints rank.
+ * Clamped back to the stored value rather than rejecting the save, so a client
+ * that still sends them (or a hand-rolled request) has the forgery discarded
+ * without losing the rest of a legitimate write.
  */
 const SERVER_OWNED_LOBBY_FIELDS = [
   "id",
@@ -272,50 +272,80 @@ function memberKey(member: any): string {
 }
 
 /**
- * Clamp the fields a non-admin writer is not allowed to change.
+ * Restrict what a non-owner squad member may do to an offer.
  *
- * A member of the squad was previously handed the same authority as the owner
- * over the whole lobby — status, payout state, the owner id, the payment proof,
- * the whole roster. That let any accepted player rewrite an offer they were on
- * (and, with a roster they supplied themselves, mint rank). Only the owner may
- * move the offer through its lifecycle; a member may still post messages, cast
- * their own completion vote, and remove themselves.
+ * Deliberately narrow. An earlier version froze every lifecycle field
+ * (`status`, `payoutStatus`, `runsCount`, `completedAt`, `roles`, `history`…)
+ * for members, which looked right and broke six real flows: voting a dungeon
+ * mission complete, completing a leveling run, failing a mission, the
+ * foot-complete split, and the member-exit path. Members are supposed to drive
+ * those outcomes — that is the whole point of a squad vote — so lifecycle
+ * fields stay writable. What is closed here is the part with no legitimate
+ * flow behind it:
+ *
+ *  - promoting yourself from `invited` into `accepted`, which granted
+ *    `hasIndependentSquadMember` standing and thread access you had not been
+ *    given;
+ *  - adding rows to the roster that were never in it, which is how a member
+ *    minted rank for accounts that did not play;
+ *  - editing or discarding another member's row;
+ *  - rewriting the vote arrays wholesale, which let one member delete the
+ *    thread's votes, forge votes attributed to other players, and vote twice to
+ *    cross the completion threshold on their own.
+ *
+ * Votes are now append-only and carry the caller's own id, one per player.
  */
 function clampMemberWrite(ex: any, lobby: any, userId: string): any {
   const uid = String(userId);
-  let next = { ...lobby };
+  const next = { ...lobby };
 
-  // Everything not on this short list is frozen to the stored value for a
-  // member: status, payoutStatus, paymentProof, ownerId, roster, content…
-  // `accepted` is listed because the block below owns that field specifically —
-  // a member may remove themselves, and nothing else about it moves.
-  const MEMBER_WRITABLE = new Set(["messages", "votes", "footLedger", "accepted"]);
-  for (const key of Object.keys(next)) {
-    if (MEMBER_WRITABLE.has(key)) continue;
-    if (JSON.stringify(next[key]) === JSON.stringify(ex[key])) continue;
-    next[key] = ex[key];
-  }
-  // …and the same list protects the member from the server-owned fields too, in
-  // case one of them is ever added to MEMBER_WRITABLE.
-  for (const f of SERVER_OWNED_LOBBY_FIELDS) {
-    if (f in ex && JSON.stringify((next as any)[f]) !== JSON.stringify((ex as any)[f])) {
-      (next as any)[f] = (ex as any)[f];
-    }
-  }
-  // A member may withdraw themselves from the squad, and may not touch anyone
-  // else's row or add anyone.
+  // Roster: the stored rows are the roster. The caller may drop their own row
+  // (leaving) and may edit their own row, but cannot introduce anyone.
   if (Array.isArray(ex.accepted)) {
     const exAccepted = ex.accepted as any[];
     const nextAccepted = Array.isArray(next.accepted) ? (next.accepted as any[]) : exAccepted;
-    const filtered = nextAccepted.filter((m) => {
+    const out: any[] = [];
+    for (const m of nextAccepted) {
       const k = memberKey(m);
       const stored = exAccepted.find((s) => memberKey(s) === k);
-      if (k === uid) return true; // may leave
-      if (!stored) return false; // may not add
-      return JSON.stringify(m) === JSON.stringify(stored); // may not edit others
-    });
-    next = { ...next, accepted: filtered };
+      // Their own row, but only if the store already had it. An `invited` member
+      // adding a row keyed to themselves is the self-promotion case: it is
+      // dropped here, and dropping their own stored row is how they leave.
+      if (k === uid) {
+        if (stored) out.push(m);
+        continue;
+      }
+      // A row the store never had is an addition, not an edit.
+      if (!stored) continue;
+      // Someone else's row is not theirs to change. Revert it to what is stored
+      // rather than dropping it — dropping would quietly remove a squad member
+      // from the offer, which is a different kind of corruption.
+      out.push(JSON.stringify(m) === JSON.stringify(stored) ? m : stored);
+    }
+    next.accepted = out;
   }
+
+  // Votes: append-only, self-authored, one per player. Mirrors the shape
+  // `validateUserTicketUpdate` already enforces on mod threads.
+  for (const field of ["votes", "failVotes"] as const) {
+    const exVotes = Array.isArray(ex[field]) ? (ex[field] as any[]) : [];
+    const nextVotes = Array.isArray(next[field]) ? (next[field] as any[]) : exVotes;
+    if (nextVotes.length <= exVotes.length) {
+      // Shrinking or rewriting in place is never a member's to do.
+      next[field] = exVotes;
+      continue;
+    }
+    const seen = new Set(exVotes.map((v) => String(memberUserId(v) || v?.userId || "")));
+    const kept = nextVotes.filter((v) => {
+      const who = String(memberUserId(v) || v?.userId || "");
+      if (who !== uid) return false; // no votes on anyone else's behalf
+      if (seen.has(who)) return false; // one vote per player
+      seen.add(who);
+      return true;
+    });
+    next[field] = [...exVotes, ...kept];
+  }
+
   return next;
 }
 
