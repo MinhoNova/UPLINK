@@ -5,6 +5,7 @@ import ThemeApplier from "@/components/ThemeApplier";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { I18nProvider } from "@/i18n/i18n";
 import DirectCommsPanel from "@/components/DirectCommsPanel";
+import OnlineNowPanel from "@/components/OnlineNowPanel";
 import CommunityNotificationsPanel from "@/components/community/CommunityNotificationsPanel";
 import OfferApplyAlertHost from "@/components/OfferApplyAlertHost";
 import PlayerProfileModal from "@/components/PlayerProfileModal";
@@ -162,6 +163,7 @@ export default function RootLayout({
             <AnalyticsTracker />
             <Navbar />
             <DirectCommsPanel />
+            <OnlineNowPanel />
             <CommunityNotificationsPanel />
             <OfferApplyAlertHost />
             <PlayerProfileModal />
