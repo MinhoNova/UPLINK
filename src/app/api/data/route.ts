@@ -33,7 +33,18 @@ export async function GET(req: Request) {
   try {
     const auth = await requireSession(req);
     if (!auth.ok) {
-      // Public read for homepage display
+      // Public read for homepage display.
+      //
+      // The cache hit below is cheap, but the miss is not: it parses the whole
+      // `kv_store` blob and, when the lobbies row is empty, runs a second
+      // unfiltered `SELECT`. That is the most expensive thing this route does,
+      // and the per-user and per-IP ceilings further down only cover signed-in
+      // readers — an anonymous caller returning here never reached them. Bound
+      // the public path on its own budget, sized for the homepage's own polling
+      // and not for a real client's 2s poll.
+      const publicRl = await rateLimitByIp(getClientIp(req), "/api/data:public", 60, 60_000);
+      if (!publicRl.ok) return rateLimitResponse(publicRl);
+
       const cached = await getPublicDataCached(FULL_DATA_CACHE_KEY);
       if (cached) {
         return NextResponse.json(cached, {

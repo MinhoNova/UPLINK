@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getKVPairs, setKV } from "@/lib/db";
+import { getKV, setKV } from "@/lib/db";
 import { requireSession } from "@/lib/authz";
 import { isAdminUser } from "@/lib/secureDataWrite";
 import { HERO_BG_ALLOWED, HERO_BG_DEFAULT } from "@/lib/heroBg";
@@ -7,8 +7,10 @@ import { HERO_BG_ALLOWED, HERO_BG_DEFAULT } from "@/lib/heroBg";
 /* Public: anything can read the current banner style key (it's just a design setting). */
 export async function GET() {
   try {
-    const kv = await getKVPairs();
-    const bg = String(kv.heroBg ?? "");
+    // `getKV` reads the one row. `getKVPairs` read and JSON.parsed every row in
+    // `kv_store` — every lobby, message, offer and user — on an unauthenticated
+    // request whose entire answer is a single design key.
+    const bg = String((await getKV("heroBg")) ?? "");
     return NextResponse.json({ bg: HERO_BG_ALLOWED.has(bg) ? bg : HERO_BG_DEFAULT });
   } catch {
     return NextResponse.json({ bg: HERO_BG_DEFAULT });

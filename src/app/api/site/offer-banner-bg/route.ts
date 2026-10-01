@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getKVPairs, setKV } from "@/lib/db";
+import { getKV, setKV } from "@/lib/db";
 import { requireSession } from "@/lib/authz";
 import { isAdminUser } from "@/lib/secureDataWrite";
 import { OFFER_BANNER_BG_ALLOWED, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
@@ -7,8 +7,10 @@ import { OFFER_BANNER_BG_ALLOWED, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBan
 /* Public: current offer-banner theme key (design setting, safe to read). */
 export async function GET() {
   try {
-    const kv = await getKVPairs();
-    const bg = String(kv.offerBannerBg ?? "");
+    // `getKV` reads the one row. `getKVPairs` read and JSON.parsed every row in
+    // `kv_store` — every lobby, message, offer and user — on an unauthenticated
+    // request whose entire answer is a single design key.
+    const bg = String((await getKV("offerBannerBg")) ?? "");
     return NextResponse.json({ bg: OFFER_BANNER_BG_ALLOWED.has(bg) ? bg : OFFER_BANNER_BG_DEFAULT });
   } catch {
     return NextResponse.json({ bg: OFFER_BANNER_BG_DEFAULT });

@@ -10,6 +10,9 @@ import {
   isPublicDataKey,
   PUBLIC_DATA_KEYS,
 } from "@/lib/publicDataView";
+import { rateLimitByIp } from "@/lib/rateLimit";
+import { rateLimitResponse } from "@/lib/rateLimitHttp";
+import { getClientIp } from "@/lib/requestIp";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +32,16 @@ function isCacheEntryUsable(cached: Record<string, unknown> | null): cached is R
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
+
+    // Bounded before the cache is consulted. The key allowlist below already
+    // stops this from reading anything private, but the cache key is derived
+    // from `?keys=`, so every distinct value is a distinct entry — a miss costs
+    // a D1 multi-key read plus a cache write, and a caller enumerating values
+    // turned that into unbounded cache growth. Nothing legitimate needs more
+    // than the allowlist in one request.
+    const rl = await rateLimitByIp(getClientIp(req), "/api/public-data", 120, 60_000);
+    if (!rl.ok) return rateLimitResponse(rl);
+
     const keysParam = url.searchParams.get("keys");
     // `?keys=` narrows the response, it must never widen it. Anything outside
     // the allowlist is dropped, so `?keys=directMessages` resolves to nothing

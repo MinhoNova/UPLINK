@@ -25,6 +25,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing room' }, { status: 400 });
   }
 
+  // Before the blob read, not after it. `getKVPairs` below parses the whole
+  // `kv_store` — every lobby, message, offer and user — and the middleware
+  // allows 400 requests a minute on this path, so a caller being throttled for
+  // joining voice too fast was still paying for a full parse on every attempt
+  // before being told no. The join limiter exists to bound token minting; it
+  // does not need the room contents to decide that.
+  const voiceRl = await enforceVoiceJoinRateLimit(auth.user.id);
+  if (!voiceRl.ok) {
+    return NextResponse.json(
+      { error: voiceRl.error, code: voiceRl.code, retryAfterMs: voiceRl.retryAfterMs },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(voiceRl.retryAfterMs / 1000)) } }
+    );
+  }
+
   await initTables();
   const data = await getKVPairs();
   const lobby = (data.lobbies || []).find((l: { id?: string }) => String(l.id) === String(room));
@@ -33,14 +47,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { error: voiceCheck.error, code: voiceCheck.code },
       { status: voiceCheck.code === 'NOT_FOUND' ? 404 : 403 }
-    );
-  }
-
-  const voiceRl = await enforceVoiceJoinRateLimit(auth.user.id);
-  if (!voiceRl.ok) {
-    return NextResponse.json(
-      { error: voiceRl.error, code: voiceRl.code, retryAfterMs: voiceRl.retryAfterMs },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil(voiceRl.retryAfterMs / 1000)) } }
     );
   }
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/authz";
 import { storeCommunityMediaFile } from "@/lib/userMediaStorage";
 import { checkUploadQuota, incrementUploadQuota } from "@/lib/imageSecurity";
+import { rateLimitByUser } from "@/lib/rateLimit";
+import { rateLimitResponse } from "@/lib/rateLimitHttp";
 
 const MAX_VIDEO_BYTES = 15 * 1024 * 1024;
 
@@ -44,6 +46,14 @@ export async function POST(req: NextRequest) {
   // Pass `req`: without it the cross-origin check is skipped entirely.
   const auth = await requireSession(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  // Rate of uploads, checked before the body is touched. The quota below bounds
+  // how much one account can store, but nothing bounded how often it could spend
+  // a request buffering 15MB and re-sniffing the result; the per-IP middleware
+  // bucket is shared behind a carrier NAT, so it is not a per-account ceiling
+  // either. Sized for a person posting a handful of clips in an evening.
+  const rl = await rateLimitByUser(String((auth.user as any).id), "video-upload", 20, 60 * 60_000);
+  if (!rl.ok) return rateLimitResponse(rl);
 
   // Reject on the declared length BEFORE reading the body. `req.formData()`
   // buffers the entire upload into worker memory, so the size check that came
