@@ -75,6 +75,20 @@ export const PROTECTED_SELF_FIELDS = [
   // account may publish offers.
   "posterApprovedAt",
 ] as const;
+
+/**
+ * Fields the server records by observation, never by client assertion.
+ *
+ * A subset of `PROTECTED_SELF_FIELDS` — that list also covers fields a player
+ * legitimately edits (their subscription, their stats), which is why it cannot be
+ * reused as-is when a privileged write has to restore the stored value. These are
+ * the ones written in exactly one place, from the server's own view of the
+ * request, and stripped from everyone else's rows before the payload leaves
+ * `filterDataForUser`. A client therefore never holds a truthful copy of another
+ * account's, and persisting its copy would erase what the server recorded.
+ */
+const SERVER_OBSERVED_USER_FIELDS = ["lastSeenAt", "lastKnownIp"] as const;
+
 const SECRET_CLUB_ONLY_FIELDS = ["profileGif", "profileGifThumb", "banner"] as const;
 const SELF_IMAGE_URL_FIELDS = ["customAvatar", "profileGif", "profileGifThumb", "banner"] as const;
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -406,7 +420,42 @@ export function validateRegisteredUsers(
     return { ok: false, error: `Username already in use: ${duplicate[0].username}` };
   }
 
-  if (isAdmin) return { ok: true, value: incoming };
+  if (isAdmin) {
+    // An admin owns the roster's editorial fields — subscriptions, approvals,
+    // rank overrides, bans — but not the ones the server observes. Those are
+    // listed in `PROTECTED_SELF_FIELDS` precisely so no client can assert them,
+    // and the admin payload never carried another account's copy of them anyway:
+    // `filterDataForUser` computes `online` and then strips `lastSeenAt` and
+    // `lastKnownIp` from everyone else, which is how presence is kept from
+    // being spoofable.
+    //
+    // Returning the payload verbatim therefore deleted every other player's
+    // presence. It is asymmetric, and that is what made it hard to spot: the
+    // admin's own row keeps its timestamp, so the account doing the saving still
+    // read as online while the rest of the roster went dark — in the DM list and
+    // in Online Now alike, since both render the same server-computed flag.
+    //
+    // So restore the server-owned fields from the stored row and take everything
+    // else from the admin. Presence is stamped in `touchUserLastIp` and nowhere
+    // else, and it stays a server observation.
+    const storedById = new Map(existing.map((u: any) => [String(u.id), u]));
+    return {
+      ok: true,
+      value: (incoming as any[]).map((user) => {
+        const stored = storedById.get(String(user?.id));
+        if (!stored) return user;
+        const restored: Record<string, unknown> = { ...user };
+        for (const field of SERVER_OBSERVED_USER_FIELDS) {
+          if (stored[field] !== undefined) restored[field] = stored[field];
+          else delete restored[field];
+        }
+        // `online` is derived from `lastSeenAt` on every read, so persisting the
+        // client's copy would only leave a stale boolean on the row.
+        delete restored["online"];
+        return restored;
+      }),
+    };
+  }
 
   const existingById = new Map(existing.map((u: any) => [String(u.id), u]));
   const sanitized = (incoming as any[]).map((user) => {
