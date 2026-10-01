@@ -34,27 +34,55 @@ function pruneExpiredBuckets(
   return changed ? kept : store;
 }
 
+/**
+ * Retries for a lost compare-and-swap before giving up and letting the request
+ * through unscored. Generous because the contention is between two writers on
+ * one row rather than between the caller and anything it depends on.
+ */
+const CONFLICT_RETRIES = 6;
+
 async function checkKvBucket(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   await initTables();
 
-  const res = await updateKVAtomic<Record<string, Bucket>>(
-    "rateLimits",
-    (store) => {
-      const now = Date.now();
-      const current = pruneExpiredBuckets(store ?? {}, now, windowMs);
-      const bucket = current[key];
-      if (!bucket || now - bucket.windowStart >= windowMs) {
-        return { ...current, [key]: { count: 1, windowStart: now } };
-      }
-      if (bucket.count >= limit) return undefined; // abort: limited
-      return { ...current, [key]: { count: bucket.count + 1, windowStart: bucket.windowStart } };
-    },
-    { maxAttempts: 3 }
-  );
+  const mutateBucket = (store: Record<string, Bucket> | null) => {
+    const now = Date.now();
+    const current = pruneExpiredBuckets(store ?? {}, now, windowMs);
+    const bucket = current[key];
+    if (!bucket || now - bucket.windowStart >= windowMs) {
+      return { ...current, [key]: { count: 1, windowStart: now } };
+    }
+    if (bucket.count >= limit) return undefined; // abort: limited
+    return { ...current, [key]: { count: bucket.count + 1, windowStart: bucket.windowStart } };
+  };
+
+  const res = await updateKVAtomic<Record<string, Bucket>>("rateLimits", mutateBucket, {
+    maxAttempts: CONFLICT_RETRIES,
+  });
 
   if (!res.ok) {
-    // Either genuine rate limit (bucket.count was >= limit) or a write conflict
-    // after exhausting retries — treat both as "slow down".
+    // Only a deliberate abort means "you are over the limit". Losing the
+    // compare-and-swap is contention on the shared `rateLimits` row, not a
+    // decision about this caller: the per-address limiter writes the same row
+    // with its own strategy, so two sessions on one machine can push this past
+    // `maxAttempts` while sitting at 1 request of a 90 budget. Reporting that as
+    // 429 throttles a caller that did nothing wrong, and on `/api/data` the 429
+    // is returned before the line that stamps `lastSeenAt` — so the account
+    // stops being reported as present and drops off the Online Now list.
+    //
+    // Retrying is safe: `mutate` is pure, and the bucket is only ever
+    // incremented, so a retry that wins just counts the request once.
+    if (res.reason === "conflict") {
+      for (let i = 0; i < CONFLICT_RETRIES; i += 1) {
+        const retry = await updateKVAtomic<Record<string, Bucket>>(
+          "rateLimits",
+          mutateBucket,
+          { maxAttempts: CONFLICT_RETRIES }
+        );
+        if (retry.ok) return { ok: true };
+        if (retry.reason === "aborted") return { ok: false, retryAfterMs: windowMs };
+      }
+      return { ok: true };
+    }
     return { ok: false, retryAfterMs: windowMs };
   }
 

@@ -186,12 +186,27 @@ async function invalidatePublicIfNeeded(key: string) {
  * once with different inputs. Return `null`/`undefined` to abort without
  * writing. Use this instead of `getKV`+`setKV` where a lost update would be
  * destructive (lobbies, daily limits, rate limit buckets).
+ *
+ * `reason` separates the two ways this can refuse to write, which used to be
+ * indistinguishable and both came back as a bare `{ ok: false }`:
+ *
+ *   - `"aborted"`  — `mutate` returned `null`/`undefined` on purpose. The
+ *     caller decided against the write (e.g. a rate limit bucket that is
+ *     already at its ceiling). Nothing was contended.
+ *   - `"conflict"` — the row moved under us and every retry lost the
+ *     compare-and-swap. The caller's intent may still be perfectly valid; the
+ *     write just could not be committed.
+ *
+ * A caller that treats a lost CAS race as a rejection — `checkKvBucket`
+ * answering 429, for instance — turns ordinary contention into a false
+ * negative for the caller. Callers that cannot act on `reason` keep working
+ * exactly as before.
  */
 export async function updateKVAtomic<T>(
   key: string,
   mutate: (current: T | null) => T | null | undefined,
   opts: { maxAttempts?: number; abortOnSetKVError?: boolean } = {}
-): Promise<{ ok: true; value: T } | { ok: false }> {
+): Promise<{ ok: true; value: T } | { ok: false; reason: "aborted" | "conflict" }> {
   const maxAttempts = opts.maxAttempts ?? 6;
   await initTables();
   const d1 = await getD1();
@@ -200,7 +215,7 @@ export async function updateKVAtomic<T>(
     // Local SQLite: better-sqlite3 transactions are synchronous and serialized,
     // so a read-modify-write inside one transaction cannot race.
     const sqlite = await getSqliteDb();
-    const outcome = sqlite.transaction((): { ok: true; value: T } | { ok: false } => {
+    const outcome = sqlite.transaction((): { ok: true; value: T } | { ok: false; reason: "aborted" } => {
       const row = sqlite
         .prepare("SELECT value FROM kv_store WHERE key = ?")
         .get(key) as { value: string } | undefined;
@@ -214,7 +229,7 @@ export async function updateKVAtomic<T>(
         }
       }
       const next = mutate(current);
-      if (next === null || next === undefined) return { ok: false };
+      if (next === null || next === undefined) return { ok: false, reason: "aborted" };
       const serialized = JSON.stringify(next);
       if (serialized === raw) return { ok: true, value: next };
       if (raw === null) {
@@ -244,7 +259,7 @@ export async function updateKVAtomic<T>(
     }
 
     const next = mutate(current);
-    if (next === null || next === undefined) return { ok: false };
+    if (next === null || next === undefined) return { ok: false, reason: "aborted" };
     const serialized = JSON.stringify(next);
     if (serialized === raw) return { ok: true, value: next };
 
@@ -270,5 +285,5 @@ export async function updateKVAtomic<T>(
     // Lost the race — loop and retry with the fresh value.
   }
 
-  return { ok: false };
+  return { ok: false, reason: "conflict" };
 }

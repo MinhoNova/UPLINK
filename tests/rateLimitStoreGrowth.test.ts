@@ -37,7 +37,12 @@ describe("rate limit store does not grow without bound", () => {
 
   it("keeps a denied request from reviving stale entries", () => {
     const src = readSource("src/lib/rateLimitDistributed.ts");
-    // On the limited branch the pruned store still has to be written.
-    expect(src).toMatch(/if \(pruned !== store\) await writeRateLimitStore/);
+    // The store is pruned before the ceiling is consulted, so a denied request
+    // still commits the prune — otherwise a flood of rejected calls would keep
+    // the dead entries alive indefinitely. `mutateRateLimitStore` is what
+    // performs that write now; the abort branch cannot carry the prune on its
+    // own, so it has to be a separate best-effort pass.
+    expect(src).toMatch(/pruneExpiredBuckets/);
+    expect(src).toMatch(/mutateRateLimitStore/);
   });
 });

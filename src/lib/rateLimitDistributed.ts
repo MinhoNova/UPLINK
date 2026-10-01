@@ -82,54 +82,106 @@ function checkMemoryBucket(key: string, limit: number, windowMs: number): RateLi
   return { ok: true };
 }
 
-async function readRateLimitStore(d1: D1Database): Promise<Record<string, Bucket>> {
-  const row = await d1
-    .prepare("SELECT value FROM kv_store WHERE key = ?")
-    .bind(RATE_LIMITS_KEY)
-    .first<{ value: string }>();
-  if (!row?.value) return {};
-  try {
-    return JSON.parse(row.value) as Record<string, Bucket>;
-  } catch {
-    return {};
-  }
-}
+/**
+ * Read-modify-write the shared `rateLimits` row under compare-and-swap.
+ *
+ * This row also carries the per-account buckets (`user:<id>:<action>`), written
+ * by `rateLimitByUser`. An unconditional `ON CONFLICT DO UPDATE SET value =
+ * excluded.value` commits whatever this caller read, so any bucket that landed
+ * between the read and the write is dropped — including an account counter, and
+ * with it the per-account ceiling. Worse, the account counter is then asked to
+ * compare-and-swap against a value that keeps being rewritten underneath it, so
+ * it can lose `maxAttempts` times while sitting far below its own limit and be
+ * answered as if it were throttled.
+ *
+ * `UPDATE ... WHERE key = ? AND value = ?` only reports a change when the row
+ * still holds the value this caller read, so a lost race is detectable and the
+ * caller simply re-reads. The write is compared against the raw string, not a
+ * parsed object, so a concurrent writer's edit is never clobbered.
+ */
+async function mutateRateLimitStore<T>(
+  d1: D1Database,
+  mutate: (store: Record<string, Bucket>) => T | null | undefined
+): Promise<{ ok: true; value: T } | { ok: false; reason: "aborted" | "conflict" }> {
+  const maxAttempts = 6;
 
-async function writeRateLimitStore(d1: D1Database, store: Record<string, Bucket>): Promise<void> {
-  await d1
-    .prepare(
-      "INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
-    )
-    .bind(RATE_LIMITS_KEY, JSON.stringify(store))
-    .run();
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const row = await d1
+      .prepare("SELECT value FROM kv_store WHERE key = ?")
+      .bind(RATE_LIMITS_KEY)
+      .first<{ value: string }>();
+    const raw = row?.value ?? null;
+    let store: Record<string, Bucket> = {};
+    if (raw !== null) {
+      try {
+        store = JSON.parse(raw) as Record<string, Bucket>;
+      } catch {
+        store = {};
+      }
+    }
+
+    const next = mutate(store);
+    if (next === null || next === undefined) return { ok: false, reason: "aborted" };
+    const serialized = JSON.stringify(next);
+    // Nothing to commit (e.g. pruning that found nothing to drop).
+    if (serialized === raw) return { ok: true, value: next };
+
+    let written = false;
+    if (raw === null) {
+      const res = await d1
+        .prepare("INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING")
+        .bind(RATE_LIMITS_KEY, serialized)
+        .run();
+      written = (res.meta.changes ?? 0) === 1;
+    } else {
+      const res = await d1
+        .prepare("UPDATE kv_store SET value = ? WHERE key = ? AND value = ?")
+        .bind(serialized, RATE_LIMITS_KEY, raw)
+        .run();
+      written = (res.meta.changes ?? 0) === 1;
+    }
+
+    if (written) return { ok: true, value: next };
+    // Lost the race — retry against the value the winner committed.
+  }
+
+  return { ok: false, reason: "conflict" };
 }
 
 async function checkKvBucket(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   const d1 = await getD1Binding();
   if (!d1) return checkMemoryBucket(key, limit, windowMs);
 
-  const store = await readRateLimitStore(d1);
+  const res = await mutateRateLimitStore<Record<string, Bucket>>(d1, (store) => {
+    const now = Date.now();
+    // Prune first, on the read we are already paying for. This is what stops the
+    // blob growing without bound.
+    const pruned = capBuckets(pruneExpiredBuckets(store, now, windowMs), now);
+    const bucket = pruned[key];
+
+    if (!bucket || now - bucket.windowStart >= windowMs) {
+      pruned[key] = { count: 1, windowStart: now };
+      return pruned;
+    }
+    if (bucket.count >= limit) return undefined; // abort: limited
+    bucket.count += 1;
+    return pruned;
+  });
+
+  if (res.ok) return { ok: true };
+
+  if (res.reason === "aborted") return { ok: false, retryAfterMs: windowMs };
+
+  // Contention on the shared row, not a decision about this caller, so the
+  // request is allowed through rather than answered 429. Persisting the prune is
+  // best-effort: the row is being actively written by the other limiter, and
+  // dropping a bounded amount of dead entries costs nothing if it does not land.
   const now = Date.now();
-  // Prune first, on the read we are already paying for. This is what stops the
-  // blob growing without bound.
-  const pruned = capBuckets(pruneExpiredBuckets(store, now, windowMs), now);
-  const bucket = pruned[key];
-
-  if (!bucket || now - bucket.windowStart >= windowMs) {
-    pruned[key] = { count: 1, windowStart: now };
-    await writeRateLimitStore(d1, pruned);
-    return { ok: true };
+  try {
+    await mutateRateLimitStore(d1, (store) => capBuckets(pruneExpiredBuckets(store, now, windowMs), now));
+  } catch {
+    // Ignore: the entries expire on their own.
   }
-
-  if (bucket.count >= limit) {
-    // Persist the pruning even on the denied path, so a flood cannot keep the
-    // dead entries alive.
-    if (pruned !== store) await writeRateLimitStore(d1, pruned);
-    return { ok: false, retryAfterMs: windowMs - (now - bucket.windowStart) };
-  }
-
-  bucket.count += 1;
-  await writeRateLimitStore(d1, pruned);
   return { ok: true };
 }
 
