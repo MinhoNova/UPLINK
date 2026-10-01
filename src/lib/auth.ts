@@ -88,6 +88,24 @@ export function getAuthOptions(): NextAuthOptions {
 
   return {
     providers: [discordProvider(clientId || "", clientSecret || "")],
+    session: {
+      strategy: "jwt",
+      // A week, sliding.
+      //
+      // The session is a signed JWT with no server-side record, so nothing can
+      // revoke one early — `maxAge` is therefore exactly how long a leaked
+      // cookie keeps working, and the next-auth default of 30 days made that a
+      // month. A week bounds it, which is the normal range for a site of this
+      // kind.
+      //
+      // `updateAge` is what keeps the shorter window from being felt: a cookie
+      // in active use is re-issued daily, so an account that opens the site
+      // never has to sign in again. What it does not do is help an attacker —
+      // a stolen cookie only renews if it is actually used, so a dormant one
+      // still dies on schedule.
+      maxAge: 7 * 24 * 60 * 60,
+      updateAge: 24 * 60 * 60,
+    },
     callbacks: {
       async jwt({ token, user }) {
         if (user) {
