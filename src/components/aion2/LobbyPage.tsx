@@ -15,6 +15,7 @@ import { useI18n } from "@/i18n/i18n";
 import { useFlag } from "@/lib/siteFlags";
 import { useRouter } from "next/navigation";
 import { resolveHeroBg, type HeroBgKey } from "@/lib/heroBg";
+import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
 import { offerBannerBgStyle, OFFER_BANNER_BG_DEFAULT } from "@/lib/offerBannerBg";
 import RankBadge from "@/components/RankBadge";
 import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEntry } from "@/lib/vfxAssets";
@@ -276,8 +277,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const charProfileHref = (c: any): string => {
     const charId = applyGameCharId(c);
     if (!charId || !c?.serverId) return "";
-    const regionBase = c.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
-    const official = `${regionBase}/characters/${c.serverId}/${encodeURIComponent(charId)}`;
+    const official = aion2CharacterPageUrl(c.serverId, charId);
     return `/character?u=${encodeURIComponent(official)}`;
   };
 
@@ -319,7 +319,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     const charId = reapplyCharId;
     const gid = applyGameCharId(applyChar);
     try {
-      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(gid ? { gameCharacterId: gid, itemLevel: Number(applyChar.itemLevel) || 0, serverId: applyChar.serverId, serverName: applyChar.serverName, region: applyChar.region || "kr", portraitUrl: String(applyChar.portraitUrl || ""), siteClass: applyChar.aionClass || "", raceName: applyChar.raceName || "", genderName: applyChar.genderName || "", level: Number(applyLevel) || Number(applyChar.level) || 1, cpAp: Number(applyCp) || Number(applyChar.cpAp || applyChar.combatPower) || 0 } : {}) } }) });
+      const res = await fetch("/api/lobbies/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: l.id, applicant: { id: charId, role: aionClassRole(applyAionClass), className: applyAionClass, aionClass: applyAionClass, level: Number(applyLevel) || 1, cpAp: Number(applyCp) || 0, applicantNote: applyNote, applicantName: meName, ...(gid ? { gameCharacterId: gid, itemLevel: Number(applyChar.itemLevel) || 0, serverId: applyChar.serverId, serverName: applyChar.serverName, region: applyChar.region || "global", portraitUrl: String(applyChar.portraitUrl || ""), siteClass: applyChar.aionClass || "", raceName: applyChar.raceName || "", genderName: applyChar.genderName || "", level: Number(applyLevel) || Number(applyChar.level) || 1, cpAp: Number(applyCp) || Number(applyChar.cpAp || applyChar.combatPower) || 0 } : {}) } }) });
       if (res.ok) {
         setAppliedIds((prev) => new Set([...prev, String(l.id)])); setApplyTarget(null); setApplyAionClass(""); setApplyNote(""); setApplyLevel("60"); setApplyCp(""); setApplySelCharId(""); setApplyCharOpen(false); window.dispatchEvent(new Event("data-refresh"));
       } else { const d: any = await res.json().catch(() => ({})); setApplyError(d.error || t("err_couldNotApply")); }
@@ -622,7 +622,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       <p className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-300">{applyChar.aionClass || applyChar.gameClassLabel || "Unknown class"}</p>
                       <p className="truncate text-[8px] font-bold uppercase tracking-widest text-slate-400">
                         {applyChar.raceName || "—"}{applyChar.genderName ? ` · ${applyChar.genderName}` : ""} · {applyChar.serverName}
-                        <span className="ml-1.5 rounded border border-white/10 bg-white/5 px-1 py-px text-[7px] uppercase text-slate-300">{applyChar.region === "tw" ? "TW" : "KR"}</span>
+                        <span className="ml-1.5 rounded border border-white/10 bg-white/5 px-1 py-px text-[7px] uppercase text-slate-300">{AION2_REGION_LABEL}</span>
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">

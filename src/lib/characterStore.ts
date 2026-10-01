@@ -30,7 +30,7 @@ export function toStoredCharacter(vc: VerifiedGameCharacter, userId: string): an
     genderName: vc.genderName || "",
     portraitUrl: portraitProxyPath(vc.portraitUrl || ""),
     verifiedAt: vc.verifiedAt,
-    region: vc.region || "kr",
+    region: vc.region || "global",
   };
 }
 

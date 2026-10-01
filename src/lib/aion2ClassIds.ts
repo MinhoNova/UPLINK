@@ -1,44 +1,43 @@
-/** Aion 2 (plaync) → site class mapping + shared client-safe types — pure module. */
+/** Aion 2 Global → site class mapping + shared client-safe types — pure module. */
 
 export const PORTRAIT_HOST = "profileimg.plaync.com";
 
-export const AION2_GAME_CLASS_BY_KO: Record<string, string> = {
-  검성: "Gladiator",
-  수호성: "Templar",
-  살성: "Assassin",
-  궁성: "Ranger",
-  마도성: "Sorcerer",
-  정령성: "Spiritmaster",
-  치유성: "Cleric",
-  호법성: "Chanter",
-};
+/** The only shard we support. `aion2.plaync.com` now serves the global release. */
+export const AION2_GLOBAL_BASE = "https://aion2.plaync.com";
 
-/** zh-TW (tw.ncsoft.com) class labels → site class. */
-export const AION2_GAME_CLASS_BY_ZH: Record<string, string> = {
-  劍星: "Gladiator",
-  守護星: "Templar",
-  殺星: "Assassin",
-  弓星: "Ranger",
-  魔道星: "Sorcerer",
-  精靈星: "Spiritmaster",
-  治癒星: "Cleric",
-  護法星: "Chanter",
-  拳星: "",
-  執行官: "",
-};
+/**
+ * The shard code the global character API requires.
+ *
+ * `/api/character/*` on `aion2.plaync.com` redirects to a 404 HTML page for
+ * every value of `region` except `nae` — including omitting it and including
+ * the old `kr`/`tw`. It answers 200 with a character only for the global code,
+ * so this is load-bearing on every character call, not a display detail.
+ */
+export const AION2_GAME_REGION = "nae";
 
-export const AION2_GAME_KO_BY_CLASS: Record<string, string> = {
-  Gladiator: "검성",
-  Templar: "수호성",
-  Assassin: "살성",
-  Ranger: "궁성",
-  Sorcerer: "마도성",
-  Spiritmaster: "정령성",
-  Cleric: "치유성",
-  Chanter: "호법성",
-};
+/** The region key stored on a verified character. */
+export type Aion2Region = "global";
+
+export const AION2_REGION_LABEL = "GLOBAL";
 
 export const AION2_SITE_CLASSES = [
+  "Templar",
+  "Gladiator",
+  "Assassin",
+  "Ranger",
+  "Sorcerer",
+  "Spiritmaster",
+  "Cleric",
+  "Chanter",
+] as const;
+
+/**
+ * The game labels for the classes above, as the global API spells them. Kept as
+ * the canonical list so the mapping table and the test that round-trips it
+ * cannot drift apart — `Elementalist` is the site's older name for
+ * `Spiritmaster` and only appears as an accepted input, not as a game label.
+ */
+export const AION2_GAME_CLASSES = [
   "Templar",
   "Gladiator",
   "Assassin",
@@ -63,33 +62,21 @@ const ENGLISH_TO_SITE: Record<string, string> = {
 };
 
 /**
- * Map a raw game class label (Korean "마도성", Chinese "魔道星" or English
- * "Elementalist"/"Fighter") to a supported site class key. Unsupported → "".
+ * Map a raw game class label to a supported site class key. Unsupported → "".
+ *
+ * The global API is queried with `lang=en`, so labels arrive in English
+ * ("Templar", "Elementalist", "Fighter"). The Korean and zh-TW label tables the
+ * KR/TW shards needed are gone with those shards.
  */
 export function mapGameClassToSite(raw: string | null | undefined): string {
   const name = String(raw || "").trim();
   if (!name) return "";
-  if (AION2_GAME_CLASS_BY_KO[name]) return AION2_GAME_CLASS_BY_KO[name];
-  if (AION2_GAME_CLASS_BY_ZH[name] !== undefined) return AION2_GAME_CLASS_BY_ZH[name];
   return ENGLISH_TO_SITE[name.toLowerCase()] ?? "";
 }
 
 export function isGameClassSupported(siteClass: string): boolean {
   return (AION2_SITE_CLASSES as readonly string[]).includes(siteClass);
 }
-
-export type GameServer = { raceId: number; serverId: number; serverName: string };
-
-export type GameCharacterSearchHit = {
-  characterId: string;
-  name: string;
-  race: number;
-  pcId: number;
-  level: number;
-  serverId: number;
-  serverName: string;
-  profileImageUrl: string | null;
-};
 
 export type VerifiedGameCharacter = {
   characterId: string;
@@ -105,9 +92,33 @@ export type VerifiedGameCharacter = {
   serverName: string;
   genderName: string;
   portraitUrl: string | null;
-  region: "tw" | "kr";
+  region: Aion2Region;
   verifiedAt: number;
 };
+
+/** The official character page URL, carrying the global region the API needs. */
+export function aion2CharacterPageUrl(
+  serverId: number | string,
+  characterId: string
+): string {
+  return `${AION2_GLOBAL_BASE}/characters/${serverId}/${encodeURIComponent(
+    characterId
+  )}?region=${AION2_GAME_REGION}`;
+}
+
+/** The character info endpoint. `region` is required — see AION2_GAME_REGION. */
+export function aion2CharacterInfoUrl(characterId: string, serverId: number): string {
+  return `${AION2_GLOBAL_BASE}/api/character/info?lang=en&characterId=${encodeURIComponent(
+    characterId
+  )}&serverId=${serverId}&region=${AION2_GAME_REGION}`;
+}
+
+/** The equipment/skill endpoint. Same region requirement as the info call. */
+export function aion2CharacterEquipmentUrl(characterId: string, serverId: number): string {
+  return `${AION2_GLOBAL_BASE}/api/character/equipment?lang=en&characterId=${encodeURIComponent(
+    characterId
+  )}&serverId=${serverId}&region=${AION2_GAME_REGION}`;
+}
 
 export function isAllowedPortraitUrl(url: string): boolean {
   try {

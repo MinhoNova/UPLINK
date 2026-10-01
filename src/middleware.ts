@@ -20,7 +20,6 @@ const SELF_AUTHENTICATED_PATHS = ["/api/discord/interactions"];
 /** Genuinely public, cacheable assets. Everything else defaults to no-store. */
 const PUBLIC_API_PATHS = [
   "/api/aion2/portrait",
-  "/api/aion2/servers",
   "/api/aion2/profile",
   "/api/user/media",
   "/api/site/hero-bg",

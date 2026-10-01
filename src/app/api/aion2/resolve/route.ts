@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   } catch (e: any) {
     const msg =
       e?.message === "invalid-character-link"
-        ? "That link is not a valid official Aion 2 character page (tw.ncsoft.com or aion2.plaync.com)."
+        ? "That link is not a valid official Aion 2 Global character page (aion2.plaync.com)."
         : e?.message || "Could not reach NCSoft for this character";
     return NextResponse.json({ error: msg }, { status: 502 });
   }

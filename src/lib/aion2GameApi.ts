@@ -1,24 +1,31 @@
 /**
- * Aion 2 (plaync) game-data proxy — server-only.
- * Wraps the public/unofficial NCSoft KR endpoints + portrait CDN whitelist.
+ * Aion 2 Global (plaync) game-data proxy — server-only.
+ * Wraps the public NCSoft global character endpoints + portrait CDN whitelist.
+ *
+ * Global only. `aion2.plaync.com` now serves the global release exclusively:
+ * every `/api/character/*` call needs `region=nae`, and the old KR/TW
+ * name-search and server-list endpoints are gone, so a character can only be
+ * resolved from its official share link.
  */
 import {
+  aion2CharacterEquipmentUrl,
+  aion2CharacterInfoUrl,
+  aion2CharacterPageUrl,
+  AION2_GLOBAL_BASE,
   mapGameClassToSite,
   isAllowedPortraitUrl,
-  type GameServer,
-  type GameCharacterSearchHit,
+  type Aion2Region,
   type VerifiedGameCharacter,
 } from "@/lib/aion2ClassIds";
 
-const API_BASE = "https://aion2.plaync.com";
-export { isAllowedPortraitUrl, portraitProxyPath } from "@/lib/aion2ClassIds";
-export type { GameServer, GameCharacterSearchHit, VerifiedGameCharacter } from "@/lib/aion2ClassIds";
-export type GameClass = { id: number; name: string; text: string };
-
-const CACHE_TTL = 6 * 60 * 60 * 1000;
-const EN_LANG = "lang=en";
-let serversCache: { at: number; data: GameServer[] } | null = null;
-let classesCache: { at: number; data: GameClass[] } | null = null;
+export {
+  isAllowedPortraitUrl,
+  portraitProxyPath,
+  aion2CharacterPageUrl,
+  AION2_GLOBAL_BASE,
+  AION2_REGION_LABEL,
+} from "@/lib/aion2ClassIds";
+export type { Aion2Region, VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 
 async function jsonFetch(url: string): Promise<any> {
   const res = await fetch(url, {
@@ -26,128 +33,19 @@ async function jsonFetch(url: string): Promise<any> {
     redirect: "follow",
   });
   if (!res.ok) throw new Error(`Game API ${res.status}`);
-  return res.json();
-}
-
-function stripHtml(s: string): string {
-  return String(s || "").replace(/<[^>]*>/g, "").trim();
-}
-
-function serverRaceOf(serverId: number): number {
-  return Math.floor(serverId / 1000) === 2 ? 2 : 1;
-}
-
-export async function getGameServers(): Promise<GameServer[]> {
-  if (serversCache && Date.now() - serversCache.at < CACHE_TTL) return serversCache.data;
-  const data = await jsonFetch(`${API_BASE}/api/gameinfo/servers?${EN_LANG}`);
-  const raw: any[] = Array.isArray(data?.serverList) ? data.serverList : [];
-  const servers: GameServer[] = raw.map((s: any) => ({
-    raceId: Number(s.raceId) || serverRaceOf(Number(s.serverId)),
-    serverId: Number(s.serverId),
-    serverName: String(s.serverName || ""),
-  }));
-  serversCache = { at: Date.now(), data: servers };
-  return servers;
-}
-
-export async function getGameServersCached(): Promise<GameServer[]> {
+  const text = await res.text();
   try {
-    return await getGameServers();
+    return JSON.parse(text);
   } catch {
-    return [
-      {
-        raceId: 1,
-        serverId: 1001,
-        serverName: "Siel",
-      },
-    ];
+    // The character endpoints answer a 200 HTML error page instead of JSON for
+    // anything they cannot serve — a characterId from the retired KR/TW shards,
+    // or a region the API does not know. Say so plainly: the 502 default of
+    // "could not reach NCSoft" would send the player looking for an outage
+    // that does not exist.
+    throw new Error(
+      "That character is not on the Aion 2 Global servers. If the link came from the Korean or Taiwanese servers, it is no longer supported here."
+    );
   }
-}
-
-export async function getGameClasses(): Promise<GameClass[]> {
-  if (classesCache && Date.now() - classesCache.at < CACHE_TTL) return classesCache.data;
-  const data = await jsonFetch(`${API_BASE}/api/gameinfo/classes?${EN_LANG}`);
-  const raw: any[] = Array.isArray(data?.classList) ? data.classList : [];
-  const classes: GameClass[] = raw.map((c: any) => ({
-    id: Number(c.id),
-    name: String(c.name || ""),
-    text: String(c.text || ""),
-  }));
-  classesCache = { at: Date.now(), data: classes };
-  return classes;
-}
-
-function cleanSearchList(list: any[]): GameCharacterSearchHit[] {
-  return (list || []).map((c: any) => ({
-    characterId: String(c.characterId || ""),
-    name: stripHtml(String(c.name || "")),
-    race: Number(c.race) || 1,
-    pcId: Number(c.pcId) || 0,
-    level: Number(c.level) || 1,
-    serverId: Number(c.serverId) || 0,
-    serverName: String(c.serverName || ""),
-    profileImageUrl: c.profileImageUrl ? String(c.profileImageUrl) : null,
-  }));
-}
-
-async function searchCharacters(
-  name: string,
-  serverId: number,
-  race: number
-): Promise<GameCharacterSearchHit[]> {
-  const url = `${API_BASE}/ko-kr/api/search/aion2/search/v2/character?keyword=${encodeURIComponent(
-    name
-  )}&race=${race}&serverId=${serverId}`;
-  const data = await jsonFetch(url);
-  return cleanSearchList(Array.isArray(data?.list) ? data.list : []);
-}
-
-function pickBestHit(
-  name: string,
-  serverId: number | undefined,
-  hits: GameCharacterSearchHit[]
-): GameCharacterSearchHit | null {
-  if (hits.length === 0) return null;
-  const needle = String(name || "").trim().toLowerCase();
-  const scoped = serverId ? hits.filter((h) => h.serverId === serverId) : hits;
-  const pool = scoped.length > 0 ? scoped : hits;
-  if (!needle) return pool[0];
-  const exact = pool.find((h) => h.name.toLowerCase() === needle);
-  if (exact) return exact;
-  return pool.find((h) => h.name.toLowerCase().includes(needle)) || pool[0];
-}
-
-/** Verify a character by name against the live game data. */
-export async function verifyGameCharacter(
-  name: string,
-  serverId?: number,
-  race?: number
-): Promise<VerifiedGameCharacter | null> {
-  let targets: Array<{ serverId: number; race: number }>;
-  if (serverId) {
-    targets = [{ serverId, race: race ?? serverRaceOf(serverId) }];
-  } else {
-    const servers = await getGameServersCached();
-    targets = servers.slice(0, 6).map((s) => ({ serverId: s.serverId, race: s.raceId }));
-  }
-
-  let best: GameCharacterSearchHit | null = null;
-  for (const t of targets) {
-    try {
-      const hits = await searchCharacters(name, t.serverId, t.race);
-      const hit = pickBestHit(name, t.serverId, hits);
-      if (hit && (!best || hit.name.toLowerCase() === String(name).trim().toLowerCase())) {
-        best = hit;
-        if (String(hit.name).trim().toLowerCase() === String(name).trim().toLowerCase()) break;
-      }
-    } catch {
-      // try next server/race
-    }
-  }
-  if (!best) return null;
-
-  const profile = await fetchGameCharacterProfile(best.characterId, best.serverId);
-  return profile;
 }
 
 function itemLevelOf(stat: any): number {
@@ -156,23 +54,10 @@ function itemLevelOf(stat: any): number {
   return hit ? Number(hit.value) || 0 : 0;
 }
 
-async function fetchGameCharacterInfoRaw(
-  characterId: string,
-  serverId: number,
-  base = API_BASE,
-  lang = EN_LANG
-): Promise<any> {
-  const url = `${base}/api/character/info?${lang}&characterId=${encodeURIComponent(
-    characterId
-  )}&serverId=${serverId}`;
-  return jsonFetch(url);
-}
-
 function mapGameCharacterInfo(
   data: any,
   characterId: string,
-  serverId: number,
-  region: "tw" | "kr"
+  serverId: number
 ): VerifiedGameCharacter | null {
   const p: any = data?.profile;
   if (!p || !p.characterId) return null;
@@ -194,31 +79,28 @@ function mapGameCharacterInfo(
     serverName: String(p.serverName || ""),
     genderName: String(p.genderName || ""),
     portraitUrl: isAllowedPortraitUrl(profileImage) ? profileImage : null,
-    region,
+    region: "global",
     verifiedAt: Date.now(),
   };
 }
 
 export async function fetchGameCharacterProfile(
   characterId: string,
-  serverId: number,
-  base = API_BASE,
-  lang = EN_LANG,
-  region: "tw" | "kr" = "kr"
+  serverId: number
 ): Promise<VerifiedGameCharacter | null> {
-  const data = await fetchGameCharacterInfoRaw(characterId, serverId, base, lang);
-  return mapGameCharacterInfo(data, characterId, serverId, region);
+  const data = await jsonFetch(aion2CharacterInfoUrl(characterId, serverId));
+  return mapGameCharacterInfo(data, characterId, serverId);
 }
 
 type CharacterShareRef = {
-  baseUrl: string;
-  lang: string;
-  region: "tw" | "kr";
   serverId: number;
   characterId: string;
 };
 
-/** Parse an official character page share-link (/characters/{serverId}/{encryptedCharacterId}). */
+/**
+ * Parse an official global character page share-link
+ * (/characters/{serverId}/{encryptedCharacterId}?region=nae).
+ */
 export function parseCharacterShareUrl(link: string): CharacterShareRef | null {
   let u: URL;
   try {
@@ -226,28 +108,14 @@ export function parseCharacterShareUrl(link: string): CharacterShareRef | null {
   } catch {
     return null;
   }
-  const host = u.hostname.toLowerCase();
-  let baseUrl: string;
-  let lang: string;
-  let region: "tw" | "kr";
-  if (host === "tw.ncsoft.com") {
-    baseUrl = "https://tw.ncsoft.com/aion2";
-    lang = EN_LANG;
-    region = "tw";
-  } else if (host === "aion2.plaync.com") {
-    baseUrl = API_BASE;
-    lang = EN_LANG;
-    region = "kr";
-  } else {
-    return null;
-  }
+  if (u.hostname.toLowerCase() !== "aion2.plaync.com") return null;
   const seg = u.pathname.split("/").filter(Boolean);
   const i = seg.findIndex((s) => s.toLowerCase() === "characters");
   if (i === -1 || i + 2 >= seg.length) return null;
   const serverId = Number(seg[i + 1]);
   const characterId = decodeURIComponent(seg[i + 2]);
   if (!Number.isFinite(serverId) || serverId <= 0 || !characterId) return null;
-  return { baseUrl, lang, region, serverId, characterId };
+  return { serverId, characterId };
 }
 
 /** Fetch a character's live data from its official share-link. */
@@ -256,7 +124,7 @@ export async function resolveCharacterFromShareUrl(
 ): Promise<VerifiedGameCharacter | null> {
   const ref = parseCharacterShareUrl(link);
   if (!ref) throw new Error("invalid-character-link");
-  return fetchGameCharacterProfile(ref.characterId, ref.serverId, ref.baseUrl, ref.lang, ref.region);
+  return fetchGameCharacterProfile(ref.characterId, ref.serverId);
 }
 
 export type CharacterItem = {
@@ -326,17 +194,12 @@ export async function fetchCharacterDetails(link: string): Promise<CharacterDeta
   const ref = parseCharacterShareUrl(link);
   if (!ref) throw new Error("invalid-character-link");
 
-  const cacheKey = `${ref.region}:${ref.serverId}:${ref.characterId}`;
+  const cacheKey = `${ref.serverId}:${ref.characterId}`;
   const cached = detailsCache.get(cacheKey);
   if (cached && Date.now() - cached.at < DETAILS_TTL) return cached.data;
 
-  const info = await fetchGameCharacterInfoRaw(
-    ref.characterId,
-    ref.serverId,
-    ref.baseUrl,
-    ref.lang
-  );
-  const profile = mapGameCharacterInfo(info, ref.characterId, ref.serverId, ref.region);
+  const info = await jsonFetch(aion2CharacterInfoUrl(ref.characterId, ref.serverId));
+  const profile = mapGameCharacterInfo(info, ref.characterId, ref.serverId);
   if (!profile) return null;
 
   let equipment: any[] = [];
@@ -344,11 +207,7 @@ export async function fetchCharacterDetails(link: string): Promise<CharacterDeta
   let petWing: any = {};
   let skillList: any[] = [];
   try {
-    const eq = await jsonFetch(
-      `${ref.baseUrl}/api/character/equipment?${ref.lang}&characterId=${encodeURIComponent(
-        ref.characterId
-      )}&serverId=${ref.serverId}`
-    );
+    const eq = await jsonFetch(aion2CharacterEquipmentUrl(ref.characterId, ref.serverId));
     equipment = Array.isArray(eq?.equipment?.equipmentList) ? eq.equipment.equipmentList : [];
     skins = Array.isArray(eq?.equipment?.skinList) ? eq.equipment.skinList : [];
     petWing = eq?.petwing || {};

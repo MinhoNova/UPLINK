@@ -14,11 +14,11 @@ import GamePortrait from "@/components/aion2/GamePortrait";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, hasIndependentSquadMember, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
+import { aion2CharacterPageUrl } from "@/lib/aion2ClassIds";
 
 function applicantProfileHref(a: any): string {
   if (!a?.gameCharacterId || !a?.serverId) return "";
-  const base = a.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
-  return `/character?u=${encodeURIComponent(`${base}/characters/${a.serverId}/${encodeURIComponent(a.gameCharacterId)}`)}`;
+  return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(a.serverId, a.gameCharacterId))}`;
 }
 
 const POWER_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png";

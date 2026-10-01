@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ExternalLink, Link2, Loader2, ShieldCheck, Sparkles, Swords, Trophy, Wand2 } from "lucide-react";
-import { portraitProxyPath } from "@/lib/aion2ClassIds";
+import { portraitProxyPath, aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
 import { aionClassRole } from "@/lib/aionClassMeta";
 import type { CharacterDetails, CharacterItem } from "@/lib/aion2GameApi";
 
@@ -58,8 +58,7 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
 }
 
 function officialPageHref(vc: CharacterDetails["profile"]): string {
-  const base = vc.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
-  return `${base}/characters/${vc.serverId}/${encodeURIComponent(vc.characterId)}`;
+  return aion2CharacterPageUrl(vc.serverId, vc.characterId);
 }
 
 function LoadingPanel() {
@@ -185,7 +184,7 @@ export default function CharacterPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && go()}
-            placeholder="Paste an official character link — e.g. https://tw.ncsoft.com/aion2/characters/1001/…"
+            placeholder="Paste an official character link — e.g. https://aion2.plaync.com/characters/1101/…"
             className="flex-1 min-w-0 rounded-xl border border-white/10 bg-[#0a0f26]/70 px-4 py-3 text-sm text-white outline-none focus:border-emerald-400/60"
           />
           <button
@@ -219,8 +218,8 @@ export default function CharacterPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-2xl font-black uppercase tracking-wide text-white">{d.profile.name}</h2>
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${d.profile.region === "tw" ? "border-rose-500/40 bg-rose-500/10 text-rose-300" : "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"}`}>
-                        <ShieldCheck className="h-2.5 w-2.5" /> {d.profile.region === "tw" ? "TW" : "KR"}
+                      <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300">
+                        <ShieldCheck className="h-2.5 w-2.5" /> {AION2_REGION_LABEL}
                       </span>
                       {d.profile.siteClass && (
                         <span className="flex items-center gap-1 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-fuchsia-300">

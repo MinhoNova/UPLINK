@@ -9,6 +9,7 @@ import GamePortrait from "@/components/aion2/GamePortrait";
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import { classThumbUrl } from "@/lib/classThumb";
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
+import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
 import {
   myLinkedCharacters,
   removeCharacterById,
@@ -64,8 +65,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
     const rid = String(c.id || "");
     const charId = rid.startsWith("game:") ? rid.slice(5) : gameCharFallback(c);
     if (!charId || !c.serverId) return "";
-    const base = c.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
-    return `/character?u=${encodeURIComponent(`${base}/characters/${c.serverId}/${encodeURIComponent(charId)}`)}`;
+    return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId))}`;
   };
 
   const gameCharFallback = (c: any): string => String(c.gameCharacterId || c.characterId || "");
@@ -146,7 +146,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
             <IdCard className="w-3.5 h-3.5" /> {t("mychars_addTitle") || "Link a new character"}
           </p>
           <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">
-            {t("mychars_addHint") || "Paste your official character page link (tw.ncsoft.com or aion2.plaync.com)"}
+            {t("mychars_addHint") || "Paste your official character page link (aion2.plaync.com)"}
           </p>
           <div className="flex gap-2">
             <input
@@ -217,7 +217,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                     <span className="flex items-center gap-1.5 min-w-0">
                       <span className="text-[12px] font-black text-white uppercase tracking-wider truncate">{c.name || "Character"}</span>
-                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full border border-white/15 bg-white/5 text-[7px] font-black uppercase tracking-widest text-slate-300">{c.region === "tw" ? "TW" : "KR"}</span>
+                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full border border-white/15 bg-white/5 text-[7px] font-black uppercase tracking-widest text-slate-300">{AION2_REGION_LABEL}</span>
                     </span>
                     <span className="text-[9px] font-black uppercase tracking-widest text-cyan-300 truncate">{cls || "—"} · {c.serverName || "—"}</span>
                     <span className="flex items-center gap-2 text-[9px] font-bold text-slate-400 tabular-nums">

@@ -11,6 +11,7 @@ import { toNameStyle } from "@/components/GradientColorPicker";
 import { classThumbUrl } from "@/lib/classThumb";
 import { averagePlayerRating } from "@/lib/playerReviews";
 import { aionClassRole } from "@/lib/aionClassMeta";
+import { aion2CharacterPageUrl } from "@/lib/aion2ClassIds";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
@@ -145,10 +146,9 @@ export default async function PlayerPage({
                 const cls = String(c.aionClass || c.className || "");
                 const role = cls ? aionClassRole(cls) : "";
                 const charId = String(c.id || "").replace(/^game:/, "");
-                const regionBase = c.region === "tw" ? "https://tw.ncsoft.com/aion2" : "https://aion2.plaync.com";
                 const profHref =
                   charId && c.serverId
-                    ? `/character?u=${encodeURIComponent(`${regionBase}/characters/${c.serverId}/${encodeURIComponent(charId)}`)}`
+                    ? `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId))}`
                     : "";
                 return (
                   <div
