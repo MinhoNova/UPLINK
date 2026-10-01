@@ -2,12 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendLobbyEmbed } from "@/lib/discord";
 import { requireSession } from "@/lib/authz";
 import { getKVCached } from "@/lib/kvCache";
+import { rateLimitByIp, rateLimitByUser } from "@/lib/rateLimit";
+import { rateLimitResponse } from "@/lib/rateLimitHttp";
+import { getClientIp } from "@/lib/requestIp";
 
 export async function POST(req: NextRequest) {
    const auth = await requireSession(req);
    if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
    }
+
+   // This writes to a public Discord channel, so a replay loop is a spam
+   // problem for everyone who reads that channel, not just for this site.
+   // Throttled per account as well as per address: the request is cheap to
+   // repeat and the same one can be re-sent from a fresh IP.
+   const ipRl = await rateLimitByIp(getClientIp(req), "/api/discord/broadcast", 10, 60_000);
+   if (!ipRl.ok) return rateLimitResponse(ipRl);
+
+   const userRl = await rateLimitByUser(String(auth.user.id), "discord-broadcast", 5, 60_000);
+   if (!userRl.ok) return rateLimitResponse(userRl);
 
    if (!process.env.DISCORD_BOT_TOKEN) {
       return NextResponse.json({ ok: false, reason: "DISCORD_BOT_TOKEN not configured" });

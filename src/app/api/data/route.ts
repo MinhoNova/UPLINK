@@ -16,6 +16,8 @@ import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards, awardedLobbyIds, RANK_AWARD_LEDGER_KEY } from '@/lib/rankAwards';
 import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
 import { getPublicDataCached, setPublicDataCached, FULL_DATA_CACHE_KEY } from '@/lib/cloudflareBindings';
+import { rateLimitByIp, rateLimitByUser } from '@/lib/rateLimit';
+import { rateLimitResponse } from '@/lib/rateLimitHttp';
 
 /* Cache disabled — was causing stale data to be served to users */
 
@@ -62,6 +64,23 @@ export async function GET(req: Request) {
 
     const ipBlock = await rejectIfIpBannedUnlessAdmin(req, auth.user.id, auth.user.username);
     if (ipBlock) return ipBlock;
+
+    // This is the site's heaviest read: it parses and rewrites the whole
+    // `kv_store` blob (every lobby, message, offer and user row) and the client
+    // polls it every 2s while a tab is visible. That is a normal 30 requests a
+    // minute per player, so the ceilings below are roughly double what a real
+    // client needs — the point is to cap the script that opens a hundred tabs,
+    // not to slow anybody down.
+    //
+    // Per-user as well as per-IP: an IP limit alone lets one account rotate
+    // through addresses, and a shared address (a school, a café, a carrier NAT)
+    // can put several dozen players behind one bucket, so the per-IP ceiling is
+    // generous and the per-user one is the one that actually bounds the work.
+    const dataRl = await rateLimitByUser(auth.user.id, "data-read", 90, 60_000);
+    if (!dataRl.ok) return rateLimitResponse(dataRl);
+
+    const dataIpRl = await rateLimitByIp(getClientIp(req), "/api/data", 240, 60_000);
+    if (!dataIpRl.ok) return rateLimitResponse(dataIpRl);
 
     // Keep the site account glued to the Discord account. Runs before the read
     // so a missing account row (first login whose callback write failed) is
@@ -178,6 +197,17 @@ export async function POST(req: Request) {
 
     const clientIp = getClientIp(req);
     touchUserLastIp(auth.user.id, clientIp).catch(() => {});
+
+    // A write here is a full-blob upsert plus validation, so it is the most
+    // expensive thing on the site. Real saves are user actions — one per click,
+    // not a poll — so this ceiling is far above normal use and only bites a
+    // replay loop. The account is throttled as well as the address, because the
+    // same forged request can be re-sent from a fresh IP.
+    const writeRl = await rateLimitByUser(auth.user.id, "data-write", 60, 60_000);
+    if (!writeRl.ok) return rateLimitResponse(writeRl);
+
+    const writeIpRl = await rateLimitByIp(clientIp, "/api/data#write", 120, 60_000);
+    if (!writeIpRl.ok) return rateLimitResponse(writeIpRl);
 
     await initTables();
     const raw: any = await req.json();

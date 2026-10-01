@@ -63,6 +63,48 @@ export function awardedLobbyIds(ledger: any): Set<string> {
   return new Set(raw.map((v: any) => String(v)).filter(Boolean));
 }
 
+/**
+ * True when this roster row reached `accepted` through a path the owner cannot
+ * forge, and so is a player who was really in the mission.
+ *
+ * The owner controls the `accepted` array outright — `lobbyUserCanModify`
+ * returns true for them, so a clamp like `clampMemberWrite`'s cannot apply
+ * without locking owners out of assembling their own squad. Membership in
+ * `accepted` on its own is therefore not evidence: an owner could paste any
+ * Discord id, mark the offer paid+completed, and mint run rank for accounts that
+ * never applied. The ledger stops the award being repeated; this stops the
+ * first one going to somebody who was never there.
+ *
+ * The same three marks `hasIndependentSquadMember` relies on: an applicant
+ * stamps `applicantId` server-side from their own session, and both the apply
+ * and the invite path stamp `invitedAt`. A pending application counts too, since
+ * an owner accepts a party who applied moments earlier.
+ */
+function memberProvedByOwnAction(lobby: any, member: any): boolean {
+  if (!lobby || !member) return false;
+  if (member.applicantId || member.invitedAt) return true;
+  const mid = memberId(member);
+  if (!mid) return false;
+  const pending = (lobby.applicants || []).some((a: any) => memberId(a) === mid);
+  return pending;
+}
+
+/** The roster rows that may be credited run rank for this payout. */
+function creditableMembers(lobby: any): string[] {
+  const ownerId = String(lobby?.ownerId || "");
+  const rows = Array.isArray(lobby?.accepted) ? (lobby.accepted as any[]) : [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const m of rows) {
+    const mid = memberId(m);
+    if (!mid || mid === ownerId || seen.has(mid)) continue;
+    if (!memberProvedByOwnAction(lobby, m)) continue;
+    seen.add(mid);
+    out.push(mid);
+  }
+  return out;
+}
+
 export function applyRankAwards(
   existingLobbies: any[],
   incomingLobbies: any[],
@@ -100,7 +142,9 @@ export function applyRankAwards(
     }
 
     if (completedNow) {
-      const memberIds = [next.ownerId, ...(next.accepted || []).map(memberId)];
+      // The owner is credited as the run's own account; every other party has to
+      // have proved they joined it themselves (see `creditableMembers`).
+      const memberIds = [next.ownerId, ...creditableMembers(next)];
       const kLevel = parseInt(String(next.keyLevel || "").replace("+", "") || "0", 10);
       const category = lobbyCategory(next);
       for (const mid of memberIds) {

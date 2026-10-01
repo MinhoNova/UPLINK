@@ -67,7 +67,22 @@ export function scopeLobbyMessages(
  * were already entitled to fetch. It belongs to the offer's own participants —
  * the same set that may open the thread — and to admins.
  */
-const OFFER_PRIVATE_FIELDS = ["paymentProof"] as const;
+/**
+ * The rest of the offer's bookkeeping, in the same class as a payment proof.
+ *
+ * These already come off the anonymous payload (`publicDataView`), but a signed-in
+ * player was reading them for every offer on the site: who was on the mission
+ * (`votes`, `history` — the latter also names everyone who was removed from it)
+ * and the members' private threads. None of that is needed to render an offer
+ * card, and all of it is readable by the same participant rule as the thread
+ * itself, so it is scoped the same way.
+ *
+ * Kept separate from `OFFER_PRIVATE_FIELDS` because the two are read by
+ * different code paths and the distinction is worth keeping visible.
+ */
+const OFFER_BOOKKEEPING_FIELDS = ["votes", "failVotes", "history", "dmThread", "modThread"] as const;
+
+const OFFER_PRIVATE_FIELDS = ["paymentProof", ...OFFER_BOOKKEEPING_FIELDS] as const;
 
 export function scopeOfferPrivateFields(
   lobbies: unknown,
