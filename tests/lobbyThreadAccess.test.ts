@@ -100,12 +100,165 @@ describe("validateLobbies — applicant write scope", () => {
     expect((res as any).value[0].pricePerRun).toBe(5);
   });
 
-  it("still lets an accepted member do anything", () => {
+  it("stops a member hijacking the offer's owner", () => {
+    // Lifecycle fields stay writable for members on purpose — driving a mission
+    // outcome is the point of a squad vote. The offer's ownership is not theirs.
     const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }] };
-    const incoming = [{ ...ex, status: "completed" }];
+    const incoming = [{ ...ex, ownerId: OUTSIDER }];
     const res = validateLobbies([ex], incoming, MEMBER, false);
     expect(res.ok).toBe(true);
-    expect((res as any).value[0].status).toBe("completed");
+    expect((res as any).value[0].ownerId).toBe(OWNER);
+  });
+
+  it("stops a member resetting a rank marker", () => {
+    const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }], rankAwardedBooster: true };
+    const res = validateLobbies([ex], [{ ...ex, rankAwardedBooster: false }], MEMBER, false);
+    expect((res as any).value[0].rankAwardedBooster).toBe(true);
+  });
+
+  it("still lets a member drive a mission outcome", () => {
+    // Regression guard for the six flows a broader clamp broke: the dungeon
+    // completion vote, the leveling completion, the fail vote, the foot-complete
+    // split, and the member exit all write lifecycle fields as a member.
+    const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }], messages: [], votes: [] };
+    const incoming = [
+      {
+        ...ex,
+        status: "completed",
+        payoutStatus: "unpaid",
+        completedAt: 123,
+        votes: [{ userId: MEMBER, at: 123 }],
+      },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    const stored = (res as any).value[0];
+    expect(stored.status).toBe("completed");
+    expect(stored.payoutStatus).toBe("unpaid");
+    expect(stored.completedAt).toBe(123);
+    expect(stored.votes).toEqual([{ userId: MEMBER, at: 123 }]);
+  });
+
+  it("stops a member deleting another player's vote", () => {
+    const ex = {
+      ...baseLobby(),
+      accepted: [{ applicantId: MEMBER }, { applicantId: OUTSIDER }],
+      votes: [{ userId: OUTSIDER, at: 1 }],
+      failVotes: [{ userId: OUTSIDER, at: 1 }],
+    };
+    // Both arrays shrink — the other player's vote is being removed.
+    const res = validateLobbies([ex], [{ ...ex, votes: [], failVotes: [] }], MEMBER, false);
+    const stored = (res as any).value[0];
+    expect(stored.votes).toEqual([{ userId: OUTSIDER, at: 1 }]);
+    expect(stored.failVotes).toEqual([{ userId: OUTSIDER, at: 1 }]);
+  });
+
+  it("stops a member voting twice or voting for someone else", () => {
+    const ex = {
+      ...baseLobby(),
+      accepted: [{ applicantId: MEMBER }],
+      votes: [{ userId: OUTSIDER, at: 1 }],
+    };
+    const res = validateLobbies(
+      [ex],
+      [
+        {
+          ...ex,
+          votes: [
+            { userId: OUTSIDER, at: 1 },
+            { userId: MEMBER, at: 2 },
+            { userId: MEMBER, at: 3 }, // second vote, same player
+            { userId: "alt-1", at: 4 }, // someone else's
+          ],
+        },
+      ],
+      MEMBER,
+      false
+    );
+    const stored = (res as any).value[0];
+    expect(stored.votes).toEqual([
+      { userId: OUTSIDER, at: 1 },
+      { userId: MEMBER, at: 2 },
+    ]);
+  });
+
+  it("lets a member post, vote once, and remove themselves", () => {
+    const ex = {
+      ...baseLobby(),
+      accepted: [{ applicantId: MEMBER }, { applicantId: OUTSIDER }],
+      messages: [],
+      votes: [],
+    };
+    const incoming = [
+      {
+        ...ex,
+        messages: [{ id: "m1", userId: MEMBER, text: "on my way" }],
+        votes: [{ userId: MEMBER, value: true }],
+        accepted: [{ applicantId: MEMBER }], // left; OUTSIDER untouched
+      },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    const stored = (res as any).value[0];
+    expect(stored.messages).toHaveLength(1);
+    expect(stored.votes).toHaveLength(1);
+    expect(stored.accepted.map((m: any) => m.applicantId)).toEqual([MEMBER]);
+  });
+
+  it("stops a member adding a made-up member to the squad", () => {
+    const ex = { ...baseLobby(), accepted: [{ applicantId: MEMBER }] };
+    const incoming = [
+      { ...ex, accepted: [{ applicantId: MEMBER }, { applicantId: "alt-1" }] },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    expect((res as any).value[0].accepted.map((m: any) => m.applicantId)).toEqual([MEMBER]);
+  });
+
+  it("stops an invited member promoting themselves into the squad", () => {
+    // `invited` is not `accepted`. Self-promotion granted
+    // hasIndependentSquadMember standing and the thread access that goes with it.
+    const ex = { ...baseLobby(), accepted: [], invited: [{ applicantId: MEMBER }] };
+    const incoming = [
+      { ...ex, accepted: [{ applicantId: MEMBER, status: "confirmed" }] },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    expect((res as any).value[0].accepted).toEqual([]);
+  });
+
+  it("stops a member editing another member's row", () => {
+    const ex = {
+      ...baseLobby(),
+      accepted: [
+        { applicantId: MEMBER, role: "dps" },
+        { applicantId: OUTSIDER, role: "healer" },
+      ],
+    };
+    // The caller's own row is sent back byte-identical; only the other member's
+    // row differs. Compare that row against the stored one.
+    const incoming = [
+      {
+        ...ex,
+        accepted: [
+          { applicantId: MEMBER, role: "dps" },
+          { applicantId: OUTSIDER, role: "owner" },
+        ],
+      },
+    ];
+    const res = validateLobbies([ex], incoming, MEMBER, false);
+    expect(res.ok).toBe(true);
+    expect((res as any).value[0].accepted[1].role).toBe("healer");
+  });
+
+  it("stops even the owner reassigning the offer or resetting a rank marker", () => {
+    const ex = { ...baseLobby(), rankAwardedBooster: true };
+    const incoming = [{ ...ex, ownerId: OUTSIDER, rankAwardedBooster: false }];
+    const res = validateLobbies([ex], incoming, OWNER, false);
+    expect(res.ok).toBe(true);
+    const stored = (res as any).value[0];
+    expect(stored.ownerId).toBe(OWNER);
+    expect(stored.rankAwardedBooster).toBe(true);
   });
 
   it("a total stranger cannot change the price", () => {
