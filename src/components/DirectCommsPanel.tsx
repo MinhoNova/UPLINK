@@ -10,8 +10,9 @@ import { getDmMsgKey, computeDmUnreadCounts, isToUser, buildDmContactList, getAc
 import { findUserById, refFor, refMatches } from "@/lib/playerIdentity";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
 import { resolveProfileImage, resolveProfileDisplayName, profileImgClass } from "@/lib/profileImage";
+import { buildOnlineRow, sortOnlineRows, type OnlineRow } from "@/lib/onlinePresence";
 
-function MemberRow({ user, onClick, friendsLabel, online = true }: { user: any; onClick: () => void; friendsLabel?: boolean; online?: boolean }) {
+function MemberRow({ user, onClick, friendsLabel, online = true, row }: { user: any; onClick: () => void; friendsLabel?: boolean; online?: boolean; row?: OnlineRow }) {
   return (
     <div
       role="button"
@@ -21,7 +22,17 @@ function MemberRow({ user, onClick, friendsLabel, online = true }: { user: any; 
       className="w-full py-2 px-3 rounded-2xl hover:bg-white/[0.05] border border-transparent hover:border-white/5 transition-all flex items-center gap-3 group relative cursor-pointer"
     >
       <div className="relative shrink-0">
+        {/* The animated profile picture a player picked on their profile, falling
+            back to their custom avatar and then their Discord one. */}
         <img src={resolveProfileImage(user)} className={`${profileImgClass(resolveProfileImage(user), "w-9 h-9 rounded-full border border-white/10")} ${online ? "" : "opacity-50 saturate-50"}`} alt="" />
+        {row && (
+          <img
+            src={row.rankImage}
+            alt={row.rank}
+            title={row.rank}
+            className="absolute -bottom-1 -left-1 w-3.5 h-3.5 object-contain pointer-events-none"
+          />
+        )}
         <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-[#0c0c18] ${online ? "bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.8)]" : "bg-zinc-500"}`} />
       </div>
       <div className="text-left flex-1 min-w-0 flex items-center gap-2">
@@ -29,7 +40,29 @@ function MemberRow({ user, onClick, friendsLabel, online = true }: { user: any; 
           <p className="text-xs font-black text-white/90 truncate group-hover:text-white transition-colors">
             {resolveProfileDisplayName(user)}
           </p>
+          {/* Nameplate: in-game character, server and class, the way a Discord
+              server tag reads under a name. */}
+          {row && (row.characterName || row.serverName) && (
+            <p className="text-[9px] text-gray-500 truncate mt-0.5">
+              {[
+                row.characterName,
+                row.className,
+                row.serverName ? `· ${row.serverName}` : "",
+                row.characterLevel > 0 ? `· Lv ${row.characterLevel}` : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            </p>
+          )}
         </div>
+        {row && (
+          <span
+            className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 border"
+            style={{ color: row.rankColor, borderColor: `${row.rankColor}40`, backgroundColor: `${row.rankColor}12` }}
+          >
+            {row.rank}
+          </span>
+        )}
         {friendsLabel && (
           <span className="text-[7px] font-black uppercase tracking-widest text-[#5b9eff] bg-[#1877f2]/10 border border-[#1877f2]/30 px-1.5 py-0.5 rounded-full shrink-0">
             Friend
@@ -494,21 +527,38 @@ export default function DirectCommsPanel() {
     [friends, currentUserId]
   );
 
-  const onlineUsers = useMemo(
+  // Discord-style roster: highest rank at the top, then most recently seen.
+  // The ordering itself lives in `@/lib/onlinePresence` so it can be tested
+  // without rendering this panel.
+  const onlineRows = useMemo(
     () =>
-      [...registeredUsers]
-        .filter((u: any) => u.username && String(u.id) !== currentUserId && !refMatches(meRef, u.username) && u.online === true && !isUserBlocked(String(u.id)))
-        .sort((a: any, b: any) =>
-          String(a.displayName || a.name || a.role || a.username).localeCompare(String(b.displayName || b.name || b.role || b.username))
-        ),
+      sortOnlineRows(
+        [...registeredUsers]
+          .filter(
+            (u: any) =>
+              u.username &&
+              String(u.id) !== currentUserId &&
+              !refMatches(meRef, u.username) &&
+              u.online === true &&
+              !isUserBlocked(String(u.id))
+          )
+          .map(buildOnlineRow)
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [registeredUsers, currentUserId]
   );
 
+  const onlineUsers = useMemo(() => onlineRows.map((r) => r.user), [onlineRows]);
+  const onlineRowById = useMemo(() => {
+    const map = new Map<string, (typeof onlineRows)[number]>();
+    for (const r of onlineRows) map.set(String(r.user?.id), r);
+    return map;
+  }, [onlineRows]);
+
   const onlineFriendIds = useMemo(() => {
     const ids = getAcceptedFriendIds(currentUserId, friends);
-    return onlineUsers.filter((u: any) => ids.has(String(u.id)));
-  }, [onlineUsers, friends, currentUserId]);
+    return onlineRows.filter((r) => ids.has(String(r.user?.id)));
+  }, [onlineRows, friends, currentUserId]);
 
   const offlineFriendUsers = useMemo(() => {
     const ids = getAcceptedFriendIds(currentUserId, friends);
@@ -609,9 +659,16 @@ export default function DirectCommsPanel() {
             <div className="w-9 h-9 rounded-xl bg-[#ff007f]/15 border border-[#ff007f]/25 flex items-center justify-center">
               <MessageCircle className="w-4 h-4 text-[#ff007f]" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-black uppercase tracking-[0.18em] text-sm text-white">Direct Message</h3>
-            </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-black uppercase tracking-[0.18em] text-sm text-white">
+            {tab === "online" ? "Online Now" : "Direct Message"}
+          </h3>
+          {tab === "online" && onlineRows.length > 0 && (
+            <p className="text-[9px] text-gray-500 mt-0.5 truncate">
+              Ranked highest first
+            </p>
+          )}
+        </div>
             <span className="text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full">{onlineUsers.length} online</span>
             <span className="text-[9px] font-black text-[#00ffff] bg-[#00ffff]/10 border border-[#00ffff]/20 px-2.5 py-1 rounded-full">{friendIdSet.size} friends</span>
             <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition">
@@ -777,8 +834,14 @@ export default function DirectCommsPanel() {
                   <div>
                     <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1.5 px-1">Friends Online</p>
                     <div className="space-y-1">
-                      {onlineFriendIds.map((user: any) => (
-                        <MemberRow key={String(user.id)} user={user} friendsLabel onClick={() => { setSelectedUser(user); setTab("dm"); }} />
+                      {onlineFriendIds.map((row) => (
+                        <MemberRow
+                          key={String(row.user.id)}
+                          user={row.user}
+                          row={row}
+                          friendsLabel
+                          onClick={() => { setSelectedUser(row.user); setTab("dm"); }}
+                        />
                       ))}
                     </div>
                   </div>
@@ -797,15 +860,20 @@ export default function DirectCommsPanel() {
                   {onlineFriendIds.length > 0 && (
                     <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1.5 px-1">Everyone</p>
                   )}
-                  {onlineUsers.length === 0 ? (
+                  {onlineRows.length === 0 ? (
                     <div className="flex flex-col items-center py-8 bg-white/[0.02] border border-dashed border-white/5 rounded-2xl">
                       <Radio className="w-6 h-6 text-gray-600 mb-2" />
                       <p className="text-[10px] text-gray-600 italic">No one is online right now — be the first in!</p>
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      {onlineUsers.map((user: any) => (
-                        <MemberRow key={String(user.id)} user={user} onClick={() => { setSelectedUser(user); setTab("dm"); }} />
+                      {onlineRows.map((row) => (
+                        <MemberRow
+                          key={String(row.user.id)}
+                          user={row.user}
+                          row={row}
+                          onClick={() => { setSelectedUser(row.user); setTab("dm"); }}
+                        />
                       ))}
                     </div>
                   )}

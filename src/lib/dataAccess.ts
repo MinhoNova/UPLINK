@@ -155,12 +155,34 @@ export function filterDataForUser(
   }
 
   if (Array.isArray(filtered.registeredUsers)) {
+    // The public character roster rides along so the online list can show a
+    // player's nameplate (their in-game name, server and class) without a second
+    // request per row. A character is already public — `/api/public-data`
+    // publishes the roster — so this reveals nothing new, it only avoids N
+    // round-trips. Keyed by owner id, and the caller picks the one to show.
+    const characters = (data.characters as any[]) || [];
+    const characterByOwner = new Map<string, any[]>();
+    for (const c of characters) {
+      const owner = String(c?.userId ?? "");
+      if (!owner) continue;
+      const list = characterByOwner.get(owner) || [];
+      list.push(c);
+      characterByOwner.set(owner, list);
+    }
+
     filtered.registeredUsers = (filtered.registeredUsers as Record<string, unknown>[]).map((u) => {
       if (String(u.id) === String(userId)) return u;
       const safe = { ...u };
       const online = isUserOnline(u);
       delete safe["lastSeenAt"];
       safe.online = online;
+      // Highest combat power first, so a player's "main" is the one shown.
+      const chars = characterByOwner.get(String(u.id));
+      if (chars?.length) {
+        safe.characters = [...chars].sort(
+          (a, b) => (Number(b?.cpAp ?? b?.combatPower) || 0) - (Number(a?.cpAp ?? a?.combatPower) || 0)
+        );
+      }
       for (const field of OTHER_USER_STRIP) delete safe[field];
       if (safe.subscription && typeof safe.subscription === "object") {
         const sub = safe.subscription as { tier?: string };
