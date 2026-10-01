@@ -7,6 +7,13 @@ import {
   memberIdentityKey,
   repairLobbyRoles,
 } from "@/lib/lobbyLifecycle";
+import {
+  addRosterProof,
+  pruneRosterProof,
+  rosterProofFrom,
+  rosterProofTo,
+  ROSTER_PROOF_KEY,
+} from "@/lib/rankRosterProof";
 
 export async function POST(req: Request) {
   const auth = await requireSession(req);
@@ -24,6 +31,7 @@ export async function POST(req: Request) {
 
   let abortError: string | null = null;
   let removedNotifId: number | null = null;
+  let accepted = false;
 
   const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
     const cur = Array.isArray(lobbies) ? [...lobbies] : [];
@@ -59,6 +67,7 @@ export async function POST(req: Request) {
         abortError = "Could not confirm your invite — squad may be full.";
         return undefined;
       }
+      accepted = true;
       return next;
     }
 
@@ -71,6 +80,19 @@ export async function POST(req: Request) {
       { error: abortError || "Could not respond — try again." },
       { status: 409 }
     );
+  }
+
+  // This is the one place a member joins an offer without applying first, and
+  // it is server-owned: the member was resolved from the session, the row is
+  // read out of the stored blob, and the promotion happened inside the atomic
+  // rewrite above. So the server can vouch that this account really accepted.
+  // That vouched fact is what later lets them be credited run rank — the marks
+  // left on the roster row are not evidence, since the owner writes those.
+  if (accepted) {
+    const proof = rosterProofFrom(await getKV(ROSTER_PROOF_KEY));
+    const added = addRosterProof(proof, String(lobbyId), uid);
+    const pruned = pruneRosterProof(proof, res.value || []);
+    if (added || pruned) await setKV(ROSTER_PROOF_KEY, rosterProofTo(proof));
   }
 
   if (removedNotifId) {

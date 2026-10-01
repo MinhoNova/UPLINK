@@ -14,6 +14,14 @@ import { rejectIfIpBannedUnlessAdmin } from '@/lib/ipBan';
 import { getClientIp } from '@/lib/requestIp';
 import { touchUserLastIp } from '@/lib/userLastIp';
 import { applyRankAwards, awardedLobbyIds, RANK_AWARD_LEDGER_KEY } from '@/lib/rankAwards';
+import {
+  recordOwnRosterProofs,
+  pruneRosterProof,
+  rosterProofFrom,
+  rosterProofTo,
+  ROSTER_PROOF_KEY,
+  ROSTER_PROOF_CUTOVER_KEY,
+} from '@/lib/rankRosterProof';
 import { recordMarketCompletion, getMarketAverageByService } from '@/lib/marketPrice';
 import { getPublicDataCached, setPublicDataCached, FULL_DATA_CACHE_KEY } from '@/lib/cloudflareBindings';
 import { rateLimitByIp, rateLimitByUser } from '@/lib/rateLimit';
@@ -244,19 +252,48 @@ export async function POST(req: Request) {
 
     let sanitized = validation.sanitized;
 
-    if (Array.isArray(sanitized.lobbies) && Array.isArray(existing.registeredUsers)) {
+    if (
+      Array.isArray(sanitized.lobbies) &&
+      Array.isArray(existing.lobbies) &&
+      Array.isArray(existing.registeredUsers)
+    ) {
+      const existingLobbies = existing.lobbies as any[];
+      const incomingLobbies = sanitized.lobbies as any[];
+
+      // Who really joined each offer, kept in server storage the client never
+      // writes. Stamped from the caller's own session — they applied, or they
+      // accepted an invite — so an owner cannot assemble a roster of strangers
+      // and mint rank for them. Recorded before the award is computed, from the
+      // validated rows rather than the raw request.
+      let proofCutover = Number((await getKV(ROSTER_PROOF_CUTOVER_KEY)) || 0);
+      if (!proofCutover) {
+        proofCutover = Date.now();
+        await setKV(ROSTER_PROOF_CUTOVER_KEY, proofCutover);
+      }
+      const rosterProof = rosterProofFrom(await getKV(ROSTER_PROOF_KEY));
+      const proofAdded = recordOwnRosterProofs(rosterProof, existingLobbies, incomingLobbies, auth.user.id);
+
       // The award ledger is server storage. Reading it here is what makes an
       // award un-replayable: the `rankAwardedBooster` field on the lobby is
       // caller-supplied and can be cleared at will, but the lobby's id in this
       // list cannot be touched from a request.
       const ledger = awardedLobbyIds(await getKV(RANK_AWARD_LEDGER_KEY));
       const outcome = applyRankAwards(
-        (existing.lobbies as any[]) || [],
-        sanitized.lobbies as any[],
+        existingLobbies,
+        incomingLobbies,
         existing.registeredUsers as any[],
         auth.user.id,
-        ledger
+        ledger,
+        rosterProof,
+        proofCutover
       );
+
+      // Pruning runs after the award, never before: this write is the one that
+      // settles the offer, so its proof has to still be on hand here. Pruning
+      // first would delete the evidence for the very payout being computed and
+      // silently pay the owner alone.
+      const proofPruned = pruneRosterProof(rosterProof, incomingLobbies);
+      if (proofAdded || proofPruned) await setKV(ROSTER_PROOF_KEY, rosterProofTo(rosterProof));
       if (outcome.awarded.boosterRuns > 0 || outcome.awarded.posterPosts > 0) {
         // Any lobby that paid out in this write joins the ledger, whatever the
         // request claimed its marker was.

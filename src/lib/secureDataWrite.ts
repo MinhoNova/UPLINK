@@ -627,6 +627,16 @@ export function validateLobbies(
           (next as any)[f] = (ex as any)[f];
         }
       }
+    } else if (!isAdmin) {
+      // A brand-new offer takes its creation time from the server clock, not the
+      // request. `createdAt` is what decides whether an offer predates the rank
+      // proof ledger (see `proofRequiredFor`): offers older than the cutover are
+      // settled on the legacy roster marks, because their members joined through
+      // paths that predate the ledger. A client-chosen timestamp would let an
+      // owner date an offer backwards into that window and mint rank from a
+      // roster of strangers. Existing rows are untouched — this branch only runs
+      // when the store has no row with this id.
+      next = { ...next, createdAt: Date.now() };
     }
     // A member of the squad is not the owner: freeze every lifecycle field.
     const isOwner = ex && String((ex as any).ownerId) === String(userId);
