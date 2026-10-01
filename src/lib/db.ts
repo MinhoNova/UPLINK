@@ -3,6 +3,7 @@ import fs from "fs";
 import { ensureD1Schema, getD1, KV_SCHEMA_SQL } from "@/lib/d1";
 import { invalidatePublicDataCache } from "@/lib/cloudflareBindings";
 import { invalidateThreadBlobCache } from "@/lib/threadBlobCache";
+import { pruneTerminalLobbies } from "@/lib/lobbyCleanup";
 
 const DB_DIR = path.join(process.cwd(), "src", "data");
 const DB_PATH = path.join(DB_DIR, "uplink.db");
@@ -136,6 +137,13 @@ export async function getKV(key: string): Promise<any | null> {
 
 export async function setKV(key: string, value: any) {
   await initTables();
+  // `lobbies` is one growing row, so every read of the site used to pay for a
+  // bigger and bigger blob. Finished threads (7-day TTL + Tuesday reset) are
+  // dropped here, on the only path that persists the key, so the row shrinks
+  // itself on the next offer write instead of growing forever.
+  if (key === "lobbies" && Array.isArray(value)) {
+    value = pruneTerminalLobbies(value).lobbies;
+  }
   const serialized = JSON.stringify(value);
   const d1 = await getD1();
   if (d1) {

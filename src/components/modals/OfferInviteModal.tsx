@@ -132,61 +132,60 @@ export default function OfferInviteModal({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 20, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-cyan-400/25 bg-[#080c20]/95 shadow-[0_30px_90px_rgba(0,0,0,0.8)]"
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/[0.12] bg-white/[0.04] shadow-[0_30px_90px_rgba(0,0,0,0.7),0_0_60px_rgba(34,211,238,0.15)] backdrop-blur-3xl"
           >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-fuchsia-500/60" />
+            {/* The offer owner's own banner sits behind the whole card, so the
+                glass tints it instead of hiding it behind an opaque panel. */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/25 via-[#070b1a]/80 to-fuchsia-500/25" />
+              {banner && (
+                <img src={banner} alt="" className="h-full w-full object-cover opacity-45" loading="lazy" decoding="async" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#070b1a] via-[#070b1a]/88 to-[#070b1a]/62" />
+            </div>
 
-            {banner ? (
-              <div className="relative h-28 w-full overflow-hidden">
-                <img src={banner} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#080c20] via-[#080c20]/30 to-transparent" />
-              </div>
-            ) : (
-              <div className="h-16 w-full bg-gradient-to-br from-cyan-500/20 via-transparent to-fuchsia-500/20">
-                <div className="absolute inset-x-0 top-3 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-              </div>
-            )}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/80 to-fuchsia-400/80" />
 
-            <div className="relative p-5 pt-2">
+            <div className="relative p-5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/10 px-3 py-1.5">
+                  <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1.5 backdrop-blur-xl">
                     <UserPlus className="h-3 w-3 text-amber-300" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">Squad Invite</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-200">Squad Invite</span>
                   </div>
                 </div>
                 <InviteTimer variant="player" expiresAt={pending.expiresAt} />
               </div>
 
-              <p className="mt-4 text-xs leading-relaxed text-slate-300">
+              <div className="mt-4 flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     if (owner?.username) window.location.href = `/player/${String(owner.username)}`;
                   }}
-                  className="inline-flex items-center gap-2 text-left"
+                  className="relative inline-block h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-cyan-300/50 bg-[#050814]/80 shadow-[0_0_18px_rgba(34,211,238,0.3)] transition hover:border-cyan-200"
                 >
-                  <span className="relative inline-block h-9 w-9 shrink-0 overflow-hidden rounded-full border border-cyan-400/40 bg-black">
-                    {ownerAvatar ? (
-                      <img src={ownerAvatar} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-[11px] font-black uppercase text-cyan-300/70">
-                        {ownerName.slice(0, 1)}
-                      </span>
-                    )}
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#080c20] bg-emerald-500" />
-                  </span>
-                </button>{" "}
-                <span
-                  className="inline-flex items-center gap-1 font-black uppercase tracking-wide"
-                  style={nameColor ? { ...toNameStyle(nameColor), textShadow: `0 0 10px ${nameGlowColor(nameColor)}55` } : undefined}
-                >
-                  {ownerName}
-                </span>{" "}
-                <span className="text-slate-400">invited you to join</span>
-              </p>
+                  {ownerAvatar ? (
+                    <img src={ownerAvatar} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-sm font-black uppercase text-cyan-300/70">
+                      {ownerName.slice(0, 1)}
+                    </span>
+                  )}
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#070b1a] bg-emerald-500" />
+                </button>
+                <p className="text-xs leading-relaxed text-slate-200">
+                  <span
+                    className="inline-flex items-center gap-1 font-black uppercase tracking-wide"
+                    style={nameColor ? { ...toNameStyle(nameColor), textShadow: `0 0 10px ${nameGlowColor(nameColor)}55` } : undefined}
+                  >
+                    {ownerName}
+                  </span>{" "}
+                  <span className="text-slate-400">invited you to join</span>
+                </p>
+              </div>
 
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-4 backdrop-blur-xl">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300">
                     {String(pending.lobby.category || "dungeon").toUpperCase()}
@@ -208,22 +207,22 @@ export default function OfferInviteModal({
                 </h3>
 
                 <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-xl border border-white/[0.06] bg-black/30 px-2.5 py-2.5 text-center">
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.05] px-2.5 py-2.5 text-center backdrop-blur-xl">
                     <Swords className="mx-auto mb-1 h-4 w-4 text-cyan-300" />
                     <p className="text-lg font-black tabular-nums text-white">{runs}</p>
-                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Runs</p>
+                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-400">Runs</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-black/30 px-2.5 py-2.5 text-center">
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.05] px-2.5 py-2.5 text-center backdrop-blur-xl">
                     <Coins className="mx-auto mb-1 h-4 w-4 text-amber-300" />
                     <p className="text-lg font-black tabular-nums text-white">{Number(gold).toLocaleString()}K</p>
-                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Gold</p>
+                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-400">Gold</p>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-black/30 px-2.5 py-2.5 text-center">
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.05] px-2.5 py-2.5 text-center backdrop-blur-xl">
                     <Users className="mx-auto mb-1 h-4 w-4 text-emerald-300" />
                     <p className="text-lg font-black tabular-nums text-white">
                       {(pending.lobby.accepted || []).filter((a: any) => a.status !== "invited").length + 1}
                     </p>
-                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-500">Squad</p>
+                    <p className="text-[7px] font-black uppercase tracking-widest text-slate-400">Squad</p>
                   </div>
                 </div>
 
@@ -237,9 +236,9 @@ export default function OfferInviteModal({
                   </div>
                 )}
 
-                <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-black/30 px-3 py-2">
-                  <MapPin className="h-3 w-3 text-slate-500" />
-                  <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">
+                <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.05] px-3 py-2 backdrop-blur-xl">
+                  <MapPin className="h-3 w-3 text-slate-400" />
+                  <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">
                     {pending.expiresAt ? `Respond before the invite expires` : "Invite"}
                   </span>
                 </div>
@@ -273,7 +272,7 @@ export default function OfferInviteModal({
               <button
                 type="button"
                 onClick={() => setDismissedKey(`${String(pending.lobby.id)}:${pending.expiresAt}`)}
-                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-black/40 text-gray-400 transition-all hover:border-white/30 hover:text-white"
+                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.12] bg-black/40 text-gray-300 backdrop-blur-xl transition-all hover:border-white/30 hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
