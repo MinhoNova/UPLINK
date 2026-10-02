@@ -136,7 +136,27 @@ export default function Navbar() {
           }
         }
         if (data.notifications) {
-          const mine = data.notifications.filter((n: any) => String(n.targetId) === String(currentUserId));
+          // Notifications address the recipient as `toUserId`, with `toUser`
+          // carrying the handle for rows written before ids were stamped on.
+          // This filtered on `n.targetId`, which is a player-reviews field and is
+          // never set on a notification, so the bell matched nothing at all and a
+          // player who was just invited to a squad saw no notification.
+          // Self-authored rows are excluded: both sides are "mine" server-side
+          // (see `validateNotifications`), so they would otherwise pin the badge
+          // on forever.
+          const meId = String(currentUserId || "");
+          const myHandle = String(data?.me?.username || currentHandle || "").toLowerCase();
+          const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+          const mine = data.notifications.filter((n: any) => {
+            const toId = String(n?.toUserId || "");
+            const toHandle = norm(n?.toUser);
+            const toMe = toId ? toId === meId : Boolean(myHandle) && toHandle === myHandle;
+            if (!toMe) return false;
+            const fromId = String(n?.fromUserId || "");
+            const fromHandle = norm(n?.fromHandle);
+            const fromMe = fromId ? fromId === meId : Boolean(myHandle) && fromHandle === myHandle;
+            return !fromMe;
+          });
           setNotifications(mine);
         }
 

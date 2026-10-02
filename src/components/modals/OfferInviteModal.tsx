@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Shield, Coins, MapPin, Clock, UserPlus, X, Check, Swords,
@@ -10,6 +10,7 @@ import { memberIdentityKey } from "@/lib/lobbyLifecycle";
 import { resolveProfileImage, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveOfferBannerImage } from "@/lib/vfxAssets";
+import { playInviteSound } from "@/lib/inviteSound";
 
 interface OfferInviteModalProps {
   lobbies: any[];
@@ -59,6 +60,21 @@ export default function OfferInviteModal({
 
   const pendingKey = pending ? `${String(pending.lobby.id)}:${pending.expiresAt}` : null;
   const visible = Boolean(pending) && pendingKey !== dismissedKey;
+
+  // Ring once per invite, not once per poll: `lobbies` re-renders every second
+  // from the timer below, so playing on `pending` alone would loop the chime for
+  // the whole 60s window. Keyed on the invite itself, and re-armed after a
+  // response so the next invite rings again.
+  const chimedKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!visible || !pendingKey) {
+      if (!visible) chimedKey.current = null;
+      return;
+    }
+    if (chimedKey.current === pendingKey) return;
+    chimedKey.current = pendingKey;
+    playInviteSound();
+  }, [visible, pendingKey]);
 
   const owner = pending
     ? registeredUsers.find((u: any) => String(u.id) === String(pending.lobby.ownerId)) || null
