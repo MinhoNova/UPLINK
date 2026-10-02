@@ -39,6 +39,7 @@ import {
 import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
 import { notificationMatchesUser } from "@/lib/userProfile";
 import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
+import { myLinkedCharacters } from "@/lib/characterStore";
 
 const TEAM_MAX = 4;
 const TEAM_MAX_MEMBERS = 3;
@@ -126,7 +127,7 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
   const myVfx: any[] = me?.userVfx || [];
 
   const myChars = useMemo(
-    () => chars.filter((c: any) => String(c.userId) === myId),
+    () => myLinkedCharacters(chars, myId),
     [chars, myId]
   );
 

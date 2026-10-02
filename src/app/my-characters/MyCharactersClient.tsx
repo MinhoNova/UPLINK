@@ -43,9 +43,19 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
     setTimeout(() => setToast(null), 3500);
   };
 
+  /**
+   * Read only the `characters` key.
+   *
+   * This used to pull all of `/api/data` — every lobby, notification and
+   * registered user in the store — to render a couple of cards, and it re-ran on
+   * every `data-refresh` event. That payload is what made this page crawl.
+   * `/api/public-data?keys=characters` narrows the D1 read to one row, and the
+   * same filtered list is what `fetchPublicCharacters` already used for writes,
+   * so the two now agree on shape.
+   */
   const refresh = useCallback(() => {
     if (!meId) return;
-    fetch("/api/data", { credentials: "include" })
+    fetch("/api/public-data?keys=characters", { credentials: "include" })
       .then((r) => r.json())
       .then((d: any) => {
         if (Array.isArray(d.characters)) setChars(d.characters);
