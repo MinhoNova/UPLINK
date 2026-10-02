@@ -10,6 +10,7 @@ import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
 import {
+  gameCharIdOf,
   myLinkedCharacters,
   removeCharacterById,
   saveVerifiedCharacterEntry,
@@ -35,6 +36,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
 
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const flash = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type });
@@ -195,11 +197,36 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
             {myChars.map((c: any) => {
               const href = charProfileHref(c);
               const cls = c.aionClass || c.gameClassLabel || "";
-              return (
+  const refreshChar = async (c: any) => {
+    const key = String(c.id);
+    if (refreshingId) return;
+    setRefreshingId(key);
+    try {
+      const res = await fetch("/api/aion2/resolve", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId: gameCharIdOf(c), serverId: Number(c.serverId) }),
+      });
+      const d: any = await res.json().catch(() => ({}));
+      if (!res.ok) { flash(d.error || "Could not refresh this character", "err"); return; }
+      const vc = d.character as VerifiedGameCharacter;
+      if (!vc?.characterId) { flash("Could not refresh this character", "err"); return; }
+      const saved = await saveVerifiedCharacterEntry(vc, meId);
+      if (!saved.ok) { flash(saved.error || "Could not refresh this character", "err"); return; }
+      flash(vc.portraitUrl ? "Character refreshed" : "Character re-verified — no portrait published for it yet");
+      refresh();
+    } catch {
+      flash("Network error", "err");
+    } finally {
+      setRefreshingId(null);
+    }
+  };
+
+  return (
+
                 <div key={String(c.id)} className="tn-light relative rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-[#00ffff]/40 transition-all flex gap-3 p-3">
                   {/* NC-style: the circular in-game portrait with the class emblem
-                      riding its edge. This was a bare square with no emblem, and
-                      a class image alone when the portrait was missing. */}
+                      stacked beneath it, smaller. */}
                   <CharacterPortraitBadge
                     src={c.portraitUrl}
                     aionClass={cls || "dps"}
@@ -225,6 +252,20 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
                         <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all">
                           <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full Profile"}
                         </a>
+                      )}
+                      {/* Characters linked before portraits existed were stored
+                          with `portraitUrl: ""` and nothing ever re-read them, so
+                          they showed the class crest forever. Re-verify in place. */}
+                      {!c.portraitUrl && (
+                        <button
+                          type="button"
+                          onClick={() => refreshChar(c)}
+                          disabled={!!refreshingId || !c.serverId}
+                          title={c.serverId ? "Re-check this character on the official site" : "No server recorded for this character"}
+                          className="inline-flex items-center gap-1 rounded-lg bg-white/5 border border-white/20 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300 hover:border-cyan-400/40 hover:text-cyan-300 disabled:opacity-40 transition-all"
+                        >
+                          {refreshingId === String(c.id) ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RefreshCw className="w-2.5 h-2.5" />} Refresh
+                        </button>
                       )}
                       {confirmRemoveId === String(c.id) ? (
                         <button
