@@ -6,16 +6,19 @@ import {
   getThreadRootId,
 } from "@/lib/lobbyLifecycle";
 import { playerAliases } from "@/lib/playerIdentity";
+import { applyCharacterSnapshots } from "@/lib/memberCharacter";
 
-/** `registeredUsers` drives display names, so it can be cached a touch longer. */
-const BLOB_TTL_MS: Record<string, number> = { lobbies: 3000, registeredUsers: 8000 };
+/** `registeredUsers` drives display names, so it can be cached a touch longer.
+ *  `characters` is only read to stamp a member's verified character onto their
+ *  row, so it may go stale for a few seconds like the rest. */
+const BLOB_TTL_MS: Record<string, number> = { lobbies: 3000, registeredUsers: 8000, characters: 8000 };
 
 /**
- * Read one of the two hot blobs, collapsing concurrent thread opens into a
+ * Read one of the hot blobs, collapsing concurrent thread opens into a
  * single D1 read per isolate per window. Writes invalidate the cache, so the
  * only staleness possible is a few seconds for *other* viewers.
  */
-async function readBlob(key: "lobbies" | "registeredUsers"): Promise<any | null> {
+async function readBlob(key: "lobbies" | "registeredUsers" | "characters"): Promise<any | null> {
   const hit = getThreadBlob(key, BLOB_TTL_MS[key]);
   if (hit) return hit.value;
   const value = await getKV(key);
@@ -129,6 +132,15 @@ export async function loadOfferThread(
   const family = getOfferThreadFamily(seed, lobbies);
   const rootId = getThreadRootId(seed, lobbies);
 
+  // Stamp each member's verified game character onto their row: the portrait,
+  // ilevel and server the thread card renders. The member rows come straight out
+  // of the `lobbies` blob and carry none of it — it lives on the `characters`
+  // roster — so without this the thread shows a default avatar where the official
+  // client shows the player's face. Only the family is touched, never the whole
+  // blob, and the caller sees no `characters` payload of their own.
+  const characters = ((await readBlob("characters")) || []) as any[];
+  const stampedFamily = applyCharacterSnapshots(family, characters);
+
   // Only the profiles that appear on this thread: owner, squad, applicants and
   // anyone already in the chat.
   const memberIds = new Set<string>([String(seed.ownerId)]);
@@ -159,12 +171,12 @@ export async function loadOfferThread(
       return out;
     });
 
-  if (opts.omitMedia) stripInlineMedia(family, users);
+  if (opts.omitMedia) stripInlineMedia(stampedFamily, users);
 
   return {
     ok: true,
     data: {
-      lobbies: family,
+      lobbies: stampedFamily,
       rootId: String(rootId),
       registeredUsers: users,
       me: { id: user.id, username: handle },

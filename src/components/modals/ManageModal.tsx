@@ -672,15 +672,27 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                banner uses. Previously a 44px square in the corner, which read
                                                                as a stray thumbnail rather than the character's face. */}
                                                            {occupant.portraitUrl && occupant.gameCharacterId ? (
-                                                              <CharacterPortraitBadge
-                                                                 src={occupant.portraitUrl}
-                                                                 aionClass={occupant.aionClass || occupant.role || "dps"}
-                                                                 size="lg"
-                                                                 className="absolute top-2 right-2 z-20"
-                                                              />
+                                                              <a
+                                                                 href={applicantProfileHref(occupant) || undefined}
+                                                                 target="_blank"
+                                                                 rel="noopener noreferrer"
+                                                                 title={
+                                                                    occupant.serverName
+                                                                       ? `Open ${occupant.characterName || "character"} on the official site`
+                                                                       : "Open character on the official site"
+                                                                 }
+                                                                 className="absolute top-2 right-2 z-20 block"
+                                                              >
+                                                                 <CharacterPortraitBadge
+                                                                    src={occupant.portraitUrl}
+                                                                    aionClass={occupant.aionClass || occupant.role || "dps"}
+                                                                    size="lg"
+                                                                 />
+                                                              </a>
                                                            ) : null}
 
-                                                          <div className="flex flex-1 items-center justify-center pt-2 min-h-0">
+                                                           <div className="flex flex-1 items-center justify-center pt-2 min-h-0">
+
                                                              {(() => {
                                                                 const occupantUser = registeredUsers.find((u: any) => String(u.id) === String(occupant.applicantId || occupant.userId));
                                                                 const userForPreview = occupantUser ? { ...occupantUser, tierLabel: getUserTierLabel(occupantUser.id) } : null;
@@ -695,18 +707,31 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                 );
                                                              })()}
                                                           </div>
-                                                          {occupant.gameCharacterId && (
-                                                             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 px-1 text-[7px] font-black uppercase tracking-widest">
-                                                                {occupant.aionClass || occupant.className || occupant.siteClass ? (
-                                                                   <span className="text-cyan-300">{occupant.aionClass || occupant.className || occupant.siteClass}</span>
-                                                                ) : null}
-                                                                {occupant.level ? <span className="text-slate-300">· LVL {occupant.level}</span> : null}
-                                                                {Number(occupant.itemLevel) > 0 ? <span className="text-violet-300">· ILVL {Number(occupant.itemLevel).toLocaleString()}</span> : null}
-                                                                {Number(occupant.cpAp) > 0 ? <span className="text-amber-300">· CP {Number(occupant.cpAp).toLocaleString()}</span> : null}
-                                                                {occupant.raceName ? <span className="text-slate-400">· {occupant.raceName}</span> : null}
-                                                                {occupant.serverName ? <span className="text-slate-400">· {occupant.serverName}</span> : null}
-                                                             </div>
-                                                          )}
+                                                           {occupant.gameCharacterId && (
+                                                              <div className="mt-1.5 flex flex-col items-center gap-1 px-1">
+                                                                 {occupant.characterName ? (
+                                                                    <span className="max-w-full truncate text-[10px] font-black text-white/90 tracking-wide">
+                                                                       {occupant.characterName}
+                                                                    </span>
+                                                                 ) : null}
+                                                                 <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[7px] font-black uppercase tracking-widest">
+                                                                    {occupant.gameClassLabel || occupant.aionClass || occupant.className || occupant.siteClass ? (
+                                                                       <span className="text-cyan-300">
+                                                                          {occupant.gameClassLabel || occupant.aionClass || occupant.className || occupant.siteClass}
+                                                                       </span>
+                                                                    ) : null}
+                                                                    {Number(occupant.gameLevel ?? occupant.level) > 0 ? (
+                                                                       <span className="text-slate-300">· LVL {Number(occupant.gameLevel ?? occupant.level)}</span>
+                                                                    ) : null}
+                                                                    {Number(occupant.itemLevel) > 0 ? <span className="text-violet-300">· ILVL {Number(occupant.itemLevel).toLocaleString()}</span> : null}
+                                                                    {Number(occupant.cpAp) > 0 ? <span className="text-amber-300">· CP {Number(occupant.cpAp).toLocaleString()}</span> : null}
+                                                                    {occupant.raceName ? <span className="text-slate-400">· {occupant.raceName}</span> : null}
+                                                                    {occupant.genderName ? <span className="text-slate-400">· {occupant.genderName}</span> : null}
+                                                                    {occupant.serverName ? <span className="text-slate-400">· {occupant.serverName}</span> : null}
+                                                                 </div>
+                                                              </div>
+                                                           )}
+
                                                          <div className="mt-auto flex flex-col gap-1.5 w-full pb-2 px-2 shrink-0">
                                                             {isPendingInvite && !ownerAutoAcceptActive && (currentUserId === targetLobby.ownerId || isAdmin) && occupant.inviteExpiresAt && (
                                                                <InviteTimer fullWidth expiresAt={occupant.inviteExpiresAt} onCancel={() => {

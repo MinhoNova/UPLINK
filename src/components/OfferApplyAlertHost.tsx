@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, X, UserPlus, Loader2, ShieldCheck } from "lucide-react";
 import { resolveProfileImage, profileImgClass, resolveNameColor } from "@/lib/profileImage";
 import { notificationMatchesUser } from "@/lib/userProfile";
+import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 
 interface PendingApply {
@@ -21,6 +22,14 @@ interface PendingApply {
   avatar?: string;
   nameColor?: string | null;
   itemLevel?: number;
+  /** The applicant's verified in-game character, stamped onto the applicant
+   *  row by the apply route. Drives the NC-style portrait badge. */
+  portraitUrl?: string;
+  gameCharacterId?: string;
+  characterName?: string;
+  gameClassLabel?: string;
+  serverName?: string;
+  raceName?: string;
 }
 
 const SEEN_KEY = "offer-alert-seen";
@@ -103,6 +112,12 @@ export default function OfferApplyAlertHost() {
           avatar: app.applicantAvatar || n?.fromAvatar || (appUser ? resolveProfileImage(appUser) : ""),
           nameColor: appUser ? resolveNameColor(appUser) : "",
           itemLevel: Number(app.itemLevel) || 0,
+          portraitUrl: app.portraitUrl ? String(app.portraitUrl) : "",
+          gameCharacterId: app.gameCharacterId ? String(app.gameCharacterId) : "",
+          characterName: app.characterName ? String(app.characterName).slice(0, 40) : "",
+          gameClassLabel: app.gameClassLabel ? String(app.gameClassLabel) : "",
+          serverName: app.serverName ? String(app.serverName) : "",
+          raceName: app.raceName ? String(app.raceName) : "",
         });
       }
       if (incoming.length === 0) return;
@@ -204,22 +219,43 @@ export default function OfferApplyAlertHost() {
             </div>
 
             <div className="mt-3 flex items-center gap-3">
-              <span className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 ${profileImgClass(imgSrc)}`}>
-                {imgSrc ? (
-                  <img src={imgSrc} alt={current.applicantName} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-violet-500/20 text-lg font-black text-violet-200">
-                    {current.applicantName.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-              </span>
+              {/* The applicant's real in-game character, NC-style, with the class
+                  emblem riding the portrait's edge — the same badge the thread
+                  and the lobby use. Falls back to the site avatar for a player
+                  who has not linked a character. */}
+              {current.portraitUrl && current.gameCharacterId ? (
+                <CharacterPortraitBadge
+                  src={current.portraitUrl}
+                  aionClass={current.gameClassLabel || current.className || "dps"}
+                  size="md"
+                  fallback={current.applicantName}
+                />
+              ) : (
+                <span className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 ${profileImgClass(imgSrc)}`}>
+                  {imgSrc ? (
+                    <img src={imgSrc} alt={current.applicantName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center bg-violet-500/20 text-lg font-black text-violet-200">
+                      {current.applicantName.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+              )}
               <div className="min-w-0">
                 <p className="truncate text-sm font-black text-white" style={nameStyle}>{current.applicantName}</p>
+                {current.characterName ? (
+                  <p className="truncate text-[10px] font-bold text-cyan-200/90">{current.characterName}</p>
+                ) : null}
                 <p className="mt-0.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                  {current.className || "Unknown class"}
+                  {current.gameClassLabel || current.className || "Unknown class"}
                   {(current.level ?? 0) > 0 && <span>· Lv {current.level}</span>}
                   {(current.cpAp ?? 0) > 0 && <span>· CP {current.cpAp!.toLocaleString()}</span>}
                 </p>
+                {current.serverName || current.raceName ? (
+                  <p className="truncate text-[8px] font-bold uppercase tracking-widest text-slate-500">
+                    {[current.raceName, current.serverName].filter(Boolean).join(" · ")}
+                  </p>
+                ) : null}
                 {current.itemLevel ? (
                   <span className="mt-1 inline-flex items-center gap-1 rounded bg-emerald-500/20 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-emerald-300">
                     <ShieldCheck className="w-2.5 h-2.5" /> ILVL {current.itemLevel.toLocaleString()}

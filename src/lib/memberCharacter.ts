@@ -18,6 +18,9 @@ import { gameCharIdOf } from "@/lib/characterStore";
 export type MemberCharacterSnapshot = {
   portraitUrl?: string;
   gameCharacterId?: string;
+  /** The in-game character's own name, distinct from the site display name. */
+  characterName?: string;
+  gameLevel?: number;
   itemLevel?: number;
   serverName?: string;
   gameClassLabel?: string;
@@ -94,6 +97,9 @@ function snapshotFromIndex(index: CharacterIndex, member: any): MemberCharacterS
   const gameId = gameCharIdOf(c);
   if (portrait) out.portraitUrl = portrait.slice(0, 500);
   if (gameId) out.gameCharacterId = String(gameId).slice(0, 64);
+  if (c.name) out.characterName = String(c.name).slice(0, 40);
+  const gameLevel = Number(c.level);
+  if (Number.isFinite(gameLevel) && gameLevel > 0) out.gameLevel = gameLevel;
   const ilvl = Number(c.itemLevel);
   if (Number.isFinite(ilvl) && ilvl > 0) out.itemLevel = ilvl;
   if (c.serverName) out.serverName = String(c.serverName).slice(0, 60);

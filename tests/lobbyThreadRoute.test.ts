@@ -15,6 +15,7 @@ vi.mock("@/lib/authz", () => ({ requireSession: vi.fn(), isAdminUser: vi.fn(asyn
   getKV: vi.fn(async (key: string) => {
     if (key === "lobbies") return LOBBIES;
     if (key === "registeredUsers") return USERS;
+    if (key === "characters") return CHARACTERS;
     return null;
   }),
 }));
@@ -42,6 +43,27 @@ const USERS = [
   { id: OWNER, username: "omarsaleh97", displayName: "Omar Saleh", email: "secret@example.com" },
   { id: MEMBER, username: "member1" },
   { id: "999-other", username: "someone" },
+];
+
+const CHAR_ID = "A1pIWbd0UKoTYJ2XbL_Cw57uCNxoM4sk4CUqtC5yJ0E=";
+const PORTRAIT = "/api/aion2/portrait?u=https%3A%2F%2Fprofileimg.plaync.com%2Fa.jpg&v=2";
+
+/** The `characters` roster, which is where the in-game portrait actually lives. */
+const CHARACTERS = [
+  {
+    id: `game:${CHAR_ID}`,
+    userId: MEMBER,
+    name: "Zerath",
+    gameClassLabel: "Warlord",
+    level: 65,
+    itemLevel: 720,
+    serverName: "Kpq",
+    raceName: "Asmodians",
+    genderName: "Female",
+    portraitUrl: PORTRAIT,
+    verifiedAt: 1_700_000_000_000,
+    region: "global",
+  },
 ];
 
 async function call(id: string, userId: string, admin = false) {
@@ -194,6 +216,43 @@ describe("GET /api/lobbies/thread", () => {
       sessionRole: "",
     });
     expect(clientSaysYes).toBe(true);
+  });
+
+  it("stamps a member's in-game character onto their row", async () => {
+    // The regression: the thread page loads from `/api/lobbies/thread`, not
+    // `/api/data`. The overlay was only ever added to the latter, so every
+    // member came back with `portraitUrl` undefined and the thread rendered a
+    // default avatar where the official client shows the player's face — the
+    // `occupant.portraitUrl` guard in ManageModal was never satisfied.
+    LOBBIES[0].accepted = [{ applicantId: MEMBER, applicantName: "Zerath", status: "confirmed" }];
+    try {
+      const { status, body } = await call("900", OWNER);
+      expect(status).toBe(200);
+      const member = body.lobbies[0].accepted[0];
+      expect(member.portraitUrl).toBe(PORTRAIT);
+      expect(member.gameCharacterId).toBe(CHAR_ID);
+      expect(member.characterName).toBe("Zerath");
+      expect(member.itemLevel).toBe(720);
+      expect(member.serverName).toBe("Kpq");
+    } finally {
+      LOBBIES[0].accepted = [];
+    }
+  });
+
+  it("does not leak the characters roster into the thread payload", async () => {
+    const { status, body } = await call("900", OWNER);
+    expect(status).toBe(200);
+    expect(body.characters).toBeUndefined();
+  });
+
+  it("leaves a member with no linked character alone", async () => {
+    LOBBIES[0].accepted = [{ applicantId: "no-such-player", applicantName: "Guest" }];
+    try {
+      const { body } = await call("900", OWNER);
+      expect(body.lobbies[0].accepted[0].portraitUrl).toBeUndefined();
+    } finally {
+      LOBBIES[0].accepted = [];
+    }
   });
 
   it("tells the client no for a refused read, so the gate agrees with the 403", async () => {
