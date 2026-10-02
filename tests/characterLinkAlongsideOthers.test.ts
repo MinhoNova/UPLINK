@@ -17,14 +17,16 @@ import { validateCharacters } from "@/lib/secureDataWrite";
 const ME = "1386800224273563868";
 const OTHER = "711027724663128106";
 
-/** Another player's linked game character, exactly as the public roster has it. */
+/** Another player's linked game character, exactly as the public roster has it.
+ *  `region: "global"` because the site is Global-only — these fixtures used to
+ *  carry arbitrary regions, which the region gate now treats as purgeable. */
 const theirGameChar = {
   id: "game:A1pIWbd0UKoTYJ2XbL_Cw57uCNxoM4sk4CUqtC5yJ0E=",
   userId: OTHER,
   name: "Lindaa",
   aionClass: "Templar",
   level: 45,
-  region: "tw",
+  region: "global",
 };
 
 /** Another player's hand-made site character. */
@@ -41,7 +43,7 @@ const myNewGameChar = {
   name: "Me",
   aionClass: "Mage",
   level: 30,
-  region: "kr",
+  region: "global",
 };
 
 const store = () => [theirGameChar, theirSiteChar];

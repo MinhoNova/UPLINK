@@ -7,6 +7,7 @@ import {
 } from "@/lib/lobbyLifecycle";
 import { playerAliases } from "@/lib/playerIdentity";
 import { applyCharacterSnapshots } from "@/lib/memberCharacter";
+import { dropNonGlobalCharacters } from "@/lib/publicDataView";
 
 /** `registeredUsers` drives display names, so it can be cached a touch longer.
  *  `characters` is only read to stamp a member's verified character onto their
@@ -138,7 +139,7 @@ export async function loadOfferThread(
   // roster — so without this the thread shows a default avatar where the official
   // client shows the player's face. Only the family is touched, never the whole
   // blob, and the caller sees no `characters` payload of their own.
-  const characters = ((await readBlob("characters")) || []) as any[];
+  const characters = dropNonGlobalCharacters<any>((await readBlob("characters")) || []);
   const stampedFamily = applyCharacterSnapshots(family, characters);
 
   // Only the profiles that appear on this thread: owner, squad, applicants and

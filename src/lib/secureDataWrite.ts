@@ -1,4 +1,5 @@
 import { getKV } from "@/lib/db";
+import { gameCharIdOf } from "@/lib/characterStore";
 import { getPosterStanding } from "@/lib/posterApproval";
 import { isSecretClubTier } from "@/lib/userProfile";
 import { findDuplicateUsernames, normRef, type PlayerRecord } from "@/lib/playerIdentity";
@@ -732,6 +733,32 @@ function isGameCharId(id: string): boolean {
   return typeof id === "string" && id.startsWith("game:");
 }
 
+/** A row that represents a verified in-game character, whichever id spelling it
+ *  uses. `isGameCharId` on the raw id was not enough: rows written before the
+ *  `game:` prefix store the bare character id in `id`, so every ownership rule
+ *  keyed on the raw id silently skipped them. Two accounts could then both
+ *  claim the same in-game character by using the bare form — the roster looked
+ *  fine in the UI (which deduped per account) while the store held the
+ *  character twice. Every check below now keys on the resolved character id. */
+function isVerifiedGameChar(ch: any): boolean {
+  return isGameCharId(String(ch?.id || "")) || Boolean(gameCharIdOf(ch));
+}
+
+/**
+ * Only Global characters may be stored.
+ *
+ * The site verifies against the Global region exclusively (`AION2_GAME_REGION`).
+ * A Taiwan/KR row is therefore either a leftover from an earlier build or a
+ * forged write, and neither belongs in the roster: it renders the wrong region
+ * badge, its portrait points at a different game's image host, and it consumes
+ * one of the per-account slots a real Global character needs.
+ */
+function isGlobalChar(ch: any): boolean {
+  const region = String(ch?.region || "").toLowerCase();
+  if (!region) return true; // pre-region site rows were never region-scoped
+  return region === "global";
+}
+
 export function validateCharacters(
   existing: unknown[],
   incoming: unknown,
@@ -739,37 +766,55 @@ export function validateCharacters(
   isAdmin: boolean
 ): ValidateResult {
   if (!Array.isArray(incoming)) return { ok: false, error: "Invalid characters" };
-  if (isAdmin) return { ok: true, value: incoming };
+
+  const incomingAll = incoming as any[];
+
+  // Region gate applies to everyone, admin included: this is a data-cleanliness
+  // rule, not a permission. Non-Global rows are dropped rather than rejected so
+  // the purge cannot be blocked by a client that still echoes an old roster back.
+  const globalOnly = incomingAll.filter(isGlobalChar);
+
+  if (isAdmin) return { ok: true, value: globalOnly };
 
   const existingById = new Map((existing as any[]).map((c) => [String(c.id), c]));
+  // Ownership is tracked by resolved character id, so the bare-id form cannot
+  // slip a second claim past the rule below.
+  const existingOwnerByChar = new Map<string, string>();
+  for (const c of existing as any[]) {
+    const key = gameCharIdOf(c);
+    if (!key) continue;
+    if (!existingOwnerByChar.has(key)) existingOwnerByChar.set(key, String(c.userId || ""));
+  }
 
-  for (const ch of incoming as any[]) {
+  for (const ch of globalOnly) {
     const id = String(ch.id || "");
     if (!id) continue;
-    if (isGameCharId(id) && String(ch.userId) !== String(userId)) {
-      // Only an attempt to *add* a `game:` character on someone else's behalf is
+    if (isVerifiedGameChar(ch) && String(ch.userId) !== String(userId)) {
+      // Only an attempt to *add* a verified character on someone else's behalf is
       // a forgery. One that is already in the store is just the roster being
       // echoed back, and rejecting it blocked every save — see below.
-      if (!existingById.has(id)) {
+      const key = gameCharIdOf(ch);
+      const known = key ? existingOwnerByChar.get(key) : undefined;
+      if (!existingById.has(id) && (key === undefined || known === undefined)) {
         return { ok: false, error: "Cannot add characters for other users" };
       }
     }
   }
 
   const seenOwners = new Map<string, string>();
-  for (const ch of incoming as any[]) {
-    const id = String(ch.id || "");
-    if (isGameCharId(id)) {
-      const owner = String(ch.userId || "");
-      const prev = seenOwners.get(id);
-      if (prev !== undefined && prev !== owner) {
-        return { ok: false, error: "The same in-game character cannot be linked to two accounts" };
-      }
-      seenOwners.set(id, owner);
+  for (const ch of globalOnly) {
+    if (!isVerifiedGameChar(ch)) continue;
+    const key = gameCharIdOf(ch);
+    if (!key) continue;
+    const owner = String(ch.userId || "");
+    const prev = seenOwners.get(key);
+    if (prev !== undefined && prev !== owner) {
+      return { ok: false, error: "The same in-game character cannot be linked to two accounts" };
     }
+    seenOwners.set(key, owner);
   }
 
-  for (const ch of incoming as any[]) {
+  for (const ch of globalOnly) {
     const ex = existingById.get(String(ch.id));
     if (!ex) {
       if (String(ch.userId) !== String(userId)) return { ok: false, error: "Cannot add characters for other users" };
@@ -786,7 +831,12 @@ export function validateCharacters(
   }
 
   for (const [id, ex] of existingById) {
-    if (!(incoming as any[]).some((c) => String(c.id) === id) && String((ex as any).userId) !== String(userId)) {
+    // Rows the region gate is dropping are not "deleted by this caller" — they
+    // are purged for everyone. Counting them here let one leftover Taiwan row
+    // owned by a different account fail every save on the site, because
+    // `saveVerifiedCharacterEntry` posts the whole public roster back.
+    if (!isGlobalChar(ex)) continue;
+    if (!globalOnly.some((c) => String(c.id) === id) && String((ex as any).userId) !== String(userId)) {
       return { ok: false, error: "Cannot delete other users' characters" };
     }
   }
@@ -794,7 +844,7 @@ export function validateCharacters(
   // Anyone else's character is written back untouched. Keeping the stored copy
   // is what actually enforces ownership — a forged or edited copy of a foreign
   // character is discarded rather than rejected, so it can never land.
-  const sanitized = (incoming as any[]).map((ch) => {
+  const sanitized = globalOnly.map((ch) => {
     const ex = existingById.get(String(ch.id));
     if (ex && String((ex as any).userId) !== String(userId)) return ex;
     return ch;

@@ -113,9 +113,28 @@ export function stripPublicOfferFields(lobbies: unknown): unknown {
 }
 
 /**
+ * The site is Global-only, so a Taiwan/KR row is either a leftover from an
+ * earlier build or a forged write. Neither belongs in a published roster: it
+ * shows the wrong region badge, its portrait points at a different game's
+ * image host, and it holds one of the account's character slots hostage.
+ *
+ * `validateCharacters` already drops these on write, but a row that was stored
+ * before that gate existed stays in the store until somebody saves. Filtering
+ * here makes them disappear for everyone immediately, without waiting for a
+ * write, and it applies to both `/api/public-data` and `/api/data`.
+ */
+export function dropNonGlobalCharacters<T>(list: unknown): T[] {
+  if (!Array.isArray(list)) return [];
+  return (list as any[]).filter((c) => {
+    const region = String(c?.region || "").toLowerCase();
+    return !region || region === "global";
+  }) as T[];
+}
+
+/**
  * Build an anonymous payload: allowlisted keys only, chat bodies removed, the
- * per-offer financial/bookkeeping fields removed, and per-player identifiers
- * removed from the roster.
+ * per-offer financial/bookkeeping fields removed, per-player identifiers
+ * removed from the roster, and non-Global characters dropped.
  */
 export function publicDataView(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -124,6 +143,7 @@ export function publicDataView(data: Record<string, unknown>): Record<string, un
     if (value === undefined) continue;
     if (key === "lobbies") out[key] = stripPublicOfferFields(value);
     else if (key === "registeredUsers") out[key] = sanitizePublicUsers(value);
+    else if (key === "characters") out[key] = dropNonGlobalCharacters(value);
     else out[key] = value;
   }
   return out;
