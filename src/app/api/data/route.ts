@@ -6,7 +6,7 @@ import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
 import { stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
 import { applyCharacterSnapshots } from '@/lib/memberCharacter';
 import { filterDataForUser } from '@/lib/dataAccess';
-import { publicDataView } from '@/lib/publicDataView';
+import { publicDataView, dropNonGlobalCharacters } from '@/lib/publicDataView';
 import { requireSession } from '@/lib/authz';
 import { logAudit } from '@/lib/auditLog';
 import { isUserBanned, bannedResponse, getBanInfo } from '@/lib/banCheck';
@@ -165,6 +165,18 @@ export async function GET(req: Request) {
       if (removed > 0) {
         data.tickets = tickets;
         await setKV('tickets', tickets);
+      }
+    }
+
+    // The site is Global-only. Rows synced from Taiwan/Korea before the region
+    // gate existed are removed from storage here, on the first ordinary read —
+    // no admin action and no user having to re-save their roster. Hiding them on
+    // the way out alone would have left them in the database forever.
+    if (Array.isArray(data.characters)) {
+      const globalOnly = dropNonGlobalCharacters<any>(data.characters);
+      if (globalOnly.length !== data.characters.length) {
+        data.characters = globalOnly;
+        await setKV('characters', globalOnly);
       }
     }
 

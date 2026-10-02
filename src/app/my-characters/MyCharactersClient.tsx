@@ -125,7 +125,9 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
   return (
     <div className="relative min-h-screen bg-[#050814] text-slate-200 font-sans selection:bg-blue-500/30">
       <PageBackdrop heroBg={heroBg} />
-      <div className="relative z-10 mx-auto max-w-4xl px-4 pt-8 pb-24">
+      {/* `pt-32 sm:pt-36` clears the fixed `h-24` navbar. This page used `pt-8`,
+          which put the heading and its buttons underneath the bar. */}
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pt-32 sm:pt-36 pb-24">
         <button
           type="button"
           onClick={() => router.push("/my-profile")}

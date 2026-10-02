@@ -579,17 +579,11 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
         {/* ══ MY CHARACTERS ══ */}
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mb-8">
           <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
-            <Swords className="w-4 h-4 text-cyan-400" />
+            <Swords className="w-4 h-4 text-blue-400" />
             <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">My Characters</h3>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{myChars.length} verified</span>
-            <button
-              type="button"
-              onClick={() => router.push("/my-characters")}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all"
-            >
-              <ExternalLink className="w-2.5 h-2.5" /> Manage
-            </button>
           </div>
+
           {myChars.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/15 bg-black/20 p-6 text-center">
               <Swords className="mx-auto h-6 w-6 text-slate-600" />

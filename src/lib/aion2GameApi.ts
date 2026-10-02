@@ -12,6 +12,7 @@ import {
   aion2CharacterInfoUrl,
   aion2CharacterPageUrl,
   AION2_GLOBAL_BASE,
+  AION2_REGION_LABEL,
   mapGameClassToSite,
   isAllowedPortraitUrl,
   type Aion2Region,
@@ -108,6 +109,14 @@ function mapGameCharacterInfo(
 ): VerifiedGameCharacter | null {
   const p: any = data?.profile;
   if (!p || !p.characterId) return null;
+  // The site is Global-only. `regionName` is empty when the API does not
+  // recognise the character at all, but when it *does* name a region, anything
+  // other than Global is refused here — a Taiwan/Korea character must never
+  // reach the roster, whatever link was pasted.
+  const regionName = String(p.regionName || "").toLowerCase();
+  if (regionName && !GLOBAL_REGION_ALIASES.has(regionName) && regionName !== AION2_REGION_LABEL.toLowerCase()) {
+    return null;
+  }
 
   const gameClassLabel = String(p.className || "");
   const siteClass = mapGameClassToSite(gameClassLabel);
@@ -148,6 +157,23 @@ type CharacterShareRef = {
  * Parse an official global character page share-link
  * (/characters/{serverId}/{encryptedCharacterId}?region=nae).
  */
+/** The site is Global-only. A link that names any other region is refused rather
+ *  than silently verified against `nae`, which is what let Taiwan/Korea rows
+ *  into the roster in the first place. */
+const GLOBAL_REGION_ALIASES = new Set(["", "nae", "global", "na"]);
+
+export function isNonGlobalRegionLink(link: string): boolean {
+  try {
+    const u = new URL(String(link || "").trim());
+    const region = (u.searchParams.get("region") || "").toLowerCase();
+    if (!GLOBAL_REGION_ALIASES.has(region)) return true;
+    // Some share links carry the region as a path segment (`/nae/characters/...`).
+    return u.pathname.split("/").filter(Boolean).some((seg) => /^(kr|tw|jp|cn|naeu)$/i.test(seg));
+  } catch {
+    return false;
+  }
+}
+
 export function parseCharacterShareUrl(link: string): CharacterShareRef | null {
   let u: URL;
   try {
@@ -156,6 +182,7 @@ export function parseCharacterShareUrl(link: string): CharacterShareRef | null {
     return null;
   }
   if (u.hostname.toLowerCase() !== "aion2.plaync.com") return null;
+  if (isNonGlobalRegionLink(link)) return null;
   const seg = u.pathname.split("/").filter(Boolean);
   const i = seg.findIndex((s) => s.toLowerCase() === "characters");
   if (i === -1 || i + 2 >= seg.length) return null;
