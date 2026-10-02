@@ -108,3 +108,35 @@ describe("My Characters page layout and the duplicate button", () => {
     expect(read("app/my-characters/MyCharactersClient.tsx")).toMatch(/refreshChar/);
   });
 });
+
+describe("one My Characters entry, one page", () => {
+  const nav = () => read("components/navbar/Navbar.tsx");
+
+  it("the profile menu offers My Characters exactly once", () => {
+    const menu = nav().slice(nav().indexOf('role="menu"'));
+    const hits = menu.match(/href="\/my-characters"/g) || [];
+    expect(hits).toHaveLength(1);
+  });
+
+  it("the menu no longer offers a second character page beside it", () => {
+    // `/character` has its own paste-a-link box and heading, so next to "My
+    // Characters" it read as the same page twice. The route stays — it is the
+    // target of every "Full Profile" button.
+    const menu = nav().slice(nav().indexOf('role="menu"'));
+    expect(menu).not.toMatch(/href="\/character"/);
+  });
+
+  it("the Character Profile route still works for every Full Profile link", () => {
+    expect(read("app/character/page.tsx")).toContain("Character");
+    const users = [
+      "app/my-characters/MyCharactersClient.tsx",
+      "app/my-profile/MyProfileClient.tsx",
+      "app/player/[handle]/page.tsx",
+      "components/aion2/LobbyPage.tsx",
+      "components/modals/ManageModal.tsx",
+    ];
+    for (const f of users) {
+      expect(read(f)).toMatch(/\/character\?u=/);
+    }
+  });
+});
