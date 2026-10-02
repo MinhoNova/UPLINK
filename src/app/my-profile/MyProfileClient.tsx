@@ -28,6 +28,7 @@ import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
 import { classThumbUrl } from "@/lib/classThumb";
 import GamePortrait from "@/components/aion2/GamePortrait";
+import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import {
   importLobbyVfxFromUrl,
@@ -608,21 +609,29 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
                 const cls = c.aionClass || c.gameClassLabel || "";
                 return (
                   <div key={String(c.id)} className="relative rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-[#00ffff]/40 transition-all flex gap-3 p-3">
-                    <GamePortrait
-                      src={c.portraitUrl}
-                      className="w-16 h-16 rounded-xl border border-cyan-400/30 bg-black object-cover shrink-0"
-                      alt=""
-                      title={c.name || "Character"}
-                    />
-                    {!c.portraitUrl && (
-                      <img
-                        src={classThumbUrl(cls)}
-                        alt={cls}
-                        title={cls}
-                        className="w-16 h-16 rounded-xl border border-white/10 bg-black object-contain shrink-0"
-                        loading="lazy"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    {c.portraitUrl ? (
+                      <CharacterPortraitBadge
+                        src={c.portraitUrl}
+                        aionClass={cls || "dps"}
+                        size="lg"
                       />
+                    ) : (
+                      <>
+                        <GamePortrait
+                          src={c.portraitUrl}
+                          className="w-16 h-16 rounded-xl border border-cyan-400/30 bg-black object-cover shrink-0"
+                          alt=""
+                          title={c.name || "Character"}
+                        />
+                        <img
+                          src={classThumbUrl(cls)}
+                          alt={cls}
+                          title={cls}
+                          className="w-16 h-16 rounded-xl border border-white/10 bg-black object-contain shrink-0"
+                          loading="lazy"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                      </>
                     )}
                     <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                       <span className="flex items-center gap-1.5 min-w-0">

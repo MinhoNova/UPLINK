@@ -54,6 +54,53 @@ function itemLevelOf(stat: any): number {
   return hit ? Number(hit.value) || 0 : 0;
 }
 
+/** Keys the plaync character payload has used for the in-game portrait over
+ *  time. The endpoint is undocumented and has shipped `profileImage` and
+ *  `profileImg` alike, and a character that verified fine but lost its face
+ *  because the field was renamed is exactly the "no portraits anywhere" bug. */
+const PORTRAIT_KEYS = [
+  "profileImage",
+  "profileImg",
+  "profile_image",
+  "profileimg",
+  "portraitUrl",
+  "portrait",
+  "characterImage",
+  "imageUrl",
+  "image",
+  "avatar",
+];
+
+/** Find the official portrait anywhere in the character payload: first the
+ *  known keys, then a bounded deep sweep for any allowlisted plaync profile
+ *  image. Returns "" when the payload genuinely has no portrait. */
+function pickPortraitUrl(data: any, profile: any): string {
+  for (const key of PORTRAIT_KEYS) {
+    const v = String(profile?.[key] || "");
+    if (v && isAllowedPortraitUrl(v)) return v;
+  }
+  const seen = new Set<any>();
+  const queue: Array<{ node: any; depth: number }> = [
+    { node: data, depth: 0 },
+    { node: profile, depth: 0 },
+  ];
+  let visited = 0;
+  while (queue.length && visited < 500) {
+    const { node, depth } = queue.shift()!;
+    if (!node || typeof node !== "object" || depth > 5 || seen.has(node)) continue;
+    seen.add(node);
+    visited++;
+    for (const value of Object.values(node)) {
+      if (typeof value === "string") {
+        if (isAllowedPortraitUrl(value)) return value;
+      } else if (value && typeof value === "object") {
+        queue.push({ node: value, depth: depth + 1 });
+      }
+    }
+  }
+  return "";
+}
+
 function mapGameCharacterInfo(
   data: any,
   characterId: string,
@@ -64,7 +111,7 @@ function mapGameCharacterInfo(
 
   const gameClassLabel = String(p.className || "");
   const siteClass = mapGameClassToSite(gameClassLabel);
-  const profileImage: string = String(p.profileImage || "");
+  const profileImage = pickPortraitUrl(data, p);
   return {
     characterId: String(p.characterId || characterId),
     name: String(p.characterName || ""),
@@ -78,7 +125,7 @@ function mapGameCharacterInfo(
     serverId: Number(p.serverId) || serverId,
     serverName: String(p.serverName || ""),
     genderName: String(p.genderName || ""),
-    portraitUrl: isAllowedPortraitUrl(profileImage) ? profileImage : null,
+    portraitUrl: profileImage || null,
     region: "global",
     verifiedAt: Date.now(),
   };

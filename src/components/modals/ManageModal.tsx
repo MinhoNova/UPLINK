@@ -667,10 +667,10 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                     const isPendingInvite = occupant.status === "invited";
                                                     return (
                                                        <div key={`slot-${idx}`} className={`relative p-2 rounded-[1.2rem] border transition-all h-full min-h-[220px] flex flex-col ${isPendingInvite ? "bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-500/35 shadow-[0_0_20px_rgba(234,179,8,0.12)]" : "bg-gradient-to-b from-[#00ffff]/10 to-transparent border-[#00ffff]/35 shadow-[0_0_20px_rgba(0,255,255,0.08)]"}`}>
-                                                           {/* The official in-game portrait, NC-style: a circular face with
-                                                               the class emblem riding its edge — the same badge the applicants
-                                                               banner uses. Previously a 44px square in the corner, which read
-                                                               as a stray thumbnail rather than the character's face. */}
+                                                           {/* The official in-game portrait, NC-style: a circular face with the
+                                                               class emblem stacked beneath it at a smaller size. It used to be
+                                                               pinned `absolute top-2 right-2`, which overlapped the card and
+                                                               read as a stray thumbnail — now it sits in the card's own flow. */}
                                                            {occupant.portraitUrl && occupant.gameCharacterId ? (
                                                               <a
                                                                  href={applicantProfileHref(occupant) || undefined}
@@ -681,7 +681,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                        ? `Open ${occupant.characterName || "character"} on the official site`
                                                                        : "Open character on the official site"
                                                                  }
-                                                                 className="absolute top-2 right-2 z-20 block"
+                                                                 className="relative z-20 self-start block"
                                                               >
                                                                  <CharacterPortraitBadge
                                                                     src={occupant.portraitUrl}
@@ -691,7 +691,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                               </a>
                                                            ) : null}
 
-                                                           <div className="flex flex-1 items-center justify-center pt-2 min-h-0">
+                                                           <div className="flex flex-1 items-center justify-center pt-3 min-h-0">
 
                                                              {(() => {
                                                                 const occupantUser = registeredUsers.find((u: any) => String(u.id) === String(occupant.applicantId || occupant.userId));

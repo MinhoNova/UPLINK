@@ -20,6 +20,16 @@ const PUBLIC_CACHE = "public, max-age=3600, s-maxage=3600, stale-while-revalidat
  *  returned a tiny error/placeholder image — let the client fall back. */
 const MIN_VALID_BYTES = 4096;
 
+/** The upstream answers 200 with a ~9.5 KB `image/png` "no portrait set"
+ *  placeholder whenever `gameServerKey` does not match the character (verified
+ *  against profileimg.plaync.com: a correct key returns a ~30 KB
+ *  `image/jpeg`, a wrong one returns the PNG). The old size check alone let
+ *  that placeholder through and every character rendered as the same generic
+ *  badge, which reads as "the portrait is broken". Genuine portraits from this
+ *  endpoint are JPEG, so reject the placeholder format outright and let the
+ *  caller's class crest be the fallback. */
+const PLACEHOLDER_CONTENT_TYPE = "image/png";
+
 function hex(buf: ArrayBuffer): string {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -60,6 +70,10 @@ export async function GET(req: Request) {
       },
     });
     if (!upstream.ok) return new Response("upstream error", { status: 502 });
+    const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
+    if (contentType.startsWith(PLACEHOLDER_CONTENT_TYPE)) {
+      return new Response("portrait unavailable", { status: 502 });
+    }
     const buf = await upstream.arrayBuffer();
     if (buf.byteLength < MIN_VALID_BYTES) {
       return new Response("portrait unavailable", { status: 502 });
@@ -67,7 +81,7 @@ export async function GET(req: Request) {
     const res = new Response(buf, {
       status: 200,
       headers: {
-        "Content-Type": upstream.headers.get("content-type") || "image/jpeg",
+        "Content-Type": contentType || "image/jpeg",
         "Cache-Control": PUBLIC_CACHE,
         "ETag": `"${hex(await crypto.subtle.digest("SHA-256", buf))}"`,
         "Access-Control-Allow-Origin": "*",

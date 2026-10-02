@@ -380,8 +380,12 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
 
   const voiceJoinInFlight = useRef(false);
   const voiceJoinCooldownUntil = useRef(0);
-  const splitInFlightRef = useRef(false);
+  const splitInFlightRef = useRef(false); 
   const autoAcceptBusyRef = useRef(false);
+  /** Set once we mutate the roster ourselves, so the next poll trusts the server
+   *  instead of unioning our stale local copy back over its answer. */
+  const authoritativeRosterRef = useRef(false);
+
   const hasFetchedRef = useRef(false);
   const dataLoadedRef = useRef(!!seedThread);
   const [dataLoaded, setDataLoaded] = useState(!!seedThread);
@@ -510,7 +514,21 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
           if (typeof d?.admin === "boolean") setServerAdmin(d.admin);
           if (Array.isArray(d.lobbies)) {
             const ready = (d.lobbies || []).map(repairLobbyRoles);
-            setLobbies((prev) => mergeLobbiesFromServer(ready, prev.map(repairLobbyRoles), currentUserId, splitInFlightRef.current || autoAcceptBusyRef.current).map(repairLobbyRoles));
+            // `mergeLobbiesFromServer` unions `accepted`: it exists so a join the
+            // server has not seen yet does not flicker out of the roster. But a
+            // union cannot express a removal, so after a kick the member the
+            // server just dropped was put straight back by the very next poll and
+            // the thread looked unchanged until a manual reload.
+            //
+            // When we have just made a roster change ourselves, the server is by
+            // definition the newer side, so adopt its lobbies verbatim for that
+            // one load instead of merging.
+            if (authoritativeRosterRef.current) {
+              authoritativeRosterRef.current = false;
+              setLobbies(ready);
+            } else {
+              setLobbies((prev) => mergeLobbiesFromServer(ready, prev.map(repairLobbyRoles), currentUserId, splitInFlightRef.current || autoAcceptBusyRef.current).map(repairLobbyRoles));
+            }
             if (hasFetchedRef.current && ready.length) {
               const others = ready.filter((l: any) => String(l.ownerId) !== String(currentUserId));
               const currentIds = new Set<string>(others.map((l: any) => String(l.id)));
@@ -840,6 +858,9 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
     }
     setNotifications(newNotifications);
     setLobbies(updated);
+    // Accepting moves a row out of `applicants` and into `accepted`. Let the
+    // server's roster win on the next poll instead of merging our copy back.
+    authoritativeRosterRef.current = true;
     await saveGlobalData({ lobbies: updated, ...(instantJoin ? {} : { notifications: newNotifications }) });
     if (applicant.applicantId && !instantJoin) {
       fetch("/api/discord/notify-invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lobbyId: targetLobby.id, notifId, applicantDiscordId: String(applicant.applicantId || applicant.userId) }) }).catch(() => {});
@@ -851,6 +872,7 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
     if (!targetLobby) return;
     const updated = lobbies.map((l) => (l.id === targetLobby.id ? { ...l, applicants: l.applicants.filter((a: any) => a.id !== applicantId) } : l));
     setLobbies(updated);
+    authoritativeRosterRef.current = true;
     saveGlobalData({ lobbies: updated });
     addToast("Transmission terminated.", "info");
   };
@@ -979,6 +1001,8 @@ export default function ManagePage({ heroBg, initialThread }: { heroBg?: string;
       await saveGlobalData({ lobbies: updated });
     } finally {
       splitInFlightRef.current = false;
+      // Our own kick is the newest word on who is in the squad.
+      authoritativeRosterRef.current = true;
       window.dispatchEvent(new CustomEvent("data-refresh"));
     }
     setActiveMemberAction(null);
