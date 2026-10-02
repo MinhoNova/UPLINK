@@ -5,6 +5,7 @@ import { acceptApplicantAcrossLobbies } from "@/lib/lobbyLifecycle";
 import { resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
+import { charactersFromStore, memberCharacterSnapshot } from "@/lib/memberCharacter";
 
 function memberId(member: { applicantId?: string; id?: string }) {
   return String(member.applicantId || member.id || "");
@@ -48,6 +49,9 @@ export async function POST(req: Request) {
       applicantAvatar: applicant.applicantAvatar || registeredUsers.find((u: any) => String(u.id) === String(applicant.applicantId))?.image || "",
       raiderRegion: String(applicant.raiderRegion || applicant.region || "").toLowerCase(),
       raiderRealm: applicant.raiderRealm || applicant.realm,
+      // Backfill the in-game portrait for applicants stored before the snapshot
+      // existed, so their squad card renders the real character.
+      ...memberCharacterSnapshot(await charactersFromStore(), applicant),
     };
     const targetKey = String(enriched.applicantId || enriched.id || "");
 

@@ -21,6 +21,8 @@ type Row = {
   toUser?: string;
   fromUserId?: string;
   fromHandle?: string;
+  /** Display name, not an address — written by every notification path. */
+  fromUser?: string;
 };
 
 function visibleToMe(rows: Row[], meId: string, myHandle: string): Row[] {

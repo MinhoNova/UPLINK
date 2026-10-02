@@ -4,8 +4,17 @@ import { isAllowedPortraitUrl } from "@/lib/aion2GameApi";
 
 export const dynamic = "force-dynamic";
 
-const PUBLIC_CACHE =
-  "public, max-age=86400, s-maxage=86400, stale-while-revalidate=86400, immutable";
+/**
+ * Portrait URLs are cached at the CDN for an hour, not a day.
+ *
+ * The proxy path is stable for a given character — `portraitProxyPath` emits the
+ * same `?u=...&v=2` string for everyone, so the URL carries no version bump when
+ * the character changes gear. A day of `immutable` therefore pinned the first
+ * portrait ever fetched for that character: re-verifying after an upgrade kept
+ * showing the old face. An hour is long enough to absorb a page full of members
+ * and short enough that a gear change shows up in the same sitting.
+ */
+const PUBLIC_CACHE = "public, max-age=3600, s-maxage=3600, stale-while-revalidate=3600";
 
 /** Real portraits are multi-KB rendered JPEGs. Below this the upstream
  *  returned a tiny error/placeholder image — let the client fall back. */
@@ -66,6 +75,8 @@ export async function GET(req: Request) {
     });
     if (edgeCache) {
       try {
+        // The edge copy inherits `s-maxage` from the response above, so both
+        // windows move together.
         await edgeCache.put(req, res.clone());
       } catch {
         // best-effort edge cache — a miss still proxies fine.

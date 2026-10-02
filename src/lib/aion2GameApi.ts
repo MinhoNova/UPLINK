@@ -186,7 +186,15 @@ export type CharacterDetails = {
   fetchedAt: number;
 };
 
-const DETAILS_TTL = 5 * 60 * 1000;
+/**
+ * Gear on the official character page changes the moment a player upgrades an
+ * item, and the thread board is where players check someone else's ilevel before
+ * applying. At 5 minutes the card sat on visibly stale gear for most of an
+ * evening's recruiting. 60s still collapses the burst of repeat requests one
+ * page fires (a thread renders the same character in several places), while
+ * picking up a fresh upgrade within a minute instead of five.
+ */
+const DETAILS_TTL = 60 * 1000;
 const detailsCache = new Map<string, { at: number; data: CharacterDetails }>();
 
 /** Fetch a character's full live details (profile, stats, gear, skills) from its official share-link. */

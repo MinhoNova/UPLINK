@@ -4,6 +4,7 @@ import { pruneTerminalLobbies } from '@/lib/lobbyCleanup';
 import { pruneExpiredTickets } from '@/lib/tickets';
 import { migrateLobbies, LOBBY_DATA_VERSION } from '@/lib/lobbyLifecycle';
 import { stripAdminFromBanList, sanitizeBannedIdRecords, validateDataWrites } from '@/lib/secureDataWrite';
+import { applyCharacterSnapshots } from '@/lib/memberCharacter';
 import { filterDataForUser } from '@/lib/dataAccess';
 import { publicDataView } from '@/lib/publicDataView';
 import { requireSession } from '@/lib/authz';
@@ -165,6 +166,15 @@ export async function GET(req: Request) {
         data.tickets = tickets;
         await setKV('tickets', tickets);
       }
+    }
+
+    if (Array.isArray(data.lobbies)) {
+      // Overlay each squad member's verified game character (portrait, ilevel,
+      // class, server) on the way out, so a thread card always reflects the
+      // player's latest re-verification instead of whatever was stored when they
+      // joined. Purely additive, and it is not persisted here — the POST path
+      // applies the same overlay so the two agree.
+      data.lobbies = applyCharacterSnapshots(data.lobbies, data.characters);
     }
 
     const scoped = filterDataForUser(data, auth.user.id, myHandle);
@@ -352,6 +362,12 @@ export async function POST(req: Request) {
       let toWrite = value;
       if (key === "tickets" && Array.isArray(value)) {
         toWrite = pruneExpiredTickets(value).tickets;
+      }
+      if (key === "lobbies" && Array.isArray(value)) {
+        // Persist the in-game portrait / ilevel onto squad rows that predate the
+        // snapshot, so an existing thread carries the same data as a new one and
+        // survives the read path's own overlay.
+        toWrite = applyCharacterSnapshots(value, existing.characters);
       }
       await setKV(key, toWrite);
       if (key === "bannedUsers" || key === "bannedUserIds") {

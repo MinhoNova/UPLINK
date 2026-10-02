@@ -10,7 +10,6 @@ import { resolveProfileDisplayName, resolveProfileImage } from "@/lib/profileIma
 import { playerAliases } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { toStorableImageDataUrl } from "@/lib/inlineImage";
-import GamePortrait from "@/components/aion2/GamePortrait";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, hasIndependentSquadMember, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
@@ -390,17 +389,24 @@ const ManageModal = ({
                 <AnimatePresence>
                   {isOpen && targetLobby && (
                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
-                         {/* EXIT — pinned to the corner of the modal so it never
-                             wraps out of view or gets buried under the action row,
-                             on any screen size. Same target as the ESC key: leave. */}
-                         <button type="button" onClick={() => onClose()} title="Exit to homepage" aria-label="Exit to homepage" className="absolute top-5 right-5 z-[130] h-12 w-12 flex items-center justify-center rounded-2xl bg-red-500/15 border-2 border-red-500/50 hover:bg-red-500 text-red-400 hover:text-white transition-all shadow-[0_0_20px_rgba(255,0,0,0.35)]">
-                            <X className="w-6 h-6" />
-                         </button>
                          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-[98vw] h-[96vh] bg-[#05050a] border-2 border-[#ff007f]/40 rounded-[3.5rem] p-1 shadow-[0_0_100px_rgba(255,0,127,0.15)] relative overflow-hidden flex flex-col">
+                            {/* EXIT — anchored to the BOARD, not the backdrop. It used
+                                to sit on the `fixed inset-0` wrapper, which put it in
+                                the p-4 gutter outside the board's rounded border on
+                                every screen size, so it read as a stray control floating
+                                beside the thread rather than part of it. */}
+                            <button type="button" onClick={() => onClose()} title="Exit to homepage" aria-label="Exit to homepage" className="absolute top-4 right-4 z-[130] h-11 w-11 flex items-center justify-center rounded-2xl bg-red-500/15 border-2 border-red-500/50 hover:bg-red-500 text-red-400 hover:text-white transition-all shadow-[0_0_20px_rgba(255,0,0,0.35)]">
+                               <X className="w-5 h-5" />
+                            </button>
 
-                             {/* KICK/LEAVE OVERLAY - inside thread, covers content */}
+                             {/* KICK/LEAVE OVERLAY — a centred dialog inside the board.
+                                 This was `absolute ... mt-2` with no top/left, so it was
+                                 positioned from the board's own top-left corner and hung
+                                 outside it, and because the board is `overflow-hidden` a
+                                 tall run-count list was clipped instead of scrolling. */}
                              {activeMemberAction && (
-                                 <div className="absolute z-[100] mt-2 bg-[#05050a] border border-[#ff007f]/50 rounded-xl p-2 shadow-2xl flex flex-col gap-1 w-40">
+                                 <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setActiveMemberAction(null)}>
+                                  <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[240px] max-h-[70vh] overflow-y-auto bg-[#05050a] border border-[#ff007f]/50 rounded-2xl p-2 shadow-2xl flex flex-col gap-1">
                                       <span className="text-[8px] font-black text-gray-500 uppercase px-2">{isFinishedOffer ? "Remove from roster" : "Completed Runs"}</span>
                                       {(isFinishedOffer ? [0] : Array.from({ length: maxExitRuns + 1 }, (_, i) => i)).map(num => (
                                          <button 
@@ -414,8 +420,12 @@ const ManageModal = ({
                                              {num} Run{num !== 1 ? 's' : ''}
                                          </button>
                                      ))}
+                                  </div>
                                  </div>
-                             )}                            {/* MODAL BACKGROUND FX */}
+                              )}
+
+                            {/* MODAL BACKGROUND FX */}
+
                            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ff007f]/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#00ffff]/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
 
@@ -479,8 +489,11 @@ return bgUrl ? (
                                      })()}
                                     </div>
 
-                                   {/* ACTION BUTTONS - ACCESSIBLE AT TOP */}
-                                   <div className="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
+                                   {/* ACTION BUTTONS - ACCESSIBLE AT TOP.
+                                       `pr-16` keeps the first row clear of the exit
+                                       button, which now sits inside the board at the
+                                       top-right rather than outside it. */}
+                                   <div className="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto pr-16">
                                      {(currentUserId === targetLobby.ownerId || isAdmin) ? (
                                         <>
 {canEditOffer && (
@@ -654,14 +667,19 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                     const isPendingInvite = occupant.status === "invited";
                                                     return (
                                                        <div key={`slot-${idx}`} className={`relative p-2 rounded-[1.2rem] border transition-all h-full min-h-[220px] flex flex-col ${isPendingInvite ? "bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-500/35 shadow-[0_0_20px_rgba(234,179,8,0.12)]" : "bg-gradient-to-b from-[#00ffff]/10 to-transparent border-[#00ffff]/35 shadow-[0_0_20px_rgba(0,255,255,0.08)]"}`}>
-                                                          {occupant.portraitUrl && occupant.gameCharacterId ? (
-                                                             <GamePortrait
-                                                                src={occupant.portraitUrl}
-                                                                className="absolute top-2 right-2 z-20 w-11 h-11 rounded-xl border-2 border-[#00ffff]/40 bg-black object-cover shadow-[0_0_14px_rgba(0,255,255,0.25)]"
-                                                                alt=""
-                                                                title={occupant.serverName ? `Game character · ${occupant.serverName}` : "Game character"}
-                                                             />
-                                                          ) : null}
+                                                           {/* The official in-game portrait, NC-style: a circular face with
+                                                               the class emblem riding its edge — the same badge the applicants
+                                                               banner uses. Previously a 44px square in the corner, which read
+                                                               as a stray thumbnail rather than the character's face. */}
+                                                           {occupant.portraitUrl && occupant.gameCharacterId ? (
+                                                              <CharacterPortraitBadge
+                                                                 src={occupant.portraitUrl}
+                                                                 aionClass={occupant.aionClass || occupant.role || "dps"}
+                                                                 size="lg"
+                                                                 className="absolute top-2 right-2 z-20"
+                                                              />
+                                                           ) : null}
+
                                                           <div className="flex flex-1 items-center justify-center pt-2 min-h-0">
                                                              {(() => {
                                                                 const occupantUser = registeredUsers.find((u: any) => String(u.id) === String(occupant.applicantId || occupant.userId));

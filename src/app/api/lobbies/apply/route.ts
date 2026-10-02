@@ -6,6 +6,7 @@ import { withdrawApplicantFromOfferFamily, acceptApplicantAcrossLobbies } from "
 import { resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { checkAndRecordOfferApply, getOfferApplyUsage } from "@/lib/offerDailyLimit";
 import { touchUserLastIp } from "@/lib/userLastIp";
+import { charactersFromStore, memberCharacterSnapshot } from "@/lib/memberCharacter";
 import { getClientIp } from "@/lib/requestIp";
 import {
   sanitizeAionClass,
@@ -80,6 +81,13 @@ export async function POST(req: Request) {
     );
   }
 
+  // The thread shows a member's real in-game portrait and ilevel. Those live on
+  // the `characters` rows, so they are snapshotted onto the applicant here rather
+  // than taken from the request: a client-supplied portrait would be discarded by
+  // `clampMemberWrite` anyway, since a member's row is frozen to what is stored.
+  const characters = await charactersFromStore();
+  const snapshot = memberCharacterSnapshot(characters, { ...nextApplicant, applicantId: uid });
+
   let abortReason: string | null = null;
   const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
     const cur = Array.isArray(lobbies) ? [...lobbies] : [];
@@ -122,7 +130,7 @@ export async function POST(req: Request) {
         return undefined;
       }
     }
-    const updatedLobby = { ...lobby, applicants: [...applicants, nextApplicant] };
+    const updatedLobby = { ...lobby, applicants: [...applicants, { ...nextApplicant, ...snapshot }] };
     cur[idx] = updatedLobby;
     return cur;
   });
@@ -143,7 +151,7 @@ export async function POST(req: Request) {
 
   if (ownerId && String(ownerId) !== uid && ownerUser?.autoAccept === true) {
     const acceptedRes = await updateKVAtomic<any[]>("lobbies", (ls) => {
-      const next = acceptApplicantAcrossLobbies(Array.isArray(ls) ? ls : [], String(lobbyId), nextApplicant);
+      const next = acceptApplicantAcrossLobbies(Array.isArray(ls) ? ls : [], String(lobbyId), { ...nextApplicant, ...snapshot });
       const cur = next.find((l: any) => String(l.id) === String(lobbyId));
       if (!cur || !(cur.accepted || []).some((a: any) => memberId(a) === uid)) return undefined;
       return next;

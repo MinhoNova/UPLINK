@@ -14,6 +14,7 @@ import {
   rosterProofTo,
   ROSTER_PROOF_KEY,
 } from "@/lib/rankRosterProof";
+import { charactersFromStore, memberCharacterSnapshot } from "@/lib/memberCharacter";
 
 export async function POST(req: Request) {
   const auth = await requireSession(req);
@@ -32,6 +33,11 @@ export async function POST(req: Request) {
   let abortError: string | null = null;
   let removedNotifId: number | null = null;
   let accepted = false;
+
+  // An invited row is created by the owner from a picked character, so it may carry
+  // no portrait of the invitee's own linked character. Fill it in on accept so the
+  // thread card matches what the player actually plays.
+  const characters = await charactersFromStore();
 
   const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
     const cur = Array.isArray(lobbies) ? [...lobbies] : [];
@@ -58,7 +64,11 @@ export async function POST(req: Request) {
     removedNotifId = Number(invitedMember.inviteNotifId) || null;
 
     if (action === "accept") {
-      const next = acceptApplicantAcrossLobbies(cur, String(lobbyId), { ...invitedMember });
+      const withPortrait = {
+        ...invitedMember,
+        ...memberCharacterSnapshot(characters, { ...invitedMember, applicantId: uid }),
+      };
+      const next = acceptApplicantAcrossLobbies(cur, String(lobbyId), withPortrait);
       const updated = next.find((l: any) => String(l.id) === String(lobbyId));
       const joined = (updated?.accepted || []).some(
         (a: any) => memberIdentityKey(a) === uid && a.status !== "invited"
