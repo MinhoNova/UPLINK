@@ -29,24 +29,43 @@ describe("the portrait disc carries the portrait and nothing else", () => {
     expect(badge()).toMatch(/UserRound/);
   });
 
-  it("keeps the class emblem under the disc", () => {
-    // One emblem, below the disc, and it is the only class image left.
-    const emblem = badge().match(/classThumbUrl\(cls\)/g) || [];
-    expect(emblem).toHaveLength(1);
-    expect(badge()).toMatch(/-mt-1 shrink-0/);
+  it("overlays the class emblem on the disc, official-site geometry", () => {
+    // Transcribed from the official stylesheet:
+    //   .profile__avatar 80px circle
+    //   .profile__class  55px box, top -10px, margin-left 6px
+    // -> 68.75% size, 37.5% from the disc top, 57.5% from its left edge.
+    // The emblem is a sibling of the circle on the official page, so it hangs
+    // over the rim rather than being clipped by it.
+    expect(badge()).toMatch(
+      /absolute w-\[68\.75%\] h-\[68\.75%\] left-\[57\.5%\] top-\[37\.5%\]/
+    );
+    expect(badge()).not.toMatch(/-mt-1/);
+  });
+
+  it("clips only the portrait to the round frame", () => {
+    // The emblem has to be able to overhang, so the overflow-hidden circle must
+    // sit inside a wrapper that does not clip.
+    expect(badge()).toMatch(/relative shrink-0 \$\{s\.disc\}/);
+    expect(badge()).toMatch(/absolute inset-0 rounded-full overflow-hidden/);
+  });
+
+  it("renders one emblem, inside the overlay box", () => {
+    expect(badge().match(/classThumbUrl\(cls\)/g) || []).toHaveLength(1);
   });
 
   it("the disc and the emblem are separately sized", () => {
-    const sizes = badge().match(/disc: "([^"]+)", thumb: "([^"]+)"/g) || [];
+    const sizes = badge().match(/disc: "([^"]+)", level: "([^"]+)"/g) || [];
     expect(sizes).toHaveLength(3);
     for (const s of sizes) {
-      const disc = s.match(/disc: "([^"]+)"/)![1];
-      const thumb = s.match(/thumb: "([^"]+)"/)![1];
-      // The emblem must stay smaller than the portrait, per the official layout.
-      const discPx = parseInt(disc.match(/h-(\d+)/)![1], 10);
-      const thumbPx = parseInt(thumb.match(/h-(\d+)/)![1], 10);
-      expect(thumbPx).toBeLessThan(discPx);
+      const discPx = parseInt(s.match(/disc: "[^"]*h-(\d+)/)![1], 10);
+      expect(discPx).toBeGreaterThan(0);
     }
+  });
+
+  it("draws the level over the emblem like the official page", () => {
+    // .profile__class-level sits inside .profile__class with padding-bottom:5px,
+    // painted above the absolutely-positioned emblem image.
+    expect(badge()).toMatch(/items-end justify-center pb-\[9%\]/);
   });
 
   it("loads the portrait straight from plaync, as the official page does", () => {

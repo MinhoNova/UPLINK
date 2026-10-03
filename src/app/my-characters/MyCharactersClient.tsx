@@ -242,6 +242,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
                   <CharacterPortraitBadge
                     src={c.portraitUrl}
                     aionClass={cls || "dps"}
+                    level={c.level}
                     size="lg"
                     fallback={c.name || ""}
                   />

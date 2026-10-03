@@ -684,10 +684,11 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                                  className="relative z-20 self-start block"
                                                               >
                                                                  <CharacterPortraitBadge
-                                                                    src={occupant.portraitUrl}
+src={occupant.portraitUrl}
                                                                     aionClass={occupant.aionClass || occupant.role || "dps"}
+                                                                    level={occupant.level}
                                                                     size="lg"
-                                                                 />
+                                                                  />
                                                               </a>
                                                            ) : null}
 
@@ -960,10 +961,11 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                                        <div className="hidden lg:block h-10 w-px bg-white/10 shrink-0" />
                                                                        <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3">
                                                                          <CharacterPortraitBadge
-                                                                            src={app.portraitUrl}
+src={app.portraitUrl}
                                                                             aionClass={aionClass || app.role || "dps"}
+                                                                            level={app.level}
                                                                             fallback={displayName || app.name || ""}
-                                                                         />
+                                                                          />
                                                                          <div className="flex flex-col gap-1 pl-2 border-l border-white/10 shrink-0 min-w-0">
                                                                            <span className="truncate text-[8px] font-black uppercase tracking-widest text-cyan-200 max-w-[130px]">
                                                                               {aionClass || app.role || "—"}

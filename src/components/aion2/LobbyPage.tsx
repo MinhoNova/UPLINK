@@ -616,7 +616,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                     onClick={() => setApplyCharOpen((v) => !v)}
                     className="w-full flex items-center gap-3 text-left"
                   >
-                    <CharacterPortraitBadge src={applyChar.portraitUrl} aionClass={applyChar.aionClass || applyChar.gameClassLabel || applyChar.siteClass || "dps"} fallback={applyChar.name || ""} size="lg" />
+                    <CharacterPortraitBadge src={applyChar.portraitUrl} aionClass={applyChar.aionClass || applyChar.gameClassLabel || applyChar.siteClass || "dps"} level={applyChar.level} fallback={applyChar.name || ""} size="lg" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-black text-emerald-200">{applyChar.name || "Character"}</p>
                       <p className="truncate text-[9px] font-black uppercase tracking-widest text-cyan-300">{applyChar.aionClass || applyChar.gameClassLabel || "Unknown class"}</p>
@@ -645,7 +645,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                             onClick={() => pickApplyChar(c)}
                             className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"}`}
                           >
-                            <CharacterPortraitBadge src={c.portraitUrl} aionClass={c.aionClass || c.gameClassLabel || "dps"} fallback={c.name || ""} size="sm" />
+                            <CharacterPortraitBadge src={c.portraitUrl} aionClass={c.aionClass || c.gameClassLabel || "dps"} level={c.level} fallback={c.name || ""} size="sm" />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-xs font-black">{c.name}</span>
                               <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>

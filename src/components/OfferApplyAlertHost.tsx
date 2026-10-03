@@ -227,6 +227,7 @@ export default function OfferApplyAlertHost() {
                 <CharacterPortraitBadge
                   src={current.portraitUrl}
                   aionClass={current.gameClassLabel || current.className || "dps"}
+                  level={current.level}
                   size="md"
                   fallback={current.applicantName}
                 />
