@@ -160,7 +160,7 @@ type CharacterShareRef = {
 /** The site is Global-only. A link that names any other region is refused rather
  *  than silently verified against `nae`, which is what let Taiwan/Korea rows
  *  into the roster in the first place. */
-const GLOBAL_REGION_ALIASES = new Set(["", "nae", "global", "na"]);
+const GLOBAL_REGION_ALIASES = new Set(["", "nae", "global", "na", "wholesome"]);
 
 export function isNonGlobalRegionLink(link: string): boolean {
   try {
