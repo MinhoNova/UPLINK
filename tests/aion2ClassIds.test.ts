@@ -138,12 +138,23 @@ describe("aion2ClassIds", () => {
     it("builds a shareable character page link", () => {
       const url = aion2CharacterPageUrl(1101, charId);
       expect(url).toBe(
-        "https://aion2.plaync.com/characters/1101/rKx-d-9c8YwO5HqimeieGA7mjJf0yE5iSkcWffjVu6o%3D?region=nae"
+        "https://aion2.plaync.com/en-us/characters/1101/rKx-d-9c8YwO5HqimeieGA7mjJf0yE5iSkcWffjVu6o%3D?region=nae"
       );
       // The built link must parse back to the same character.
       const ref = parseCharacterShareUrl(url);
       expect(ref?.serverId).toBe(1101);
       expect(ref?.characterId).toBe(charId);
+    });
+
+    it("keeps the /en-us locale prefix the official page requires", () => {
+      // Verified live against a real Global character:
+      //   /en-us/characters/1101/<id>?region=nae -> 200, 32747 bytes, the page
+      //   /characters/1101/<id>?region=nae      -> 200,  2080 bytes, error page
+      // Both are 200, so the missing segment never surfaced as an HTTP error --
+      // every "Full Profile" button silently opened "page not found".
+      const url = aion2CharacterPageUrl(1101, charId);
+      expect(url).toContain("/en-us/characters/");
+      expect(new URL(url).pathname.startsWith("/characters/")).toBe(false);
     });
   });
 

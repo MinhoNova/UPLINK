@@ -101,7 +101,12 @@ export function aion2CharacterPageUrl(
   serverId: number | string,
   characterId: string
 ): string {
-  return `${AION2_GLOBAL_BASE}/characters/${serverId}/${encodeURIComponent(
+  // The `/en-us` locale segment is required. Verified against the live site:
+  //   /en-us/characters/1101/<id>?region=nae -> 200, ~33 KB character page
+  //   /characters/1101/<id>?region=nae      -> 200, ~2 KB "page not found"
+  // Both answer 200, so the broken form looked like it worked. Every "Full
+  // Profile" button on the site was opening that error page.
+  return `${AION2_GLOBAL_BASE}/en-us/characters/${serverId}/${encodeURIComponent(
     characterId
   )}?region=${AION2_GAME_REGION}`;
 }
