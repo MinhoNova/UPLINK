@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { portraitProxyPath } from "@/lib/aion2ClassIds";
 
-/** Extract the raw plaync URL out of a stored `/api/aion2/portrait?u=ΓÇª` proxy path. */
+/** Extract the raw plaync URL out of a stored `/api/aion2/portrait?u=…` proxy path. */
 function rawUrlOf(src: string): string {
   if (src.startsWith("/api/aion2/portrait?u=")) {
     try {
@@ -15,32 +15,45 @@ function rawUrlOf(src: string): string {
   return src;
 }
 
-/** In-game character portrait. Tries the site proxy first, then falls back to
- *  the direct plaync URL (same behaviour as the /character page), then hides so
- *  the caller's letter fallback is what the user sees.
+/** In-game character portrait.
  *
- *  `proxyOnly` stops the direct-plaync retry. The badge needs it: the upstream
- *  answers a wrong `gameServerKey` with a generic 200 PNG placeholder, so the
- *  direct retry would happily paint that placeholder over the proxy's refusal
- *  and every character would look identical. */
+ *  Loads the plaync URL straight from the visitor's browser first and only falls
+ *  back to the site proxy. That order is the whole point of this component.
+ *
+ *  The proxy was tried first once, and it could never work: `profileimg.plaync.com`
+ *  is served by Envoy behind Google Frontend (`Via: 1.1 google`, `x-envoy-upstream-service-time`),
+ *  which bot-filters datacenter egress. Verified in production — the proxy route
+ *  answered 502 "portrait unavailable" for a URL that answers 200 / image/jpeg /
+ *  31,291 bytes from a residential IP, and an identical `fetch` from local Node
+ *  (same URL, same User-Agent, same redirect handling) succeeded. The origin
+ *  returns a stub to Cloudflare's ranges, so the proxy renders every portrait
+ *  blank no matter what headers we send.
+ *
+ *  The official site loads these images as plain `<img>` tags from the player's
+ *  own browser, which is exactly what this now does first. The proxy stays as a
+ *  fallback for the rare client that genuinely cannot reach plaync, and the
+ *  caller's neutral silhouette is the last resort.
+ */
 export default function CharacterPortrait({
   src,
   className = "",
   alt = "",
   title = "",
-  proxyOnly = false,
+  preferProxy = false,
 }: {
   src?: string | null;
   className?: string;
   alt?: string;
   title?: string;
-  proxyOnly?: boolean;
+  preferProxy?: boolean;
 }) {
   const raw = src ? rawUrlOf(String(src)) : "";
   const proxied = raw ? portraitProxyPath(raw) : "";
-  const [mode, setMode] = useState<0 | 1 | 2>(proxied ? 0 : raw ? 1 : 2);
+  const [mode, setMode] = useState<0 | 1 | 2>(!raw ? 2 : preferProxy && proxied ? 0 : 1);
   if (!raw || mode === 2) return null;
-  const current = mode === 0 ? proxied : raw;
+  // 1 = direct plaync, 0 = site proxy. A direct load is what the official page
+  // does and is the only path that survives the origin's bot filter.
+  const current = mode === 1 ? raw : proxied;
   return (
     <img
       src={current}
@@ -51,7 +64,7 @@ export default function CharacterPortrait({
       decoding="async"
       referrerPolicy="no-referrer"
       onError={() => {
-        if (mode === 0 && raw && !proxyOnly) setMode(1);
+        if (mode === 1 && proxied) setMode(0);
         else setMode(2);
       }}
     />

@@ -63,10 +63,20 @@ export async function GET(req: Request) {
   }
 
   try {
+    // Best-effort at looking like the official page's own <img> request. The
+    // upstream is Envoy behind Google Frontend (`Via: 1.1 google`,
+    // `x-envoy-upstream-service-time`) and it bot-filters datacenter ranges: in
+    // production this route answered 502 for portraits that a residential IP --
+    // and an identical local Node fetch -- received as 200 / image/jpeg /
+    // 31,291 bytes. Client-side loads are the primary path for that reason, so
+    // this proxy is only a fallback and cannot be the reason a face is missing.
     const upstream = await fetch(url, {
       redirect: "follow",
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; UPLINK/1.0; portrait-proxy)",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        Referer: "https://aion2.plaync.com/",
       },
     });
     if (!upstream.ok) return new Response("upstream error", { status: 502 });

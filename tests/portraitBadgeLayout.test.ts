@@ -49,10 +49,14 @@ describe("the portrait disc carries the portrait and nothing else", () => {
     }
   });
 
-  it("still renders the portrait through the proxy only", () => {
-    // The direct-plaync retry would repaint the upstream placeholder image that
-    // the proxy deliberately refuses.
-    expect(badge()).toMatch(/proxyOnly/);
+  it("loads the portrait straight from plaync, as the official page does", () => {
+    // The proxy answers 502 for every real portrait in production: the origin
+    // (Envoy behind Google Frontend) bot-filters Cloudflare's egress. Direct
+    // browser loads are the only path that works, so the badge must not pin the
+    // proxy and refuse the retry.
+    const portrait = read("components/aion2/CharacterPortrait.tsx");
+    expect(portrait).not.toMatch(/proxyOnly/);
+    expect(badge()).not.toMatch(/proxyOnly/);
   });
 });
 

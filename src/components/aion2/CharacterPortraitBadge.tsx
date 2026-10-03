@@ -63,7 +63,6 @@ export default function CharacterPortraitBadge({
         {hasPortrait ? (
           <CharacterPortrait
             src={raw}
-            proxyOnly
             className="absolute inset-0 h-full w-full object-cover"
             alt=""
             title={cls ? `Game character · ${cls}` : "Game character"}
