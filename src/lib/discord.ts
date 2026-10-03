@@ -1,9 +1,11 @@
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
+import { classThumbUrl } from "@/lib/classThumb";
 
 const API = "https://discord.com/api/v10";
 
 let cachedGuildId: string | null = null;
 let cachedChannels: { id: string; name: string }[] | null = null;
+let cachedEmojis: { id: string; name: string; animated?: boolean }[] | null = null;
 let lastFetch = 0;
 
 async function discordFetch(path: string, options?: RequestInit): Promise<any | null> {
@@ -21,14 +23,77 @@ async function discordFetch(path: string, options?: RequestInit): Promise<any | 
 }
 
 async function ensureGuildCache() {
-   if (cachedGuildId && cachedChannels && Date.now() - lastFetch < 60000) return;
+   if (cachedGuildId && cachedChannels && cachedEmojis && Date.now() - lastFetch < 60000) return;
    const guilds: any[] = await discordFetch("/users/@me/guilds");
    if (!guilds?.length) return;
    const configuredGuildId = process.env.DISCORD_GUILD_ID?.trim();
    cachedGuildId ??= guilds.find((guild) => guild.id === configuredGuildId)?.id ?? guilds[0].id;
    const channels: any[] = await discordFetch(`/guilds/${cachedGuildId}/channels`);
    if (channels) cachedChannels = channels.map((c: any) => ({ id: c.id, name: c.name }));
+   // Nitro servers upload their own emoji. Reading them back lets an offer embed
+   // use the guild's art instead of the flat unicode blocks we had, without
+   // asking the operator to paste snowflake ids into environment variables.
+   const emojis: any[] = await discordFetch(`/guilds/${cachedGuildId}/emojis`);
+   if (emojis) cachedEmojis = emojis.map((e: any) => ({ id: e.id, name: e.name, animated: e.animated }));
    lastFetch = Date.now();
+}
+
+/**
+ * Resolves a guild emoji by name, tolerating the prefixes Discord adds when a
+ * server owner renames one. Returns the mention form Discord actually renders,
+ * or null so callers can fall back to unicode.
+ */
+function guildEmoji(...candidates: string[]): string | null {
+   if (!cachedEmojis?.length) return null;
+   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+   for (const candidate of candidates) {
+      const want = norm(candidate);
+      if (!want) continue;
+      const hit =
+         cachedEmojis.find((e) => norm(e.name) === want) ||
+         cachedEmojis.find((e) => norm(e.name).includes(want) || want.includes(norm(e.name)));
+      if (hit) return hit.animated ? `<a:${hit.name}:${hit.id}>` : `<:${hit.name}:${hit.id}>`;
+   }
+   return null;
+}
+
+const EMBED_GLYPH: Record<string, string> = {
+   leveling: "🚀",
+   dungeons: "🏰",
+   raids: "⚔️",
+   professions: "🛠️",
+};
+
+/** Guild art first, unicode second. */
+function categoryGlyph(category: string): string {
+   const byCategory = CATEGORY_EMOJI[category];
+   const custom = guildEmoji(byCategory || "", `${category}-offers`, category, EMBED_GLYPH[category] || "");
+   return custom || byCategory || "🎮";
+}
+
+function absoluteSiteUrl(path: string): string {
+   const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || SITE_URL).replace(/\/+$/, "");
+   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/**
+ * Picks the one class worth putting in the embed corner. An offer can name many
+ * classes in `requiredClasses`, and a thumbnail of the wrong one is worse than
+ * none, so this only speaks up when a single class is in play.
+ */
+function offerClassThumb(lobby: any): { url: string } | undefined {
+   const single = (() => {
+      if (lobby.aionClass) return String(lobby.aionClass);
+      if (lobby.ownerClass) return String(lobby.ownerClass);
+      const req = lobby.requiredClasses;
+      if (Array.isArray(req)) {
+         const clean = req.map((c: any) => String(c || "").trim()).filter(Boolean);
+         return clean.length === 1 ? clean[0] : "";
+      }
+      return "";
+   })();
+   if (!single) return undefined;
+   return { url: absoluteSiteUrl(classThumbUrl(single)) };
 }
 
 function findChannelId(namePatterns: string[]): string | null {
@@ -149,7 +214,7 @@ export async function sendLobbyEmbed(lobby: any) {
    const rolesNeeded = Object.entries(lobby.roles || {}).filter(([, c]) => (c as number) > 0);
    const rolesStr = rolesNeeded.map(([r, c]) => `**${String(r).toUpperCase()}** ×${c}`).join(" · ") || "Any role";
    const ownerName = lobby.ownerDiscordName || lobby.ownerHandle || "Unknown";
-   const categoryEmoji = CATEGORY_EMOJI[category] || "🎮";
+   const categoryEmoji = categoryGlyph(category);
    const title = missionTitle(lobby);
    const squadProgress = formatRolesProgress(lobby);
 
@@ -162,6 +227,9 @@ export async function sendLobbyEmbed(lobby: any) {
       description:
          "Apply below — the owner reviews applicants on **UPLINK**. UPLINK is a coordination platform; we do not handle payments or loot.",
       color: CATEGORY_CHANNELS[discordCategoryKey(lobby.category)] ? (category === "leveling" ? 0x8a2be2 : category === "raids" ? 0xff007f : category === "professions" ? 0x22c55e : 0x00b7ff) : 0xff007f,
+      // Discord renders this in the 80x80 slot on the right. Pre-rasterized webp
+      // from public/classes-thumb, which is the only class art the site has.
+      thumbnail: offerClassThumb(lobby),
       fields: [
          { name: "💰 Offer", value: `**${price}K** gold`, inline: true },
          { name: "🎯 Open Roles", value: rolesStr, inline: true },
@@ -178,6 +246,7 @@ export async function sendLobbyEmbed(lobby: any) {
       timestamp: new Date().toISOString(),
    };
 
+   const applyUrl = absoluteSiteUrl(`/apply/${lobby.id}`);
    const components = [
       {
          type: 1,
@@ -193,7 +262,7 @@ export async function sendLobbyEmbed(lobby: any) {
                type: 2,
                style: 5,
                label: "Open UPLINK",
-               url: `${SITE_URL}/?lobby=${lobby.id}`,
+               url: applyUrl,
                emoji: { name: "🌐" },
             },
          ],
@@ -266,7 +335,7 @@ export async function sendDiscordInviteDM(
                   type: 2,
                   style: 5,
                   label: "Open UPLINK",
-                  url: `${SITE_URL}/?lobby=${lobby.id}`,
+                  url: `${absoluteSiteUrl(`/manage/${lobby.id}`)}`,
                },
             ],
          },
@@ -318,7 +387,7 @@ export async function sendDiscordConfirmedDM(
                   type: 2,
                   style: 5,
                   label: "Open UPLINK",
-                  url: `${SITE_URL}/?lobby=${lobby.id}`,
+                  url: `${absoluteSiteUrl(`/manage/${lobby.id}`)}`,
                },
             ],
          },

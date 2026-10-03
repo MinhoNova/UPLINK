@@ -22,37 +22,67 @@ async function loadLobbyData() {
 }
 
 export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: string) {
-  const { registeredUsers, characters } = await loadLobbyData();
+   const { registeredUsers, characters } = await loadLobbyData();
 
-  const user = registeredUsers.find((u) => String(u.id) === String(discordUserId));
-  if (!user) {
-    return { ok: false as const, error: "Link your account on UPLINK first (Sign in with Discord on the site)." };
-  }
+   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "").replace(/\/+$/, "");
+   const applyPage = `${siteUrl}/apply/${encodeURIComponent(lobbyId)}`;
+   const user = registeredUsers.find((u) => String(u.id) === String(discordUserId));
+   if (!user) {
+      return {
+         ok: false as const,
+         error: `Sign in with Discord on UPLINK and add your character, then apply — ${applyPage}`,
+      };
+   }
 
-  // The web apply route runs this inside `requireSession`. Discord's button
-  // bypassed it, so a suspended account could still apply from a stale embed.
-  if (await isUserBanned(user.username, user.id)) {
-    return { ok: false as const, error: "Your account is suspended. Contact support if this is a mistake." };
-  }
+   // The web apply route runs this inside `requireSession`. Discord's button
+   // bypassed it, so a suspended account could still apply from a stale embed.
+   if (await isUserBanned(user.username, user.id)) {
+      return { ok: false as const, error: "Your account is suspended. Contact support if this is a mistake." };
+   }
 
-  const uid = String(discordUserId);
-  const char =
-    characters.find((c) => String(c.userId) === uid) ||
-    characters.find((c) => String(c.userName || "").toLowerCase() === String(user.username || "").toLowerCase());
+   const uid = String(discordUserId);
 
-  if (!char) {
-    return {
-      ok: false as const,
-      error: "Character required — add one on UPLINK first, then apply from Discord.",
-    };
-  }
+   // Collect every character this account owns instead of taking the first one.
+   // `find` handed the applicant whichever row happened to be first, so someone
+   // with a level 20 alt and a level 80 main could silently apply on the alt, and
+   // the per-character `game:<charId>` dedupe in the web route never ran here —
+   // which is exactly how the same character ends up on two squads.
+   const owned = characters.filter(
+      (c) =>
+         String(c.userId) === uid ||
+         String(c.userName || "").toLowerCase() === String(user.username || "").toLowerCase(),
+   );
 
-  if (Number(char.level ?? char.applicantLevel ?? 0) < 45) {
-    return {
-      ok: false as const,
-      error: `Boosting offers require Level 45+ — your character is Level ${char.level || char.applicantLevel || "?"}.`,
-    };
-  }
+   if (owned.length === 0) {
+      return {
+         ok: false as const,
+         error: `You have no character on UPLINK yet. Add one, then apply — ${applyPage}`,
+      };
+   }
+
+   const eligible = owned.filter((c) => Number(c.level ?? c.applicantLevel ?? 0) >= 45);
+   if (eligible.length === 0) {
+      const best = owned.reduce((m, c) =>
+         Number(c.level ?? c.applicantLevel ?? 0) > Number(m.level ?? m.applicantLevel ?? 0) ? c : m,
+      );
+      return {
+         ok: false as const,
+         error: `Boosting offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one here: ${applyPage}`,
+      };
+   }
+
+   if (eligible.length > 1) {
+      // Ambiguous, so stop rather than guess. Guessing is what caused the bug
+      // above; the apply page is where the player picks on purpose.
+      return {
+         ok: false as const,
+         error: `You have ${eligible.length} characters at Level 45+ (${eligible
+            .map((c: any) => c.name || "unnamed")
+            .join(", ")}). Pick the one you want to bring: ${applyPage}`,
+      };
+   }
+
+   const char = eligible[0];
 
   const limitCheck = await checkAndRecordOfferApply(uid, false);
   if (!limitCheck.ok) {

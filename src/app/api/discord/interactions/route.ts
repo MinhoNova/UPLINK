@@ -85,7 +85,7 @@ export async function POST(req: Request) {
       if (!result.ok) return ephemeral(result.error);
 
       return ephemeral(
-        `✅ Application sent!\nThe owner will review you on UPLINK.\n${SITE_URL}/?lobby=${lobbyId}`
+        `✅ Application sent!\nThe owner will review you on UPLINK.\n${SITE_URL}/manage/${lobbyId}`
       );
     }
 
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
 
       const result = await confirmInviteFromDiscord(userId, lobbyId, notifId);
       if (!result.ok) return ephemeral(result.error);
-      return ephemeral(`✅ Invite accepted!\n${SITE_URL}/?lobby=${lobbyId}`);
+      return ephemeral(`✅ Invite accepted!\n${SITE_URL}/manage/${lobbyId}`);
     }
 
     if (customId.startsWith("discord_decline_")) {
