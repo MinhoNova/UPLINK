@@ -84,6 +84,12 @@ export default function CharacterPortraitBadge({
         <div
           className={`absolute inset-0 rounded-full overflow-hidden border-2 border-cyan-400/40 bg-black shadow-[0_0_16px_rgba(0,255,255,0.22)]`}
         >
+          {/* Always painted, not only when there is no portrait. The portrait is
+              transparent until it loads (see CharacterPortrait), so this is what
+              the disc shows during the wait instead of a bare black circle. */}
+          <span className="absolute inset-0 flex items-center justify-center select-none pointer-events-none bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.14),rgba(2,6,23,0.9)_70%)]">
+            <UserRound className="h-1/2 w-1/2 text-cyan-400/25" strokeWidth={1.5} />
+          </span>
           {hasPortrait ? (
             <CharacterPortrait
               src={raw}
@@ -91,11 +97,7 @@ export default function CharacterPortraitBadge({
               alt=""
               title={cls ? `Game character · ${cls}` : "Game character"}
             />
-          ) : (
-            <span className="absolute inset-0 flex items-center justify-center select-none pointer-events-none bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.14),rgba(2,6,23,0.9)_70%)]">
-              <UserRound className="h-1/2 w-1/2 text-cyan-400/25" strokeWidth={1.5} />
-            </span>
-          )}
+          ) : null}
         </div>
         <div className={EMBLEM_BOX}>
           <img

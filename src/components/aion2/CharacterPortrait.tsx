@@ -40,30 +40,46 @@ export default function CharacterPortrait({
   alt = "",
   title = "",
   preferProxy = false,
+  onLoadingChange,
 }: {
   src?: string | null;
   className?: string;
   alt?: string;
   title?: string;
   preferProxy?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
 }) {
   const raw = src ? rawUrlOf(String(src)) : "";
   const proxied = raw ? portraitProxyPath(raw) : "";
   const [mode, setMode] = useState<0 | 1 | 2>(!raw ? 2 : preferProxy && proxied ? 0 : 1);
+  const [loaded, setLoaded] = useState(false);
   if (!raw || mode === 2) return null;
   // 1 = direct plaync, 0 = site proxy. A direct load is what the official page
   // does and is the only path that survives the origin's bot filter.
   const current = mode === 1 ? raw : proxied;
+  // Fade in rather than paint instantly. The portrait comes from a different
+  // origin than the page, so there is a real DNS + TLS + TTFB wait behind it and
+  // a hard swap out of the caller's placeholder reads as a black disc flashing
+  // into a face. Holding opacity at 0 until `load` lets whatever the caller has
+  // underneath stay visible the whole time.
   return (
     <img
       src={current}
       alt={alt}
       title={title}
-      className={className}
+      className={`${className} ${loaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300 ease-out`}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
+      onLoad={() => {
+        setLoaded(true);
+        onLoadingChange?.(false);
+      }}
       onError={() => {
+        // Reset before switching sources, otherwise a successful proxy load would
+        // stay invisible because `loaded` was never cleared.
+        setLoaded(false);
+        onLoadingChange?.(true);
         if (mode === 1 && proxied) setMode(0);
         else setMode(2);
       }}

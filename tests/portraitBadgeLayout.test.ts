@@ -77,6 +77,35 @@ describe("the portrait disc carries the portrait and nothing else", () => {
     expect(portrait).not.toMatch(/proxyOnly/);
     expect(badge()).not.toMatch(/proxyOnly/);
   });
+
+  it("fades the portrait in instead of flashing a black disc", () => {
+    // The portrait is a cross-origin request, so there is a real DNS + TLS +
+    // TTFB wait behind it. Painting it at full opacity immediately meant the
+    // disc stayed bare black until the bytes arrived, which read as a black
+    // circle that suddenly became a face.
+    const portrait = read("components/aion2/CharacterPortrait.tsx");
+    expect(portrait).toMatch(/loaded \? "opacity-100" : "opacity-0"/);
+    expect(portrait).toMatch(/transition-opacity/);
+    expect(portrait).toMatch(/onLoad=/);
+  });
+
+  it("keeps the silhouette underneath while loading, not only when absent", () => {
+    // It has to be a base layer rather than an else-branch: the portrait is
+    // transparent until it loads, and a bare black circle is what shows through
+    // in the meantime.
+    expect(badge()).not.toMatch(/\)\s*:\s*\(\s*<span className="absolute inset-0 flex items-center justify-center select-none/);
+    const silhouette = badge().match(/<UserRound/g) || [];
+    expect(silhouette).toHaveLength(1);
+    // ...and it must sit before the portrait in the markup.
+    expect(badge().indexOf("<UserRound")).toBeLessThan(badge().indexOf("<CharacterPortrait"));
+  });
+
+  it("clears the loaded flag when it falls back to the proxy", () => {
+    // Otherwise a successful proxy load would stay invisible.
+    const portrait = read("components/aion2/CharacterPortrait.tsx");
+    const onError = portrait.slice(portrait.indexOf("onError="));
+    expect(onError.slice(0, 200)).toMatch(/setLoaded\(false\)/);
+  });
 });
 
 describe("My Profile uses the badge everywhere", () => {
