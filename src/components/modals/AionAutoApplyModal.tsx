@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { X, Zap, ShieldCheck, Check, ChevronDown, IdCard, RefreshCw } from "lucide-react";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 
 export interface AionAutoApply {
   enabled: boolean;
@@ -257,15 +258,12 @@ export default function AionAutoApplyModal({
                   {selectedChar?.raceName ? `${selectedChar.raceName} · ` : ""}{selectedChar?.serverName || ""}{selectedChar?.region ? ` · ${String(selectedChar.region).toUpperCase()}` : ""}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0 text-center">
-                <div>
-                  <p className="text-[7px] font-black uppercase tracking-widest text-violet-400">Item Lv</p>
-                  <p className="text-sm font-black text-violet-300 tabular-nums">{Number(selectedChar?.itemLevel) > 0 ? Number(selectedChar.itemLevel).toLocaleString() : "—"}</p>
-                </div>
-                <div>
-                  <p className="text-[7px] font-black uppercase tracking-widest text-amber-400">CP</p>
-                  <p className="text-sm font-black text-amber-300 tabular-nums">{Number(selectedChar?.combatPower) > 0 ? Number(selectedChar.combatPower).toLocaleString() : "—"}</p>
-                </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <CharacterPowerStats
+                  combatPower={Number(selectedChar?.combatPower) || 0}
+                  itemLevel={Number(selectedChar?.itemLevel) || 0}
+                  size="sm"
+                />
               </div>
               <ChevronDown className={`h-4 w-4 shrink-0 text-emerald-300 transition-transform ${charDropOpen ? "rotate-180" : ""}`} />
             </button>
@@ -289,7 +287,7 @@ export default function AionAutoApplyModal({
                         <span className="block truncate text-xs font-black">{c.name}</span>
                         <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
                       </span>
-                      <span className="text-[8px] font-black text-violet-300 tabular-nums shrink-0">{Number(c.itemLevel) > 0 ? c.itemLevel : "—"} iLvl</span>
+                      <CharacterPowerStats combatPower={0} itemLevel={Number(c.itemLevel) || 0} size="sm" />
                     </button>
                   );
                 })}

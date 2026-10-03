@@ -29,6 +29,7 @@ import { getUserRanks } from "@/lib/ranks";
 import { classThumbUrl } from "@/lib/classThumb";
 import GamePortrait from "@/components/aion2/GamePortrait";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import {
   importLobbyVfxFromUrl,
@@ -619,9 +620,14 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
                       <span className="text-[9px] font-black uppercase tracking-widest text-cyan-300 truncate">{cls || c.gameClassLabel || "—"} · {c.serverName || "—"}</span>
                       <span className="flex items-center gap-2 text-[9px] font-bold text-slate-400 tabular-nums">
                         <span className="text-cyan-300">{c.level || "—"}</span> LVL
-                        <span className="text-violet-300">{Number(c.itemLevel) || "—"}</span> ILVL
-                        {Number(c.cpAp) ? <span className="text-amber-300">{c.cpAp}</span> : null}
                       </span>
+                      {/* Official icons + official combat-power form. */}
+                      <CharacterPowerStats
+                        combatPower={Number(c.cpAp) || Number(c.combatPower) || 0}
+                        itemLevel={Number(c.itemLevel) || 0}
+                        size="sm"
+                        className="mt-0.5"
+                      />
                       {href && (
                         <a
                           href={href}

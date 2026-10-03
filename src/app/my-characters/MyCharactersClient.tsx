@@ -7,6 +7,7 @@ import { ArrowLeft, BadgeCheck, ExternalLink, IdCard, Link2, Loader2, RefreshCw,
 import { useRouter } from "next/navigation";
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
 import {
@@ -254,9 +255,14 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
                     <span className="text-[9px] font-black uppercase tracking-widest text-cyan-300 truncate">{cls || "—"} · {c.serverName || "—"}</span>
                     <span className="flex items-center gap-2 text-[9px] font-bold text-slate-400 tabular-nums">
                       <span className="text-cyan-300">{c.level || "—"}</span> LVL
-                      <span className="text-violet-300">{Number(c.itemLevel) || "—"}</span> ILVL
-                      {Number(c.cpAp) ? <span className="text-amber-300">{c.cpAp}</span> : null}
                     </span>
+                    {/* Official icons + official combat-power form. */}
+                    <CharacterPowerStats
+                      combatPower={Number(c.cpAp) || Number(c.combatPower) || 0}
+                      itemLevel={Number(c.itemLevel) || 0}
+                      size="sm"
+                      className="mt-0.5"
+                    />
                     {Number(c.level) < 45 && (
                       <span className="inline-flex w-fit rounded border border-red-500/40 bg-red-500/10 px-1.5 py-px text-[7px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"}</span>
                     )}

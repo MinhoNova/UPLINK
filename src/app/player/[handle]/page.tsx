@@ -9,6 +9,7 @@ import {
 } from "@/lib/profileImage";
 import { toNameStyle } from "@/components/GradientColorPicker";
 import { classThumbUrl } from "@/lib/classThumb";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import { averagePlayerRating } from "@/lib/playerReviews";
 import { aionClassRole } from "@/lib/aionClassMeta";
 import { aion2CharacterPageUrl } from "@/lib/aion2ClassIds";
@@ -188,18 +189,13 @@ export default async function PlayerPage({
                             {String(c.gameClassLabel || c.rawClassName || "Unknown class")}
                           </span>
                         )}
-                        {c.itemLevel > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-violet-300">
-                            <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-3 w-auto" loading="lazy" />
-                            {Number(c.itemLevel).toLocaleString()}
-                          </span>
-                        )}
-                        {Number(c.cpAp) > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-amber-300">
-                            <img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-3 w-auto" loading="lazy" />
-                            {Number(c.cpAp).toLocaleString()}
-                          </span>
-                        )}
+                        {Number(c.itemLevel) > 0 || Number(c.cpAp) > 0 ? (
+                          <CharacterPowerStats
+                            combatPower={Number(c.cpAp) || 0}
+                            itemLevel={Number(c.itemLevel) || 0}
+                            size="sm"
+                          />
+                        ) : null}
                         <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-widest text-emerald-300">
                           LVL {Number(c.level) || "?"}
                         </span>

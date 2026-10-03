@@ -7,6 +7,7 @@ import { Check, X, UserPlus, Loader2, ShieldCheck } from "lucide-react";
 import { resolveProfileImage, profileImgClass, resolveNameColor } from "@/lib/profileImage";
 import { notificationMatchesUser } from "@/lib/userProfile";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 
 interface PendingApply {
@@ -257,10 +258,13 @@ export default function OfferApplyAlertHost() {
                     {[current.raceName, current.serverName].filter(Boolean).join(" · ")}
                   </p>
                 ) : null}
-                {current.itemLevel ? (
-                  <span className="mt-1 inline-flex items-center gap-1 rounded bg-emerald-500/20 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-emerald-300">
-                    <ShieldCheck className="w-2.5 h-2.5" /> ILVL {current.itemLevel.toLocaleString()}
-                  </span>
+                {current.itemLevel || current.cpAp ? (
+                  <CharacterPowerStats
+                    combatPower={Number(current.cpAp) || 0}
+                    itemLevel={Number(current.itemLevel) || 0}
+                    size="sm"
+                    className="mt-1"
+                  />
                 ) : null}
               </div>
             </div>

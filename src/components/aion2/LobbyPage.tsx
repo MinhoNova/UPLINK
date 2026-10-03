@@ -22,6 +22,7 @@ import { resolveOfferBannerImage, resolveVfxBannerUrl, resolveVfxSrc, type VfxEn
 import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPublicFeed, isRemovedDungeonOffer } from "@/lib/lobbyLifecycle";
 import { classThumbUrl } from "@/lib/classThumb";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
@@ -650,21 +651,18 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                               <span className="block truncate text-xs font-black">{c.name}</span>
                               <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
                             </span>
-                            <span className="text-[8px] font-black text-violet-300 tabular-nums shrink-0">{Number(c.itemLevel) > 0 ? Number(c.itemLevel).toLocaleString() : "—"} iLvl</span>
+                            <CharacterPowerStats combatPower={0} itemLevel={Number(c.itemLevel) || 0} size="sm" />
                           </button>
                         );
                       })}
                     </div>
                   )}
-                  <div className="mt-2.5 grid grid-cols-2 gap-1.5">
-                    <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2 py-1.5 text-center">
-                      <p className="text-[7px] font-black uppercase tracking-widest text-violet-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />Item Lv</p>
-                      <p className="text-sm font-black text-violet-300 tabular-nums">{Number(applyChar.itemLevel) > 0 ? Number(applyChar.itemLevel).toLocaleString() : "—"}</p>
-                    </div>
-                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-center">
-                      <p className="text-[7px] font-black uppercase tracking-widest text-amber-400"><img src="https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png" alt="" className="inline-block h-2.5 w-auto align-[-1px] mr-0.5" loading="lazy" />CP</p>
-                      <p className="text-sm font-black text-amber-300 tabular-nums">{Number(applyChar.cpAp || applyChar.combatPower) > 0 ? Number(applyChar.cpAp || applyChar.combatPower).toLocaleString() : "—"}</p>
-                    </div>
+                  <div className="mt-2.5 flex justify-center">
+                    {/* Same pill, icons and "39.98K" form as the official page. */}
+                    <CharacterPowerStats
+                      combatPower={Number(applyChar.cpAp || applyChar.combatPower) || 0}
+                      itemLevel={Number(applyChar.itemLevel) || 0}
+                    />
                   </div>
                   {Number(applyChar.level) < 45 && (
                     <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">

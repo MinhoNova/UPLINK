@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Trash2, Coins, ShieldAlert, Users, LogOut, CheckCircle2, MessageSquare, Zap, ShieldCheck, CircleDollarSign, Star, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -11,6 +11,7 @@ import { playerAliases } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { toStorableImageDataUrl } from "@/lib/inlineImage";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import { getAverageRating } from "@/components/RankBadge";
 import { canOwnerCancelLobby, cancelLobbyInvite, canVoteMissionComplete, finalizeLevelingMissionComplete, finalizeMissionFailed, getCompletedRunsCount, getEffectiveOfferStatus, getMissionCompleteVotesNeeded, getMissionFailVotesNeeded, getOccupantsBySlot, getOfferFamilyMessages, getViewableOfferThreads, hasIndependentSquadMember, isEmbeddedFootArchive, isVoiceLobbyOpen, manualStartMission, memberIdentityKey, ownerMissionCompleteInstant, splitLobbyAfterFootComplete, squadRolesFilled, userCanAccessVoice, userCanViewOfferThread, voiceLobbyLockLabel } from "@/lib/lobbyLifecycle";
 import { aion2CharacterPageUrl } from "@/lib/aion2ClassIds";
@@ -161,10 +162,10 @@ const ManageModal = ({
         setScamReason("");
         addToast("Report filed. Our team will review it shortly.", "success");
       } else {
-        addToast(data?.error || "Could not file the report — please try again.", "error");
+        addToast(data?.error || "Could not file the report � please try again.", "error");
       }
     } catch {
-      addToast("Could not file the report — please try again.", "error");
+      addToast("Could not file the report � please try again.", "error");
     }
   };
 
@@ -199,14 +200,14 @@ const ManageModal = ({
    // offering to be paid again long after the money moved. Nothing is left to
    // attach or confirm once the payout is `paid`, so the entry point goes.
    const payoutSettled = targetLobby?.payoutStatus === 'paid';
-   // A finished offer still needs its roster correctable — a scammer sitting on
+   // A finished offer still needs its roster correctable � a scammer sitting on
    // the offer, or a member who was never really on it, has to be removable, and
    // an owner left alone on the offer is the normal state of an old one. The
    // block on kicking here was never about the roster: with completed runs
    // attached, a member exit splits the offer and republishes the remainder as
    // a new active offer, which is how a finished (already paid) offer could be
    // milked for more runs and more rank. So a finished offer allows the
-   // removal, pinned to zero runs — a roster correction, never a reopening.
+   // removal, pinned to zero runs � a roster correction, never a reopening.
    const isFinishedOffer = ["unpaid", "completed", "cancelled", "payment_pending", "failed"].includes(effectiveStatus);
    const canSeeApplicants = String(targetLobby?.ownerId) === String(currentUserId) || isAdmin;
    const canEditOffer = !isFootArchive && !["unpaid", "completed", "cancelled", "payment_pending", "failed"].includes(effectiveStatus) && (!targetLobby?.status || targetLobby.status === "standby" || targetLobby.status === "in_progress");
@@ -359,7 +360,7 @@ const ManageModal = ({
               fromHandle: 'UPLINK',
               fromAvatar: '',
               fromEffect: 'none',
-              text: `MISSION FAILED — vote passed (${newVotes.length}/${failVotesNeeded}). Squad disbanded. Thread archived to history.`,
+              text: `MISSION FAILED � vote passed (${newVotes.length}/${failVotesNeeded}). Squad disbanded. Thread archived to history.`,
               image: null,
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
            };
@@ -375,7 +376,7 @@ const ManageModal = ({
            setVoiceToken(null);
            if (typeof localStorage !== "undefined") localStorage.removeItem("uplink_voice_lobby");
            onClose();
-           addToast("Mission FAILED. Squad removed — thread moved to history.", "error");
+           addToast("Mission FAILED. Squad removed � thread moved to history.", "error");
            playSound('terminal');
         } else {
            const upd = { ...targetLobby, failVotes: newVotes, messages: [...(targetLobby.messages || []), failMsg] };
@@ -390,7 +391,7 @@ const ManageModal = ({
                   {isOpen && targetLobby && (
                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
                          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-[98vw] h-[96vh] bg-[#05050a] border-2 border-[#ff007f]/40 rounded-[3.5rem] p-1 shadow-[0_0_100px_rgba(255,0,127,0.15)] relative overflow-hidden flex flex-col">
-                            {/* EXIT — anchored to the BOARD, not the backdrop. It used
+                            {/* EXIT � anchored to the BOARD, not the backdrop. It used
                                 to sit on the `fixed inset-0` wrapper, which put it in
                                 the p-4 gutter outside the board's rounded border on
                                 every screen size, so it read as a stray control floating
@@ -399,7 +400,7 @@ const ManageModal = ({
                                <X className="w-5 h-5" />
                             </button>
 
-                             {/* KICK/LEAVE OVERLAY — a centred dialog inside the board.
+                             {/* KICK/LEAVE OVERLAY � a centred dialog inside the board.
                                  This was `absolute ... mt-2` with no top/left, so it was
                                  positioned from the board's own top-left corner and hung
                                  outside it, and because the board is `overflow-hidden` a
@@ -513,14 +514,14 @@ return bgUrl ? (
                                                    handleUpdateLobby(upd);
                                                    addToast(squadRolesFilled(targetLobby.roles) ? "Mission started!" : "Mission started with a partial squad.", "success");
                                                 }} className={`h-11 px-5 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-[0_0_25px_rgba(34,197,94,0.18)] flex items-center gap-2 transition-all active:scale-95 ${hasIndependentSquadMember(targetLobby) ? 'bg-green-500/15 text-green-400 border border-green-500/40 hover:bg-green-500 hover:text-black' : 'bg-white/[0.03] text-gray-600 border border-white/50 cursor-not-allowed opacity-60'}`}>
-                                                   <Zap className="w-4 h-4" /> START {!squadRolesFilled(targetLobby.roles) ? "· PARTIAL SQUAD" : ""}
+                                                   <Zap className="w-4 h-4" /> START {!squadRolesFilled(targetLobby.roles) ? "� PARTIAL SQUAD" : ""}
                                                 </motion.button>
                                               )}
 
                                              {canOwnerCancelLobby(targetLobby) && (
                                                 <motion.button onClick={() => {
                                                    if (!canOwnerCancelLobby(targetLobby)) {
-                                                      addToast("Cannot cancel — mission already started or completed.", "error");
+                                                      addToast("Cannot cancel � mission already started or completed.", "error");
                                                       return;
                                                    }
                                                    onTerminateLobby(targetLobby.id);
@@ -670,7 +671,7 @@ const updated = { ...targetLobby, payoutStatus: 'paid', status: 'completed', com
                                                            {/* The official in-game portrait, NC-style: a circular face with the
                                                                class emblem stacked beneath it at a smaller size. It used to be
                                                                pinned `absolute top-2 right-2`, which overlapped the card and
-                                                               read as a stray thumbnail — now it sits in the card's own flow. */}
+                                                               read as a stray thumbnail � now it sits in the card's own flow. */}
                                                            {occupant.portraitUrl && occupant.gameCharacterId ? (
                                                               <a
                                                                  href={applicantProfileHref(occupant) || undefined}
@@ -722,13 +723,18 @@ src={occupant.portraitUrl}
                                                                        </span>
                                                                     ) : null}
                                                                     {Number(occupant.gameLevel ?? occupant.level) > 0 ? (
-                                                                       <span className="text-slate-300">· LVL {Number(occupant.gameLevel ?? occupant.level)}</span>
+                                                                       <span className="text-slate-300">� LVL {Number(occupant.gameLevel ?? occupant.level)}</span>
                                                                     ) : null}
-                                                                    {Number(occupant.itemLevel) > 0 ? <span className="text-violet-300">· ILVL {Number(occupant.itemLevel).toLocaleString()}</span> : null}
-                                                                    {Number(occupant.cpAp) > 0 ? <span className="text-amber-300">· CP {Number(occupant.cpAp).toLocaleString()}</span> : null}
-                                                                    {occupant.raceName ? <span className="text-slate-400">· {occupant.raceName}</span> : null}
-                                                                    {occupant.genderName ? <span className="text-slate-400">· {occupant.genderName}</span> : null}
-                                                                    {occupant.serverName ? <span className="text-slate-400">· {occupant.serverName}</span> : null}
+                                                                    {Number(occupant.itemLevel) > 0 || Number(occupant.cpAp) > 0 ? (
+                                                                       <CharacterPowerStats
+                                                                          combatPower={Number(occupant.cpAp) || 0}
+                                                                          itemLevel={Number(occupant.itemLevel) || 0}
+                                                                          size="sm"
+                                                                       />
+                                                                     ) : null}
+                                                                    {occupant.raceName ? <span className="text-slate-400">� {occupant.raceName}</span> : null}
+                                                                    {occupant.genderName ? <span className="text-slate-400">� {occupant.genderName}</span> : null}
+                                                                    {occupant.serverName ? <span className="text-slate-400">� {occupant.serverName}</span> : null}
                                                                  </div>
                                                               </div>
                                                            )}
@@ -860,7 +866,7 @@ src={occupant.portraitUrl}
                                  </div>
                               </div>
 
-{/* DUAL MODE: APPLICANTS or COMPLETED RUNS — full width below chat */}
+{/* DUAL MODE: APPLICANTS or COMPLETED RUNS � full width below chat */}
                                  <div className="w-full mt-2">
 
                                             {/* DUAL MODE: APPLICANTS or COMPLETED RUNS */}
@@ -944,7 +950,7 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                                               <span
                                                                                  className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-purple-300 whitespace-nowrap max-w-[120px] truncate"
                                                                                  title={Array.isArray(app.teamMembers) && app.teamMembers.length > 0
-                                                                                    ? `${app.teamName} — ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
+                                                                                    ? `${app.teamName} � ${app.teamMembers.map((m: any) => m.name || m.username || "?").join(", ")}`
                                                                                     : app.teamName}
                                                                               >
                                                                                  <Users className="w-3 h-3 text-purple-400" />
@@ -957,7 +963,7 @@ const aionClass = app.aionClass || app.className || app.class || "";
                                                                         </div>
                                                                      </div>
 
-{/* character — middle of the banner: circular in-game portrait with the class emblem riding bottom-right (NC style). No inner box — merged into the single NC banner */}
+{/* character � middle of the banner: circular in-game portrait with the class emblem riding bottom-right (NC style). No inner box � merged into the single NC banner */}
                                                                        <div className="hidden lg:block h-10 w-px bg-white/10 shrink-0" />
                                                                        <div className="flex-1 min-w-0 lg:justify-center flex items-center gap-3">
                                                                          <CharacterPortraitBadge
@@ -968,21 +974,16 @@ src={app.portraitUrl}
                                                                           />
                                                                          <div className="flex flex-col gap-1 pl-2 border-l border-white/10 shrink-0 min-w-0">
                                                                            <span className="truncate text-[8px] font-black uppercase tracking-widest text-cyan-200 max-w-[130px]">
-                                                                              {aionClass || app.role || "—"}
-                                                                              {app.serverName ? <span className="text-slate-400"> · {app.serverName}</span> : null}
+                                                                              {aionClass || app.role || "�"}
+                                                                              {app.serverName ? <span className="text-slate-400"> � {app.serverName}</span> : null}
                                                                               {app.region ? <span className="ml-1 rounded border border-white/10 bg-white/5 px-1 text-[7px] text-slate-400">{String(app.region).toUpperCase()}</span> : null}
                                                                            </span>
-                                                                           <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-violet-300">
-                                                                              <img src={LEVEL_ICON} alt="" className="h-3.5 w-auto" loading="lazy" />
-                                                                              {Number(app.itemLevel) > 0 ? Number(app.itemLevel).toLocaleString() : "—"}
-                                                                              <span className="text-[6px] font-black uppercase tracking-[0.2em] text-violet-400/80">Item Lv</span>
-                                                                           </span>
-                                                                            <span className="flex items-center gap-1.5 text-[9px] font-black tabular-nums text-amber-300 shrink-0 whitespace-nowrap min-w-0">
-                                                                               <img src={POWER_ICON} alt="" loading="eager" className="h-3.5 w-auto shrink-0" />
-                                                                               {Number(app.cpAp) > 0 ? <span className="tabular-nums whitespace-nowrap">{Number(app.cpAp).toLocaleString()}</span> : <span>—</span>}
-                                                                               <span className="text-[6px] font-black uppercase tracking-[0.2em] text-amber-400/80 shrink-0">Combat</span>
-                                                                            </span>
-                                                                        </div>
+<CharacterPowerStats
+                                                                              combatPower={Number(app.cpAp) || Number(app.combatPower) || 0}
+                                                                              itemLevel={Number(app.itemLevel) || 0}
+                                                                              size="sm"
+                                                                            />
+                                                                         </div>
                                                                         <span
                                                                            className="hidden md:inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/10 text-[#00ffff] whitespace-nowrap shrink-0"
                                                                            title={`${postStatCount} ${postStatLabel.toLowerCase()} on site`}
@@ -1000,7 +1001,7 @@ src={app.portraitUrl}
                                                                               target="_blank"
                                                                               rel="noreferrer"
                                                                               className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-cyan-300 transition-all hover:bg-cyan-500/20 whitespace-nowrap"
-                                                                              title="Open the full character profile — gear, stats, history"
+                                                                              title="Open the full character profile � gear, stats, history"
                                                                            >
                                                                               <ExternalLink className="w-3 h-3" /> Character
                                                                            </a>

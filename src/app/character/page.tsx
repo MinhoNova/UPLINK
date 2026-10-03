@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ExternalLink, Link2, Loader2, ShieldCheck, Sparkles, Swords, Trophy, Wand2 } from "lucide-react";
 import { portraitProxyPath, aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
 import { aionClassRole } from "@/lib/aionClassMeta";
+import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import type { CharacterDetails, CharacterItem } from "@/lib/aion2GameApi";
 
 type State = "idle" | "loading" | "ready" | "error";
@@ -89,20 +90,25 @@ const POWER_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/inf
 const LEVEL_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_level_icon_pc.png";
 
 function CharacterPortrait({ url, name }: { url: string | null; name: string }) {
-  const [src, setSrc] = useState<string | null>(url ? portraitProxyPath(url) || url : null);
+  // Direct first, proxy as fallback -- same order as the shared badge. This
+  // used to go through the proxy first, and the proxy answers 502 for every
+  // real portrait because the origin bot-filters Cloudflare's egress, so this
+  // page showed a letter where the face should be.
+  const [src, setSrc] = useState<string | null>(url || null);
   const [hidden, setHidden] = useState(false);
   if (hidden || !src) {
     return (
       <div className="flex h-full w-full items-center justify-center text-3xl font-black text-cyan-400/40 uppercase">{String(name || "?").slice(0, 1)}</div>
     );
   }
+  const proxied = url ? portraitProxyPath(url) : "";
   return (
     <img
       src={src}
       alt=""
       className="h-full w-full object-cover"
       onError={() => {
-        if (src !== url) setSrc(url);
+        if (src !== proxied && proxied) setSrc(proxied);
         else setHidden(true);
       }}
     />
@@ -235,8 +241,12 @@ export default function CharacterPage() {
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">LVL {d.profile.level}</span>
-                      {d.profile.combatPower > 0 && <StatChip icon={POWER_ICON} value={d.profile.combatPower.toLocaleString()} accent="border-amber-500/40 bg-amber-500/10 text-amber-300" />}
-                      {d.profile.itemLevel > 0 && <StatChip icon={LEVEL_ICON} value={d.profile.itemLevel.toLocaleString()} accent="border-violet-500/40 bg-violet-500/10 text-violet-300" />}
+                      {/* Official pill: same icons, same colours, and the same
+                          "39.98K" combat-power form the official page uses. */}
+                      <CharacterPowerStats
+                        combatPower={d.profile.combatPower}
+                        itemLevel={d.profile.itemLevel}
+                      />
                     </div>
                   </div>
 
