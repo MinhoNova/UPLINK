@@ -1119,7 +1119,7 @@ roles: requiredClasses.length > 0
                         <div className="flex items-end justify-between gap-3 px-5 py-4">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">Total Price / Player</p>
-                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{pricePerRun.toFixed(2)}M per run · per player</p>
+                            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{pricePerRun.toFixed(2)}M per run / player</p>
                             <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">{qty}× runs = {(pricePerRun * qty).toFixed(2)}M per player · {maxBoosters} player{maxBoosters > 1 ? "s" : ""} → {(pricePerRun * qty * maxBoosters).toFixed(2)}M total offer</p>
                           </div>
                           <p className=" text-2xl font-black text-cyan-200 drop-shadow-[0_0_18px_rgba(0,229,255,0.4)] tabular-nums">{sel ? (pricePerRun * qty).toFixed(2) : "0.00"}<span className="text-base text-cyan-300 ml-1">M</span></p>
