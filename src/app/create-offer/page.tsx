@@ -939,7 +939,7 @@ roles: requiredClasses.length > 0
                             {/* PRICE PER RUN + SET AVERAGE */}
                             <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
                               <p className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[0.24em] uppercase text-gray-400">
-                                <Coins className="h-3.5 w-3.5 text-amber-300" /> Price per {sel.priceUnit?.replace("per ", "") || "run"} (Kinah)
+                                <Coins className="h-3.5 w-3.5 text-amber-300" /> Price per run / player (Kinah)
                               </p>
                               <div className="flex items-center gap-2">
                                 <input

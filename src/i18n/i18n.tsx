@@ -117,7 +117,7 @@ const en: Dict = {
   history_runFallback: "Run",
   /* offer card */
   offer_totalPlayer: "Total/Player:",
-  offer_perRun: "per run",
+  offer_perRun: "per run / player",
   offer_open: "OPEN:",
   offer_applied: "Applied",
   offer_apply: "Apply",
