@@ -1,5 +1,6 @@
 import { lobbyRunCount } from "@/lib/lobbyDisplay";
 import { classThumbUrl } from "@/lib/classThumb";
+import { configuredOfferChannelId } from "@/lib/discordConstants";
 
 const API = "https://discord.com/api/v10";
 
@@ -204,7 +205,10 @@ export async function sendLobbyEmbed(lobby: any) {
    await ensureGuildCache();
    const category = discordCategoryKey(lobby.category);
    const channelNames = channelPatternsFor(lobby.category);
-   const channelId = findChannelId(channelNames);
+   // An explicit channel id always wins. The name lookup is a fuzzy substring
+   // match, so renaming a channel silently stopped offers from posting with no
+   // error anywhere; ids do not rot.
+   const channelId = configuredOfferChannelId(category) || findChannelId(channelNames);
    if (!channelId) {
       console.error("Discord channel not found for category:", lobby.category);
       return;

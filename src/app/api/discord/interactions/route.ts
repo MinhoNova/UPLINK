@@ -5,13 +5,19 @@ import {
   declineInviteFromDiscord,
 } from "@/lib/lobbyDiscord";
 import {
-  DISCORD_ENTRY_ROLES,
   DISCORD_MAX_ENTRY_ROLES,
+  getDiscordEntryRoles,
 } from "@/lib/discordConstants";
 import {
   getMemberEntryRoles,
   toggleEntryRole,
 } from "@/lib/discordGuild";
+import {
+  runOffersCommand,
+  runApplyCommand,
+  runMyCharactersCommand,
+  ephemeralPayload,
+} from "@/lib/discordCommandHandlers";
 import { syncAuthEnvFromCloudflare } from "@/lib/authEnv";
 
 const SITE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
@@ -24,10 +30,7 @@ function interactionResponse(body: unknown) {
 }
 
 function ephemeral(content: string) {
-  return interactionResponse({
-    type: 4,
-    data: { content: content.slice(0, 2000), flags: 64 },
-  });
+  return interactionResponse(ephemeralPayload(content));
 }
 
 export async function POST(req: Request) {
@@ -67,6 +70,33 @@ export async function POST(req: Request) {
 
   if (interaction.type === 1) {
     return interactionResponse({ type: 1 });
+  }
+
+  // Slash commands used to be answered with "Unsupported interaction." — the
+  // only way to find an offer was to already be standing in front of its embed.
+  if (interaction.type === 2) {
+    const userId = interaction.member?.user?.id || interaction.user?.id;
+    const name = String(interaction.data?.name || "");
+    const options: any[] = Array.isArray(interaction.data?.options) ? interaction.data.options : [];
+    const optionOf = (optName: string) => String(options.find((o: any) => o.name === optName)?.value ?? "");
+
+    try {
+      if (!userId) return ephemeral("Could not identify your Discord account.");
+
+      if (name === "offers") {
+        return interactionResponse(await runOffersCommand(userId, optionOf("category")));
+      }
+      if (name === "apply") {
+        return interactionResponse(await runApplyCommand(userId, optionOf("offer")));
+      }
+      if (name === "mycharacters") {
+        return interactionResponse(await runMyCharactersCommand(userId));
+      }
+      return ephemeral(`Unknown command \`/${name}\`.`);
+    } catch (e) {
+      console.error("discord command error:", e);
+      return ephemeral("Something went wrong. Try again on the website.");
+    }
   }
 
   if (interaction.type !== 3) {
@@ -114,7 +144,7 @@ export async function POST(req: Request) {
     }
 
     if (customId.startsWith("role_")) {
-      const roleSpec = DISCORD_ENTRY_ROLES.find((r) => r.customId === customId);
+      const roleSpec = getDiscordEntryRoles().find((r) => r.customId === customId);
       if (!roleSpec) return ephemeral("Unknown role button.");
       const userId = interaction.member?.user?.id || interaction.user?.id;
       if (!userId) return ephemeral("Could not identify your account.");

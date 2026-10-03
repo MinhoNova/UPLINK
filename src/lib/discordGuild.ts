@@ -217,9 +217,9 @@ export async function toggleEntryRole(
 }
 
 const entryPickerEmbed = () => ({
-  title: "🚪 Pick your channels",
-  description: `Welcome, Explorer! Choose the channels you want to unlock. You can hold up to **${DISCORD_MAX_ENTRY_ROLES}** roles — click a button again to remove it.\n\n${DISCORD_ENTRY_ROLES.map(
-    (r) => `${r.emoji} **${r.name}** — ${r.description}`
+  title: "???? Pick your channels",
+  description: `Welcome, Explorer! Choose the channels you want to unlock. You can hold up to **${DISCORD_MAX_ENTRY_ROLES}** roles ??? click a button again to remove it.\n\n${DISCORD_ENTRY_ROLES.map(
+    (r) => `${r.emoji} **${r.name}** ??? ${r.description}`
   ).join("\n")}`,
   color: 0x00d9ff,
   footer: { text: DISCORD_ENTRY_PICKER_FOOTER },
@@ -393,7 +393,7 @@ export async function syncGuildAutoRoles(): Promise<{ checked: number; granted: 
 
   const roleId = await findRoleId(guildId, DISCORD_AUTO_ROLE_NAME);
   if (!roleId) {
-    console.warn(`[autorole] Role "${DISCORD_AUTO_ROLE_NAME}" not found — run discord:roles script first.`);
+    console.warn(`[autorole] Role "${DISCORD_AUTO_ROLE_NAME}" not found ??? run discord:roles script first.`);
     return { checked: 0, granted: 0 };
   }
 
@@ -413,7 +413,7 @@ export async function syncGuildAutoRoles(): Promise<{ checked: number; granted: 
     );
     if (ok !== null) {
       granted++;
-      console.log(`[autorole] Granted ${DISCORD_AUTO_ROLE_NAME} → ${member.user.id}`);
+      console.log(`[autorole] Granted ${DISCORD_AUTO_ROLE_NAME} ??? ${member.user.id}`);
     }
   }
 
