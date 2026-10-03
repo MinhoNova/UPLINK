@@ -235,9 +235,10 @@ export async function sendLobbyEmbed(lobby: any) {
       // from public/classes-thumb, which is the only class art the site has.
       thumbnail: offerClassThumb(lobby),
       fields: [
-         { name: "💰 Offer", value: `**${price}K** gold`, inline: true },
-         { name: "🎯 Open Roles", value: rolesStr, inline: true },
-         { name: "📊 Squad", value: squadProgress, inline: false },
+         { name: "💰 Price / Run / Player", value: `**${lobby.pricePerRun || lobby.goldPerRun || 0}M**`, inline: true },
+         { name: "💎 Total / Player", value: `**${Number(lobby.totalGold || (Number(lobby.pricePerRun||0)*(Number(lobby.runsCount)||1))).toFixed(2)}M**`, inline: true },
+         { name: "🏃 Runs", value: `**${lobbyRunCount(lobby)}**`, inline: true },
+         { name: "🎯 Open Roles", value: rolesStr, inline: false },
          ...(lobby.category !== "leveling" && lobby.minIlvl
             ? [{ name: "⚡ Min iLvl", value: `${lobby.minIlvl}+`, inline: true }] : []),
          ...(lobby.category !== "leveling" && lobby.keyLevel
