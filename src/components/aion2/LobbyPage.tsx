@@ -523,7 +523,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                           {Number(offer.pricePerRun) > 0 && (
                             <div className="flex items-center gap-3 mt-1 whitespace-nowrap">
                               <span className="text-sm font-black text-amber-300">{t("offer_totalPlayer")} {(Number(offer.pricePerRun) * (offer.runsCount || 1)).toFixed(2)}M</span>
-                              <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M {t("offer_perRun")} / player</span>
+                              <span className="text-sm font-bold text-amber-200/80">{Number(offer.pricePerRun).toFixed(2)}M {t("offer_perRun")}</span>
                             </div>
                           )}
                           {!classSlots && openRoles.length > 0 && (<span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mt-1"><Users className="w-3.5 h-3.5 text-cyan-400" />{`${t("offer_open")} ${openRoles.map((r) => `${r.n} ${r.role.toUpperCase()}`).join(" · ")}`}</span>)}
