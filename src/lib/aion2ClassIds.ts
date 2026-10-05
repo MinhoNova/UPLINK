@@ -16,7 +16,7 @@ export const AION2_GLOBAL_BASE = "https://aion2.plaync.com";
 export const AION2_GAME_REGION = "nae";
 
 /** The region key stored on a verified character. */
-export type Aion2Region = "global";
+export type Aion2Region = "global" | "na" | "eu";
 
 export const AION2_REGION_LABEL = "GLOBAL";
 

@@ -88,6 +88,44 @@ export async function POST(req: Request) {
   const characters = await charactersFromStore();
   const snapshot = memberCharacterSnapshot(characters, { ...nextApplicant, applicantId: uid });
 
+  // Region check: prevent EU <-> NA cross-application
+  try {
+    const myCharId = String(applicant.id || nextApplicant.id || "");
+    let myRegion: string | null = null;
+    if (myCharId.startsWith("game:")) {
+      const c = characters.find((ch: any) => String(ch.id) === myCharId);
+      if (c?.region) myRegion = String(c.region).toLowerCase();
+    }
+    if (myRegion && myRegion !== "global") {
+      const lobbyCheck = (await getKV("lobbies")) || [];
+      const targetLobby = lobbyCheck.find((l: any) => String(l.id) === String(lobbyId));
+      if (targetLobby) {
+        const memberChars: any[] = [];
+        const allMembers = [...(targetLobby.accepted || []), ...(targetLobby.applicants || [])];
+        for (const m of allMembers) {
+          const mid = String(m.id || "");
+          if (mid.startsWith("game:")) {
+            const mc = characters.find((ch: any) => String(ch.id) === mid);
+            if (mc?.region) memberChars.push(String(mc.region).toLowerCase());
+          }
+        }
+        if (memberChars.length > 0) {
+          const lobbyRegion = memberChars[0];
+          if (lobbyRegion !== "global" && myRegion !== lobbyRegion) {
+            return NextResponse.json(
+              {
+                error: `Cannot apply: this offer is ${lobbyRegion.toUpperCase()} region, your character is ${myRegion.toUpperCase()} region.`,
+              },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // ignore region check errors
+  }
+
   let abortReason: string | null = null;
   const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
     const cur = Array.isArray(lobbies) ? [...lobbies] : [];

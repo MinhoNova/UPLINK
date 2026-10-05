@@ -15,8 +15,10 @@ import {
   AION2_REGION_LABEL,
   mapGameClassToSite,
   isAllowedPortraitUrl,
+  extractCharacterRegion,
   type Aion2Region,
   type VerifiedGameCharacter,
+  type CharacterRegion,
 } from "@/lib/aion2ClassIds";
 
 export {
@@ -25,8 +27,9 @@ export {
   aion2CharacterPageUrl,
   AION2_GLOBAL_BASE,
   AION2_REGION_LABEL,
+  extractCharacterRegion,
 } from "@/lib/aion2ClassIds";
-export type { Aion2Region, VerifiedGameCharacter } from "@/lib/aion2ClassIds";
+export type { Aion2Region, VerifiedGameCharacter, CharacterRegion } from "@/lib/aion2ClassIds";
 
 async function jsonFetch(url: string): Promise<any> {
   const res = await fetch(url, {
@@ -105,7 +108,8 @@ function pickPortraitUrl(data: any, profile: any): string {
 function mapGameCharacterInfo(
   data: any,
   characterId: string,
-  serverId: number
+  serverId: number,
+  inferredRegion: CharacterRegion = "na"
 ): VerifiedGameCharacter | null {
   const p: any = data?.profile;
   if (!p || !p.characterId) return null;
@@ -135,17 +139,18 @@ function mapGameCharacterInfo(
     serverName: String(p.serverName || ""),
     genderName: String(p.genderName || ""),
     portraitUrl: profileImage || null,
-    region: "global",
+    region: inferredRegion === "eu" ? "eu" : inferredRegion === "na" ? "na" : "global",
     verifiedAt: Date.now(),
   };
 }
 
 export async function fetchGameCharacterProfile(
   characterId: string,
-  serverId: number
+  serverId: number,
+  inferredRegion: CharacterRegion = "na"
 ): Promise<VerifiedGameCharacter | null> {
   const data = await jsonFetch(aion2CharacterInfoUrl(characterId, serverId));
-  return mapGameCharacterInfo(data, characterId, serverId);
+  return mapGameCharacterInfo(data, characterId, serverId, inferredRegion);
 }
 
 type CharacterShareRef = {
@@ -160,17 +165,44 @@ type CharacterShareRef = {
 /** The site is Global-only. A link that names any other region is refused rather
  *  than silently verified against `nae`, which is what let Taiwan/Korea rows
  *  into the roster in the first place. */
-const GLOBAL_REGION_ALIASES = new Set(["", "nae", "global", "na", "wholesome", "wholesome server"]);
+const GLOBAL_REGION_ALIASES = new Set(["", "nae", "global", "na", "wholesome", "wholesome server", "eu", "europe"]);
 
 export function isNonGlobalRegionLink(link: string): boolean {
   try {
     const u = new URL(String(link || "").trim());
     const region = (u.searchParams.get("region") || "").toLowerCase();
-    if (!GLOBAL_REGION_ALIASES.has(region)) return true;
-    // Some share links carry the region as a path segment (`/nae/characters/...`).
-    return u.pathname.split("/").filter(Boolean).some((seg) => /^(kr|tw|jp|cn|naeu)$/i.test(seg));
+    // Only reject explicit non-global shards
+    const NON_GLOBAL = new Set(["kr", "tw", "jp", "cn"]);
+    if (NON_GLOBAL.has(region)) return true;
+    // Some share links carry the region as a path segment (`/nae/characters/...` or `/kr/characters/...`)
+    const segs = u.pathname.split("/").filter(Boolean);
+    if (segs.some((seg) => NON_GLOBAL.has(seg.toLowerCase()))) return true;
+    // Also reject legacy non-global path segments if any
+    if (segs.some((seg) => /^(kr|tw|jp|cn)$/i.test(seg))) return true;
+    return false;
   } catch {
     return false;
+  }
+}
+
+export type CharacterRegion = "na" | "eu" | "global";
+
+export function extractCharacterRegion(link: string): CharacterRegion {
+  try {
+    const u = new URL(String(link || "").trim());
+    const region = (u.searchParams.get("region") || "").toLowerCase();
+    if (region === "eu" || region === "europe") return "eu";
+    if (region === "na" || region === "nae" || region === "global" || region === "") {
+      // default to NA for global links unless explicitly EU
+      return "na";
+    }
+    // fallback: check path
+    const segs = u.pathname.split("/").filter(Boolean);
+    if (segs.some((s) => s.toLowerCase() === "eu")) return "eu";
+    if (segs.some((s) => s.toLowerCase() === "na" || s.toLowerCase() === "nae")) return "na";
+    return "na";
+  } catch {
+    return "na";
   }
 }
 
@@ -198,7 +230,8 @@ export async function resolveCharacterFromShareUrl(
 ): Promise<VerifiedGameCharacter | null> {
   const ref = parseCharacterShareUrl(link);
   if (!ref) throw new Error("invalid-character-link");
-  return fetchGameCharacterProfile(ref.characterId, ref.serverId);
+  const region = extractCharacterRegion(link);
+  return fetchGameCharacterProfile(ref.characterId, ref.serverId, region);
 }
 
 export type CharacterItem = {
