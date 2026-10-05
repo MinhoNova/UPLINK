@@ -9,7 +9,7 @@ import PageBackdrop from "@/components/aion2/PageBackdrop";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
-import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
+import { aion2CharacterPageUrl, AION2_REGION_LABEL, rawPortraitUrlOf } from "@/lib/aion2ClassIds";
 import {
   gameCharIdOf,
   myLinkedCharacters,
@@ -17,6 +17,17 @@ import {
   saveVerifiedCharacterEntries,
 } from "@/lib/characterStore";
 import { useI18n } from "@/i18n/i18n";
+
+/**
+ * How many characters are re-verified at once.
+ *
+ * Deliberately below the 20-requests-per-minute the resolve route allows per IP:
+ * a wider fan-out does not finish sooner, it just spends the budget and answers
+ * 429 for the rows that would otherwise have succeeded. Four keeps a typical
+ * roster of one to four characters fully parallel while leaving headroom for the
+ * link-paste path, which shares the same bucket.
+ */
+const UPDATE_CONCURRENCY = 4;
 
 export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
   const { data: session } = useSession();
@@ -124,6 +135,15 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
    * Results are collected and written in one pass. `characters` is a single
    * blob, so saving as we went would rewrite the whole roster once per
    * character — N reads, N writes, N chances to clobber a concurrent tab.
+   *
+   * Latency, measured from the site against NCSoft (3 runs each, October 2025):
+   * the character-info call is ~1.7-2.1s for the EU shard and ~0.23s for NA,
+   * and a cold portrait fetch is ~0.7-1.4s. Doing the rows one after another
+   * made the wait the *sum* of those, so three EU characters cost ~6s. The rows
+   * are independent, so they now go out concurrently and the wait is the
+   * slowest single row instead. Concurrency is capped at UPDATE_CONCURRENCY
+   * rather than unbounded: the resolve route allows 20 calls/min per IP, and a
+   * fan-out wider than the rate limit would only convert calls into 429s.
    */
   const updateAllChars = async () => {
     if (updating) return;
@@ -137,35 +157,65 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
     try {
       const verified: VerifiedGameCharacter[] = [];
       const failed: string[] = [];
-      let throttled = 0;
+      let stopped = false;
+
+      // Start the portraits downloading now, alongside the data calls, instead of
+      // after them. NCSoft serves `max-age=864000` on a portrait URL that has no
+      // version component, so this is normally a cache hit and free — but when it
+      // is the cold path, the ~1s fetch overlaps the ~2s info call rather than
+      // following it. `new Image` (not `fetch`) because the response has no CORS
+      // headers and would be opaque; an <img> populates the same HTTP cache.
       for (const c of targets) {
-        try {
-          const res = await fetch("/api/aion2/resolve", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              characterId: gameCharIdOf(c),
-              serverId: Number(c.serverId),
-              region: c.region || "global",
-            }),
-          });
-          // The resolve route allows 20 calls/min per IP. A roster larger than
-          // that would otherwise keep hammering through the limit and report
-          // every later row as a broken character. Stop, save what we got, and
-          // say why.
-          if (res.status === 429) {
-            throttled = targets.length - verified.length - failed.length;
-            break;
-          }
-          const d: any = await res.json().catch(() => ({}));
-          const vc = d?.character as VerifiedGameCharacter | undefined;
-          if (res.ok && vc?.characterId) verified.push(vc);
-          else failed.push(c.name || "character");
-        } catch {
-          failed.push(c.name || "character");
-        }
-        setUpdateDone((n) => n + 1);
+        const raw = rawPortraitUrlOf(c?.portraitUrl);
+        if (!raw || !/^https:\/\//.test(raw)) continue;
+        const img = new Image();
+        img.src = raw;
       }
+
+      let next = 0;
+      const worker = async () => {
+        for (;;) {
+          if (stopped) return;
+          const i = next++;
+          if (i >= targets.length) return;
+          const c = targets[i];
+          try {
+            const res = await fetch("/api/aion2/resolve", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                characterId: gameCharIdOf(c),
+                serverId: Number(c.serverId),
+                region: c.region || "global",
+              }),
+            });
+            // The resolve route allows 20 calls/min per IP. Stop handing out new
+            // rows the moment one comes back limited, so the rows never attempted
+            // are not reported as broken characters. Requests already in flight
+            // are allowed to finish and are counted normally.
+            if (res.status === 429) {
+              stopped = true;
+              return;
+            }
+            const d: any = await res.json().catch(() => ({}));
+            const vc = d?.character as VerifiedGameCharacter | undefined;
+            if (res.ok && vc?.characterId) verified.push(vc);
+            else failed.push(c.name || "character");
+          } catch {
+            failed.push(c.name || "character");
+          }
+          setUpdateDone((n) => n + 1);
+        }
+      };
+      await Promise.all(
+        Array.from(
+          { length: Math.min(UPDATE_CONCURRENCY, targets.length) },
+          () => worker()
+        )
+      );
+      // Anything neither verified nor failed was never started, i.e. the pass hit
+      // the rate limit.
+      const throttled = targets.length - verified.length - failed.length;
       if (verified.length > 0) {
         const saved = await saveVerifiedCharacterEntries(verified, meId);
         if (!saved.ok) {

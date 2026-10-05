@@ -5,6 +5,7 @@ import {
   isGameClassSupported,
   isAllowedPortraitUrl,
   portraitProxyPath,
+  rawPortraitUrlOf,
   aion2CharacterPageUrl,
   aion2CharacterInfoUrl,
   aion2CharacterEquipmentUrl,
@@ -169,6 +170,53 @@ describe("aion2ClassIds", () => {
       const proxied = portraitProxyPath(`https://${PORTRAIT_HOST}/game_profile_images/a.png`);
       expect(proxied.startsWith("/api/aion2/portrait?")).toBe(true);
       expect(proxied).not.toContain(`${PORTRAIT_HOST}/game_profile_images/a.png`);
+    });
+
+    /**
+     * The refresh button pre-warms the portrait cache by loading the raw URL
+     * while the data calls are still in flight, and the portrait component loads
+     * that same raw URL directly (our edge is bot-filtered by the origin). Both
+     * need to unwrap the stored proxy path, so the inverse has to be exact — a
+     * truncated or still-encoded URL silently renders no portrait at all, which
+     * looks identical to a character that has none.
+     */
+    describe("rawPortraitUrlOf", () => {
+      it("round-trips a real character portrait URL", () => {
+        const real =
+          `https://${PORTRAIT_HOST}/game_profile_images/aion2global/images` +
+          `?gameServerKey=1302&charKey=366480419677515525`;
+        expect(rawPortraitUrlOf(portraitProxyPath(real))).toBe(real);
+      });
+
+      it("drops the version param that portraitProxyPath appends", () => {
+        const real = `https://${PORTRAIT_HOST}/game_profile_images/x.png`;
+        const proxied = portraitProxyPath(real);
+        expect(proxied).toContain("&v=2");
+        expect(rawPortraitUrlOf(proxied)).toBe(real);
+      });
+
+      it("passes an already-raw URL straight through", () => {
+        const real = `https://${PORTRAIT_HOST}/game_profile_images/y.png`;
+        expect(rawPortraitUrlOf(real)).toBe(real);
+      });
+
+      it("is pure, with no window access", () => {
+        // The copy this replaced built a URL out of `window.location.origin`, so
+        // it could not run in a worker or a test without a DOM.
+        expect(rawPortraitUrlOf(`https://${PORTRAIT_HOST}/game_profile_images/z.png`)).not.toContain(
+          "undefined"
+        );
+      });
+
+      it("returns empty rather than throwing on a malformed escape", () => {
+        expect(rawPortraitUrlOf("/api/aion2/portrait?u=%E0%A4%A&v=2")).toBe("");
+      });
+
+      it("treats a missing portrait as empty", () => {
+        expect(rawPortraitUrlOf("")).toBe("");
+        expect(rawPortraitUrlOf(null)).toBe("");
+        expect(rawPortraitUrlOf(undefined)).toBe("");
+      });
     });
   });
 });

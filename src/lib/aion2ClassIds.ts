@@ -208,3 +208,29 @@ export function portraitProxyPath(fullUrl: string): string {
   if (!fullUrl || !isAllowedPortraitUrl(fullUrl)) return "";
   return `/api/aion2/portrait?u=${encodeURIComponent(fullUrl)}&v=2`;
 }
+
+/**
+ * The exact inverse of `portraitProxyPath`: unwrap a stored proxy path back to
+ * the raw plaync URL.
+ *
+ * Two callers need this and they must not disagree — the portrait component
+ * (which loads the raw URL directly, because our edge is bot-filtered by the
+ * origin) and the refresh button (which pre-warms the browser cache so the image
+ * is already decoded by the time fresh data lands). Reading the `u` param by
+ * hand is fragile: `encodeURIComponent` leaves no delimiter that `URLSearchParams`
+ * would misread, but the trailing `&v=2` has to be dropped either way.
+ *
+ * Pure and browser-safe — no `window`, unlike the copy this replaces.
+ */
+export function rawPortraitUrlOf(src: string | null | undefined): string {
+  const s = String(src || "");
+  if (!s.startsWith("/api/aion2/portrait?u=")) return s;
+  const rest = s.slice("/api/aion2/portrait?u=".length);
+  const amp = rest.indexOf("&");
+  const encoded = amp === -1 ? rest : rest.slice(0, amp);
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return "";
+  }
+}

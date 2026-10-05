@@ -1,19 +1,6 @@
 ﻿"use client";
 import { useState } from "react";
-import { portraitProxyPath } from "@/lib/aion2ClassIds";
-
-/** Extract the raw plaync URL out of a stored `/api/aion2/portrait?u=…` proxy path. */
-function rawUrlOf(src: string): string {
-  if (src.startsWith("/api/aion2/portrait?u=")) {
-    try {
-      const u = new URL(window.location.origin + src).searchParams.get("u") || "";
-      return u ? decodeURIComponent(u) : src;
-    } catch {
-      return src;
-    }
-  }
-  return src;
-}
+import { portraitProxyPath, rawPortraitUrlOf } from "@/lib/aion2ClassIds";
 
 /** In-game character portrait.
  *
@@ -49,7 +36,7 @@ export default function CharacterPortrait({
   preferProxy?: boolean;
   onLoadingChange?: (loading: boolean) => void;
 }) {
-  const raw = src ? rawUrlOf(String(src)) : "";
+  const raw = src ? rawPortraitUrlOf(src) : "";
   const proxied = raw ? portraitProxyPath(raw) : "";
   const [mode, setMode] = useState<0 | 1 | 2>(!raw ? 2 : preferProxy && proxied ? 0 : 1);
   const [loaded, setLoaded] = useState(false);

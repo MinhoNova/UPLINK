@@ -66,10 +66,59 @@ it("the refresh uses the stored game character id, not the row id", () => {
     const client = read("app/my-characters/MyCharactersClient.tsx");
     expect(client).toMatch(/const verified: VerifiedGameCharacter\[\] = \[\]/);
     expect(client).toMatch(/saveVerifiedCharacterEntries\(verified, meId\)/);
-    // And not from inside the per-character loop.
-    const loop = client.slice(client.indexOf("for (const c of targets)"));
-    expect(loop.slice(0, loop.indexOf("saveVerifiedCharacterEntries"))).not.toMatch(
-      /saveVerifiedCharacterEntries/
+    // ...and not from inside the per-character worker. Asserting on the worker's
+    // real boundaries matters: an earlier version of this test sliced on a loop
+    // header that no longer existed, so `indexOf` returned -1, the slice was one
+    // character long, and the assertion passed without ever looking at the file.
+    const start = client.indexOf("const worker = async () => {");
+    const save = client.indexOf("saveVerifiedCharacterEntries(verified, meId)");
+    expect(start).toBeGreaterThan(-1);
+    expect(save).toBeGreaterThan(start);
+    expect(client.slice(start, save)).not.toMatch(/saveVerifiedCharacterEntries/);
+  });
+
+  /**
+   * NCSoft's character-info call measures ~1.7-2.1s on the EU shard and ~0.23s
+   * on NA, and a cold portrait fetch ~0.7-1.4s. Issued one row after another,
+   * three EU characters cost the sum — about six seconds — for work that has no
+   * dependency between rows. These two guards are what stop that regressing back
+   * into a sequential loop, and back into a refresh that lands new numbers
+   * seconds before the face they belong to.
+   */
+  it("rows are re-verified concurrently, and the fan-out is capped", () => {
+    const client = read("app/my-characters/MyCharactersClient.tsx");
+    expect(client).toMatch(/await Promise\.all\(/);
+    expect(client).toMatch(
+      /Array\.from\(\s*\{ length: Math\.min\(UPDATE_CONCURRENCY, targets\.length\) \}/
+    );
+    // Below the 20-per-minute the resolve route allows per IP — a wider fan-out
+    // spends the budget instead of finishing sooner and answers 429.
+    expect(client).toMatch(/const UPDATE_CONCURRENCY = \d+/);
+    const cap = Number(/const UPDATE_CONCURRENCY = (\d+)/.exec(client)?.[1] || "0");
+    expect(cap).toBeGreaterThan(1);
+    expect(cap).toBeLessThanOrEqual(20);
+  });
+
+  it("portraits start downloading before the data calls return", () => {
+    const client = read("app/my-characters/MyCharactersClient.tsx");
+    expect(client).toMatch(/new Image\(\)/);
+    expect(client).toMatch(/rawPortraitUrlOf\(c\?\.portraitUrl\)/);
+    // Warm-up must precede the fan-out, otherwise it just adds to the wait.
+    const warm = client.indexOf("new Image()");
+    const fanout = client.indexOf("await Promise.all(");
+    expect(warm).toBeGreaterThan(-1);
+    expect(fanout).toBeGreaterThan(warm);
+    // And it must not go through our proxy, which is rate-limited and answers
+    // 502 for datacenter egress.
+    expect(client.slice(warm, fanout)).not.toMatch(/portraitProxyPath/);
+  });
+
+  it("hitting the rate limit stops new rows instead of failing them", () => {
+    const client = read("app/my-characters/MyCharactersClient.tsx");
+    expect(client).toMatch(/res\.status === 429/);
+    // Rows never attempted are counted as throttled, not as broken characters.
+    expect(client).toMatch(
+      /const throttled = targets\.length - verified\.length - failed\.length/
     );
   });
 

@@ -2,6 +2,7 @@
 import { UserRound } from "lucide-react";
 import CharacterPortrait from "./CharacterPortrait";
 import { classThumbUrl } from "@/lib/classThumb";
+import { rawPortraitUrlOf } from "@/lib/aion2ClassIds";
 
 /**
  * Portrait disc geometry, transcribed from the official character page
@@ -33,18 +34,6 @@ const SIZES = {
 
 const EMBLEM_BOX = "absolute w-[68.75%] h-[68.75%] left-[57.5%] top-[37.5%]";
 
-function rawUrlOf(src: string): string {
-  if (src.startsWith("/api/aion2/portrait?u=")) {
-    try {
-      const u = new URL(window.location.origin + src).searchParams.get("u") || "";
-      return u ? decodeURIComponent(u) : src;
-    } catch {
-      return src;
-    }
-  }
-  return src;
-}
-
 /** NC-style character badge: the circular in-game portrait with the class emblem
  *  overlaid on its lower right, exactly as the official character page composes
  *  `.profile__avatar` and `.profile__class`.
@@ -75,7 +64,7 @@ export default function CharacterPortraitBadge({
 }) {
   const s = SIZES[size];
   const cls = aionClass || "dps";
-  const raw = src ? rawUrlOf(String(src)) : "";
+  const raw = src ? rawPortraitUrlOf(src) : "";
   const hasPortrait = !!raw;
   return (
     <div className={`flex flex-col items-center shrink-0 ${className}`}>
