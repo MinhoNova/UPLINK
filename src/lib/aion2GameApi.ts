@@ -311,7 +311,8 @@ export async function fetchCharacterDetails(link: string): Promise<CharacterDeta
   if (cached && Date.now() - cached.at < DETAILS_TTL) return cached.data;
 
   const info = await jsonFetch(aion2CharacterInfoUrl(ref.characterId, ref.serverId));
-  const profile = mapGameCharacterInfo(info, ref.characterId, ref.serverId);
+  const region = extractCharacterRegion(link);
+  const profile = mapGameCharacterInfo(info, ref.characterId, ref.serverId, region);
   if (!profile) return null;
 
   let equipment: any[] = [];
