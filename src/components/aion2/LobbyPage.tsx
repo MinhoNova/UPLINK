@@ -571,14 +571,24 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
           </section>
 
           {/* Sidebar - Ongoing Missions */}
-          <aside className="w-full lg:self-start">
-            <div className="tn-light relative flex w-full max-h-[calc(100vh-7.5rem)] flex-col rounded-3xl bg-white/[0.05] backdrop-blur-3xl border border-cyan-500/20 p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all lg:sticky lg:top-[6.5rem] overflow-hidden">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-900/30 shrink-0">
-                <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">{t("missions_header") || "ONGOING MISSIONS"}</h3>
-                {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : t("missions_live")}</span></span>) : null}
-              </div>
+          <aside className="w-full lg:self-start lg:sticky lg:top-[6.5rem]">
+            {/* Heading lives outside the card so the sidebar reads like the offers
+                column: a label above the content, not a bar inside it. At text-xs
+                with 0.2em tracking, "ONGOING MISSIONS" wrapped onto two lines in a
+                340px column and set a header height the empty state never used.
+                The panel below now starts straight into its content. */}
+            <div className="mb-3 flex items-center justify-between gap-2 px-1">
+              <h3 className="text-[10px] font-black tracking-[0.18em] uppercase text-blue-100">{t("missions_header") || "ONGOING MISSIONS"}</h3>
+              {meId ? (<span className="flex items-center gap-1.5">{signalScan ? (<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />) : (<span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}<span className="text-[8px] font-black tracking-widest text-slate-500 uppercase">{signalScan ? (t("missions_scan") || "SCANNING") : t("missions_live")}</span></span>) : null}
+            </div>
+            {/* An empty board gets the same panel the empty offers list gets.
+                `bg-white/[0.05] backdrop-blur-3xl` lays a white wash over the page,
+                and with nothing behind it to blur that reads as flat grey. The
+                offers empty state uses 40%-alpha navy, which lets the premium art
+                and site background show through instead. */}
+            <div className={`tn-light relative flex w-full max-h-[calc(100vh-8.5rem)] flex-col rounded-3xl border p-4 shadow-[0_8px_32px_rgba(34,211,238,0.05)] transition-all overflow-hidden ${missions.length === 0 ? "bg-[#0a0f26]/40 border-blue-900/30" : "bg-white/[0.05] backdrop-blur-3xl border-cyan-500/20"}`}>
               {missions.length === 0 ? (
-                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center text-center py-6"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
+                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center text-center py-12"><p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{signalScan ? (t("missions_scan") || "SCANNING FOR SIGNAL...") : (t("missions_empty") || "NO ACTIVE MISSIONS")}</p></div>
               ) : (
                 <div className="custom-scrollbar -m-1 flex-1 min-h-0 space-y-4 overflow-y-auto p-1">
                   {activeMissions.length > 0 && (
