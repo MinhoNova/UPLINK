@@ -2,17 +2,22 @@
  * Aion 2 Global (plaync) game-data proxy — server-only.
  * Wraps the public NCSoft global character endpoints + portrait CDN whitelist.
  *
- * Global only. `aion2.plaync.com` now serves the global release exclusively:
- * every `/api/character/*` call needs `region=nae`, and the old KR/TW
- * name-search and server-list endpoints are gone, so a character can only be
- * resolved from its official share link.
+ * Global only. `aion2.plaync.com` serves the global release exclusively, and it
+ * serves it from more than one shard code (`nae` and `eu`): every `/api/character/*`
+ * call needs the character's own `region`, or the API answers 200 with an empty
+ * `profile` instead of an error. The old KR/TW name-search and server-list
+ * endpoints are gone, so a character can only be resolved from its official
+ * share link.
  */
 import {
   aion2CharacterEquipmentUrl,
   aion2CharacterInfoUrl,
   aion2CharacterPageUrl,
+  AION2_GAME_REGION,
   AION2_GLOBAL_BASE,
   AION2_REGION_LABEL,
+  aion2GameRegionFor,
+  aion2RegionFromGameRegion,
   mapGameClassToSite,
   isAllowedPortraitUrl,
   type Aion2Region,
@@ -141,13 +146,39 @@ function mapGameCharacterInfo(
   };
 }
 
+/**
+ * Fetch `/api/character/info`, trying the character's own shard first and the
+ * other live global shard second.
+ *
+ * The API does not 404 a shard mismatch, it answers 200 with `profile` full of
+ * nulls, so a character queried under the wrong region is indistinguishable
+ * from one that does not exist. Share links carry the region, but people edit
+ * them, copy them from a friend on the other shard, or paste the bare page URL
+ * — and an empty profile there means "Character not found" for a character that
+ * is perfectly linkable. Trying both shards turns that into a success.
+ */
+async function fetchCharacterInfo(
+  characterId: string,
+  serverId: number,
+  region: CharacterRegion | string
+): Promise<{ data: any; region: CharacterRegion } | null> {
+  const preferred = aion2RegionFromGameRegion(region);
+  // `na` and `eu` are the only live global shards; the retired ones have no code.
+  for (const attempt of [preferred, preferred === "eu" ? "na" : "eu"] as CharacterRegion[]) {
+    const data = await jsonFetch(aion2CharacterInfoUrl(characterId, serverId, attempt));
+    if (data?.profile?.characterId) return { data, region: attempt };
+  }
+  return null;
+}
+
 export async function fetchGameCharacterProfile(
   characterId: string,
   serverId: number,
   inferredRegion: CharacterRegion = "na"
 ): Promise<VerifiedGameCharacter | null> {
-  const data = await jsonFetch(aion2CharacterInfoUrl(characterId, serverId));
-  return mapGameCharacterInfo(data, characterId, serverId, inferredRegion);
+  const hit = await fetchCharacterInfo(characterId, serverId, inferredRegion);
+  if (!hit) return null;
+  return mapGameCharacterInfo(hit.data, characterId, serverId, hit.region);
 }
 
 type CharacterShareRef = {
@@ -310,9 +341,10 @@ export async function fetchCharacterDetails(link: string): Promise<CharacterDeta
   const cached = detailsCache.get(cacheKey);
   if (cached && Date.now() - cached.at < DETAILS_TTL) return cached.data;
 
-  const info = await jsonFetch(aion2CharacterInfoUrl(ref.characterId, ref.serverId));
-  const region = extractCharacterRegion(link);
-  const profile = mapGameCharacterInfo(info, ref.characterId, ref.serverId, region);
+  const hit = await fetchCharacterInfo(ref.characterId, ref.serverId, extractCharacterRegion(link));
+  if (!hit) return null;
+  const info = hit.data;
+  const profile = mapGameCharacterInfo(info, ref.characterId, ref.serverId, hit.region);
   if (!profile) return null;
 
   let equipment: any[] = [];
@@ -320,7 +352,11 @@ export async function fetchCharacterDetails(link: string): Promise<CharacterDeta
   let petWing: any = {};
   let skillList: any[] = [];
   try {
-    const eq = await jsonFetch(aion2CharacterEquipmentUrl(ref.characterId, ref.serverId));
+    // The shard is the one the profile actually answered on, not the one the
+    // link claims — the fallback above may have resolved the mismatch.
+    const eq = await jsonFetch(
+      aion2CharacterEquipmentUrl(ref.characterId, ref.serverId, hit.region)
+    );
     equipment = Array.isArray(eq?.equipment?.equipmentList) ? eq.equipment.equipmentList : [];
     skins = Array.isArray(eq?.equipment?.skinList) ? eq.equipment.skinList : [];
     petWing = eq?.petwing || {};

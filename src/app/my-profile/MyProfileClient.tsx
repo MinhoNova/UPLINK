@@ -136,7 +136,7 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
     const rid = String(c.id || "");
     const charId = rid.startsWith("game:") ? rid.slice(5) : rid;
     if (!charId || !c.serverId) return "";
-    return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId))}`;
+    return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId, c.region))}`;
   };
 
   const publicUrl = `/community/${String(me?.username || "").toLowerCase()}`;

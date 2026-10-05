@@ -1,3 +1,5 @@
+import { isSupportedGlobalRegion } from "@/lib/aion2ClassIds";
+
 /**
  * The keys an anonymous visitor may read.
  *
@@ -113,22 +115,23 @@ export function stripPublicOfferFields(lobbies: unknown): unknown {
 }
 
 /**
- * The site is Global-only, so a Taiwan/KR row is either a leftover from an
- * earlier build or a forged write. Neither belongs in a published roster: it
- * shows the wrong region badge, its portrait points at a different game's
- * image host, and it holds one of the account's character slots hostage.
+ * The site serves the global release only, so a Taiwan/KR row is either a
+ * leftover from an earlier build or a forged write. Neither belongs in a
+ * published roster: it shows the wrong region badge, its portrait points at a
+ * different game's image host, and it holds one of the account's character
+ * slots hostage.
  *
  * `validateCharacters` already drops these on write, but a row that was stored
  * before that gate existed stays in the store until somebody saves. Filtering
  * here makes them disappear for everyone immediately, without waiting for a
  * write, and it applies to both `/api/public-data` and `/api/data`.
+ *
+ * The global release runs on more than one shard, so the test is an allowlist
+ * of live shard codes rather than a single one — see `isSupportedGlobalRegion`.
  */
 export function dropNonGlobalCharacters<T>(list: unknown): T[] {
   if (!Array.isArray(list)) return [];
-  return (list as any[]).filter((c) => {
-    const region = String(c?.region || "").toLowerCase();
-    return !region || region === "global";
-  }) as T[];
+  return (list as any[]).filter((c) => isSupportedGlobalRegion(c?.region)) as T[];
 }
 
 /**

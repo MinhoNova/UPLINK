@@ -149,7 +149,7 @@ export default async function PlayerPage({
                 const charId = String(c.id || "").replace(/^game:/, "");
                 const profHref =
                   charId && c.serverId
-                    ? `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId))}`
+                    ? `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId, c.region))}`
                     : "";
                 return (
                   <div

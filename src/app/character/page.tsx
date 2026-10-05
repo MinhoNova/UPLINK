@@ -59,7 +59,7 @@ function SectionTitle({ icon, children }: { icon: React.ReactNode; children: Rea
 }
 
 function officialPageHref(vc: CharacterDetails["profile"]): string {
-  return aion2CharacterPageUrl(vc.serverId, vc.characterId);
+  return aion2CharacterPageUrl(vc.serverId, vc.characterId, vc.region);
 }
 
 function LoadingPanel() {

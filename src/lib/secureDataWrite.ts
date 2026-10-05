@@ -1,3 +1,4 @@
+import { isSupportedGlobalRegion } from "@/lib/aion2ClassIds";
 import { getKV } from "@/lib/db";
 import { gameCharIdOf } from "@/lib/characterStore";
 import { getPosterStanding } from "@/lib/posterApproval";
@@ -745,18 +746,21 @@ function isVerifiedGameChar(ch: any): boolean {
 }
 
 /**
- * Only Global characters may be stored.
+ * Only characters on a live global-release shard may be stored.
  *
- * The site verifies against the Global region exclusively (`AION2_GAME_REGION`).
- * A Taiwan/KR row is therefore either a leftover from an earlier build or a
- * forged write, and neither belongs in the roster: it renders the wrong region
- * badge, its portrait points at a different game's image host, and it consumes
- * one of the per-account slots a real Global character needs.
+ * The site verifies against the global release exclusively. A Taiwan/KR row is
+ * therefore either a leftover from an earlier build or a forged write, and
+ * neither belongs in the roster: it renders the wrong region badge, its portrait
+ * points at a different game's image host, and it consumes one of the
+ * per-account slots a real global character needs.
+ *
+ * The test is an allowlist of live shard codes, not `=== "global"`, because the
+ * global release runs on both `nae` and `eu`. Pinning it to one string meant a
+ * character that verified correctly was dropped again by the save that followed
+ * it, so EU players could never link anything at all.
  */
 function isGlobalChar(ch: any): boolean {
-  const region = String(ch?.region || "").toLowerCase();
-  if (!region) return true; // pre-region site rows were never region-scoped
-  return region === "global";
+  return isSupportedGlobalRegion(ch?.region);
 }
 
 export function validateCharacters(

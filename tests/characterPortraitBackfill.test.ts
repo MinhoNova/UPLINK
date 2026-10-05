@@ -44,9 +44,12 @@ describe("stored character portrait backfill", () => {
     expect(client).toMatch(/\{!c\.portraitUrl &&/);
   });
 
-  it("the refresh uses the stored game character id, not the row id", () => {
+it("the refresh uses the stored game character id, not the row id", () => {
     const client = read("app/my-characters/MyCharactersClient.tsx");
-    expect(client).toMatch(/characterId: gameCharIdOf\(c\), serverId: Number\(c\.serverId\)/);
+    expect(client).toMatch(/characterId: gameCharIdOf\(c\),\s*serverId: Number\(c\.serverId\)/);
+    // And the character's own shard, so a re-check of an EU character is not
+    // answered with the empty `nae` profile that reads as "Character not found".
+    expect(client).toMatch(/region: c\.region \|\| "global"/);
   });
 
   it("an empty portrait never becomes a non-empty proxy path", () => {

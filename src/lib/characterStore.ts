@@ -1,11 +1,13 @@
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
-import { portraitProxyPath } from "@/lib/aion2ClassIds";
+import { isSupportedGlobalRegion, portraitProxyPath } from "@/lib/aion2ClassIds";
 
 /** True for a row that was written by the game-character verifier, as opposed to
  *  a plain site character. Only verified rows carry these, and they are what
  *  lets us recognise a pre-`game:`-prefix row (see `gameCharIdOf`). */
 function looksLikeVerifiedGameRow(c: any): boolean {
-  if (String(c?.region || "").toLowerCase() === "global") return true;
+  // Any live global shard counts, not just `global` — an EU character row is a
+  // verified row and has to resolve its id like any other.
+  if (String(c?.region || "").trim()) return isSupportedGlobalRegion(c.region);
   if (c?.gameClassLabel) return true;
   return Boolean(c?.verifiedAt) && Number(c?.serverId) > 0;
 }

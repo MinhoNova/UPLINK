@@ -77,7 +77,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
     const rid = String(c.id || "");
     const charId = rid.startsWith("game:") ? rid.slice(5) : gameCharFallback(c);
     if (!charId || !c.serverId) return "";
-    return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId))}`;
+    return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId, c.region))}`;
   };
 
   const gameCharFallback = (c: any): string => String(c.gameCharacterId || c.characterId || "");
@@ -218,7 +218,11 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
       const res = await fetch("/api/aion2/resolve", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ characterId: gameCharIdOf(c), serverId: Number(c.serverId) }),
+        body: JSON.stringify({
+          characterId: gameCharIdOf(c),
+          serverId: Number(c.serverId),
+          region: c.region || "global",
+        }),
       });
       const d: any = await res.json().catch(() => ({}));
       if (!res.ok) { flash(d.error || "Could not refresh this character", "err"); return; }

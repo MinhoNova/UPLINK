@@ -278,7 +278,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const charProfileHref = (c: any): string => {
     const charId = applyGameCharId(c);
     if (!charId || !c?.serverId) return "";
-    const official = aion2CharacterPageUrl(c.serverId, charId);
+    const official = aion2CharacterPageUrl(c.serverId, charId, c.region);
     return `/character?u=${encodeURIComponent(official)}`;
   };
 

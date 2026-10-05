@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { aion2RegionFromGameRegion } from "@/lib/aion2ClassIds";
 import { getClientIp } from "@/lib/requestIp";
 import { rateLimitByIp, rateLimitResponse } from "@/lib/rateLimit";
 import { requireSession } from "@/lib/authz";
@@ -37,13 +38,20 @@ export async function PUT(req: Request) {
     );
   }
 
+  // The stored shard, so a re-check hits the same live region the character
+  // verified on. Without it an EU character is re-checked against `nae`, which
+  // answers 200 with an empty profile — the exact "Character not found" this
+  // control is supposed to be able to fix. Omitting it is fine: the fetch falls
+  // back to the other global shard.
+  const region = aion2RegionFromGameRegion(body?.region);
+
   const auth = await requireSession(req);
   if (!auth.ok) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
   try {
-    const character = await fetchGameCharacterProfile(characterId, serverId);
+    const character = await fetchGameCharacterProfile(characterId, serverId, region);
     if (!character) {
       return NextResponse.json({ error: "Character not found" }, { status: 404 });
     }

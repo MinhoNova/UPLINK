@@ -18,7 +18,7 @@ import { aion2CharacterPageUrl } from "@/lib/aion2ClassIds";
 
 function applicantProfileHref(a: any): string {
   if (!a?.gameCharacterId || !a?.serverId) return "";
-  return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(a.serverId, a.gameCharacterId))}`;
+  return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(a.serverId, a.gameCharacterId, a.region))}`;
 }
 
 const POWER_ICON = "https://assets.playnccdn.com/static-aion2/characters/img/info/profile_power_icon_pc.png";
