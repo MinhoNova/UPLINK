@@ -108,21 +108,21 @@ describe("the portrait disc carries the portrait and nothing else", () => {
   });
 });
 
-describe("My Profile uses the badge everywhere", () => {
+describe("My Profile no longer renders character portraits", () => {
   const profile = () => read("app/my-profile/MyProfileClient.tsx");
 
   it("has no square portrait fallback branch", () => {
     expect(profile()).not.toMatch(/rounded-xl border border-cyan-400\/30 bg-black object-cover/);
   });
 
-  it("renders the stacked badge unconditionally", () => {
-    expect(profile()).toMatch(/<CharacterPortraitBadge/);
-    expect(profile()).not.toMatch(/\{c\.portraitUrl \? \(/);
+  it("renders no character badge at all", () => {
+    // Characters live on /my-characters only. My Profile kept a second copy of
+    // the list, which meant one character drawn twice with two ways to update it.
+    expect(profile()).not.toMatch(/<CharacterPortraitBadge/);
+    expect(profile()).not.toMatch(/My Characters/);
   });
 
   it("no longer renders a bare square class image", () => {
-    // The only remaining `classThumbUrl` use in the file is the fallback for a
-    // character with no class at all, which must not be a square portrait board.
     const squares = profile().match(/classThumbUrl\(cls\)[\s\S]{0,320}?w-\d+ h-\d+ rounded-xl/g);
     expect(squares === null || squares.length === 0).toBe(true);
   });

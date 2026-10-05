@@ -3,18 +3,20 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Regression: characters linked before the portrait feature kept a blank face
- * forever.
+ * Regression: a stored character was frozen at the moment its link was pasted.
  *
- * `toStoredCharacter` is the only writer of `portraitUrl`, it only runs from
- * `saveVerifiedCharacterEntry`, and that only runs when someone pastes a
- * character link. A row saved with `portraitUrl: ""` therefore never picks one
- * up — so fixing the upstream mapping fixed new links only, and every
- * pre-existing character kept rendering the class crest on My Profile, My
- * Characters and in every squad card.
+ * `toStoredCharacter` is the only writer of `portraitUrl`, `itemLevel` and
+ * `combatPower`, and it only ran when someone pasted a character link. A row
+ * therefore never picked up a new value on its own — so a character that gained
+ * a level or an upgrade kept rendering its linking-time portrait, item level
+ * and combat power on My Characters and in every squad card.
  *
- * The fix needs two halves: a way to re-verify a stored character from its
- * own `characterId`/`serverId`, and a control that triggers it.
+ * The refresh control that existed was scoped to `!c.portraitUrl`, so it only
+ * appeared for rows that had never published a portrait — i.e. never, for a
+ * character that works. There was no way to update anything.
+ *
+ * The fix needs two halves: a way to re-verify a stored character from its own
+ * `characterId`/`serverId`, and a control that triggers it for every row.
  */
 
 const root = join(process.cwd(), "src");
@@ -33,15 +35,21 @@ describe("stored character portrait backfill", () => {
   it("re-verifying requires a session", () => {
     const route = read("app/api/aion2/resolve/route.ts");
     const put = route.slice(route.indexOf("export async function PUT"));
-    expect(put).toMatch(/requireSession/);
+expect(put).toMatch(/requireSession/);
   });
 
-  it("My Characters exposes the refresh control for portrait-less rows", () => {
+  it("My Characters re-checks every row from one control", () => {
     const client = read("app/my-characters/MyCharactersClient.tsx");
-    expect(client).toMatch(/refreshChar/);
+    expect(client).toMatch(/updateAllChars/);
     expect(client).toMatch(/method: "PUT"/);
-    // Guarded on the missing portrait so it is not just permanent UI noise.
-    expect(client).toMatch(/\{!c\.portraitUrl &&/);
+    // Not scoped to portrait-less rows any more. That guard meant the control
+    // only existed for characters that had never published a portrait, so a
+    // working character — which always has one — had no way to re-read its
+    // level, item level or combat power.
+    expect(client).not.toMatch(/\{!c\.portraitUrl &&/);
+    // The badge that claimed a sync was happening. Nothing synced.
+    expect(client).not.toMatch(/mychars_synced/);
+    expect(client).not.toMatch(/>\s*Synced\s*</);
   });
 
 it("the refresh uses the stored game character id, not the row id", () => {
@@ -50,6 +58,19 @@ it("the refresh uses the stored game character id, not the row id", () => {
     // And the character's own shard, so a re-check of an EU character is not
     // answered with the empty `nae` profile that reads as "Character not found".
     expect(client).toMatch(/region: c\.region \|\| "global"/);
+  });
+
+  it("results are collected and written once, not once per character", () => {
+    // `characters` is a single blob: saving per character would rewrite the
+    // whole roster N times, each invalidating the public cache for every reader.
+    const client = read("app/my-characters/MyCharactersClient.tsx");
+    expect(client).toMatch(/const verified: VerifiedGameCharacter\[\] = \[\]/);
+    expect(client).toMatch(/saveVerifiedCharacterEntries\(verified, meId\)/);
+    // And not from inside the per-character loop.
+    const loop = client.slice(client.indexOf("for (const c of targets)"));
+    expect(loop.slice(0, loop.indexOf("saveVerifiedCharacterEntries"))).not.toMatch(
+      /saveVerifiedCharacterEntries/
+    );
   });
 
   it("an empty portrait never becomes a non-empty proxy path", () => {

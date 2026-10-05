@@ -56,7 +56,6 @@ describe("the combat power / item level pill", () => {
 describe("no invented CP/ILVL chips remain on the character surfaces", () => {
   const surfaces: [string, string][] = [
     ["app/character/page.tsx", "the character profile"],
-    ["app/my-profile/MyProfileClient.tsx", "My Profile"],
     ["app/my-characters/MyCharactersClient.tsx", "My Characters"],
     ["components/aion2/LobbyPage.tsx", "the lobby"],
     ["components/modals/ManageModal.tsx", "Manage"],

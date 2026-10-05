@@ -14,7 +14,7 @@ import {
   gameCharIdOf,
   myLinkedCharacters,
   removeCharacterById,
-  saveVerifiedCharacterEntry,
+  saveVerifiedCharacterEntries,
 } from "@/lib/characterStore";
 import { useI18n } from "@/i18n/i18n";
 
@@ -37,7 +37,8 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
 
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [updateDone, setUpdateDone] = useState(0);
 
   const flash = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type });
@@ -96,7 +97,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
       if (d.alreadyLinked) { setLinkError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
       const vc = d.character as VerifiedGameCharacter;
       if (!vc?.characterId) { setLinkError(t("verify_notFound")); return; }
-      const saved = await saveVerifiedCharacterEntry(vc, meId);
+      const saved = await saveVerifiedCharacterEntries([vc], meId);
       if (!saved.ok) { setLinkError(saved.error || t("mychars_saveFailed")); return; }
       setLinkResult(vc);
       setLink("");
@@ -106,6 +107,88 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
       setLinkError(t("err_network"));
     } finally {
       setLinkBusy(false);
+    }
+  };
+
+  /**
+   * Re-verify every character on the page, exactly as if its link had just been
+   * pasted again: each row is re-read from the official character API and the
+   * stored snapshot is replaced field for field.
+   *
+   * The stored row is a snapshot taken at link time (`verifiedAt` is when the
+   * verifier last ran), so item level and combat power sat at their linking
+   * values until a link was pasted again. The per-character Refresh button was
+   * scoped to characters missing a portrait, which every working character has,
+   * so in practice there was no way to update anything.
+   *
+   * Results are collected and written in one pass. `characters` is a single
+   * blob, so saving as we went would rewrite the whole roster once per
+   * character — N reads, N writes, N chances to clobber a concurrent tab.
+   */
+  const updateAllChars = async () => {
+    if (updating) return;
+    const targets = myChars.filter((c: any) => gameCharIdOf(c) && Number(c.serverId) > 0);
+    if (targets.length === 0) {
+      flash("None of your characters have a recorded server to re-check", "err");
+      return;
+    }
+    setUpdating(true);
+    setUpdateDone(0);
+    try {
+      const verified: VerifiedGameCharacter[] = [];
+      const failed: string[] = [];
+      let throttled = 0;
+      for (const c of targets) {
+        try {
+          const res = await fetch("/api/aion2/resolve", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              characterId: gameCharIdOf(c),
+              serverId: Number(c.serverId),
+              region: c.region || "global",
+            }),
+          });
+          // The resolve route allows 20 calls/min per IP. A roster larger than
+          // that would otherwise keep hammering through the limit and report
+          // every later row as a broken character. Stop, save what we got, and
+          // say why.
+          if (res.status === 429) {
+            throttled = targets.length - verified.length - failed.length;
+            break;
+          }
+          const d: any = await res.json().catch(() => ({}));
+          const vc = d?.character as VerifiedGameCharacter | undefined;
+          if (res.ok && vc?.characterId) verified.push(vc);
+          else failed.push(c.name || "character");
+        } catch {
+          failed.push(c.name || "character");
+        }
+        setUpdateDone((n) => n + 1);
+      }
+      if (verified.length > 0) {
+        const saved = await saveVerifiedCharacterEntries(verified, meId);
+        if (!saved.ok) {
+          flash(saved.error || "Could not update your characters", "err");
+          return;
+        }
+        refresh();
+      }
+      const remaining = throttled + failed.length;
+      if (throttled > 0) {
+        flash(
+          `Updated ${verified.length}. Too many characters for one pass — wait a minute and press update again for the other ${remaining}.`,
+          "err"
+        );
+      } else if (failed.length === 0) {
+        flash(`${verified.length} character${verified.length === 1 ? "" : "s"} updated`);
+      } else if (verified.length === 0) {
+        flash(`Could not update ${failed.length} character${failed.length === 1 ? "" : "s"} — try again in a moment`, "err");
+      } else {
+        flash(`Updated ${verified.length}, could not update ${failed.length}`, "err");
+      }
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -147,10 +230,19 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
               {meName ? `Operative · ${meName}` : "Operative"} — {myChars.length} {t("mychars_verified") || "verified"}
             </p>
           </div>
-          {loaded && (
-            <span className="ml-auto hidden sm:flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-emerald-300">
-              <RefreshCw className="w-3 h-3" /> {t("mychars_synced") || "Synced"}
-            </span>
+          {loaded && myChars.length > 0 && (
+            <button
+              type="button"
+              onClick={updateAllChars}
+              disabled={updating}
+              title="Re-read every linked character from the official site and update its level, item level and combat power"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-50 transition-all"
+            >
+              {updating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {updating
+                ? `Updating ${updateDone}/${myChars.length}`
+                : (t("mychars_updateAll") || "Update Characters")}
+            </button>
           )}
         </div>
 
@@ -210,37 +302,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
             {myChars.map((c: any) => {
               const href = charProfileHref(c);
               const cls = c.aionClass || c.gameClassLabel || "";
-  const refreshChar = async (c: any) => {
-    const key = String(c.id);
-    if (refreshingId) return;
-    setRefreshingId(key);
-    try {
-      const res = await fetch("/api/aion2/resolve", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          characterId: gameCharIdOf(c),
-          serverId: Number(c.serverId),
-          region: c.region || "global",
-        }),
-      });
-      const d: any = await res.json().catch(() => ({}));
-      if (!res.ok) { flash(d.error || "Could not refresh this character", "err"); return; }
-      const vc = d.character as VerifiedGameCharacter;
-      if (!vc?.characterId) { flash("Could not refresh this character", "err"); return; }
-      const saved = await saveVerifiedCharacterEntry(vc, meId);
-      if (!saved.ok) { flash(saved.error || "Could not refresh this character", "err"); return; }
-      flash(vc.portraitUrl ? "Character refreshed" : "Character re-verified — no portrait published for it yet");
-      refresh();
-    } catch {
-      flash("Network error", "err");
-    } finally {
-      setRefreshingId(null);
-    }
-  };
-
-  return (
-
+              return (
                 <div key={String(c.id)} className="tn-light relative rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-[#00ffff]/40 transition-all flex gap-3 p-3">
                   {/* NC-style: the circular in-game portrait with the class emblem
                       stacked beneath it, smaller. */}
@@ -275,20 +337,6 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
                         <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all">
                           <ExternalLink className="w-2.5 h-2.5" /> {t("verify_fullProfile") || "Full Profile"}
                         </a>
-                      )}
-                      {/* Characters linked before portraits existed were stored
-                          with `portraitUrl: ""` and nothing ever re-read them, so
-                          they showed the class crest forever. Re-verify in place. */}
-                      {!c.portraitUrl && (
-                        <button
-                          type="button"
-                          onClick={() => refreshChar(c)}
-                          disabled={!!refreshingId || !c.serverId}
-                          title={c.serverId ? "Re-check this character on the official site" : "No server recorded for this character"}
-                          className="inline-flex items-center gap-1 rounded-lg bg-white/5 border border-white/20 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300 hover:border-cyan-400/40 hover:text-cyan-300 disabled:opacity-40 transition-all"
-                        >
-                          {refreshingId === String(c.id) ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RefreshCw className="w-2.5 h-2.5" />} Refresh
-                        </button>
                       )}
                       {confirmRemoveId === String(c.id) ? (
                         <button

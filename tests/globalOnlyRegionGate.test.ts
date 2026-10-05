@@ -94,18 +94,22 @@ describe("My Characters page layout and the duplicate button", () => {
     expect(client).not.toMatch(/px-4 pt-8 pb-24/);
   });
 
-  it("My Profile no longer sends people to the duplicate list", () => {
+  it("My Profile does not list characters at all", () => {
     const profile = read("app/my-profile/MyProfileClient.tsx");
-    // The section already renders every linked character inline, so the
-    // "Manage" jump was a second route to the same list.
-    expect(profile).not.toMatch(/>\s*Manage\s*</);
-    // The empty state keeps its link button — there is nothing to show inline.
-    expect(profile).toMatch(/Link your first character/);
+    // My Profile is identity and presentation; /my-characters is the single
+    // place a character is listed, updated and removed. Rendering them in both
+    // drew one character twice, with two paths to update it.
+    expect(profile).not.toMatch(/Link your first character/);
+    expect(profile).not.toMatch(/My Characters/);
+    expect(profile).not.toMatch(/myLinkedCharacters/);
+    expect(profile).not.toMatch(/CharacterPowerStats/);
+    expect(profile).not.toMatch(/\/character\?u=/);
   });
 
-  it("the dedicated page still exists for linking and re-verifying", () => {
-    expect(read("app/my-characters/MyCharactersClient.tsx")).toMatch(/resolve/);
-    expect(read("app/my-characters/MyCharactersClient.tsx")).toMatch(/refreshChar/);
+  it("the dedicated page is the only place a character is listed", () => {
+    const client = read("app/my-characters/MyCharactersClient.tsx");
+    expect(client).toMatch(/resolve/);
+    expect(client).toMatch(/updateAllChars/);
   });
 });
 
@@ -130,7 +134,6 @@ describe("one My Characters entry, one page", () => {
     expect(read("app/character/page.tsx")).toContain("Character");
     const users = [
       "app/my-characters/MyCharactersClient.tsx",
-      "app/my-profile/MyProfileClient.tsx",
       "app/player/[handle]/page.tsx",
       "components/aion2/LobbyPage.tsx",
       "components/modals/ManageModal.tsx",

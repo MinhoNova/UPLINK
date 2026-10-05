@@ -122,34 +122,59 @@ export async function writeCharacters(next: any[]): Promise<{ ok: boolean; error
   }
 }
 
-export async function saveVerifiedCharacterEntry(
-  vc: VerifiedGameCharacter,
+/**
+ * Save several verified characters from one read and one write.
+ *
+ * `characters` is a single blob, so every write rewrites the entire roster.
+ * Refreshing a page of N characters one at a time therefore cost N full-blob
+ * reads and N full-blob writes, each invalidating the public cache for every
+ * reader — and N opportunities for two tabs to clobber each other. Collecting
+ * the live results first and writing them in one pass keeps a whole-page update
+ * atomic and costs a single rewrite.
+ *
+ * Per-character behaviour is unchanged: replace the caller's first copy in
+ * place, drop any further copy (so the first write after the `game:` prefix
+ * landed repairs storage, not just the rendered list), and append anything the
+ * roster did not have yet.
+ */
+export async function saveVerifiedCharacterEntries(
+  entries: VerifiedGameCharacter[],
   userId: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (!Array.isArray(entries) || entries.length === 0) return { ok: true };
   const existing = await fetchPublicCharacters();
-  const charId = String(vc.characterId);
   // Match on the character itself, not just the row id. A row saved before the
   // `game:` prefix carries the bare character id as its `id`; matching only
   // `game:<id>` left that row in place and appended a second one, which is how
   // one character came to be listed twice.
-  const isMine = (c: any) => gameCharIdOf(c) === charId && String(c.userId) === String(userId);
-  const entry = toStoredCharacter(vc, userId);
-  // Replace the first copy in place, drop any further copy: the first write
-  // after this fix repairs storage, not just the rendered list.
-  let replaced = false;
+  const wanted = entries
+    .map((vc) => ({ charId: String(vc.characterId), entry: toStoredCharacter(vc, userId) }))
+    .filter((w) => w.charId);
+  const written = new Set<string>();
   const next: any[] = [];
   for (const c of existing) {
-    if (!isMine(c)) {
+    const match = wanted.find((w) => w.charId === gameCharIdOf(c) && String(c.userId) === String(userId));
+    if (!match) {
       next.push(c);
       continue;
     }
-    if (!replaced) {
-      next.push(entry);
-      replaced = true;
-    }
+    if (written.has(match.charId)) continue;
+    written.add(match.charId);
+    next.push(match.entry);
   }
-  if (!replaced) next.push(entry);
+  for (const w of wanted) {
+    if (written.has(w.charId)) continue;
+    written.add(w.charId);
+    next.push(w.entry);
+  }
   return writeCharacters(next);
+}
+
+export async function saveVerifiedCharacterEntry(
+  vc: VerifiedGameCharacter,
+  userId: string
+): Promise<{ ok: boolean; error?: string }> {
+  return saveVerifiedCharacterEntries([vc], userId);
 }
 
 export async function removeCharacterById(

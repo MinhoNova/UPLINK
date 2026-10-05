@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Shield,
   ShieldCheck,
   Sparkles,
-  Swords,
   Users,
   Upload,
   Link as LinkIcon,
@@ -26,10 +24,6 @@ import {
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
-import { classThumbUrl } from "@/lib/classThumb";
-import GamePortrait from "@/components/aion2/GamePortrait";
-import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
-import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import {
   importLobbyVfxFromUrl,
@@ -39,8 +33,6 @@ import {
 } from "@/lib/clientImagePoster";
 import { resolveVfxSrc, resolveVfxBannerUrl } from "@/lib/vfxAssets";
 import { notificationMatchesUser } from "@/lib/userProfile";
-import { aion2CharacterPageUrl, AION2_REGION_LABEL } from "@/lib/aion2ClassIds";
-import { myLinkedCharacters } from "@/lib/characterStore";
 
 const TEAM_MAX = 4;
 const TEAM_MAX_MEMBERS = 3;
@@ -50,13 +42,10 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
   const { data: session, status } = useSession();
 
   const [users, setUsers] = useState<any[]>([]);
-  const [lobbies, setLobbies] = useState<any[]>([]);
-  const [chars, setChars] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
   const myId = String((session?.user as any)?.id || "");
-  const router = useRouter();
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const refresh = useCallback(() => {
@@ -65,8 +54,6 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
       .then((r) => r.json())
       .then((d: any) => {
         if (d.registeredUsers) setUsers(d.registeredUsers);
-        if (d.lobbies) setLobbies(d.lobbies);
-        if (d.characters) setChars(d.characters);
         if (d.notifications) setNotifications(d.notifications);
         setDataLoaded(true);
       })
@@ -126,18 +113,6 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
   }, [me]);
 
   const myVfx: any[] = me?.userVfx || [];
-
-  const myChars = useMemo(
-    () => myLinkedCharacters(chars, myId),
-    [chars, myId]
-  );
-
-  const charProfileHref = (c: any): string => {
-    const rid = String(c.id || "");
-    const charId = rid.startsWith("game:") ? rid.slice(5) : rid;
-    if (!charId || !c.serverId) return "";
-    return `/character?u=${encodeURIComponent(aion2CharacterPageUrl(c.serverId, charId, c.region))}`;
-  };
 
   const publicUrl = `/community/${String(me?.username || "").toLowerCase()}`;
 
@@ -577,74 +552,11 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
           </div>
         </div>
 
-        {/* ══ MY CHARACTERS ══ */}
-        <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mb-8">
-          <div className="flex items-center gap-3 pb-4 mb-5 border-b border-blue-900/30">
-            <Swords className="w-4 h-4 text-blue-400" />
-            <h3 className="text-xs font-black tracking-[0.2em] uppercase text-blue-100">My Characters</h3>
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{myChars.length} verified</span>
-          </div>
-
-          {myChars.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/15 bg-black/20 p-6 text-center">
-              <Swords className="mx-auto h-6 w-6 text-slate-600" />
-              <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-slate-300">No characters linked yet</p>
-              <p className="mt-1 text-[8px] font-bold uppercase tracking-widest text-slate-500">Link your official character page once — then apply to any offer with it</p>
-              <button
-                type="button"
-                onClick={() => router.push("/my-characters")}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#074f7b] to-[#41389f] px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all"
-              >
-                <Swords className="w-3 h-3" /> Link your first character
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myChars.map((c: any) => {
-                const href = charProfileHref(c);
-                const cls = c.aionClass || c.gameClassLabel || "";
-                return (
-                  <div key={String(c.id)} className="relative rounded-2xl border border-white/10 bg-black/40 overflow-hidden hover:border-[#00ffff]/40 transition-all flex gap-3 p-3">
-                    <CharacterPortraitBadge
-                      src={c.portraitUrl}
-                      aionClass={cls || "dps"}
-                      level={c.level}
-                      size="lg"
-                      fallback={c.name || ""}
-                    />
-                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-                      <span className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[12px] font-black text-white uppercase tracking-wider truncate">{c.name || "Character"}</span>
-                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full border border-white/15 bg-white/5 text-[7px] font-black uppercase tracking-widest text-slate-300">{AION2_REGION_LABEL}</span>
-                      </span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-cyan-300 truncate">{cls || c.gameClassLabel || "—"} · {c.serverName || "—"}</span>
-                      <span className="flex items-center gap-2 text-[9px] font-bold text-slate-400 tabular-nums">
-                        <span className="text-cyan-300">{c.level || "—"}</span> LVL
-                      </span>
-                      {/* Official icons + official combat-power form. */}
-                      <CharacterPowerStats
-                        combatPower={Number(c.cpAp) || Number(c.combatPower) || 0}
-                        itemLevel={Number(c.itemLevel) || 0}
-                        size="sm"
-                        className="mt-0.5"
-                      />
-                      {href && (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-1 inline-flex items-center gap-1 self-start rounded-lg bg-cyan-500/10 border border-cyan-500/40 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all"
-                        >
-                          <ExternalLink className="w-2.5 h-2.5" /> Full Profile
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* Characters are not listed here. My Profile is identity and
+            presentation; /my-characters is the one place a character is linked,
+            updated and removed. Rendering them in both meant the same character
+            appeared twice with two different refresh paths, and the copy here
+            never showed whether its numbers were current. */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Picture */}

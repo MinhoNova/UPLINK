@@ -102,7 +102,6 @@ describe("every character URL carries the character's own shard", () => {
     const sites = [
       "app/character/page.tsx",
       "app/my-characters/MyCharactersClient.tsx",
-      "app/my-profile/MyProfileClient.tsx",
       "app/player/[handle]/page.tsx",
       "components/aion2/LobbyPage.tsx",
       "components/modals/ManageModal.tsx",
