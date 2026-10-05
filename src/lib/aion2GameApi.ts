@@ -15,10 +15,8 @@ import {
   AION2_REGION_LABEL,
   mapGameClassToSite,
   isAllowedPortraitUrl,
-  extractCharacterRegion,
   type Aion2Region,
   type VerifiedGameCharacter,
-  type CharacterRegion,
 } from "@/lib/aion2ClassIds";
 
 export {
@@ -27,9 +25,8 @@ export {
   aion2CharacterPageUrl,
   AION2_GLOBAL_BASE,
   AION2_REGION_LABEL,
-  extractCharacterRegion,
 } from "@/lib/aion2ClassIds";
-export type { Aion2Region, VerifiedGameCharacter, CharacterRegion } from "@/lib/aion2ClassIds";
+export type { Aion2Region, VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 
 async function jsonFetch(url: string): Promise<any> {
   const res = await fetch(url, {
@@ -167,24 +164,6 @@ type CharacterShareRef = {
  *  into the roster in the first place. */
 const GLOBAL_REGION_ALIASES = new Set(["", "nae", "global", "na", "wholesome", "wholesome server", "eu", "europe"]);
 
-export function isNonGlobalRegionLink(link: string): boolean {
-  try {
-    const u = new URL(String(link || "").trim());
-    const region = (u.searchParams.get("region") || "").toLowerCase();
-    // Only reject explicit non-global shards
-    const NON_GLOBAL = new Set(["kr", "tw", "jp", "cn"]);
-    if (NON_GLOBAL.has(region)) return true;
-    // Some share links carry the region as a path segment (`/nae/characters/...` or `/kr/characters/...`)
-    const segs = u.pathname.split("/").filter(Boolean);
-    if (segs.some((seg) => NON_GLOBAL.has(seg.toLowerCase()))) return true;
-    // Also reject legacy non-global path segments if any
-    if (segs.some((seg) => /^(kr|tw|jp|cn)$/i.test(seg))) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
-
 export type CharacterRegion = "na" | "eu" | "global";
 
 export function extractCharacterRegion(link: string): CharacterRegion {
@@ -203,6 +182,24 @@ export function extractCharacterRegion(link: string): CharacterRegion {
     return "na";
   } catch {
     return "na";
+  }
+}
+
+export function isNonGlobalRegionLink(link: string): boolean {
+  try {
+    const u = new URL(String(link || "").trim());
+    const region = (u.searchParams.get("region") || "").toLowerCase();
+    // Only reject explicit non-global shards
+    const NON_GLOBAL = new Set(["kr", "tw", "jp", "cn"]);
+    if (NON_GLOBAL.has(region)) return true;
+    // Some share links carry the region as a path segment (`/nae/characters/...` or `/kr/characters/...`)
+    const segs = u.pathname.split("/").filter(Boolean);
+    if (segs.some((seg) => NON_GLOBAL.has(seg.toLowerCase()))) return true;
+    // Also reject legacy non-global path segments if any
+    if (segs.some((seg) => /^(kr|tw|jp|cn)$/i.test(seg))) return true;
+    return false;
+  } catch {
+    return false;
   }
 }
 
