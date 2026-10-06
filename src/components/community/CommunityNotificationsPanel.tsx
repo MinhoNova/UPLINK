@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import PostActivityFeed, { usePostActivity } from "@/components/community/PostActivityFeed";
 import { resolveProfileImage, profileImgClass, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 import DmThreadView from "@/components/chat/DmThreadView";
 import { getDmMsgKey, computeDmUnreadCounts, buildDmContactList, getAcceptedFriendIds, isToUser, withDmIdentities, type DmMessage } from "@/lib/dmHelpers";
 import { findUserById, refFor } from "@/lib/playerIdentity";

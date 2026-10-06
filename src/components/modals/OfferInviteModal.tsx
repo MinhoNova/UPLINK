@@ -8,7 +8,7 @@ import {
 import InviteTimer from "@/components/InviteTimer";
 import { memberIdentityKey } from "@/lib/lobbyLifecycle";
 import { resolveProfileImage, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 import { resolveOfferBannerImage } from "@/lib/vfxAssets";
 import { playInviteSound } from "@/lib/inviteSound";
 

@@ -7,9 +7,10 @@ import {
   isAnimatedImageUrl,
   profileImgClass,
 } from "@/lib/profileImage";
-import { toNameStyle } from "@/components/GradientColorPicker";
+import { toNameStyle } from "@/lib/nameStyle";
 import { classThumbUrl } from "@/lib/classThumb";
 import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
+import HideOnErrorImg from "@/components/HideOnErrorImg";
 import { averagePlayerRating } from "@/lib/playerReviews";
 import { achievementStatsFrom } from "@/lib/achievements";
 import AchievementsPanel from "@/components/achievements/AchievementsPanel";
@@ -169,12 +170,9 @@ export default async function PlayerPage({
                     className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0a0f26]/70 p-4 transition-all hover:border-cyan-500/40"
                   >
                     {c.portraitUrl ? (
-                      <img
+                      <HideOnErrorImg
                         src={String(c.portraitUrl)}
                         alt=""
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
                         className="h-16 w-16 rounded-xl object-cover border border-white/10 bg-black"
                       />
                     ) : (
@@ -242,11 +240,8 @@ export default async function PlayerPage({
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 bg-black shrink-0">
                         {r.reviewerImage ? (
-                          <img
+                          <HideOnErrorImg
                             src={String(r.reviewerImage)}
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).style.display = "none";
-                            }}
                             alt=""
                             className="h-full w-full object-cover"
                           />

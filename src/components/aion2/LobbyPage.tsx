@@ -27,7 +27,7 @@ import { ApplyBlockedHint, OfferRequirementPills } from "@/components/aion2/Offe
 import { bestPreviewStats, previewRequirementFailures, readOfferRequirements } from "@/lib/offerRequirements";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 import AionAutoApplyModal from "@/components/modals/AionAutoApplyModal";
 import type { AionAutoApply } from "@/components/modals/AionAutoApplyModal";
 import OfferInviteModal from "@/components/modals/OfferInviteModal";

@@ -21,7 +21,8 @@ import {
   ExternalLink,
   Copy,
 } from "lucide-react";
-import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import GradientColorPicker from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
 import { achievementStatsFrom } from "@/lib/achievements";

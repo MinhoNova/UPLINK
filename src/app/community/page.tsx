@@ -14,7 +14,7 @@ import {
   Zap, ImagePlus, Globe, Users, Pin, Smile,
 } from "lucide-react";
 import { resolveProfileBanner, resolveProfileImage, profileImgClass, isAnimatedImageUrl, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 import { isPrimaryAdmin } from "@/lib/rolesConstants";
 
 const REACTION_TYPES = [

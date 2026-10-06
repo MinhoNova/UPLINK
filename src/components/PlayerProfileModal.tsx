@@ -8,7 +8,7 @@ import {
   X, UserCheck, UserPlus, Ban, MessageCircle, Users, UserMinus, ExternalLink,
 } from "lucide-react";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 import {
   resolveProfileBanner,
   resolveProfileImage,

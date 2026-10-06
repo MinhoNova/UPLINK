@@ -8,7 +8,7 @@ import { resolveProfileImage, profileImgClass, resolveNameColor } from "@/lib/pr
 import { notificationMatchesUser } from "@/lib/userProfile";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 
 interface PendingApply {
   notificationId: number;

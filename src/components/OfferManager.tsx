@@ -18,7 +18,7 @@ import {
   acceptedExcludingMember,
   memberIdentityKey,
 } from "@/lib/lobbyLifecycle";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 
 type Tab = "squad" | "applicants" | "chat";
 

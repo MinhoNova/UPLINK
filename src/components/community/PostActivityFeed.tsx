@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, Loader2, MessageCircle, Heart } from "lucide-react";
 import { resolveProfileImage, resolveProfileDisplayName, resolveNameColor } from "@/lib/profileImage";
-import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
+import { toNameStyle, nameGlowColor } from "@/lib/nameStyle";
 
 export type PostActivityItem = {
   id: string;
