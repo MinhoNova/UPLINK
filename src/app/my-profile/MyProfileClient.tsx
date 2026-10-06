@@ -24,6 +24,8 @@ import {
 import GradientColorPicker, { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
 import { resolveProfileBanner, resolveProfileImage } from "@/lib/profileImage";
 import { getUserRanks } from "@/lib/ranks";
+import { achievementStatsFrom } from "@/lib/achievements";
+import AchievementsPanel from "@/components/achievements/AchievementsPanel";
 import PageBackdrop from "@/components/aion2/PageBackdrop";
 import {
   importLobbyVfxFromUrl,
@@ -55,6 +57,12 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
       .then((d: any) => {
         if (d.registeredUsers) setUsers(d.registeredUsers);
         if (d.notifications) setNotifications(d.notifications);
+        // The achievement panel reads the roster, friendships and reviews off
+        // this same response — they already ship with it, they were just being
+        // thrown away here.
+        if (Array.isArray(d.characters)) setRoster(d.characters);
+        if (Array.isArray(d.friends)) setFriendEdges(d.friends);
+        if (Array.isArray(d.playerReviews)) setPlayerReviews(d.playerReviews);
         setDataLoaded(true);
       })
       .catch(() => {});
@@ -89,6 +97,9 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
   const [teamQuery, setTeamQuery] = useState("");
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [roster, setRoster] = useState<any[]>([]);
+  const [friendEdges, setFriendEdges] = useState<any[]>([]);
+  const [playerReviews, setPlayerReviews] = useState<any[]>([]);
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [nameColor, setNameColor] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
@@ -113,6 +124,19 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
   }, [me]);
 
   const myVfx: any[] = me?.userVfx || [];
+
+  const myAchievements = useMemo(
+    () =>
+      achievementStatsFrom({
+        userId: myId,
+        stats: me?.stats,
+        rankOverride: me?.rankOverride || null,
+        reviews: playerReviews,
+        characters: roster,
+        friends: friendEdges,
+      }),
+    [myId, me, playerReviews, roster, friendEdges]
+  );
 
   const publicUrl = `/community/${String(me?.username || "").toLowerCase()}`;
 
@@ -889,6 +913,9 @@ export default function MyProfileClient({ heroBg }: { heroBg?: string }) {
             })()}
           </div>
         </div>
+
+        {/* Achievements */}
+        <AchievementsPanel stats={myAchievements} variant="own" />
 
         {/* Lobby Store */}
         <div className="tn-light relative w-full rounded-3xl bg-[#070a1c]/70 backdrop-blur-xl border border-cyan-500/25 p-6 mt-8">

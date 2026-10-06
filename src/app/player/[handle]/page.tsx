@@ -11,6 +11,8 @@ import { toNameStyle } from "@/components/GradientColorPicker";
 import { classThumbUrl } from "@/lib/classThumb";
 import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
 import { averagePlayerRating } from "@/lib/playerReviews";
+import { achievementStatsFrom } from "@/lib/achievements";
+import AchievementsPanel from "@/components/achievements/AchievementsPanel";
 import { aionClassRole } from "@/lib/aionClassMeta";
 import { aion2CharacterPageUrl } from "@/lib/aion2ClassIds";
 import type { Metadata } from "next";
@@ -90,6 +92,16 @@ export default async function PlayerPage({
   );
   const rating = averagePlayerRating(reviews);
   const ratingCount = reviews.length;
+
+  const allFriends: any[] = (await getKV("friends")) || [];
+  const achievements = achievementStatsFrom({
+    userId: uid,
+    stats: user.stats,
+    rankOverride: user.rankOverride,
+    reviews: allReviews,
+    characters: allChars,
+    friends: allFriends,
+  });
 
   return (
     <main className="min-h-screen bg-[#050814] text-slate-200 font-sans relative">
@@ -267,6 +279,9 @@ export default async function PlayerPage({
             </div>
           )}
         </section>
+
+        {/* Achievements */}
+        <AchievementsPanel stats={achievements} variant="public" />
       </div>
     </main>
   );
