@@ -23,6 +23,8 @@ import { getOwnerOngoingMissions, getJoinedOngoingMissions, isLobbyListedInPubli
 import { classThumbUrl } from "@/lib/classThumb";
 import CharacterPortraitBadge from "@/components/aion2/CharacterPortraitBadge";
 import CharacterPowerStats from "@/components/aion2/CharacterPowerStats";
+import { ApplyBlockedHint, OfferRequirementPills } from "@/components/aion2/OfferRequirementPills";
+import { bestPreviewStats, previewRequirementFailures, readOfferRequirements } from "@/lib/offerRequirements";
 import { AION2_ROLE_LABEL, aionClassRole, AION2_LEVEL_MAX } from "@/lib/aionClassMeta";
 import { effectiveAvatarEffect } from "@/lib/userProfile";
 import { toNameStyle, nameGlowColor } from "@/components/GradientColorPicker";
@@ -266,6 +268,21 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
   const applyMyChars = charactersList.filter((c: any) => String(c.userId) === String(meId));
   const applyChar = applyMyChars.find((c: any) => String(c.id) === applySelCharId) || applyMyChars[0] || null;
 
+  // Why the *selected* character cannot apply to the offer currently open. The
+  // same verdict, on the one character that will actually be submitted, so the
+  // message cannot be about a different character than the one being sent.
+  const applyModalBlockFailures = applyTarget
+    ? previewRequirementFailures(
+        readOfferRequirements(applyTarget),
+        applyChar
+          ? {
+              itemLevel: Number(applyChar.itemLevel) || 0,
+              combatPower: Number(applyChar.cpAp ?? applyChar.combatPower) || 0,
+            }
+          : null
+      )
+    : [];
+
   const applyGameCharId = (c: any): string => {
     if (!c) return "";
     const rid = String(c.id || "");
@@ -488,6 +505,17 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                   const openRoles = openRolesOf(offer);
                   const classSlots = classSlotsOf(offer);
                   const applied = alreadyApplied(offer);
+
+                  // Gear requirement: what this offer asks for, and whether any of
+                  // the viewer's characters could answer it. This only decides how
+                  // the button looks — the server re-checks on submit with its own
+                  // signed numbers, so being wrong here costs a rejected apply, not
+                  // a wrong entry to a squad.
+                  const offerReq = readOfferRequirements(offer);
+                  const applyBlockFailures = previewRequirementFailures(
+                    offerReq,
+                    bestPreviewStats(applyMyChars)
+                  );
                   return (
                     <motion.div key={`${offer.id}-${offer.createdAt || ""}`} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ scale: 1.005 }} onDoubleClick={(e) => { if (isMine || isAdmin) { e.stopPropagation(); setBgEditOfferId(String(offer.id)); setBgError(""); } }} className="tn-light relative w-full min-h-[110px] rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex items-center gap-3 pr-2 pl-3 py-3 group shadow-[0_4px_24px_rgba(34,211,238,0.08)] hover:shadow-[0_0_32px_rgba(34,211,238,0.15)] transition-all">
                       {/* Banner BG */}
@@ -541,7 +569,15 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                         </div>
                       )}
 
-                      {/* Actions */}
+                      {/* Gear this offer demands. Shown on every card that sets one, so a player can
+                          rule an offer in or out by scanning the list. */}
+                          <OfferRequirementPills
+                            minItemLevel={offerReq.minItemLevel}
+                            minCombatPower={offerReq.minCombatPower}
+                            className="mt-2"
+                          />
+
+                          {/* Actions */}
                       <div className="relative z-10 ml-auto flex-shrink-0 sm:pl-2 flex flex-col gap-1.5 min-w-[150px]">
                         {applied ? (
                           cancelConfirmId === String(offer.id) ? (
@@ -550,7 +586,9 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                             <button onClick={() => { setCancelConfirmId(String(offer.id)); setApplyError(""); window.setTimeout(() => setCancelConfirmId((c) => (c === String(offer.id) ? null : c)), 4000); }} className="px-3.5 py-2.5 rounded-xl border border-red-500/40 bg-[#050814]/85 text-red-300 text-[9px] font-black uppercase tracking-widest hover:bg-red-600/25 hover:text-red-200 transition-all flex items-center justify-center gap-1.5 backdrop-blur-md"><UserMinus className="w-3 h-3" /> {t("offer_cancelApply")}</button>
                           )
                         ) : (
-                          <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
+                          <ApplyBlockedHint failures={applyBlockFailures}>
+                            <button onClick={() => { setApplyTarget(offer); setApplyError(""); }} disabled={!meId || applyingId === String(offer.id) || applyBlockFailures.length > 0} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] text-white text-[9px] font-black uppercase tracking-widest hover:from-[#08a3c4] hover:to-[#5b4ddb] transition-all shadow-[0_0_18px_rgba(0,180,255,0.25)] disabled:opacity-50 flex items-center justify-center gap-1.5 border border-white/[0.08]"><Swords className="w-3 h-3" /> {applyingId === String(offer.id) ? t("offer_applying") : t("offer_apply")}</button>
+                          </ApplyBlockedHint>
                         )}
                         {(isMine || isAdmin) && (
                           confirmId === String(offer.id) ? (
@@ -649,12 +687,20 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                     <div className="absolute top-full left-0 right-0 z-50 mt-1 overflow-y-auto custom-scrollbar rounded-xl border border-white/10 bg-[#0a0f26] shadow-2xl max-h-[220px]">
                       {applyMyChars.map((c: any) => {
                         const isSel = String(c.id) === String(applyChar?.id);
+                        // Per-character verdict, so a player with one strong and one
+                        // weak character can see which to apply with instead of
+                        // picking at random and reading why it failed.
+                        const cFail = previewRequirementFailures(readOfferRequirements(applyTarget), {
+                          itemLevel: Number(c.itemLevel) || 0,
+                          combatPower: Number(c.cpAp ?? c.combatPower) || 0,
+                        });
+                        const cBlocked = cFail.length > 0;
                         return (
                           <button
                             key={String(c.id)}
                             type="button"
                             onClick={() => pickApplyChar(c)}
-                            className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"}`}
+                            className={`w-full flex items-center gap-3 p-2.5 text-left transition-all ${isSel ? "bg-emerald-500/10 text-emerald-300" : "text-white hover:bg-white/5"} ${cBlocked && !isSel ? "opacity-45" : ""}`}
                           >
                             <CharacterPortraitBadge src={c.portraitUrl} aionClass={c.aionClass || c.gameClassLabel || "dps"} level={c.level} fallback={c.name || ""} size="sm" />
                             <span className="min-w-0 flex-1">
@@ -662,6 +708,11 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                               <span className="block truncate text-[7px] font-black uppercase tracking-widest text-slate-500">{c.aionClass || c.gameClassLabel} · {c.serverName || ""}</span>
                             </span>
                             <CharacterPowerStats combatPower={0} itemLevel={Number(c.itemLevel) || 0} size="sm" />
+                            {cBlocked && (
+                              <span className="shrink-0 rounded-md border border-red-500/35 bg-red-500/10 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-red-300">
+                                {t("req_doesNotMeet") || "No"}
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -677,6 +728,25 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                   {Number(applyChar.level) < 45 && (
                     <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
                       <p className="text-[8px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"}</p>
+                    </div>
+                  )}
+                  {/* This offer's own gear requirement, against the character that
+                      is actually selected. Sitting directly under the stat pill
+                      above, which already shows this character's real numbers, so the
+                      comparison is visual rather than something to compute. */}
+                  {applyModalBlockFailures.length > 0 && (
+                    <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
+                      {applyModalBlockFailures.some((f: any) => f.kind === "stats-unverified") ? (
+                        <p className="text-[8px] font-black uppercase tracking-widest text-red-400">{t("req_blockedUnverified") || "Sync your character in My Characters to verify its gear."}</p>
+                      ) : (
+                        applyModalBlockFailures.map((f: any, i: number) => (
+                          <p key={i} className="text-[8px] font-black uppercase tracking-widest text-red-400">
+                            {f.kind === "item-level"
+                              ? `${t("req_blockedItemLevel") || "Item Level"} ${f.required}+ ${t("req_blockedRequired") || "required"} — ${t("req_blockedYours") || "yours"} ${f.actual ?? 0}`
+                              : `${t("req_blockedCombatPower") || "Combat Power"} ${f.required}+ ${t("req_blockedRequired") || "required"} — ${t("req_blockedYours") || "yours"} ${(f.actual ?? 0).toLocaleString("en-US")}`}
+                          </p>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
@@ -695,7 +765,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
               )}
               <div className="mt-4"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{t("apply_note")}</p><input type="text" maxLength={200} value={applyNote} onChange={(e) => setApplyNote(e.target.value)} placeholder={t("apply_notePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-gray-200 outline-none" /></div>
               {applyError && (<p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">{applyError}</p>)}
-              <button onClick={submitApply} disabled={!applyChar || !applyAionClass || !!applyingId} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : (applyChar ? (t("apply_send") || "Apply") : (t("apply_linkFirst") || "Link Character First"))}</button>
+              <button onClick={submitApply} disabled={!applyChar || !applyAionClass || !!applyingId || applyModalBlockFailures.length > 0} className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#074f7b] to-[#41389f] px-5 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50"><Swords className="w-3.5 h-3.5" /> {applyingId ? t("apply_submitting") : (applyChar ? (t("apply_send") || "Apply") : (t("apply_linkFirst") || "Link Character First"))}</button>
             </motion.div>
           </motion.div>
         )}

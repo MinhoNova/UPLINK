@@ -16,6 +16,15 @@ const FINISHED_OFFER_STATUSES = new Set([
   "failed",
 ]);
 import { checkAndRecordOfferApply, checkAndRecordOfferCreate } from "@/lib/offerDailyLimit";
+import { verifyCharacterStats, trustCharacterStats } from "@/lib/characterStatsSig";
+import type { TrustedCharacterStats } from "@/lib/characterStatsSig";
+import {
+  checkOfferRequirements,
+  cleanRequirements,
+  describeRequirementFailures,
+  hasOfferRequirements,
+  readOfferRequirements,
+} from "@/lib/offerRequirements";
 
 export const ADMIN_ID = "1497295886223544471";
 export const ADMIN_HANDLE = "minhonovazen";
@@ -714,6 +723,17 @@ export function validateLobbies(
         })),
       };
     }
+
+    // Gear requirements, clamped on every write rather than only in the edit
+    // route. These fields decide whether other players may apply, and `lobbies` is
+    // a client-writable blob, so the owner could otherwise set a requirement of
+    // 10^9 through /api/data and permanently lock their own offer to nobody. The
+    // ceiling is the same one the requirement check compares against, so a stored
+    // requirement can never be stricter than anything the game could produce.
+    if ("minItemLevel" in next || "minCombatPower" in next) {
+      const req = cleanRequirements(next);
+      next = { ...next, minItemLevel: req.minItemLevel, minCombatPower: req.minCombatPower };
+    }
     return next;
   });
 
@@ -855,6 +875,111 @@ export function validateCharacters(
   });
 
   return { ok: true, value: sanitized };
+}
+
+export async function enforceApplyRequirementsOnLobbyWrites(
+  existing: any[],
+  incoming: any[],
+  userId: string,
+  isAdmin: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (isAdmin) return { ok: true };
+
+  const existingById = new Map(existing.map((l) => [String(l.id), l]));
+
+  // Only lobbies where this write *adds* the caller as an applicant. Anything
+  // already on the roster was vetted when they joined.
+  const candidates = incoming.filter((l) => {
+    const ex = existingById.get(String(l.id));
+    if (!ex) return false;
+    const was = (ex.applicants || []).some((a: any) => memberUserId(a) === userId);
+    const now = (l.applicants || []).some((a: any) => memberUserId(a) === userId);
+    return !was && now;
+  });
+  if (!candidates.length) return { ok: true };
+
+  // Requirements first, so only the lobbies that actually gate something pay for
+  // a roster read.
+  const gated = candidates.filter((l) => hasOfferRequirements(readOfferRequirements(l)));
+  if (!gated.length) return { ok: true };
+
+  const characters: any[] = (await getKV("characters")) as any[];
+  for (const lobby of gated) {
+    const mine = (lobby.applicants || []).find((a: any) => memberUserId(a) === userId);
+    const charId = String(mine?.id || "");
+    let stats: TrustedCharacterStats | null = null;
+    if (charId.startsWith("game:")) {
+      const row = characters.find((ch: any) => String(ch.id) === charId);
+      // Only a row this account owns is ever considered, whichever id the payload
+      // claims — otherwise the gate could be satisfied with somebody else's
+      // high-geared character.
+      if (row && String(row.userId) === userId) {
+        stats = await trustCharacterStats(row, userId);
+      }
+    }
+    const verdict = checkOfferRequirements(readOfferRequirements(lobby), stats);
+    if (!verdict.ok) {
+      return { ok: false, error: describeRequirementFailures(verdict.failures) };
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * Strip the numbers a gear requirement is decided on from any of the caller's own
+ * rows whose server signature does not verify.
+ *
+ * `validateCharacters` deliberately keeps a foreign character's stored row and
+ * discards a forged claim on it, but the caller's OWN row passed through
+ * untouched, numbers and all — and `characters` is a client-writable blob. So
+ * anyone could POST their own character with `combatPower: 999999` and satisfy
+ * any requirement on any offer, which made the requirement a client-side
+ * decoration. The fix is here rather than inside `validateCharacters` so the
+ * validator stays synchronous and its many callers do not change shape.
+ *
+ * The signature is minted server-side from NCSoft's answer at resolve time, so a
+ * client cannot produce one for numbers it invented. It is checked against the
+ * row's own `userId`, which means a signature cannot be lifted between accounts
+ * either.
+ *
+ * Zeroing rather than dropping the row is deliberate. A missing signature is
+ * ambiguous by nature — it is a row written before signing existed exactly as
+ * much as it is a forgery — and deleting a linked character over that ambiguity
+ * would cost somebody their roster. Zeroed, the row still renders and still has
+ * its owner; the one thing it loses is the ability to satisfy a requirement,
+ * which is precisely the part that could have been faked. "Update Characters"
+ * re-verifies from the game and signs it.
+ */
+export async function enforceCharacterStatsTrust(
+  incoming: any[],
+  existing: unknown[],
+  userId: string
+): Promise<any[]> {
+  const existingById = new Map((existing as any[]).map((c) => [String(c.id), c]));
+  const out: any[] = [];
+
+  for (const ch of Array.isArray(incoming) ? incoming : []) {
+    // A plain site character has no game stats and nothing to verify.
+    if (!isVerifiedGameChar(ch)) {
+      out.push(ch);
+      continue;
+    }
+    // Another account's row is already restored to the stored copy above. Trust
+    // whatever the store holds for it; re-checking here would zero a legitimate
+    // pre-signing row the moment its owner happened to save the roster.
+    const ex = existingById.get(String(ch.id));
+    if (ex && String(ex.userId || "") !== String(userId)) {
+      out.push(ch);
+      continue;
+    }
+    const verified = await verifyCharacterStats(ch, String(ch.userId || userId));
+    if (verified.ok) {
+      out.push(ch);
+      continue;
+    }
+    out.push({ ...ch, level: 0, cpAp: 0, combatPower: 0, itemLevel: 0 });
+  }
+  return out;
 }
 
 export function validateNotifications(
@@ -1053,10 +1178,35 @@ export async function validateDataWrites(
           isAdmin
         );
         if (!limitCheck.ok) return limitCheck;
+        // A bulk write can put the caller on `lobby.applicants` all by itself —
+        // `isSelfApplicantScopedChange` exists precisely to let an applicant join,
+        // edit their note, or withdraw. Gating only the dedicated apply route
+        // would therefore have left the requirement bypassable by POSTing to
+        // /api/data instead, which is the obvious thing to try once the button
+        // stops working.
+        const requirementCheck = await enforceApplyRequirementsOnLobbyWrites(
+          (existing.lobbies as any[]) || [],
+          result.value as any[],
+          userId,
+          isAdmin
+        );
+        if (!requirementCheck.ok) return { ok: false, error: requirementCheck.error };
         break;
       }
       case "characters":
         result = validateCharacters((existing.characters as unknown[]) || [], value, userId, isAdmin);
+        if (!result.ok) break;
+        // Separate pass because it needs the signing key, and `validateCharacters`
+        // is synchronous with a long list of synchronous callers. Same shape as the
+        // lobby quota check above: validate, then enforce what needs I/O.
+        result = {
+          ok: true,
+          value: await enforceCharacterStatsTrust(
+            result.value as any[],
+            (existing.characters as unknown[]) || [],
+            userId
+          ),
+        };
         break;
       case "notifications":
         result = validateNotifications((existing.notifications as unknown[]) || [], value, userId, handle, isAdmin);

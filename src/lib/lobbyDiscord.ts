@@ -7,6 +7,13 @@ import {
 } from "@/lib/lobbyLifecycle";
 import { notificationMatchesUser } from "@/lib/userProfile";
 import { checkAndRecordOfferApply } from "@/lib/offerDailyLimit";
+import { trustCharacterStats } from "@/lib/characterStatsSig";
+import {
+  checkOfferRequirements,
+  describeRequirementFailures,
+  hasOfferRequirements,
+  readOfferRequirements,
+} from "@/lib/offerRequirements";
 import { isUserBanned } from "@/lib/banCheck";
 
 function memberId(member: { applicantId?: string; userId?: string; id?: string }) {
@@ -84,6 +91,17 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
 
    const char = eligible[0];
 
+   // Gear requirements — the bot is a third door into `lobby.applicants`, and it
+   // picks the character for the player rather than letting them choose. Without
+   // this gate a Discord player joins offers the site had just refused them
+   // through the browser.
+   //
+   // Verified here, before the write, because `updateKVAtomic` is synchronous. The
+   // comparison itself still happens inside it against the requirements on the row
+   // actually being written, so an owner raising the bar mid-request cannot be
+   // slipped past by this earlier read.
+   const trustedStats = await trustCharacterStats(char, uid);
+
   const limitCheck = await checkAndRecordOfferApply(uid, false);
   if (!limitCheck.ok) {
     return { ok: false as const, error: limitCheck.error };
@@ -106,6 +124,15 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       return undefined;
     }
     const lobby = cur[idx];
+    // Requirements read from the row being written, not the pre-write copy.
+    const required = readOfferRequirements(lobby);
+    if (hasOfferRequirements(required)) {
+      const verdict = checkOfferRequirements(required, trustedStats);
+      if (!verdict.ok) {
+        abortError = describeRequirementFailures(verdict.failures);
+        return undefined;
+      }
+    }
     if (String(lobby.ownerId) === uid) {
       abortError = "You cannot apply to your own offer.";
       return undefined;

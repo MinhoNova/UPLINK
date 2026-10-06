@@ -6,6 +6,7 @@ import { appendOfferFamilyMessage } from "@/lib/lobbyLifecycle";
 import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { OFFER_BANNER_BG_ALLOWED } from "@/lib/offerBannerBg";
+import { cleanRequirements } from "@/lib/offerRequirements";
 
 const ALLOWED_REGIONS = ["EU", "NA (EAST)", "NA (WEST)"];
 const ALLOWED_STATUSES = new Set(["", "standby", "in_progress"]);
@@ -108,6 +109,14 @@ export async function POST(req: Request) {
 
     let updated: any = { ...prev, title, notes, runsCount, pricePerRun, serverRegion, customBg };
     if (roles) { updated = { ...updated, roles, requiredClasses }; }
+
+    // Gear requirements, clamped to the same ceilings the apply-time check
+    // compares against, so an owner cannot edit themselves into an offer nobody
+    // can ever satisfy. 0 clears the requirement.
+    if ("minItemLevel" in body || "minCombatPower" in body) {
+      const req = cleanRequirements(body);
+      updated = { ...updated, minItemLevel: req.minItemLevel, minCombatPower: req.minCombatPower };
+    }
 
     const mtime = Date.now();
     updated = { ...updated, updatedAt: mtime };

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { X, Paintbrush, Save, Loader2, Users, Coins, Layers, MapPin, FileText, AlertTriangle } from "lucide-react";
 import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole } from "@/lib/aionClassMeta";
 import { classThumbUrl } from "@/lib/classThumb";
+import OfferRequirementFields from "@/components/aion2/OfferRequirementFields";
 
 const EDIT_REGIONS = ["EU", "NA (EAST)", "NA (WEST)"];
 const MAX_CLASS_COUNT = 4;
@@ -18,6 +19,9 @@ interface EditOfferPayload {
   serverRegion: string;
   customBg?: string;
   requiredClasses?: string[];
+  /** 0 clears the requirement. */
+  minItemLevel: number;
+  minCombatPower: number;
 }
 
 interface EditOfferModalProps {
@@ -36,6 +40,8 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
   const [runs, setRuns] = useState(String(Number(lobby?.runsCount) || 1));
   const [region, setRegion] = useState(String(lobby?.serverRegion || "EU").toUpperCase());
   const [classCounts, setClassCounts] = useState<Record<string, number>>({});
+  const [minItemLevel, setMinItemLevel] = useState(Math.max(0, Number(lobby?.minItemLevel) || 0));
+  const [minCombatPower, setMinCombatPower] = useState(Math.max(0, Number(lobby?.minCombatPower) || 0));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -91,6 +97,11 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
       runsCount: Math.min(99, Math.max(1, Math.round(Number(runs)) || 1)),
       pricePerRun: Math.min(99999, Math.max(0, Number(price) || 0)),
       serverRegion: region,
+      // Always sent, both fields. The edit route only touches them when they are
+      // present, so omitting them would mean "leave the existing requirement
+      // alone" — and clearing one has to be able to say 0 explicitly.
+      minItemLevel: Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
+      minCombatPower: Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
     };
     if (upcomingClasses.length > 0) payload.requiredClasses = upcomingClasses;
     else payload.requiredClasses = [];
@@ -180,6 +191,20 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Gear requirements. Enforced on the server at apply time; this is only
+            how the owner sets them, and it shares one component with the create
+            flow so the two cannot drift apart on bounds or wording. */}
+        <div className="mt-4">
+          <OfferRequirementFields
+            minItemLevel={minItemLevel}
+            minCombatPower={minCombatPower}
+            onChange={({ minItemLevel: il, minCombatPower: cp }) => {
+              setMinItemLevel(il);
+              setMinCombatPower(cp);
+            }}
+          />
         </div>
 
         {/* Notes */}

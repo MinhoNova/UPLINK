@@ -5,8 +5,29 @@ import { rateLimitByIp, rateLimitResponse } from "@/lib/rateLimit";
 import { requireSession } from "@/lib/authz";
 import { fetchGameCharacterProfile, resolveCharacterFromShareUrl } from "@/lib/aion2GameApi";
 import { findCharacterLink } from "@/lib/aion2Uniqueness";
+import { signCharacterStats } from "@/lib/characterStatsSig";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Pair a freshly verified character with a signature over its stats.
+ *
+ * This is the only moment the site sees the real numbers: the server is holding
+ * NCSoft's answer inside `fetchGameCharacterProfile`. Signing here, on the way
+ * out, is what lets the requirement check on an offer trust these numbers later
+ * even though they travel back through a client-writable roster.
+ *
+ * A null signature (no signing key configured) is passed through rather than
+ * faked, so the row lands unsigned and simply cannot satisfy a requirement. See
+ * `characterStatsSig.ts`.
+ */
+async function signedCharacter(
+  character: any,
+  userId: string
+): Promise<{ character: any; statsSig: string | null }> {
+  const statsSig = await signCharacterStats(character, userId);
+  return { character, statsSig };
+}
 
 /**
  * Re-verify a character we already store, from its stored `characterId` +
@@ -62,7 +83,7 @@ export async function PUT(req: Request) {
     if (linked && String(linked.userId) !== uid) {
       return NextResponse.json({ error: "That character is linked to another account" }, { status: 403 });
     }
-    return NextResponse.json({ character });
+    return NextResponse.json(await signedCharacter(character, uid));
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message || "Could not reach NCSoft for this character" },
@@ -98,7 +119,13 @@ export async function POST(req: Request) {
     if (linked && String(linked.userId) !== uid) {
       return NextResponse.json({ character, alreadyLinked: true }, { status: 200 });
     }
-    return NextResponse.json({ character });
+    // Signed on the way out here too, not only on PUT: linking a character goes
+    // through POST, so this is the path a new roster row actually takes. Without
+    // it a freshly linked character is stored unsigned and is refused by every
+    // offer that asks for gear, until the player runs an Update. Signed in is
+    // required to mint, because the signature binds the row to this account; an
+    // anonymous preview is returned unsigned and cannot be applied with.
+    return NextResponse.json(uid ? await signedCharacter(character, uid) : { character });
   } catch (e: any) {
     const msg =
       e?.message === "invalid-character-link"

@@ -5,6 +5,14 @@ import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { withdrawApplicantFromOfferFamily, acceptApplicantAcrossLobbies } from "@/lib/lobbyLifecycle";
 import { resolveNotificationRecipient, resolveNotificationRecipientId } from "@/lib/userProfile";
 import { checkAndRecordOfferApply, getOfferApplyUsage } from "@/lib/offerDailyLimit";
+import type { TrustedCharacterStats } from "@/lib/characterStatsSig";
+import { trustCharacterStats } from "@/lib/characterStatsSig";
+import {
+  checkOfferRequirements,
+  describeRequirementFailures,
+  hasOfferRequirements,
+  readOfferRequirements,
+} from "@/lib/offerRequirements";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { charactersFromStore, memberCharacterSnapshot } from "@/lib/memberCharacter";
 import { getClientIp } from "@/lib/requestIp";
@@ -73,19 +81,53 @@ export async function POST(req: Request) {
     })(),
   };
 
-  const applicantLevel = Number(nextApplicant.level ?? 0);
-  if (applicantLevel < BOOST_MIN_LEVEL) {
+  const characters = await charactersFromStore();
+
+  // The applicant's own character row, with the server's own numbers.
+  //
+  // `characters` is a client-writable blob, so a row could carry any level,
+  // ilevel or combat power it liked. The row is only believed here when this
+  // account owns it and the server's signature over its stats still verifies —
+  // which is what makes both the Level 45 rule and an offer's gear requirement
+  // enforceable. A client that POSTs a bigger number gets the same answer as one
+  // that never tried.
+  //
+  // Verified before the atomic block because verification is async, then compared
+  // inside it against the lobby actually being written — so an owner editing the
+  // requirement between the two cannot be slipped past by a stale read.
+  const myCharId = String(nextApplicant.id || "");
+  let myStats: TrustedCharacterStats | null = null;
+  if (myCharId.startsWith("game:")) {
+    const row = characters.find((ch: any) => String(ch.id) === myCharId);
+    if (row && String(row.userId) === uid) {
+      myStats = await trustCharacterStats(row, uid);
+    }
+  }
+
+  // Level 45, from those signed numbers rather than from `applicant.level` in the
+  // request body. Reading it off the request made the rule decorative: anyone who
+  // edited the payload cleared it. Unverifiable rows now fail this too, which is
+  // why the message points at the sync page — an unproven level is not a level
+  // above 44, it is an unknown one.
+  const trustedLevel = myStats?.level ?? 0;
+  if (trustedLevel < BOOST_MIN_LEVEL) {
     return NextResponse.json(
-      { error: `Boosting offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${applicantLevel}.` },
+      {
+        error: myStats
+          ? `Boosting offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${trustedLevel}.`
+          : `Boosting offers require a verified Level ${BOOST_MIN_LEVEL}+ character — sync your character in My Characters first.`,
+      },
       { status: 400 }
     );
   }
+  // What the squad leader sees in the applicant row is the verified level, not
+  // the number that was sent in.
+  nextApplicant.level = trustedLevel;
 
   // The thread shows a member's real in-game portrait and ilevel. Those live on
   // the `characters` rows, so they are snapshotted onto the applicant here rather
   // than taken from the request: a client-supplied portrait would be discarded by
   // `clampMemberWrite` anyway, since a member's row is frozen to what is stored.
-  const characters = await charactersFromStore();
   const snapshot = memberCharacterSnapshot(characters, { ...nextApplicant, applicantId: uid });
 
   // Region check: prevent EU <-> NA cross-application
@@ -126,7 +168,11 @@ export async function POST(req: Request) {
     // ignore region check errors
   }
 
+  // Gear requirements: an offer can demand a minimum Item Level / Combat Power
+  // because the dungeon genuinely locks lower characters out, so a player under
+  // it cannot join. Checked against `myStats`, resolved above.
   let abortReason: string | null = null;
+  let abortStatus = 0;
   const res = await updateKVAtomic<any[]>("lobbies", (lobbies) => {
     const cur = Array.isArray(lobbies) ? [...lobbies] : [];
     const idx = cur.findIndex((l: any) => String(l.id) === String(lobbyId));
@@ -135,6 +181,20 @@ export async function POST(req: Request) {
       return undefined;
     }
     const lobby = cur[idx] as any;
+
+    // Against the requirements on the row being written, not a copy read earlier.
+    const required = readOfferRequirements(lobby);
+    if (hasOfferRequirements(required)) {
+      const verdict = checkOfferRequirements(required, myStats);
+      if (!verdict.ok) {
+        abortReason = describeRequirementFailures(verdict.failures);
+        // 403, not 409: nothing is wrong with the state of the offer, the caller
+        // simply is not eligible for it, and retrying will not change that.
+        abortStatus = 403;
+        return undefined;
+      }
+    }
+
     if (String(lobby.ownerId) === uid) {
       abortReason = "You cannot apply to your own offer.";
       return undefined;
@@ -174,7 +234,7 @@ export async function POST(req: Request) {
   });
 
   if (!res.ok) {
-    const status = abortReason === "Lobby not found" ? 404 : 409;
+    const status = abortStatus || (abortReason === "Lobby not found" ? 404 : 409);
     return NextResponse.json({ error: abortReason || "Could not apply — try again." }, { status });
   }
 

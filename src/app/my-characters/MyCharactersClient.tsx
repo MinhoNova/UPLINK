@@ -16,6 +16,7 @@ import {
   removeCharacterById,
   saveVerifiedCharacterEntries,
 } from "@/lib/characterStore";
+import type { SignedVerifiedCharacterEntry } from "@/lib/characterStore";
 import { useI18n } from "@/i18n/i18n";
 
 /**
@@ -108,7 +109,9 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
       if (d.alreadyLinked) { setLinkError(t("verify_alreadyLinked") || "This character is already linked to another account on the site."); return; }
       const vc = d.character as VerifiedGameCharacter;
       if (!vc?.characterId) { setLinkError(t("verify_notFound")); return; }
-      const saved = await saveVerifiedCharacterEntries([vc], meId);
+      // The signature the server minted over this character's stats travels with the
+      // row, which is what makes those numbers usable as an offer requirement.
+      const saved = await saveVerifiedCharacterEntries([{ ...vc, statsSig: d?.statsSig ?? null }], meId);
       if (!saved.ok) { setLinkError(saved.error || t("mychars_saveFailed")); return; }
       setLinkResult(vc);
       setLink("");
@@ -155,7 +158,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
     setUpdating(true);
     setUpdateDone(0);
     try {
-      const verified: VerifiedGameCharacter[] = [];
+      const verified: SignedVerifiedCharacterEntry[] = [];
       const failed: string[] = [];
       let stopped = false;
 
@@ -199,7 +202,11 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
             }
             const d: any = await res.json().catch(() => ({}));
             const vc = d?.character as VerifiedGameCharacter | undefined;
-            if (res.ok && vc?.characterId) verified.push(vc);
+            // `statsSig` rides along and is stored with the row. It is what lets an
+            // offer's Item Level / Combat Power requirement be checked against this
+            // character's real numbers instead of the client's word for them, so a
+            // refresh is what re-arms the character for offers that gate on gear.
+            if (res.ok && vc?.characterId) verified.push({ ...vc, statsSig: d?.statsSig ?? null });
             else failed.push(c.name || "character");
           } catch {
             failed.push(c.name || "character");

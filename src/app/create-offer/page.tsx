@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AION_SERVICES, AION_CATEGORIES, AION_CLASSES, AionService, AionServiceOption, isRemovedDungeonService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
+import OfferRequirementFields from "@/components/aion2/OfferRequirementFields";
 
 const STEPS = ["service", "details"] as const;
 type Step = (typeof STEPS)[number];
@@ -410,6 +411,11 @@ export default function CreateOfferPage() {
   const [difficultyOpen, setDifficultyOpen] = useState(false);
   const [pricePerRun, setPricePerRun] = useState(0);
   const [maxBoosters, setMaxBoosters] = useState(1);
+  // Optional minimum gear for this offer. 0 = no requirement, which is what an
+  // offer that does not gate on gear stores, so the server reads these straight
+  // off the lobby with no migration.
+  const [minItemLevel, setMinItemLevel] = useState(0);
+  const [minCombatPower, setMinCombatPower] = useState(0);
   const [requiredClasses, setRequiredClasses] = useState<string[]>([]);
   const [autoClasses, setAutoClasses] = useState(true);
 
@@ -545,7 +551,12 @@ export default function CreateOfferPage() {
         pricePerRun,
         goldPerRun: pricePerRun,
         totalGold: pricePerRun * qty,
-        maxBoosters,
+maxBoosters,
+        // Clamped here as well as on the server. The server is what actually
+        // enforces this, but an out-of-range number in the form would be saved and
+        // then silently changed under the owner, which is worse than refusing it.
+        minItemLevel: Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
+        minCombatPower: Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
         requiredClasses: requiredClasses.length > 0 ? requiredClasses : undefined,
         selectedOption: difficulty !== "Average" ? difficulty : pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
         selectedOptionGroup: (difficulty !== "Average" || pickedVariant) ? pickedOption?.label || undefined : undefined,
@@ -904,6 +915,15 @@ roles: requiredClasses.length > 0
                               </div>
                             </div>
                             </div>
+
+                            <OfferRequirementFields
+                              minItemLevel={minItemLevel}
+                              minCombatPower={minCombatPower}
+                              onChange={({ minItemLevel: il, minCombatPower: cp }) => {
+                                setMinItemLevel(il);
+                                setMinCombatPower(cp);
+                              }}
+                            />
 
                             {difficultyOptions.length > 0 && (
                               <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">

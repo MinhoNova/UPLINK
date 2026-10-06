@@ -1,5 +1,21 @@
 import type { VerifiedGameCharacter } from "@/lib/aion2ClassIds";
 import { isSupportedGlobalRegion, portraitProxyPath } from "@/lib/aion2ClassIds";
+import { STATS_SIG_FIELD } from "@/lib/characterStatsLimits";
+
+/**
+ * A verified character together with the signature the resolve endpoint minted
+ * over its stats.
+ *
+ * The two are only separable because the response hands them over side by side,
+ * and keeping them apart matters: `character` is entirely client-visible while
+ * `statsSig` is what makes its numbers usable as a gate. Widening the save
+ * function to accept either shape means a caller that has no signature in hand —
+ * an older caller, or a code path that skipped resolve — stores an unsigned row
+ * rather than inventing one. Unsigned rows cannot satisfy a requirement, so
+ * forgetting the signature degrades to "cannot use this feature", never to "can
+ * forge their stats".
+ */
+export type SignedVerifiedCharacterEntry = VerifiedGameCharacter & { statsSig?: string | null };
 
 /** True for a row that was written by the game-character verifier, as opposed to
  *  a plain site character. Only verified rows carry these, and they are what
@@ -72,7 +88,7 @@ export function myLinkedCharacters(list: any[], userId: string): any[] {
     .map(([, row]) => row);
 }
 
-export function toStoredCharacter(vc: VerifiedGameCharacter, userId: string): any {
+export function toStoredCharacter(vc: VerifiedGameCharacter, userId: string, statsSig: string | null = null): any {
   return {
     id: `game:${vc.characterId}`,
     userId,
@@ -91,6 +107,13 @@ export function toStoredCharacter(vc: VerifiedGameCharacter, userId: string): an
     portraitUrl: portraitProxyPath(vc.portraitUrl || ""),
     verifiedAt: vc.verifiedAt,
     region: vc.region || "global",
+    // Carried, never computed here. The server minted this over the numbers above
+    // at resolve time, which is the only point the site saw the real values; the
+    // client cannot produce one, so it cannot inflate a row that a stat
+    // requirement is later checked against. Left off entirely when signing is
+    // unavailable, which makes the row unusable for requirements rather than
+    // making it forgeable.
+    ...(statsSig ? { [STATS_SIG_FIELD]: statsSig } : {}),
   };
 }
 
@@ -138,7 +161,7 @@ export async function writeCharacters(next: any[]): Promise<{ ok: boolean; error
  * roster did not have yet.
  */
 export async function saveVerifiedCharacterEntries(
-  entries: VerifiedGameCharacter[],
+  entries: Array<VerifiedGameCharacter | SignedVerifiedCharacterEntry>,
   userId: string
 ): Promise<{ ok: boolean; error?: string }> {
   if (!Array.isArray(entries) || entries.length === 0) return { ok: true };
@@ -148,7 +171,14 @@ export async function saveVerifiedCharacterEntries(
   // `game:<id>` left that row in place and appended a second one, which is how
   // one character came to be listed twice.
   const wanted = entries
-    .map((vc) => ({ charId: String(vc.characterId), entry: toStoredCharacter(vc, userId) }))
+    .map((vc) => ({
+      charId: String(vc.characterId),
+      entry: toStoredCharacter(
+        vc,
+        userId,
+        "statsSig" in vc ? String((vc as SignedVerifiedCharacterEntry).statsSig || "") || null : null
+      ),
+    }))
     .filter((w) => w.charId);
   const written = new Set<string>();
   const next: any[] = [];
@@ -171,7 +201,7 @@ export async function saveVerifiedCharacterEntries(
 }
 
 export async function saveVerifiedCharacterEntry(
-  vc: VerifiedGameCharacter,
+  vc: VerifiedGameCharacter | SignedVerifiedCharacterEntry,
   userId: string
 ): Promise<{ ok: boolean; error?: string }> {
   return saveVerifiedCharacterEntries([vc], userId);

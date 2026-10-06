@@ -64,7 +64,11 @@ it("the refresh uses the stored game character id, not the row id", () => {
     // `characters` is a single blob: saving per character would rewrite the
     // whole roster N times, each invalidating the public cache for every reader.
     const client = read("app/my-characters/MyCharactersClient.tsx");
-    expect(client).toMatch(/const verified: VerifiedGameCharacter\[\] = \[\]/);
+    // The element type is `SignedVerifiedCharacterEntry` rather than
+    // `VerifiedGameCharacter` because each result now travels with the signature
+    // the server minted over its stats. The assertion is on there being ONE
+    // array declared outside the worker, not on which type describes a row.
+    expect(client).toMatch(/const verified: SignedVerifiedCharacterEntry\[\] = \[\]/);
     expect(client).toMatch(/saveVerifiedCharacterEntries\(verified, meId\)/);
     // ...and not from inside the per-character worker. Asserting on the worker's
     // real boundaries matters: an earlier version of this test sliced on a loop
