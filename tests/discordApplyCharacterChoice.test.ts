@@ -51,7 +51,10 @@ describe("applying from discord", () => {
     // `characters.find(...)` handed the applicant an arbitrary row, so someone
     // with a level 20 alt and a level 80 main silently applied on the alt.
     expect(lobbyDiscord).not.toMatch(/const char =\s*\n?\s*characters\.find/);
-    expect(lobbyDiscord).toMatch(/const eligible = owned\.filter/);
+    // Eligibility is still a filter for boosting offers; leveling offers lift
+    // the 45+ floor because leveling exists to raise sub-45 characters.
+    expect(lobbyDiscord).toMatch(/const eligible = isLeveling\s*\n?\s*\?\s*owned\s*\n?\s*:\s*owned\.filter/);
+    expect(lobbyDiscord).toMatch(/owned\.filter\(\(c\) => Number\(c\.level/);
   });
 
   it("asks the player to choose when more than one character qualifies", () => {

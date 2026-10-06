@@ -104,25 +104,18 @@ export async function POST(req: Request) {
     }
   }
 
-  // Level 45, from those signed numbers rather than from `applicant.level` in the
-  // request body. Reading it off the request made the rule decorative: anyone who
-  // edited the payload cleared it. Unverifiable rows now fail this too, which is
-  // why the message points at the sync page — an unproven level is not a level
+  // Level 45 is read from the signed numbers, not from `applicant.level` in the
+  // request body — reading it off the request made the rule decorative: anyone
+  // who edited the payload cleared it. Unverifiable rows fail it too, which is
+  // why the message points at the sync page: an unproven level is not a level
   // above 44, it is an unknown one.
+  //
+  // The check itself lives inside `updateKVAtomic` below, next to the lobby
+  // actually being written, so it can exempt leveling offers: a leveling offer
+  // exists to raise a character that is usually under 45, so the boost floor
+  // would block every buyer it is meant for. There the applicant's own claimed
+  // level is kept for the owner to see instead of the verified one.
   const trustedLevel = myStats?.level ?? 0;
-  if (trustedLevel < BOOST_MIN_LEVEL) {
-    return NextResponse.json(
-      {
-        error: myStats
-          ? `Boosting offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${trustedLevel}.`
-          : `Boosting offers require a verified Level ${BOOST_MIN_LEVEL}+ character — sync your character in My Characters first.`,
-      },
-      { status: 400 }
-    );
-  }
-  // What the squad leader sees in the applicant row is the verified level, not
-  // the number that was sent in.
-  nextApplicant.level = trustedLevel;
 
   // The thread shows a member's real in-game portrait and ilevel. Those live on
   // the `characters` rows, so they are snapshotted onto the applicant here rather
@@ -181,6 +174,24 @@ export async function POST(req: Request) {
       return undefined;
     }
     const lobby = cur[idx] as any;
+
+    // The Level 45 floor, evaluated against the lobby row being written so the
+    // category cannot be swapped out between read and write.
+    const isLevelingOffer = String(lobby.category || "").toLowerCase() === "leveling";
+    if (!isLevelingOffer) {
+      if (trustedLevel < BOOST_MIN_LEVEL) {
+        abortReason = myStats
+          ? `Boosting offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${trustedLevel}.`
+          : `Boosting offers require a verified Level ${BOOST_MIN_LEVEL}+ character — sync your character in My Characters first.`;
+        // 400, not 409 or 403: the applicant is not eligible for the rule this
+        // offer runs under and retrying will not change that.
+        abortStatus = 400;
+        return undefined;
+      }
+      // What the squad leader sees in the applicant row is the verified level,
+      // not the number that was sent in.
+      nextApplicant.level = trustedLevel;
+    }
 
     // Against the requirements on the row being written, not a copy read earlier.
     const required = readOfferRequirements(lobby);

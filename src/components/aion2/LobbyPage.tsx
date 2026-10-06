@@ -332,7 +332,9 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
     if (!meId || !l || applyingId) return;
     if (!applyChar) { setApplyError(t("apply_noCharacter")); return; }
     if (!applyAionClass) { setApplyError(t("err_pickClass")); return; }
-    if (Number(applyChar.level ?? 0) < 45) { setApplyError(t("apply_levelRequired") || "Boosting offers require Level 45+"); return; }
+    // Leveling offers exist to raise a character that is usually under 45, so the
+    // boost floor only applies to dungeon/raid offers.
+    if (String(l.category || "").toLowerCase() !== "leveling" && Number(applyChar.level ?? 0) < 45) { setApplyError(t("apply_levelRequired") || "Boosting offers require Level 45+"); return; }
     setApplyingId(String(l.id)); setApplyError("");
     const charId = reapplyCharId;
     const gid = applyGameCharId(applyChar);
@@ -725,7 +727,7 @@ export default function LobbyPage({ initialHeroBg }: { initialHeroBg?: string })
                       itemLevel={Number(applyChar.itemLevel) || 0}
                     />
                   </div>
-                  {Number(applyChar.level) < 45 && (
+                  {String(applyTarget?.category || "").toLowerCase() !== "leveling" && Number(applyChar.level) < 45 && (
                     <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
                       <p className="text-[8px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"}</p>
                     </div>

@@ -25,11 +25,12 @@ async function loadLobbyData() {
   const registeredUsers: any[] = (await getKV("registeredUsers")) || [];
   const characters: any[] = (await getKV("characters")) || [];
   const notifications: any[] = (await getKV("notifications")) || [];
-  return { registeredUsers, characters, notifications };
+  const lobbies: any[] = (await getKV("lobbies")) || [];
+  return { registeredUsers, characters, notifications, lobbies };
 }
 
 export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: string) {
-   const { registeredUsers, characters } = await loadLobbyData();
+   const { registeredUsers, characters, lobbies } = await loadLobbyData();
 
    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "").replace(/\/+$/, "");
    const applyPage = `${siteUrl}/apply/${encodeURIComponent(lobbyId)}`;
@@ -67,14 +68,24 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       };
    }
 
-   const eligible = owned.filter((c) => Number(c.level ?? c.applicantLevel ?? 0) >= 45);
+   // The 45+ floor is a boosting rule. A leveling offer exists to raise a
+   // character that is usually under 45, so every owned character is eligible
+   // there and the floor would block each of the buyers it is meant for.
+   const lobbyRow = lobbies.find((l) => String(l.id) === String(lobbyId));
+   const isLeveling = String(lobbyRow?.category || "").toLowerCase() === "leveling";
+
+   const eligible = isLeveling
+      ? owned
+      : owned.filter((c) => Number(c.level ?? c.applicantLevel ?? 0) >= 45);
    if (eligible.length === 0) {
       const best = owned.reduce((m, c) =>
          Number(c.level ?? c.applicantLevel ?? 0) > Number(m.level ?? m.applicantLevel ?? 0) ? c : m,
       );
       return {
          ok: false as const,
-         error: `Boosting offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one here: ${applyPage}`,
+         error: isLeveling
+            ? `No character can be applied to this leveling offer. Add one here and try again: ${applyPage}`
+            : `Boosting offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one here: ${applyPage}`,
       };
    }
 
@@ -83,7 +94,7 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       // above; the apply page is where the player picks on purpose.
       return {
          ok: false as const,
-         error: `You have ${eligible.length} characters at Level 45+ (${eligible
+         error: `You have ${eligible.length} characters${isLeveling ? "" : " at Level 45+"} (${eligible
             .map((c: any) => c.name || "unnamed")
             .join(", ")}). Pick the one you want to bring: ${applyPage}`,
       };
