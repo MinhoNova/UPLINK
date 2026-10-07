@@ -41,8 +41,14 @@ describe("discord offer embed", () => {
     expect(discord).toMatch(/const applyUrl = absoluteSiteUrl\(`\/apply\/\$\{lobby\.id\}`\)/);
   });
 
-  it("keeps Apply a custom_id button so it still works without a link", () => {
-    expect(discord).toMatch(/custom_id: `apply_\$\{lobby\.id\}`/);
+  it("points the Apply button at the site apply page instead of applying in Discord", () => {
+    // A player with 2+ Level 45 characters, or any gear gate (unverified or low
+    // Item Level), got a hard refusal from the bot-side apply. The broadcast
+    // button now hands straight to the site's picker, where every player works.
+    expect(discord).not.toMatch(/custom_id: `apply_\$\{lobby\.id\}`/);
+    expect(discord).toMatch(/label: "Apply",\s*url: applyUrl/);
+    // The embed keeps a plain site link in the second slot.
+    expect(discord).toMatch(/label: "Open UPLINK",\s*url: absoluteSiteUrl\("\/"\)/);
   });
 });
 
@@ -60,6 +66,14 @@ describe("applying from discord", () => {
   it("asks the player to choose when more than one character qualifies", () => {
     expect(lobbyDiscord).toMatch(/if \(eligible\.length > 1\)/);
     expect(lobbyDiscord).toMatch(/Pick the one you want to bring/);
+  });
+
+  it("walks refused players to the site with a sync link when the fault is gear", () => {
+    // Every Discord path that cannot finish an apply now appends a browser link;
+    // gear refusals also point at /my-characters, where the numbers are synced.
+    expect(lobbyDiscord).toMatch(/const myCharacters = `\$\{siteUrl\}\/my-characters`/);
+    expect(lobbyDiscord).toMatch(/Apply in your browser/);
+    expect(lobbyDiscord).toMatch(/String\(abortError \|\| ""\)\.startsWith\("Cannot apply"\)/);
   });
 
   it("sends unregistered and characterless players to the site", () => {

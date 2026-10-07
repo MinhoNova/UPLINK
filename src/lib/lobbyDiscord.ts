@@ -35,11 +35,25 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
 
    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "").replace(/\/+$/, "");
    const applyPage = `${siteUrl}/apply/${encodeURIComponent(lobbyId)}`;
+   const myCharacters = `${siteUrl}/my-characters`;
+
+   // Every Discord path that cannot finish an apply now says where to go on the
+   // site instead of ending in prose. Gear refusals additionally point at the
+   // character roster, which is where a player syncs the numbers the gate needs.
+   const guide = (msg: string, opts: { chars?: boolean; apply?: boolean } = {}) => {
+      const lines = [msg];
+      if (opts.chars) lines.push(`👤 Add or sync your character: ${myCharacters}`);
+      if (opts.apply) lines.push(`🎯 Apply in your browser (sign in with Discord there): ${applyPage}`);
+      return lines.join("\n");
+   };
+
    const user = registeredUsers.find((u) => String(u.id) === String(discordUserId));
    if (!user) {
       return {
          ok: false as const,
-         error: `Sign in with Discord on UPLINK and add your character, then apply — ${applyPage}`,
+         error: guide(`Sign in with Discord on UPLINK and add your character, then apply.`, {
+            apply: true,
+         }),
       };
    }
 
@@ -65,7 +79,10 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
    if (owned.length === 0) {
       return {
          ok: false as const,
-         error: `You have no character on UPLINK yet. Add one, then apply — ${applyPage}`,
+         error: guide(`You have no character on UPLINK yet — add one first, then apply.`, {
+            chars: true,
+            apply: true,
+         }),
       };
    }
 
@@ -80,7 +97,10 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       );
       return {
          ok: false as const,
-         error: `Offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one here: ${applyPage}`,
+         error: guide(
+            `Offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one, then apply.`,
+            { chars: true, apply: true },
+         ),
       };
    }
 
@@ -89,9 +109,12 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       // above; the apply page is where the player picks on purpose.
       return {
          ok: false as const,
-         error: `You have ${eligible.length} characters at Level 45+ (${eligible
-            .map((c: any) => c.name || "unnamed")
-            .join(", ")}). Pick the one you want to bring: ${applyPage}`,
+         error: guide(
+            `You have ${eligible.length} eligible characters (${eligible
+               .map((c: any) => c.name || "unnamed")
+               .join(", ")}). Pick the one you want to bring.`,
+            { apply: true },
+         ),
       };
    }
 
@@ -110,7 +133,7 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
 
   const limitCheck = await checkAndRecordOfferApply(uid, false);
   if (!limitCheck.ok) {
-    return { ok: false as const, error: limitCheck.error };
+    return { ok: false as const, error: guide(limitCheck.error, { apply: true }) };
   }
 
   const nextApplicant = {
@@ -165,7 +188,13 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
     return cur;
   });
 
-  if (!res.ok) return { ok: false as const, error: abortError || "Could not apply — try again." };
+  if (!res.ok) {
+    const isGear = String(abortError || "").startsWith("Cannot apply");
+    return {
+      ok: false as const,
+      error: guide(abortError || "Could not apply — try again.", { chars: isGear, apply: true }),
+    };
+  }
 
   const lobby = (res.value || []).find((l: any) => String(l.id) === String(lobbyId));
   return { ok: true as const, lobby, applicantName: nextApplicant.applicantName };

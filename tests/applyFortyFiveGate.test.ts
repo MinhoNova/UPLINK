@@ -11,7 +11,8 @@ import { join } from "node:path";
  * These cases pin that on every door into `lobby.applicants`:
  *
  *  - `POST /api/lobbies/apply` (the web + Discord-handoff flow)
- *  - `applyToLobbyFromDiscord` (the embed's Apply button)
+ *  - `applyToLobbyFromDiscord` (kept as the Discord-apply fallback; the embed's
+ *    Apply button itself now hands off to the site apply page)
  *
  * and the sync gate that makes it hold everywhere: `GET /api/aion2/resolve` is
  * the only place the site sees NCSoft's real level, so a character below 45 is

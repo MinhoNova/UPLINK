@@ -258,16 +258,16 @@ export async function sendLobbyEmbed(lobby: any) {
          components: [
             {
                type: 2,
-               style: 3,
+               style: 5,
                label: "Apply",
-               custom_id: `apply_${lobby.id}`,
+               url: applyUrl,
                emoji: { name: "⚡" },
             },
             {
                type: 2,
                style: 5,
                label: "Open UPLINK",
-               url: applyUrl,
+               url: absoluteSiteUrl("/"),
                emoji: { name: "🌐" },
             },
          ],
