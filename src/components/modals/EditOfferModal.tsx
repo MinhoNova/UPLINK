@@ -6,6 +6,8 @@ import { X, Paintbrush, Save, Loader2, Users, Coins, Layers, MapPin, FileText, A
 import { AION2_CLASSES, AION2_ROLE_LABEL, aionClassRole } from "@/lib/aionClassMeta";
 import { classThumbUrl } from "@/lib/classThumb";
 import OfferRequirementFields from "@/components/aion2/OfferRequirementFields";
+import { STAT_MAX } from "@/lib/characterStatsLimits";
+import { lobbyStageItemLevel } from "@/lib/transcendenceStages";
 
 const EDIT_REGIONS = ["EU", "NA (EAST)", "NA (WEST)"];
 const MAX_CLASS_COUNT = 4;
@@ -88,6 +90,11 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
     return req;
   }, [classCounts]);
 
+  // A Transcendence stage's game floor is the least this offer may ask for; the
+  // owner cannot edit it below the level the dungeon itself demands.
+  const stageFloor = lobbyStageItemLevel(lobby);
+  const effectiveMinItemLevel = Math.max(minItemLevel, stageFloor);
+
   const submit = async () => {
     setSaving(true);
     setError("");
@@ -102,7 +109,7 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
       // present, so omitting them would mean "leave the existing requirement
       // alone" — and clearing one has to be able to say 0 explicitly.
       // Leveling offers carry no gear requirement by design.
-      minItemLevel: isLeveling ? 0 : Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
+      minItemLevel: isLeveling ? 0 : Math.min(STAT_MAX.itemLevel, Math.max(0, Math.floor(effectiveMinItemLevel) || 0)),
       minCombatPower: isLeveling ? 0 : Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
     };
     if (upcomingClasses.length > 0) payload.requiredClasses = upcomingClasses;
@@ -200,7 +207,7 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
             flow so the two cannot drift apart on bounds or wording. */}
         <div className="mt-4">
           <OfferRequirementFields
-            minItemLevel={minItemLevel}
+            minItemLevel={effectiveMinItemLevel}
             minCombatPower={minCombatPower}
             disabled={isLeveling}
             onChange={({ minItemLevel: il, minCombatPower: cp }) => {

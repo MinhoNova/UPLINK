@@ -30,7 +30,7 @@ export const STATS_SIG_FIELD = "statsSig";
  */
 export const STAT_MAX = {
   level: 200,
-  itemLevel: 1000,
+  itemLevel: 10_000,
   combatPower: 100_000,
 } as const;
 

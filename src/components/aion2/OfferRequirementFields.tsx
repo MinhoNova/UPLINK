@@ -1,6 +1,7 @@
 "use client";
 
 import { AION2_ITEM_LEVEL_ICON, AION2_POWER_ICON } from "@/lib/aion2Stats";
+import { STAT_MAX } from "@/lib/characterStatsLimits";
 import { useI18n } from "@/i18n/i18n";
 
 /**
@@ -55,7 +56,7 @@ export default function OfferRequirementFields({
           iconClass="h-[13px] w-auto"
           label={t("offer_reqItemLevel") || "Item Level"}
           value={minItemLevel}
-          max={1000}
+          max={STAT_MAX.itemLevel}
           disabled={disabled}
           onChange={(v) => set("minItemLevel", v)}
           anyLabel={t("offer_reqAny") || "Any"}

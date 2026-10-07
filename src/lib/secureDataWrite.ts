@@ -6,6 +6,7 @@ import { isSecretClubTier } from "@/lib/userProfile";
 import { findDuplicateUsernames, normRef, type PlayerRecord } from "@/lib/playerIdentity";
 import { sanitizeApplicantNote } from "@/lib/applicantNote";
 import { canOwnerCancelLobby, hasIndependentSquadMember, hasRealMissionEvidence } from "@/lib/lobbyLifecycle";
+import { lobbyStageItemLevel } from "@/lib/transcendenceStages";
 
 /** Offer states past their mission: settling or clearing them is never a start. */
 const FINISHED_OFFER_STATUSES = new Set([
@@ -735,9 +736,12 @@ export function validateLobbies(
       // Leveling offers carry no gear requirement by design — any Level 45
       // character fits — so one cannot be smuggled in through a bulk write.
       const isLeveling = String(next.category || "").toLowerCase() === "leveling";
+      // A Transcendence stage demands its own Item Level in game, so an offer on
+      // one can never ask for less than that floor.
+      const floor = lobbyStageItemLevel(next);
       next = {
         ...next,
-        minItemLevel: isLeveling ? 0 : req.minItemLevel,
+        minItemLevel: isLeveling ? 0 : Math.max(req.minItemLevel, floor),
         minCombatPower: isLeveling ? 0 : req.minCombatPower,
       };
     }

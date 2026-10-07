@@ -29,6 +29,7 @@ vi.mock("@/lib/offerDailyLimit", () => ({
 
 import { validateDataWrites, validateLobbies } from "@/lib/secureDataWrite";
 import { resetStatsKeyCacheForTests, signCharacterStats, STATS_SIG_FIELD } from "@/lib/characterStatsSig";
+import { STAT_MAX } from "@/lib/characterStatsLimits";
 
 const OWNER = "owner-1";
 const APPLICANT = "player-2";
@@ -255,7 +256,7 @@ describe("requirements an owner types", () => {
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const rows = res.value as any[];
-    expect(rows[0].minItemLevel).toBe(1000);
+    expect(rows[0].minItemLevel).toBe(STAT_MAX.itemLevel);
     expect(rows[0].minCombatPower).toBe(0);
   });
 

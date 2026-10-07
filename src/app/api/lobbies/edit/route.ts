@@ -7,6 +7,7 @@ import { getClientIp } from "@/lib/requestIp";
 import { touchUserLastIp } from "@/lib/userLastIp";
 import { OFFER_BANNER_BG_ALLOWED } from "@/lib/offerBannerBg";
 import { cleanRequirements } from "@/lib/offerRequirements";
+import { lobbyStageItemLevel } from "@/lib/transcendenceStages";
 
 const ALLOWED_REGIONS = ["EU", "NA (EAST)", "NA (WEST)"];
 const ALLOWED_STATUSES = new Set(["", "standby", "in_progress"]);
@@ -118,9 +119,12 @@ export async function POST(req: Request) {
       // Leveling offers carry no gear requirement by design — any Level 45
       // character fits — so an owner cannot set one on them.
       const isLeveling = String(lobby.category || "").toLowerCase() === "leveling";
+      // A Transcendence stage demands its own Item Level in game, so the offer
+      // can never be edited down below it.
+      const floor = lobbyStageItemLevel(lobby);
       updated = {
         ...updated,
-        minItemLevel: isLeveling ? 0 : req.minItemLevel,
+        minItemLevel: isLeveling ? 0 : Math.max(req.minItemLevel, floor),
         minCombatPower: isLeveling ? 0 : req.minCombatPower,
       };
     }

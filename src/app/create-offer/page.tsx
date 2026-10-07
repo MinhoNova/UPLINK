@@ -11,6 +11,7 @@ import {
 import { AION_SERVICES, AION_CATEGORIES, AION_CLASSES, AionService, AionServiceOption, isRemovedDungeonService } from "@/lib/aionServices";
 import { saveDataSmart } from "@/lib/saveDataRouter";
 import OfferRequirementFields from "@/components/aion2/OfferRequirementFields";
+import { STAT_MAX } from "@/lib/characterStatsLimits";
 
 const STEPS = ["service", "details"] as const;
 type Step = (typeof STEPS)[number];
@@ -471,10 +472,10 @@ export default function CreateOfferPage() {
   }, [sel?.id, marketPrices]);
 
   /* Clear difficulty options + price helpers for the details step */
-  const difficultyOptions = useMemo(() => {
+  const difficultyOptions = useMemo<{ label: string; price: number; minItemLevel?: number }[]>(() => {
     if (!sel) return [];
     if (pickedOption?.variants?.length) {
-      return pickedOption.variants.map((v) => ({ label: v.label, price: v.priceKina }));
+      return pickedOption.variants.map((v) => ({ label: v.label, price: v.priceKina, minItemLevel: v.minItemLevel || 0 }));
     }
     if (sel.category === "Dungeons" && !pickedOption) {
       return [
@@ -484,6 +485,11 @@ export default function CreateOfferPage() {
     }
     return [];
   }, [sel, pickedOption]);
+
+  /* A Transcendence stage carries the game's own Item Level floor, and an offer
+     is never allowed to sit below it — the dungeon will not let a player in. */
+  const stageItemLevelFloor = pickedVariant?.minItemLevel || 0;
+  const effectiveMinItemLevel = Math.max(minItemLevel, stageItemLevelFloor);
 
   const selectDifficulty = (opt: { label: string; price: number }) => {
     setDifficulty(opt.label);
@@ -557,7 +563,7 @@ maxBoosters,
         // then silently changed under the owner, which is worse than refusing it.
         // Leveling offers carry no gear requirement by design — any Level 45
         // character fits — so they always store 0.
-        minItemLevel: category === "leveling" ? 0 : Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
+        minItemLevel: category === "leveling" ? 0 : Math.min(STAT_MAX.itemLevel, Math.max(0, Math.floor(effectiveMinItemLevel) || 0)),
         minCombatPower: category === "leveling" ? 0 : Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
         requiredClasses: requiredClasses.length > 0 ? requiredClasses : undefined,
         selectedOption: difficulty !== "Average" ? difficulty : pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
@@ -919,7 +925,7 @@ roles: requiredClasses.length > 0
                             </div>
 
                             <OfferRequirementFields
-                              minItemLevel={sel?.category === "Leveling" ? 0 : minItemLevel}
+                              minItemLevel={sel?.category === "Leveling" ? 0 : effectiveMinItemLevel}
                               minCombatPower={sel?.category === "Leveling" ? 0 : minCombatPower}
                               disabled={sel?.category === "Leveling"}
                               onChange={({ minItemLevel: il, minCombatPower: cp }) => {
@@ -945,12 +951,17 @@ roles: requiredClasses.length > 0
                                       >
                                         <span className="text-xs font-black">{opt.label}</span>
                                         <span className={`text-[9px] font-bold ${isActive ? "text-cyan-300" : "text-gray-500"}`}>{opt.price.toFixed(2)}M</span>
+                                        {opt.minItemLevel ? (
+                                          <span className={`text-[8px] font-bold ${isActive ? "text-amber-300" : "text-gray-600"}`}>IL {opt.minItemLevel}+</span>
+                                        ) : null}
                                       </button>
                                     );
                                   })}
                                 </div>
                                 <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-gray-600">
-                                  Owner picks the difficulty — price applies accordingly
+                                  {pickedOption?.variants?.length
+                                    ? "Each stage requires its Item Level — under-geared players cannot apply"
+                                    : "Owner picks the difficulty — price applies accordingly"}
                                 </p>
                               </div>
                             )}

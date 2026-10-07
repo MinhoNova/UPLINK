@@ -1,10 +1,14 @@
 "use client";
 
+import { TRANSCENDENCE_DUNGEONS } from "@/lib/transcendenceStages";
+
 export interface AionServiceOption {
   label: string;
   priceKina: number;
   variants?: AionServiceOption[];
   img?: string;
+  /** The game's Item Level floor for this option — players under it cannot apply. */
+  minItemLevel?: number;
 }
 
 export interface AionService {
@@ -186,19 +190,22 @@ export const AION_SERVICES: AionService[] = [
     id: "transcendence",
     name: "Transcendence",
     category: "Dungeons",
-    description: "Deus Research Base / Shattered Arcanis. All stages available.",
-    basePriceKina: kinah(2.5),
+    description: "Deus Research Base / Shattered Arcanis — pick a dungeon and stage. Each stage requires its own Item Level.",
+    basePriceKina: 7,
     priceUnit: "per stage",
     express: kinah(0.5),
     superExpress: kinah(1.0),
     img: "/dungeons/transcendence.png",
-    options: [
-      { label: "Stage 1-4", priceKina: kinah(1.7) },
-      { label: "Stage 5-7", priceKina: kinah(2.67) },
-      { label: "Stage 8", priceKina: kinah(4.78) },
-      { label: "Stage 9", priceKina: kinah(6.08) },
-      { label: "Stage 10", priceKina: kinah(6.8) },
-    ],
+    options: TRANSCENDENCE_DUNGEONS.map((d) => ({
+      label: d.label,
+      priceKina: 0,
+      img: d.img,
+      variants: d.stageItemLevels.map((floor, i) => ({
+        label: `Stage ${i + 1}`,
+        priceKina: d.stagePrices[i],
+        minItemLevel: floor,
+      })),
+    })),
   },
   {
     id: "sealed-dungeons",
