@@ -177,7 +177,7 @@ export async function runMyCharactersCommand(discordUserId: string) {
 
   if (mine.length === 0) {
     return ephemeralPayload(
-      `No characters on your UPLINK account yet. Add one here:\n${absolute("/my-characters")}\n\nBoosting offers need a Level 45+ character.`,
+      `No characters on your UPLINK account yet. Add one here:\n${absolute("/my-characters")}\n\nOffers need a Level 45+ character.`,
     );
   }
 

@@ -125,7 +125,7 @@ export default function AionAutoApplyModal({
   };
 
   const pickChar = (c: any) => {
-    if (Number(c.level) < 45) { setError("Boosting offers require Level 45+ — your character is under Level 45"); return; }
+    if (Number(c.level) < 45) { setError("Offers require Level 45+ — your character is under Level 45"); return; }
     setSelCharId(String(c.id));
     setCharDropOpen(false);
     set({ ...charPatch(c), enabled: true });
@@ -179,7 +179,7 @@ export default function AionAutoApplyModal({
             onClick={() => {
               if (!meId) { setError("Sign in to use auto-apply"); return; }
               if (!selectedChar) { setError("Link a character first — add one in My Characters"); return; }
-              if (Number(selectedChar.level) < 45) { setError("Boosting offers require Level 45+ — your character is under Level 45"); return; }
+              if (Number(selectedChar.level) < 45) { setError("Offers require Level 45+ — your character is under Level 45"); return; }
               set({ enabled: !cfg.enabled });
             }}
             disabled={saving}
@@ -296,7 +296,7 @@ export default function AionAutoApplyModal({
             </div>
             {Number(selectedChar?.level) < 45 && (
               <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
-                <p className="text-[8px] font-black uppercase tracking-widest text-red-400">Boosting offers require Level 45+ — your character is under Level 45</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-red-400">Offers require Level 45+ — your character is under Level 45</p>
               </div>
             )}
           </>
