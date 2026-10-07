@@ -732,7 +732,14 @@ export function validateLobbies(
     // requirement can never be stricter than anything the game could produce.
     if ("minItemLevel" in next || "minCombatPower" in next) {
       const req = cleanRequirements(next);
-      next = { ...next, minItemLevel: req.minItemLevel, minCombatPower: req.minCombatPower };
+      // Leveling offers carry no gear requirement by design — any Level 45
+      // character fits — so one cannot be smuggled in through a bulk write.
+      const isLeveling = String(next.category || "").toLowerCase() === "leveling";
+      next = {
+        ...next,
+        minItemLevel: isLeveling ? 0 : req.minItemLevel,
+        minCombatPower: isLeveling ? 0 : req.minCombatPower,
+      };
     }
     return next;
   });

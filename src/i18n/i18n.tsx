@@ -150,7 +150,7 @@ const en: Dict = {
   apply_as: "Applying as",
   apply_pickCharacter: "Pick your character",
   apply_noCharacter: "You don't have any linked characters yet",
-  apply_levelRequired: "Boosting offers require Level 45+",
+  apply_levelRequired: "Offers require Level 45+",
   req_blockedUnverified: "Sync your character in My Characters to verify its gear.",
   req_blockedItemLevel: "Item Level",
   req_blockedCombatPower: "Combat Power",

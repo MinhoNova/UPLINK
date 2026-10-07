@@ -338,7 +338,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
           )}
           {linkResult && Number(linkResult.level) < 45 && (
             <div className="mt-2 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/[0.06] p-3">
-              <span className="text-[9px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"} — Level {linkResult.level}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Offers require Level 45+"} — Level {linkResult.level}</span>
             </div>
           )}
         </div>
@@ -387,7 +387,7 @@ export default function MyCharactersClient({ heroBg }: { heroBg?: string }) {
                       className="mt-0.5"
                     />
                     {Number(c.level) < 45 && (
-                      <span className="inline-flex w-fit rounded border border-red-500/40 bg-red-500/10 px-1.5 py-px text-[7px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Boosting offers require Level 45+"}</span>
+                      <span className="inline-flex w-fit rounded border border-red-500/40 bg-red-500/10 px-1.5 py-px text-[7px] font-black uppercase tracking-widest text-red-400">{t("apply_levelRequired") || "Offers require Level 45+"}</span>
                     )}
                     <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                       {href && (

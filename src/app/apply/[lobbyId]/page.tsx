@@ -65,12 +65,8 @@ export default function ApplyPage() {
         const mine = (Array.isArray(d.characters) ? d.characters : []).filter(
           (c: any) => String(c.userId) === String(meId),
         );
-        const isLeveling = String(found?.category || "").toLowerCase() === "leveling";
-        // The 45+ floor is a boosting rule; a leveling offer exists to raise a
-        // character that is usually under 45, so every character is eligible there.
-        const eligible = isLeveling
-          ? mine
-          : mine.filter((c: any) => Number(c.level ?? c.applicantLevel ?? 0) >= BOOST_MIN_LEVEL);
+        // Every offer on the site runs under the 45+ floor — leveling included.
+        const eligible = mine.filter((c: any) => Number(c.level ?? c.applicantLevel ?? 0) >= BOOST_MIN_LEVEL);
         setChars(eligible);
         setSelCharId((prev) => (prev && eligible.some((c: any) => String(c.id) === String(prev)) ? prev : eligible[0] ? String(eligible[0].id) : ""));
       }
@@ -88,7 +84,6 @@ export default function ApplyPage() {
 
   const selChar = useMemo(() => chars.find((c) => String(c.id) === String(selCharId)) || null, [chars, selCharId]);
   const aionClass = sanitizeAionClass(selChar?.aionClass || selChar?.className || "");
-  const isLeveling = String(lobby?.category || "").toLowerCase() === "leveling";
   const meta = CATEGORY_META[String(lobby?.category || "").toLowerCase()] || { emoji: "🎮", label: "Mission", tint: "text-cyan-300" };
 
   const submit = async () => {
@@ -211,10 +206,8 @@ export default function ApplyPage() {
           </button>
         </Callout>
       ) : chars.length === 0 ? (
-        <Callout icon={<UserRound className="h-5 w-5" />} title={isLeveling ? "No character yet" : "No eligible character"}>
-          {isLeveling
-            ? "Add the character you want to level to your profile, then reopen this link."
-            : <>Boosting offers need a Level {BOOST_MIN_LEVEL}+ character. Add one to your profile, then reopen this link.</>}
+        <Callout icon={<UserRound className="h-5 w-5" />} title="No eligible character">
+          <>Offers need a Level {BOOST_MIN_LEVEL}+ character. Add one to your profile, then reopen this link.</>
           <button
             onClick={() => router.push("/my-characters")}
             className="mt-4 w-full rounded-xl bg-cyan-400/15 px-5 py-3 text-sm font-bold text-cyan-300 ring-1 ring-cyan-400/40 transition hover:bg-cyan-400/25"

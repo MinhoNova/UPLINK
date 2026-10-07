@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { aion2RegionFromGameRegion } from "@/lib/aion2ClassIds";
+import { BOOST_MIN_LEVEL } from "@/lib/aionClassMeta";
 import { getClientIp } from "@/lib/requestIp";
 import { rateLimitByIp, rateLimitResponse } from "@/lib/rateLimit";
 import { requireSession } from "@/lib/authz";
@@ -27,6 +28,16 @@ async function signedCharacter(
 ): Promise<{ character: any; statsSig: string | null }> {
   const statsSig = await signCharacterStats(character, userId);
   return { character, statsSig };
+}
+
+/**
+ * The site only serves Level 45 players: a character below the cap cannot be
+ * linked, so it never lands signed in anyone's roster (an unsigned row cannot
+ * pass the apply gate on any offer). This is the one moment the server holds
+ * NCSoft's real numbers, so it is where the rule is enforced.
+ */
+function belowMaxLevel(character: any): boolean {
+  return Number(character?.level) < BOOST_MIN_LEVEL;
 }
 
 /**
@@ -76,6 +87,12 @@ export async function PUT(req: Request) {
     if (!character) {
       return NextResponse.json({ error: "Character not found" }, { status: 404 });
     }
+    if (belowMaxLevel(character)) {
+      return NextResponse.json(
+        { error: `Characters below Level ${BOOST_MIN_LEVEL} can't be linked on UPLINK.` },
+        { status: 400 }
+      );
+    }
     // A link is a per-account claim: refuse to hand someone else's character
     // back just because they guessed the id.
     const linked = await findCharacterLink(character.characterId);
@@ -112,6 +129,12 @@ export async function POST(req: Request) {
     const character = await resolveCharacterFromShareUrl(link);
     if (!character) {
       return NextResponse.json({ error: "Character not found" }, { status: 404 });
+    }
+    if (belowMaxLevel(character)) {
+      return NextResponse.json(
+        { error: `Characters below Level ${BOOST_MIN_LEVEL} can't be linked on UPLINK.` },
+        { status: 400 }
+      );
     }
     const auth = await requireSession(req);
     const uid = auth.ok ? String(auth.user.id) : "";

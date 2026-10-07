@@ -115,7 +115,14 @@ export async function POST(req: Request) {
     // can ever satisfy. 0 clears the requirement.
     if ("minItemLevel" in body || "minCombatPower" in body) {
       const req = cleanRequirements(body);
-      updated = { ...updated, minItemLevel: req.minItemLevel, minCombatPower: req.minCombatPower };
+      // Leveling offers carry no gear requirement by design — any Level 45
+      // character fits — so an owner cannot set one on them.
+      const isLeveling = String(lobby.category || "").toLowerCase() === "leveling";
+      updated = {
+        ...updated,
+        minItemLevel: isLeveling ? 0 : req.minItemLevel,
+        minCombatPower: isLeveling ? 0 : req.minCombatPower,
+      };
     }
 
     const mtime = Date.now();

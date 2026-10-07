@@ -555,8 +555,10 @@ maxBoosters,
         // Clamped here as well as on the server. The server is what actually
         // enforces this, but an out-of-range number in the form would be saved and
         // then silently changed under the owner, which is worse than refusing it.
-        minItemLevel: Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
-        minCombatPower: Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
+        // Leveling offers carry no gear requirement by design — any Level 45
+        // character fits — so they always store 0.
+        minItemLevel: category === "leveling" ? 0 : Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
+        minCombatPower: category === "leveling" ? 0 : Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
         requiredClasses: requiredClasses.length > 0 ? requiredClasses : undefined,
         selectedOption: difficulty !== "Average" ? difficulty : pickedVariant ? pickedVariant.label : pickedOption?.label || undefined,
         selectedOptionGroup: (difficulty !== "Average" || pickedVariant) ? pickedOption?.label || undefined : undefined,
@@ -917,8 +919,9 @@ roles: requiredClasses.length > 0
                             </div>
 
                             <OfferRequirementFields
-                              minItemLevel={minItemLevel}
-                              minCombatPower={minCombatPower}
+                              minItemLevel={sel?.category === "Leveling" ? 0 : minItemLevel}
+                              minCombatPower={sel?.category === "Leveling" ? 0 : minCombatPower}
+                              disabled={sel?.category === "Leveling"}
                               onChange={({ minItemLevel: il, minCombatPower: cp }) => {
                                 setMinItemLevel(il);
                                 setMinCombatPower(cp);

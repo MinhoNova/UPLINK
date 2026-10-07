@@ -34,6 +34,7 @@ interface EditOfferModalProps {
 
 export default function EditOfferModal({ lobby, registeredUsers = [], onClose, onSaved, onError }: EditOfferModalProps) {
   const owner = registeredUsers.find((u: any) => String(u.id) === String(lobby?.ownerId)) || null;
+  const isLeveling = String(lobby?.category || "").toLowerCase() === "leveling";
   const [title, setTitle] = useState(String(lobby?.title || "").slice(0, 60));
   const [notes, setNotes] = useState(String(lobby?.notes || "").slice(0, 400));
   const [price, setPrice] = useState(String(Number(lobby?.pricePerRun) || 0));
@@ -100,8 +101,9 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
       // Always sent, both fields. The edit route only touches them when they are
       // present, so omitting them would mean "leave the existing requirement
       // alone" — and clearing one has to be able to say 0 explicitly.
-      minItemLevel: Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
-      minCombatPower: Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
+      // Leveling offers carry no gear requirement by design.
+      minItemLevel: isLeveling ? 0 : Math.min(1000, Math.max(0, Math.floor(minItemLevel) || 0)),
+      minCombatPower: isLeveling ? 0 : Math.min(100000, Math.max(0, Math.floor(minCombatPower) || 0)),
     };
     if (upcomingClasses.length > 0) payload.requiredClasses = upcomingClasses;
     else payload.requiredClasses = [];
@@ -200,6 +202,7 @@ export default function EditOfferModal({ lobby, registeredUsers = [], onClose, o
           <OfferRequirementFields
             minItemLevel={minItemLevel}
             minCombatPower={minCombatPower}
+            disabled={isLeveling}
             onChange={({ minItemLevel: il, minCombatPower: cp }) => {
               setMinItemLevel(il);
               setMinCombatPower(cp);

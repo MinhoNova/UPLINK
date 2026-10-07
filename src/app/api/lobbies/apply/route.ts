@@ -11,6 +11,7 @@ import {
   checkOfferRequirements,
   describeRequirementFailures,
   hasOfferRequirements,
+  NO_REQUIREMENTS,
   readOfferRequirements,
 } from "@/lib/offerRequirements";
 import { touchUserLastIp } from "@/lib/userLastIp";
@@ -111,10 +112,8 @@ export async function POST(req: Request) {
   // above 44, it is an unknown one.
   //
   // The check itself lives inside `updateKVAtomic` below, next to the lobby
-  // actually being written, so it can exempt leveling offers: a leveling offer
-  // exists to raise a character that is usually under 45, so the boost floor
-  // would block every buyer it is meant for. There the applicant's own claimed
-  // level is kept for the owner to see instead of the verified one.
+  // actually being written, so the category cannot be swapped out between read
+  // and write. It runs for every offer — leveling included.
   const trustedLevel = myStats?.level ?? 0;
 
   // The thread shows a member's real in-game portrait and ilevel. Those live on
@@ -176,25 +175,31 @@ export async function POST(req: Request) {
     const lobby = cur[idx] as any;
 
     // The Level 45 floor, evaluated against the lobby row being written so the
-    // category cannot be swapped out between read and write.
-    const isLevelingOffer = String(lobby.category || "").toLowerCase() === "leveling";
-    if (!isLevelingOffer) {
-      if (trustedLevel < BOOST_MIN_LEVEL) {
-        abortReason = myStats
-          ? `Boosting offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${trustedLevel}.`
-          : `Boosting offers require a verified Level ${BOOST_MIN_LEVEL}+ character — sync your character in My Characters first.`;
-        // 400, not 409 or 403: the applicant is not eligible for the rule this
-        // offer runs under and retrying will not change that.
-        abortStatus = 400;
-        return undefined;
-      }
-      // What the squad leader sees in the applicant row is the verified level,
-      // not the number that was sent in.
-      nextApplicant.level = trustedLevel;
+    // category cannot be swapped out between read and write. Every offer on the
+    // site runs under it — leveling included — so a sub-45 or unverifiable
+    // character is turned away everywhere; the only thing that varies by
+    // category is the gear requirement below.
+    if (trustedLevel < BOOST_MIN_LEVEL) {
+      abortReason = myStats
+        ? `Offers require Level ${BOOST_MIN_LEVEL}+ — your character is Level ${trustedLevel}.`
+        : `Offers require a verified Level ${BOOST_MIN_LEVEL}+ character — sync your character in My Characters first.`;
+      // 400, not 409 or 403: the applicant is not eligible for the rule every
+      // offer runs under and retrying will not change that.
+      abortStatus = 400;
+      return undefined;
     }
+    // What the squad leader sees in the applicant row is the verified level,
+    // not the number that was sent in.
+    nextApplicant.level = trustedLevel;
 
     // Against the requirements on the row being written, not a copy read earlier.
-    const required = readOfferRequirements(lobby);
+    // Leveling offers carry no gear requirement by design — any Level 45
+    // character fits there — so any numbers stored on one are ignored, never
+    // enforced.
+    const required =
+      String(lobby.category || "").toLowerCase() === "leveling"
+        ? NO_REQUIREMENTS
+        : readOfferRequirements(lobby);
     if (hasOfferRequirements(required)) {
       const verdict = checkOfferRequirements(required, myStats);
       if (!verdict.ok) {

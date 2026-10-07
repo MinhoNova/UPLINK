@@ -185,7 +185,7 @@ export async function runMyCharactersCommand(discordUserId: string) {
     const level = Number(c.level ?? c.applicantLevel ?? 0);
     const cls = String(c.aionClass || c.className || "Unknown class");
     const ilvl = Number(c.itemLevel) || 0;
-    return `• **${String(c.name || "Unnamed")}** · ${cls} · Level ${level || "?"}${ilvl ? ` · iLvl ${ilvl}` : ""}${level < 45 ? " _(too low for boosting offers)_" : ""}`;
+    return `• **${String(c.name || "Unnamed")}** · ${cls} · Level ${level || "?"}${ilvl ? ` · iLvl ${ilvl}` : ""}${level < 45 ? " _(too low for offers — Level 45 required)_" : ""}`;
   });
 
   return ephemeralPayload(

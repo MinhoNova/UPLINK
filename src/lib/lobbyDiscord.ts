@@ -12,6 +12,7 @@ import {
   checkOfferRequirements,
   describeRequirementFailures,
   hasOfferRequirements,
+  NO_REQUIREMENTS,
   readOfferRequirements,
 } from "@/lib/offerRequirements";
 import { isUserBanned } from "@/lib/banCheck";
@@ -30,7 +31,7 @@ async function loadLobbyData() {
 }
 
 export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: string) {
-   const { registeredUsers, characters, lobbies } = await loadLobbyData();
+   const { registeredUsers, characters } = await loadLobbyData();
 
    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || "").replace(/\/+$/, "");
    const applyPage = `${siteUrl}/apply/${encodeURIComponent(lobbyId)}`;
@@ -68,24 +69,18 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       };
    }
 
-   // The 45+ floor is a boosting rule. A leveling offer exists to raise a
-   // character that is usually under 45, so every owned character is eligible
-   // there and the floor would block each of the buyers it is meant for.
-   const lobbyRow = lobbies.find((l) => String(l.id) === String(lobbyId));
-   const isLeveling = String(lobbyRow?.category || "").toLowerCase() === "leveling";
-
-   const eligible = isLeveling
-      ? owned
-      : owned.filter((c) => Number(c.level ?? c.applicantLevel ?? 0) >= 45);
+   // Every offer on the site runs under the 45+ floor — leveling included — so
+   // only characters of Level 45+ are ever put forward. The only per-category
+   // difference is the gear requirement later: leveling offers have none, so any
+   // Level 45 character is welcome there.
+   const eligible = owned.filter((c) => Number(c.level ?? c.applicantLevel ?? 0) >= 45);
    if (eligible.length === 0) {
       const best = owned.reduce((m, c) =>
          Number(c.level ?? c.applicantLevel ?? 0) > Number(m.level ?? m.applicantLevel ?? 0) ? c : m,
       );
       return {
          ok: false as const,
-         error: isLeveling
-            ? `No character can be applied to this leveling offer. Add one here and try again: ${applyPage}`
-            : `Boosting offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one here: ${applyPage}`,
+         error: `Offers require Level 45+ — your best character is Level ${best.level || best.applicantLevel || "?"}. Add a higher one here: ${applyPage}`,
       };
    }
 
@@ -94,7 +89,7 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       // above; the apply page is where the player picks on purpose.
       return {
          ok: false as const,
-         error: `You have ${eligible.length} characters${isLeveling ? "" : " at Level 45+"} (${eligible
+         error: `You have ${eligible.length} characters at Level 45+ (${eligible
             .map((c: any) => c.name || "unnamed")
             .join(", ")}). Pick the one you want to bring: ${applyPage}`,
       };
@@ -135,8 +130,12 @@ export async function applyToLobbyFromDiscord(discordUserId: string, lobbyId: st
       return undefined;
     }
     const lobby = cur[idx];
-    // Requirements read from the row being written, not the pre-write copy.
-    const required = readOfferRequirements(lobby);
+    // Leveling offers carry no gear requirement by design — any Level 45
+    // character fits there — so numbers stored on one are ignored.
+    const required =
+      String(lobby.category || "").toLowerCase() === "leveling"
+        ? NO_REQUIREMENTS
+        : readOfferRequirements(lobby);
     if (hasOfferRequirements(required)) {
       const verdict = checkOfferRequirements(required, trustedStats);
       if (!verdict.ok) {
